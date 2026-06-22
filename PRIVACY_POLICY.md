@@ -1,4 +1,4 @@
-# Privacy Policy for [Name of Your App]
+# Privacy Policy for Dart Penalty Playback
 
 The protection of your personal data is of utmost importance to us. This application is programmed to respect the user's privacy to the maximum extent. Since the app operates entirely without a server connection, no personal data is transmitted to us or any third parties.
 
@@ -27,11 +27,10 @@ Please note that when you download or update the app through F-Droid or another 
 ## 4. Contact and Imprint
 If you have any questions regarding this Privacy Policy or the app, you can contact us at the following address:
 
-[Your Name / Developer Name]
-[Your E-Mail Address]
-[Optional: Your Postal Address]
+Fabis Codestube
+fabi.codestube@gmail.com
 
 You can find the source code or updates for this project on our GitHub page:
-https://github.com[Your-GitHub-Username]/[Your-Repository-Name]
+https://github.com/fabicodestube-dotcom/Dart-Penalty-Playback/
 
 Date of Last Update: [Current Date]
