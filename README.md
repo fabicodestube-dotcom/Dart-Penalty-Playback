@@ -14,7 +14,7 @@ You can get the official, ready-to-install Android APK directly here:
 
 ---
 
-## ✨ Key Features (USPs)
+## ✨ Key Features
 
 *   **🎮 Classic & Custom Modes:** Play against friends or AI bots in classic **X01**, **Cricket**, or **Around the Clock**.
 *   **👥 Dynamic Local Profiles:** Create and manage offline player accounts directly inside the app.
