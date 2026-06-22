@@ -16,11 +16,12 @@ You can get the official, ready-to-install Android APK directly here:
 
 ## ✨ Key Features (USPs)
 
-*   **🎙️ Built-in Voice Recorder:** Record your own voice directly inside the app to announce scores, checkouts, and custom game events.
-*   **💸 Custom Penalty System:** Set up personalized financial rules or fun punishments for specific events like wall hits, ceiling hits, or hitting "Schnapszahlen" (e.g., 111, 222).
-*   **🤖 Smart Bots & Game Modes:** Play against AI opponents in classic **X01**, **Cricket**, or **Around the Clock**.
-*   **📊 In-Depth Statistics:** Track your averages and match history locally (stored safely in local JSON files).
-*   **🔒 Pure Privacy:** No internet connection required, zero trackers, and absolutely **no ads**.
+*   **🎮 Classic & Custom Modes:** Play against friends or AI bots in classic **X01**, **Cricket**, or **Around the Clock**.
+*   **👥 Dynamic Local Profiles:** Create and manage offline player accounts directly inside the app.
+*   **📊 Lifetime Statistics:** Every single match can be saved, feeding directly into comprehensive, global lifetime stats.
+*   **💸 Custom Penalty System:** Set up personalized financial rules for specific events like wall hits, ceiling hits, and other blunders.
+*   **🎙️ Built-in Voice Recorder:** Record your own voice directly inside the app to announce scores, penalties, or other game milestones.
+*   **🔒 Pure Privacy:** No internet connection required, zero trackers, and absolutely **no ads** (all data is stored safely in local JSON files).
 
 ---
 
@@ -28,7 +29,7 @@ You can get the official, ready-to-install Android APK directly here:
 
 Found a bug or have a feature request? Please help improve the app by opening a ticket in our official tracker:
 
-👉 **[Open a New Issue / Ticket](https://github.com)**
+👉 **[Open a New Issue / Ticket](https://github.com](https://github.com/fabicodestube-dotcom/Dart-Penalty-Playback/issues)**
 
 ---
 
@@ -36,7 +37,7 @@ Found a bug or have a feature request? Please help improve the app by opening a 
 
 This app is completely free, ad-free, and respects your privacy. If you enjoy using it and want to support its development, you can fuel the project through one of these platforms:
 
-*   ☕ **[Support on Ko-fi] (Link pending)**
+*   ☕ **[Support on Ko-fi](Link pending)**
 
 *Thank you so much for backing this independent project!*
 
