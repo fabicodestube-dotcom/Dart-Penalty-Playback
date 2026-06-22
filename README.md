@@ -12,16 +12,6 @@ You can get the official, ready-to-install Android APK directly here:
 
 ---
 
-## ❤️ Support the Project
-
-This app is completely free, ad-free, and respects your privacy. If you enjoy using it and want to support its development, you can fuel the project through one of these platforms:
-
-*   ☕ **[Support on Ko-fi (One-time Tip)](https://ko-fi.com)** — Great for a quick, one-time donation with zero platform fees.
-
-*Thank you so much for backing this independent project!*
-
----
-
 ## ✨ Key Features (USPs)
 
 *   **🎙️ Built-in Voice Recorder:** Record your own voice directly inside the app to announce scores, checkouts, and custom game events.
@@ -37,6 +27,16 @@ This app is completely free, ad-free, and respects your privacy. If you enjoy us
 Found a bug or have a feature request? Please help improve the app by opening a ticket in our official tracker:
 
 👉 **[Open a New Issue / Ticket](https://github.com)**
+
+---
+
+## ❤️ Support the Project
+
+This app is completely free, ad-free, and respects your privacy. If you enjoy using it and want to support its development, you can fuel the project through one of these platforms:
+
+*   ☕ **[Support on Ko-fi] (Link pending)**
+
+*Thank you so much for backing this independent project!*
 
 ---
 
