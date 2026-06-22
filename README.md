@@ -8,7 +8,9 @@ This repository is used exclusively for **issue tracking (bug reports & feature 
 
 You can get the official, ready-to-install Android APK directly here:
 
-👉 **[Download Latest APK from F-Droid](Link pending)**  
+👉 **[Download Latest APK from GitHub](https://github.com/fabicodestube-dotcom/Dart-Penalty-Playback/releases)**  
+
+👉 **[Download Latest APK from F-Droid](Link pending)**
 
 ---
 
