@@ -40,7 +40,7 @@ This app is completely free, ad-free, and respects your privacy. If you enjoy us
 
 ---
 
-## 📜 Privacy Policy (DSV)
+## 📜 Privacy Policy
 
 Data protection is of utmost importance. The app does not collect, store, or transmit any personal data. All game statistics and audio recordings remain strictly on your local device.
 
