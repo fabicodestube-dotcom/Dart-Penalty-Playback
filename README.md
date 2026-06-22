@@ -37,7 +37,7 @@ Found a bug or have a feature request? Please help improve the app by opening a 
 
 This app is completely free, ad-free, and respects your privacy. If you enjoy using it and want to support its development, you can fuel the project through one of these platforms:
 
-*   ☕ **[Support on Ko-fi](https://ko-fi.com/fabiscodestube)**
+☕ **[Support on Ko-fi](https://ko-fi.com/fabiscodestube)**
 
 *Thank you so much for backing this independent project!*
 
