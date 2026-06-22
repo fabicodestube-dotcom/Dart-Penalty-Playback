@@ -29,7 +29,7 @@ You can get the official, ready-to-install Android APK directly here:
 
 Found a bug or have a feature request? Please help improve the app by opening a ticket in our official tracker:
 
-👉 **[Open a New Issue / Ticket](https://github.com](https://github.com/fabicodestube-dotcom/Dart-Penalty-Playback/issues)**
+👉 **[Open a New Issue / Ticket](https://github.com/fabicodestube-dotcom/Dart-Penalty-Playback/issues)**
 
 ---
 
