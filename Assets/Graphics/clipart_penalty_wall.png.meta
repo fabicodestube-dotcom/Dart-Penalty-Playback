@@ -1,0 +1,546 @@
+fileFormatVersion: 2
+guid: 994d964e453a7470fab36a00e6cf0e9c
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -4139900086904692336
+    second: clipart_penalty_wall_0
+  - first:
+      213: 3996457212420783659
+    second: clipart_penalty_wall_1
+  - first:
+      213: 6812475647863793687
+    second: clipart_penalty_wall_2
+  - first:
+      213: 4541869525452291229
+    second: clipart_penalty_wall_3
+  - first:
+      213: 378289478962085246
+    second: clipart_penalty_wall_4
+  - first:
+      213: 8728982219596678757
+    second: clipart_penalty_wall_5
+  - first:
+      213: 8715137562118110588
+    second: clipart_penalty_wall_6
+  - first:
+      213: 2885758587747644502
+    second: clipart_penalty_wall_7
+  - first:
+      213: -482300221001384589
+    second: clipart_penalty_wall_8
+  - first:
+      213: 6842048855899031242
+    second: clipart_penalty_wall_9
+  - first:
+      213: -3761797313305604049
+    second: clipart_penalty_wall_10
+  - first:
+      213: 4374534696352602417
+    second: clipart_penalty_wall_11
+  - first:
+      213: -239281988428225328
+    second: clipart_penalty_wall_12
+  - first:
+      213: 6826704398895748625
+    second: clipart_penalty_wall_13
+  - first:
+      213: -4522305662008218018
+    second: clipart_penalty_wall_14
+  - first:
+      213: 802074207793367761
+    second: clipart_penalty_wall_15
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 1
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: clipart_penalty_wall_0
+      rect:
+        serializedVersion: 2
+        x: 19
+        y: 256
+        width: 142
+        height: 68
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 091ef6a1ece1c86c0800000000000000
+      internalID: -4139900086904692336
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: clipart_penalty_wall_1
+      rect:
+        serializedVersion: 2
+        x: 163
+        y: 256
+        width: 114
+        height: 68
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b2e736a19a4467730800000000000000
+      internalID: 3996457212420783659
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: clipart_penalty_wall_2
+      rect:
+        serializedVersion: 2
+        x: 257
+        y: 286
+        width: 31
+        height: 67
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 718abe7f186ca8e50800000000000000
+      internalID: 6812475647863793687
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: clipart_penalty_wall_3
+      rect:
+        serializedVersion: 2
+        x: 284
+        y: 261
+        width: 38
+        height: 51
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d9c71c00546f70f30800000000000000
+      internalID: 4541869525452291229
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: clipart_penalty_wall_4
+      rect:
+        serializedVersion: 2
+        x: 311
+        y: 262
+        width: 61
+        height: 41
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e7d7dcfd644ff3500800000000000000
+      internalID: 378289478962085246
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: clipart_penalty_wall_5
+      rect:
+        serializedVersion: 2
+        x: 19
+        y: 187
+        width: 70
+        height: 67
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 566c2c1a413932970800000000000000
+      internalID: 8728982219596678757
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: clipart_penalty_wall_6
+      rect:
+        serializedVersion: 2
+        x: 91
+        y: 187
+        width: 142
+        height: 67
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c7db6be107362f870800000000000000
+      internalID: 8715137562118110588
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: clipart_penalty_wall_7
+      rect:
+        serializedVersion: 2
+        x: 235
+        y: 187
+        width: 100
+        height: 67
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6543b3a65264c0820800000000000000
+      internalID: 2885758587747644502
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: clipart_penalty_wall_8
+      rect:
+        serializedVersion: 2
+        x: 298
+        y: 228
+        width: 73
+        height: 34
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 37dbe1c11868e49f0800000000000000
+      internalID: -482300221001384589
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: clipart_penalty_wall_9
+      rect:
+        serializedVersion: 2
+        x: 329
+        y: 193
+        width: 48
+        height: 36
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ac6cab70f27d3fe50800000000000000
+      internalID: 6842048855899031242
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: clipart_penalty_wall_10
+      rect:
+        serializedVersion: 2
+        x: 19
+        y: 117
+        width: 142
+        height: 68
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f20966f36496bcbc0800000000000000
+      internalID: -3761797313305604049
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: clipart_penalty_wall_11
+      rect:
+        serializedVersion: 2
+        x: 163
+        y: 117
+        width: 142
+        height: 68
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 139d7b9012875bc30800000000000000
+      internalID: 4374534696352602417
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: clipart_penalty_wall_12
+      rect:
+        serializedVersion: 2
+        x: 307
+        y: 117
+        width: 74
+        height: 68
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0d4269e9c46edacf0800000000000000
+      internalID: -239281988428225328
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: clipart_penalty_wall_13
+      rect:
+        serializedVersion: 2
+        x: 19
+        y: 47
+        width: 70
+        height: 68
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 11617ca3b735dbe50800000000000000
+      internalID: 6826704398895748625
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: clipart_penalty_wall_14
+      rect:
+        serializedVersion: 2
+        x: 91
+        y: 47
+        width: 142
+        height: 68
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e5e234ae5fa8d31c0800000000000000
+      internalID: -4522305662008218018
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: clipart_penalty_wall_15
+      rect:
+        serializedVersion: 2
+        x: 235
+        y: 47
+        width: 146
+        height: 68
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1dac60f0e3a812b00800000000000000
+      internalID: 802074207793367761
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 5e97eb03825dee720800000000000000
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      clipart_penalty_wall_0: -4139900086904692336
+      clipart_penalty_wall_1: 3996457212420783659
+      clipart_penalty_wall_10: -3761797313305604049
+      clipart_penalty_wall_11: 4374534696352602417
+      clipart_penalty_wall_12: -239281988428225328
+      clipart_penalty_wall_13: 6826704398895748625
+      clipart_penalty_wall_14: -4522305662008218018
+      clipart_penalty_wall_15: 802074207793367761
+      clipart_penalty_wall_2: 6812475647863793687
+      clipart_penalty_wall_3: 4541869525452291229
+      clipart_penalty_wall_4: 378289478962085246
+      clipart_penalty_wall_5: 8728982219596678757
+      clipart_penalty_wall_6: 8715137562118110588
+      clipart_penalty_wall_7: 2885758587747644502
+      clipart_penalty_wall_8: -482300221001384589
+      clipart_penalty_wall_9: 6842048855899031242
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
