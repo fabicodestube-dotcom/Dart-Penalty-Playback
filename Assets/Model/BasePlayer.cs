@@ -297,6 +297,69 @@ public abstract class BasePlayer
         }
     }
 
+    public void ApplyTimebasedGameStats(Game game)
+    {
+        if (game == null)
+            return;
+
+        if (!game.GetPlayerIDs().Contains(id))
+            return;
+
+        if (!game.GetPlayerStats().TryGetValue(id, out var stats))
+            return;
+
+        float penaltyCost = game.GetTotalPenaltyCost(id);
+
+        switch (game.GetGameMode())
+        {
+            case GameMode.X01:
+            {
+                GameStatsX01 s = stats as GameStatsX01;
+
+                // TimeBased
+                ApplyToTimeRanges(game,
+                    x01TodayStats,
+                    x01WeekStats,
+                    x01MonthStats,
+                    x01YearStats,
+                    s,
+                    penaltyCost);
+
+                break;
+            }
+
+            case GameMode.Cricket:
+            {
+                GameStatsCricket s = stats as GameStatsCricket;
+
+                ApplyToTimeRanges(game,
+                    cricketTodayStats,
+                    cricketWeekStats,
+                    cricketMonthStats,
+                    cricketYearStats,
+                    s,
+                    penaltyCost);
+
+                break;
+            }
+
+            case GameMode.ATC:
+            {
+                GameStatsATC s = stats as GameStatsATC;
+
+                ApplyToTimeRanges(game,
+                    atcTodayStats,
+                    atcWeekStats,
+                    atcMonthStats,
+                    atcYearStats,
+                    s,
+                    penaltyCost);
+
+                break;
+            }
+        }
+    }
+
     private void ApplyToTimeRanges<T>(
     Game game,
     T today,

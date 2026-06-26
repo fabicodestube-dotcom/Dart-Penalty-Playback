@@ -231,10 +231,13 @@ public class Database
 
         foreach (var game in games)
         {
-            foreach (var playerId in game.GetPlayerIDs())
+            if (game.IsFinished())
             {
-                GetPlayerByID(playerId)?.ApplyGameStats(game);
-            }
+                foreach (var playerId in game.GetPlayerIDs())
+                {
+                    GetPlayerByID(playerId)?.ApplyTimebasedGameStats(game);
+                }
+            }    
         }
     }
 
