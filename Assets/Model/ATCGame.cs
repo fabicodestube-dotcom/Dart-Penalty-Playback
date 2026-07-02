@@ -20,6 +20,7 @@ public class ATCGame : Game
 
     [JsonProperty] private int validThrowsInTurn = 0;
     [JsonIgnore] public Action<Guid, int> OnATCTurnCompleted;
+    [JsonIgnore] public Action<Guid> OnStreakStarted;
 
     [JsonProperty] private Dictionary<Guid, int> lastVisitHits = new();
 
@@ -522,12 +523,17 @@ public class ATCGame : Game
         {
             TouchActivity();
         }
-        else 
+        else
         {
             if (validThrowsInTurn == 3)
-                CompleteTurn(playerId, false); // 3 Treffer -> Bonus einleiten
+            {
+                OnStreakStarted?.Invoke(playerId);
+                CompleteTurn(playerId, false);
+            }
             else
-                CompleteTurn(playerId, true);  // Miss dabei -> Wechsel
+            {
+                CompleteTurn(playerId, true);
+            }
         }
     }
 

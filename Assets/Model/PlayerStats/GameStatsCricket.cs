@@ -50,19 +50,7 @@ public class GameStatsCricket : GameStats
         base.AddGameStat(stats, gameId, penaltyCost);
 
         turnCount += cricket.turnCount;
-        
-        // Mark count
-        int previousGames = gameCount;
-        if (previousGames == 0)
-        {
-            markCount = cricket.markCount;
-        }
-        else
-        {
-            markCount = (int)Math.Round(
-                ((float)markCount * previousGames + cricket.markCount)
-                / (previousGames + 1));
-        }
+        markCount += cricket.markCount;
 
         gameThrowCount[gameId] = cricket.totalThrowsCount;
         gameDoublePercentage[gameId] = cricket.doublePercentage;
@@ -103,19 +91,7 @@ public class GameStatsCricket : GameStats
         base.RemoveGameStat(stats, gameId);
 
         turnCount = Math.Max(0, turnCount - cricket.turnCount);
-
-        // Marks
-        int games = gameMarksPerRound.Count;
-        if (games <= 1)
-        {
-            markCount = 0;
-        }
-        else
-        {
-            markCount = (int)Math.Round(
-                ((float)markCount * games - cricket.markCount)
-                / (games - 1));
-        }
+        markCount = Math.Max(0, markCount - cricket.markCount);
 
         gameThrowCount.Remove(gameId);
         gameDoublePercentage.Remove(gameId);
@@ -176,6 +152,7 @@ public class GameStatsCricket : GameStats
 
     public void RegisterThrow(Throw t, int newMarks)
     {
+        base.AddThrow(t);
         markCount += newMarks;
     }
 
@@ -199,6 +176,11 @@ public class GameStatsCricket : GameStats
 
         marksPerRound = (float)markCount / turnCount;
         marksPerRound = (float)Math.Round(marksPerRound, 2);
+
+        Debug.Log(
+            $"[PlayerStatsCricket] MPR updated" +
+            $" = {marksPerRound} ({markCount}/{turnCount})"
+        );
     }
 
     // ========================================================

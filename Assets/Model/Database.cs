@@ -26,10 +26,108 @@ public class Database
 
     [JsonProperty] private GameMode lastGameMode;
 
-    //[JsonProperty] private AppSettings appSettings;
+// ================= PUBLIC GETTERS =================
 
-
+    // PLAYERS - QUERIES
     // =========================================================
+
+    public List<BasePlayer> GetPlayers()
+    {
+        return activePlayers
+            .Union(reservePlayers)
+            .Where(p => !p.GotDeleted())
+            .OrderBy(p => p.GetName())
+            .ToList();
+    }
+
+    public List<BasePlayer> GetActivePlayers()
+    {
+        return activePlayers
+            .Where(p => !p.GotDeleted())
+            .ToList();
+    }
+
+    public List<BasePlayer> GetReservePlayers()
+    {
+        return reservePlayers
+            .Where(p => !p.GotDeleted())
+            .ToList();
+    }
+
+    public List<BasePlayer> GetAllPlayers()
+    {
+        return activePlayers
+            .Concat(reservePlayers)
+            .ToList();
+    }
+
+    public BasePlayer GetPlayerByID(Guid id)
+    {
+        return activePlayers
+            .Concat(reservePlayers)
+            .FirstOrDefault(p => p.GetID() == id);
+    }
+
+    public string GetPlayerNameByID(Guid playerID)
+    {
+        BasePlayer playerToFind = GetAllPlayers().Find(p => p.GetID() == playerID);
+
+        if (playerToFind != null)
+        {
+            return playerToFind.GetName();
+        }
+
+        Debug.LogWarning($"Kein Spieler mit ID {playerID} gefunden.");
+        return null;
+    }
+
+    // GAMES - CORE
+    // =========================================================
+
+    public List<Game> GetGames()
+    {
+        return games
+            .OrderByDescending(g => g.GetSortTimestamp())
+            .ToList();
+    }
+
+    public X01GameSettings GetX01Settings()
+    {
+        return x01Settings;
+    }
+
+    public CricketGameSettings GetCricketSettings()
+    {
+        return cricketSettings;
+    }
+
+    public ATCGameSettings GetATCSettings()
+    {
+        return atcSettings;
+    }
+
+    public GameMode GetLastGameMode()
+    {
+        return lastGameMode;
+    }
+
+    public SetsAndLegs GetSetsAndLegsMode()
+    {
+        return persistentSetsAndLegs;
+    }
+
+    public int GetSetCount()
+    {
+        return persistentSetCount;
+    }
+
+    public int GetLegCount()
+    {
+        return persistentLegCount;
+    }
+
+// ================= PUBLIC METHODS =================
+
     // CONSTRUCTOR / INITIALIZATION
     // =========================================================
 
@@ -42,8 +140,6 @@ public class Database
         ApplyStandardSettings();
     }
 
-
-    // =========================================================
     // PLAYERS - CRUD
     // =========================================================
 
@@ -102,70 +198,6 @@ public class Database
         Debug.Log($"Player {player.GetName()} mit ID {playerID} wurde deaktiviert (Soft Delete).");
     }
 
-
-    private void MovePlayerToReserveForDelete(BasePlayer p)
-    {
-        activePlayers.Remove(p);
-        reservePlayers.Add(p);
-    }
-
-
-    // =========================================================
-    // PLAYERS - QUERIES
-    // =========================================================
-
-    public List<BasePlayer> GetPlayers()
-    {
-        return activePlayers
-            .Union(reservePlayers)
-            .Where(p => !p.GotDeleted())
-            .OrderBy(p => p.GetName())
-            .ToList();
-    }
-
-    public List<BasePlayer> GetActivePlayers()
-    {
-        return activePlayers
-            .Where(p => !p.GotDeleted())
-            .ToList();
-    }
-
-    public List<BasePlayer> GetReservePlayers()
-    {
-        return reservePlayers
-            .Where(p => !p.GotDeleted())
-            .ToList();
-    }
-
-    public List<BasePlayer> GetAllPlayers()
-    {
-        return activePlayers
-            .Concat(reservePlayers)
-            .ToList();
-    }
-
-    public BasePlayer GetPlayerByID(Guid id)
-    {
-        return activePlayers
-            .Concat(reservePlayers)
-            .FirstOrDefault(p => p.GetID() == id);
-    }
-
-    public string GetPlayerNameByID(Guid playerID)
-    {
-        BasePlayer playerToFind = GetAllPlayers().Find(p => p.GetID() == playerID);
-
-        if (playerToFind != null)
-        {
-            return playerToFind.GetName();
-        }
-
-        Debug.LogWarning($"Kein Spieler mit ID {playerID} gefunden.");
-        return null;
-    }
-
-
-    // =========================================================
     // PLAYER STATE MANAGEMENT
     // =========================================================
 
@@ -241,18 +273,6 @@ public class Database
         }
     }
 
-
-    // =========================================================
-    // GAMES - CORE
-    // =========================================================
-
-    public List<Game> GetGames()
-    {
-        return games
-            .OrderByDescending(g => g.GetSortTimestamp())
-            .ToList();
-    }
-
     public Game LoadGame(Guid id)
     {
         return games
@@ -276,8 +296,6 @@ public class Database
         return game.GetGameMode();
     }
 
-
-    // =========================================================
     // GAMES - X01
     // =========================================================
 
@@ -349,8 +367,6 @@ public class Database
         return newGame;
     }
 
-
-    // =========================================================
     // GAMES - GENERAL UTIL
     // =========================================================
 
@@ -382,49 +398,48 @@ public class Database
         Debug.Log($"[Database] {removed} Games gelöscht.");
     }
 
-
-    // =========================================================
-    // SETTINGS
-    // =========================================================
-
-    public X01GameSettings GetX01Settings()
-    {
-        return x01Settings;
-    }
-
-    public CricketGameSettings GetCricketSettings()
-    {
-        return cricketSettings;
-    }
-
-    public ATCGameSettings GetATCSettings()
-    {
-        return atcSettings;
-    }
-
     public void SetLastGameMode(GameMode mode)
     {
         lastGameMode = mode;
     }
 
-    public GameMode GetLastGameMode()
+    // INTEGRITY SYSTEM (ADDED - NO LOGIC CHANGES ELSEWHERE)
+    // =========================================================
+
+    /// <summary>
+    /// Entfernt dauerhaft (Hard Delete) alle gelöschten Spieler,
+    /// die in keinem Game mehr referenziert werden.
+    /// </summary>
+    public void RunIntegrityCheck()
     {
-        return lastGameMode;
+        List<BasePlayer> deletedPlayers = GetAllPlayers()
+            .Where(p => p.GotDeleted())
+            .ToList();
+
+        foreach (Player player in deletedPlayers)
+        {
+            Guid id = player.GetID();
+
+            bool stillUsed = games.Any(g =>
+                g.GetPlayerIDs().Contains(id)
+            );
+
+            if (!stillUsed)
+            {
+                activePlayers.Remove(player);
+                reservePlayers.Remove(player);
+
+                Debug.Log($"[Integrity] Player {id} hard deleted (no references).");
+            }
+        }
     }
 
-    public SetsAndLegs GetSetsAndLegsMode()
-    {
-        return persistentSetsAndLegs;
-    }
+// ================= PRIVATE HELPERS =================
 
-    public int GetSetCount()
+    private void MovePlayerToReserveForDelete(BasePlayer p)
     {
-        return persistentSetCount;
-    }
-
-    public int GetLegCount()
-    {
-        return persistentLegCount;
+        activePlayers.Remove(p);
+        reservePlayers.Add(p);
     }
 
     private void ApplyStandardSettings()
@@ -472,40 +487,6 @@ public class Database
         };
     }
 
-
-
-    // =========================================================
-    // INTEGRITY SYSTEM (ADDED - NO LOGIC CHANGES ELSEWHERE)
-    // =========================================================
-
-    /// <summary>
-    /// Entfernt dauerhaft (Hard Delete) alle gelöschten Spieler,
-    /// die in keinem Game mehr referenziert werden.
-    /// </summary>
-    public void RunIntegrityCheck()
-    {
-        List<BasePlayer> deletedPlayers = GetAllPlayers()
-            .Where(p => p.GotDeleted())
-            .ToList();
-
-        foreach (Player player in deletedPlayers)
-        {
-            Guid id = player.GetID();
-
-            bool stillUsed = games.Any(g =>
-                g.GetPlayerIDs().Contains(id)
-            );
-
-            if (!stillUsed)
-            {
-                activePlayers.Remove(player);
-                reservePlayers.Remove(player);
-
-                Debug.Log($"[Integrity] Player {id} hard deleted (no references).");
-            }
-        }
-    }
-
     private void StorePersistentSetsAndLegs(SetsAndLegs setsAndLegs, int sets, int legs)
     {
         persistentSetsAndLegs = setsAndLegs;
@@ -529,4 +510,92 @@ public class Database
 
         return candidate;
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 }
