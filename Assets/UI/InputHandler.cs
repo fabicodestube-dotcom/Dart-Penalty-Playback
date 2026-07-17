@@ -102,25 +102,7 @@ public abstract class InputHandler : MonoBehaviour
 
     protected void TriggerHaptic()
     {
-        var vibration = AppSettingsManager.Instance.Settings.Vibration;
-
-        if (!vibration.Enabled)
-            return;
-
-        switch (vibration.Strength)
-        {
-            case VibrationStrength.Weak:
-                VibrationManager.Instance.Vibrate(1);
-                break;
-
-            case VibrationStrength.Medium:
-                VibrationManager.Instance.Vibrate(2);
-                break;
-
-            case VibrationStrength.Strong:
-                VibrationManager.Instance.Vibrate(3);
-                break;
-        }
+        VibrationManager.Instance.Vibrate();
     }
 
 

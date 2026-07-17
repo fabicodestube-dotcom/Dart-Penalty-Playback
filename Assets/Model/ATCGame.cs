@@ -24,6 +24,10 @@ public class ATCGame : Game
 
     [JsonProperty] private Dictionary<Guid, int> lastVisitHits = new();
 
+    // Dartboard-Reihenfolge im Uhrzeigersinn (20 → 1 → 18 → 4 → …)
+    private static readonly int[] DartboardOrderRight = { 20, 1, 18, 4, 13, 6, 10, 15, 2, 17, 3, 19, 7, 16, 8, 11, 14, 9, 12, 5 };
+    // Dartboard-Reihenfolge gegen den Uhrzeigersinn (20 → 5 → 12 → …)
+    private static readonly int[] DartboardOrderLeft = { 20, 5, 12, 9, 14, 11, 8, 16, 7, 19, 3, 17, 2, 15, 10, 6, 13, 4, 18, 1 };
 
     public ATCGameSettings GetSettingsAsATC() => settings as ATCGameSettings;
 
@@ -87,6 +91,18 @@ public class ATCGame : Game
 
             case ATCOrder.Descending:
                 targets = baseTargets.OrderByDescending(x => x).ToList();
+                break;
+
+            case ATCOrder.Right:
+                targets = DartboardOrderRight.ToList();
+                if (GetSettingsAsATC().targetType != ATCTargetType.Triples)
+                    targets.Add(25);
+                break;
+
+            case ATCOrder.Left:
+                targets = DartboardOrderLeft.ToList();
+                if (GetSettingsAsATC().targetType != ATCTargetType.Triples)
+                    targets.Add(25);
                 break;
 
             case ATCOrder.Random:

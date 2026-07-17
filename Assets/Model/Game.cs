@@ -115,15 +115,21 @@ public abstract class Game
     protected void IdentifyNextLegStarter()
     {
         // 1. Berechne, welcher Spieler dieses Set anfangen durfte
-        int setStarter = (sets.Count) % playerIDs.Count;
+        // sets.Count ist die Anzahl der derzeitigen Sets. Der Index des aktuellen Sets ist sets.Count-1 (0-basiert).
+        int setIndex = (sets.Count - 1 + playerIDs.Count) % playerIDs.Count; // sicherstellen, dass nicht negativ
+        int setStarter = setIndex % playerIDs.Count;
 
         // 2. Berechne ausgehend vom Set-Starter, wer das aktuelle Leg anfängt
-        startingPlayerIndex = (setStarter + sets[^1].GetLegs().Count) % playerIDs.Count;
+        // Die Legs-Liste enthält das aktuelle Leg als letztes Element, daher ist der 0-basierte Leg-Index legs.Count-1.
+        int legIndex = Math.Max(0, sets[^1].GetLegs().Count - 1);
+
+        startingPlayerIndex = (setStarter + legIndex) % playerIDs.Count;
     }
 
     protected void RotateStartingPlayer()
     {
         IdentifyNextLegStarter();
+        // Bei Bedarf könnte hier zusätzlich hochgezählt werden, je nach Aufrufsemantik.
         //startingPlayerIndex = (startingPlayerIndex + 1) % playerIDs.Count;
     }
 
@@ -566,8 +572,8 @@ public abstract class Game
                 result.PreviousWinnerId = currentLeg.WinnerPlayerId;
 
                 currentLeg.ClearWinner();
-                // Start-Rotation zurückdrehen
-                startingPlayerIndex = (startingPlayerIndex - 1 + playerIDs.Count) % playerIDs.Count;
+                // Start-Rotation neu berechnen (sicherer als manuelles Dekrement)
+                IdentifyNextLegStarter();
             }
         }
 

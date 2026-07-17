@@ -103,6 +103,8 @@ public class PlayerDragHandler : MonoBehaviour,
 
     private void StartDrag(Vector2 pointerPos)
     {
+        VibrationManager.Instance.Vibrate();
+
         isDragging = true;
         IsDraggingAny = true;
 
@@ -159,8 +161,14 @@ public class PlayerDragHandler : MonoBehaviour,
             placeholderParent = newParent;
         }
 
+        int oldIndex = placeholder.transform.GetSiblingIndex();
         int newIndex = zone.GetDropIndex(rectTransform);
-        placeholder.transform.SetSiblingIndex(newIndex);
+
+        if (oldIndex != newIndex)
+        {
+            VibrationManager.Instance.Vibrate();
+            placeholder.transform.SetSiblingIndex(newIndex);
+        }
 
         RequestRebuild(placeholder.transform.parent as RectTransform);
 

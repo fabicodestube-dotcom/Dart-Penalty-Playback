@@ -34,7 +34,6 @@ public class GameDetail : UIScreen, IUIScreen
     public Sprite iconTripleDigit;
     public Sprite iconLostGame;
 
-
     [Header("Actions")]
     public GameObject buttonContinue;
     public GameObject buttonDelete;
@@ -43,6 +42,7 @@ public class GameDetail : UIScreen, IUIScreen
     private readonly Dictionary<string, TableView> cachedTables = new Dictionary<string, TableView>();
     private readonly List<HitSectorChart> x01HitSectorCharts = new List<HitSectorChart>();
     private GameObject x01HitSectorHeadline;
+    
 
     private void Awake()
     {
@@ -418,8 +418,16 @@ public class GameDetail : UIScreen, IUIScreen
         // =====================================================
         // HIT SECTOR HEADLINE
         // =====================================================
-        if (x01HitSectorHeadline != null)
-            x01HitSectorHeadline.SetActive(true);
+        if (x01HitSectorHeadline == null)
+        {
+            x01HitSectorHeadline = Instantiate(prefabHeadline, contentParent);
+            var headlineText = x01HitSectorHeadline.GetComponentInChildren<TMP_Text>();
+            if (headlineText != null)
+            {
+                headlineText.text = "Hit Sectors";
+            }
+        }
+        x01HitSectorHeadline.SetActive(true);
 
         // =====================================================
         // HIT SECTOR CHARTS (bleibt wie bisher, da nicht in Stats)

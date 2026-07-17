@@ -66,6 +66,9 @@ public class RecorderSpecialButton : MonoBehaviour
             case SpecialAudioType.Marks:
                 staticText.text = "Marks";
                 break;
+            case SpecialAudioType.ATCStreak:
+                staticText.text = "ATC Streak";
+                break;
         }
     }
 

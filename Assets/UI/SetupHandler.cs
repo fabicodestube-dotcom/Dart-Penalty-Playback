@@ -286,6 +286,18 @@ public class SetupHandler : MonoBehaviour, IUIScreen
         atcSettings.order = ATCOrder.Descending;
         atcOrderLabel.text = "Descending";
     }
+    public void ATCOrderRight()
+    {
+        atcSettings.order = ATCOrder.Right;
+        atcOrderLabel.text = "Right";
+    }
+
+    public void ATCOrderLeft()
+    {
+        atcSettings.order = ATCOrder.Left;
+        atcOrderLabel.text = "Left";
+    }
+
     public void ATCOrderRandom()
     {
         atcSettings.order = ATCOrder.Random;

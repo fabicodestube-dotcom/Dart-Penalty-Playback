@@ -139,12 +139,6 @@ public class StatisticsHandler : MonoBehaviour, IUIScreen
         }
     }
 
-    private void RequestPriorityBuild(StatisticsRange range)
-    {
-        StopBuildCoroutines();
-        buildRoutine = StartCoroutine(BuildRangeThenResumePreload(range));
-    }
-
     private void RequestRebuildBuiltRanges()
     {
         var previouslyBuilt = builtRanges.ToList();
@@ -155,18 +149,12 @@ public class StatisticsHandler : MonoBehaviour, IUIScreen
 
     private IEnumerator BuildStartupSequence()
     {
+        timelineSelectionGroup.Init(4);
         yield return BuildRangeAsync(StatisticsRange.AllTime);
         buildRoutine = null;
         preloadRoutine = StartCoroutine(PreloadRemainingRanges());
     }
-
-    private IEnumerator BuildRangeThenResumePreload(StatisticsRange priorityRange)
-    {
-        yield return BuildRangeAsync(priorityRange);
-        buildRoutine = null;
-        preloadRoutine = StartCoroutine(PreloadRemainingRanges());
-    }
-
+    
     private IEnumerator RebuildRangesSequence(List<StatisticsRange> ranges)
     {
         var ordered = new List<StatisticsRange> { currentRange };

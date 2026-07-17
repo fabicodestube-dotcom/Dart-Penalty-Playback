@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using Newtonsoft.Json;
 using UnityEngine;
@@ -11,11 +12,14 @@ public enum ATCTargetType
     [JsonProperty] Triples,
 }
 
+
 [System.Serializable]
 public enum ATCOrder
 {
     [JsonProperty] Ascending,
     [JsonProperty] Descending,
+    [JsonProperty] Right,
+    [JsonProperty] Left,
     [JsonProperty] Random
 }
 
