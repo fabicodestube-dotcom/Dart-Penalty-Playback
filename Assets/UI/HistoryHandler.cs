@@ -5,6 +5,8 @@ using System.Linq;
 using JetBrains.Annotations;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Localization;
+using UnityEngine.Localization.Components;
 using UnityEngine.UI;
 
 public class HistoryHandler : MonoBehaviour, IUIScreen
@@ -53,6 +55,9 @@ public class HistoryHandler : MonoBehaviour, IUIScreen
         StartCoroutine(BuildAllPages());
         appHandler.OnDeleteGame += HandleDeleteGame;
         appHandler.OnAddGame += HandleAddGame;
+        // Reagiert auf Batch-Löschungen (ganzer Modus) und komplette Löschungen
+        appHandler.OnDeleteGamesOfMode += HandleDeleteGamesOfMode;
+        appHandler.OnAllGamesDeleted += HandleAllGamesDeleted;
     }
 
     // =========================
@@ -87,16 +92,17 @@ public class HistoryHandler : MonoBehaviour, IUIScreen
 
             // 2. Jetzt für jede Seite prüfen: Ist sie leer geblieben?
             if (allItems.Count == 0)
-                allHeadline = CreateHeadline(allGamesParent, "Keine Spiele vorhanden");
+                allHeadline = CreateHeadline(allGamesParent, "No_games_available");
 
             if (x01Items.Count == 0)
-                x01Headline = CreateHeadline(x01GamesParent, "Keine X01 Spiele vorhanden");
+                x01Headline = CreateHeadline(x01GamesParent, "No_games_available_x01");
 
             if (atcItems.Count == 0)
-                atcHeadline = CreateHeadline(atcGamesParent, "Keine ATC Spiele vorhanden");
+                atcHeadline = CreateHeadline(atcGamesParent, "No_games_available_atc");
 
             if (cricketItems.Count == 0)
-                cricketHeadline = CreateHeadline(cricketGamesParent, "Keine Cricket Spiele vorhanden");
+                cricketHeadline = CreateHeadline(cricketGamesParent, "No_games_available_cricket");
+
         }
         finally
         {
@@ -108,16 +114,28 @@ public class HistoryHandler : MonoBehaviour, IUIScreen
     }
 
 
-    private GameObject CreateHeadline(Transform parent, string text)
+    private GameObject CreateHeadline(Transform parent, string localizationKey)
     {
         if (prefabHeadline == null || parent == null)
             return null;
 
+        // 1. Prefab wie gewohnt instanziieren
         var go = Instantiate(prefabHeadline, parent);
         var tmp = go.GetComponent<TMP_Text>();
 
         if (tmp != null)
-            tmp.text = text;
+        {
+            // 2. Die Localization-Komponente an das neue GameObject hängen
+            var localizeEvent = go.AddComponent<LocalizeStringEvent>();
+            
+            // 3. Dem Event sagen, aus welcher Tabelle und welcher Key genutzt werden soll
+            // Ersetze "DeineTableName" mit dem exakten Namen deiner String Table in Unity!
+            localizeEvent.StringReference = new LocalizedString("LocalizationTable", localizationKey);
+            
+            // 4. Das Event mit dem Textfeld verknüpfen
+            // Sobald das Spiel startet (und bei jedem Sprachwechsel), wird dieser Listener gefeuert
+            localizeEvent.OnUpdateString.AddListener(localizedValue => tmp.text = localizedValue);
+        }
 
         return go;
     }
@@ -228,9 +246,8 @@ public class HistoryHandler : MonoBehaviour, IUIScreen
             Debug.Log("[HistoryHandler] Unbekannter Index beim Löschen!");
         }
 
-        // UI wird nach dem Löschen neu aufgebaut
+        // UI: Popup schließen. Änderungen werden inkrementell durch die Event-Handler verarbeitet (kein Full-Rebuild mehr)
         windowHandler.HidePopup();
-        StartCoroutine(BuildAllPages());
     }
 
     private void HandleDeleteGame(GameMode mode, Guid gameId)
@@ -303,25 +320,122 @@ public class HistoryHandler : MonoBehaviour, IUIScreen
             // ------------------------
             // Platzhalter prüfen
             // ------------------------
-            if (allItems.Count == 0 && allHeadline == null)
+            if (allItems.Count == 0) //&& allHeadline == null)
             {
-                allHeadline = CreateHeadline(allGamesParent, "Keine Spiele vorhanden");
+                allHeadline = CreateHeadline(allGamesParent, "No_games_available");
             }
 
             if (x01Items.Count == 0 && x01Headline == null)
             {
-                x01Headline = CreateHeadline(x01GamesParent, "Keine X01 Spiele vorhanden");
+                x01Headline = CreateHeadline(x01GamesParent, "No_games_available_x01");
             }
 
             if (cricketItems.Count == 0 && cricketHeadline == null)
             {
-                cricketHeadline = CreateHeadline(cricketGamesParent, "Keine Cricket Spiele vorhanden");
+                cricketHeadline = CreateHeadline(cricketGamesParent, "No_games_available_cricket");
             }
 
             if (atcItems.Count == 0 && atcHeadline == null)
             {
-                atcHeadline = CreateHeadline(atcGamesParent, "Keine ATC Spiele vorhanden");
+                atcHeadline = CreateHeadline(atcGamesParent, "No_games_available_atc");
             }
+        }
+        finally
+        {
+            EnableLayoutGroups(allGamesParent, x01GamesParent, atcGamesParent, cricketGamesParent);
+        }
+    }
+
+    // ------------------------
+    // Batch-Delete Handler
+    // ------------------------
+    private void HandleDeleteGamesOfMode(GameMode mode)
+    {
+        DisableLayoutGroups(allGamesParent, x01GamesParent, atcGamesParent, cricketGamesParent);
+
+        try
+        {
+            if (mode == GameMode.X01)
+            {
+                var toRemove = x01Items.ToList();
+                foreach (var item in toRemove)
+                {
+                    var id = item.GetGameID();
+                    Destroy(item.gameObject);
+
+                    allItems.Remove(item);
+                    allItemLookup.Remove(id);
+                    existingGameIds.Remove(id);
+                }
+
+                x01Items.Clear();
+                x01ItemLookup.Clear();
+
+                // Placeholder für leere Seite
+                x01Headline = CreateHeadline(x01GamesParent, "No_games_available_x01");
+            }
+            else if (mode == GameMode.Cricket)
+            {
+                var toRemove = cricketItems.ToList();
+                foreach (var item in toRemove)
+                {
+                    var id = item.GetGameID();
+                    Destroy(item.gameObject);
+
+                    allItems.Remove(item);
+                    allItemLookup.Remove(id);
+                    existingGameIds.Remove(id);
+                }
+
+                cricketItems.Clear();
+                cricketItemLookup.Clear();
+
+                cricketHeadline = CreateHeadline(cricketGamesParent, "No_games_available_cricket");
+            }
+            else if (mode == GameMode.ATC)
+            {
+                var toRemove = atcItems.ToList();
+                foreach (var item in toRemove)
+                {
+                    var id = item.GetGameID();
+                    Destroy(item.gameObject);
+
+                    allItems.Remove(item);
+                    allItemLookup.Remove(id);
+                    existingGameIds.Remove(id);
+                }
+
+                atcItems.Clear();
+                atcItemLookup.Clear();
+
+                atcHeadline = CreateHeadline(atcGamesParent, "No_games_available_atc");
+            }
+
+            // Falls die ALL-Seite danach leer ist: placeholder setzen
+            if (allItems.Count == 0)
+            {
+                allHeadline = CreateHeadline(allGamesParent, "No_games_available");
+            }
+        }
+        finally
+        {
+            EnableLayoutGroups(allGamesParent, x01GamesParent, atcGamesParent, cricketGamesParent);
+        }
+    }
+
+    private void HandleAllGamesDeleted()
+    {
+        DisableLayoutGroups(allGamesParent, x01GamesParent, atcGamesParent, cricketGamesParent);
+
+        try
+        {
+            // Entferne alle Items und setze Platzhalter
+            ClearAllItems();
+
+            allHeadline = CreateHeadline(allGamesParent, "No_games_available");
+            x01Headline = CreateHeadline(x01GamesParent, "No_games_available_x01");
+            atcHeadline = CreateHeadline(atcGamesParent, "No_games_available_atc");
+            cricketHeadline = CreateHeadline(cricketGamesParent, "No_games_available_cricket");
         }
         finally
         {
@@ -481,6 +595,17 @@ public class HistoryHandler : MonoBehaviour, IUIScreen
             {
                 layout.enabled = true;
             }
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (appHandler != null)
+        {
+            appHandler.OnDeleteGame -= HandleDeleteGame;
+            appHandler.OnAddGame -= HandleAddGame;
+            appHandler.OnDeleteGamesOfMode -= HandleDeleteGamesOfMode;
+            appHandler.OnAllGamesDeleted -= HandleAllGamesDeleted;
         }
     }
 
