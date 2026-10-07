@@ -32,6 +32,11 @@ public class GameStatsCricket : GameStats
     [JsonProperty] public int whiteHorseTurns = 0;
     [JsonProperty] public int sameTripleTurns = 0;
 
+    public GameStatsCricket() : base(Guid.Empty)
+    {
+        EnsureInternalStructures();
+    }
+
     public GameStatsCricket(Guid playerID) : base(playerID)
     {
         turnCount = 0;

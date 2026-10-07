@@ -1,0 +1,545 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9620f8c34305754d8cc9a7e49e852d9, type: 3}
+  m_Name: LocalizationTable_en
+  m_EditorClassIdentifier: Unity.Localization::UnityEngine.Localization.Tables.StringTable
+  m_LocaleId:
+    m_Code: en
+  m_SharedData: {fileID: 11400000, guid: 69cc5fdb8958e6e33a772797f9dc50e8, type: 2}
+  m_Metadata:
+    m_Items: []
+  m_TableData:
+  - m_Id: 1
+    m_Localized: 30 days
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2
+    m_Localized: 365 days
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3
+    m_Localized: 7 days
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4
+    m_Localized: Abort game
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5
+    m_Localized: The game is not finished yet. Would you like to save the game so
+      it can be continued later, or would you like to abort it?
+    m_Metadata:
+      m_Items: []
+  - m_Id: 6
+    m_Localized: About
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7
+    m_Localized: Activate Vibration
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8
+    m_Localized: Determines whether haptic feedback should occur when entering inputs
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9
+    m_Localized: Add bot
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10
+    m_Localized: All
+    m_Metadata:
+      m_Items: []
+  - m_Id: 11
+    m_Localized: Ascending
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12
+    m_Localized: Audio
+    m_Metadata:
+      m_Items: []
+  - m_Id: 13
+    m_Localized: Blue
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14
+    m_Localized: Bronze
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15
+    m_Localized: Bust
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16
+    m_Localized: Cancel
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17
+    m_Localized: Ceiling
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18
+    m_Localized: Ceiling hit, which can be entered via button click instead of a
+      0-dart
+    m_Metadata:
+      m_Items: []
+  - m_Id: 19
+    m_Localized: Clips
+    m_Metadata:
+      m_Items: []
+  - m_Id: 20
+    m_Localized: Confirm
+    m_Metadata:
+      m_Items: []
+  - m_Id: 21
+    m_Localized: Costs
+    m_Metadata:
+      m_Items: []
+  - m_Id: 22
+    m_Localized: Custom clip browser
+    m_Metadata:
+      m_Items: []
+  - m_Id: 23
+    m_Localized: Custom clips
+    m_Metadata:
+      m_Items: []
+  - m_Id: 24
+    m_Localized: Custom sound
+    m_Metadata:
+      m_Items: []
+  - m_Id: 25
+    m_Localized: Custom sounds are user-recorded sounds, otherwise the default package
+      is used
+    m_Metadata:
+      m_Items: []
+  - m_Id: 26
+    m_Localized: Cyan
+    m_Metadata:
+      m_Items: []
+  - m_Id: 27
+    m_Localized: Delete all games
+    m_Metadata:
+      m_Items: []
+  - m_Id: 28
+    m_Localized: Are you sure you want to delete all recorded games? This action
+      cannot be undone!
+    m_Metadata:
+      m_Items: []
+  - m_Id: 29
+    m_Localized: Delete Around the Clock games
+    m_Metadata:
+      m_Items: []
+  - m_Id: 30
+    m_Localized: Are you sure you want to delete all Around the Clock games? This
+      action cannot be undone!
+    m_Metadata:
+      m_Items: []
+  - m_Id: 31
+    m_Localized: Delete clip
+    m_Metadata:
+      m_Items: []
+  - m_Id: 32
+    m_Localized: Are you sure you want to delete the currently displayed clip? This
+      action cannot be undone!
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33
+    m_Localized: Delete Cricket games
+    m_Metadata:
+      m_Items: []
+  - m_Id: 34
+    m_Localized: Are you sure you want to delete all Cricket games? This action cannot
+      be undone!
+    m_Metadata:
+      m_Items: []
+  - m_Id: 35
+    m_Localized: Delete player
+    m_Metadata:
+      m_Items: []
+  - m_Id: 36
+    m_Localized: Are you sure you want to delete player {name}? This action cannot
+      be undone!
+    m_Metadata:
+      m_Items: []
+  - m_Id: 37
+    m_Localized: Delete X01 games
+    m_Metadata:
+      m_Items: []
+  - m_Id: 38
+    m_Localized: Are you sure you want to delete all X01 games? This action cannot
+      be undone!
+    m_Metadata:
+      m_Items: []
+  - m_Id: 39
+    m_Localized: Descending
+    m_Metadata:
+      m_Items: []
+  - m_Id: 40
+    m_Localized: Don't save
+    m_Metadata:
+      m_Items: []
+  - m_Id: 41
+    m_Localized: Easy
+    m_Metadata:
+      m_Items: []
+  - m_Id: 42
+    m_Localized: Filter by players
+    m_Metadata:
+      m_Items: []
+  - m_Id: 43
+    m_Localized: Finished
+    m_Metadata:
+      m_Items: []
+  - m_Id: 44
+    m_Localized: Game not saved yet
+    m_Metadata:
+      m_Items: []
+  - m_Id: 45
+    m_Localized: The game has not been saved yet. Would you like to save it now?
+    m_Metadata:
+      m_Items: []
+  - m_Id: 46
+    m_Localized: Game over
+    m_Metadata:
+      m_Items: []
+  - m_Id: 47
+    m_Localized: Start game
+    m_Metadata:
+      m_Items: []
+  - m_Id: 48
+    m_Localized: Gold
+    m_Metadata:
+      m_Items: []
+  - m_Id: 49
+    m_Localized: Green
+    m_Metadata:
+      m_Items: []
+  - m_Id: 50
+    m_Localized: Hard
+    m_Metadata:
+      m_Items: []
+  - m_Id: 51
+    m_Localized: Highscores
+    m_Metadata:
+      m_Items: []
+  - m_Id: 52
+    m_Localized: History
+    m_Metadata:
+      m_Items: []
+  - m_Id: 53
+    m_Localized: Hits
+    m_Metadata:
+      m_Items: []
+  - m_Id: 54
+    m_Localized: Home
+    m_Metadata:
+      m_Items: []
+  - m_Id: 55
+    m_Localized: In progress
+    m_Metadata:
+      m_Items: []
+  - m_Id: 56
+    m_Localized: Inactive players
+    m_Metadata:
+      m_Items: []
+  - m_Id: 57
+    m_Localized: Intensity
+    m_Metadata:
+      m_Items: []
+  - m_Id: 58
+    m_Localized: Lose
+    m_Metadata:
+      m_Items: []
+  - m_Id: 59
+    m_Localized: Penalty for participating in a game without emerging as the winner
+    m_Metadata:
+      m_Items: []
+  - m_Id: 60
+    m_Localized: Lucky number
+    m_Metadata:
+      m_Items: []
+  - m_Id: 61
+    m_Localized: Penalty if you reach a score that is a repdigit (e. g. 111, 222,
+      etc.)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 62
+    m_Localized: Mark everything
+    m_Metadata:
+      m_Items: []
+  - m_Id: 63
+    m_Localized: Marks
+    m_Metadata:
+      m_Items: []
+  - m_Id: 64
+    m_Localized: Marks per round
+    m_Metadata:
+      m_Items: []
+  - m_Id: 65
+    m_Localized: Medium
+    m_Metadata:
+      m_Items: []
+  - m_Id: 66
+    m_Localized: Mode
+    m_Metadata:
+      m_Items: []
+  - m_Id: 67
+    m_Localized: New player
+    m_Metadata:
+      m_Items: []
+  - m_Id: 68
+    m_Localized: Name is too short (min. 2 characters)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 69
+    m_Localized: No board hit
+    m_Metadata:
+      m_Items: []
+  - m_Id: 70
+    m_Localized: Penalty if all darts are wall or ceiling hits
+    m_Metadata:
+      m_Items: []
+  - m_Id: 71
+    m_Localized: No clips recorded
+    m_Metadata:
+      m_Items: []
+  - m_Id: 72
+    m_Localized: No games available
+    m_Metadata:
+      m_Items: []
+  - m_Id: 73
+    m_Localized: No players added
+    m_Metadata:
+      m_Items: []
+  - m_Id: 74
+    m_Localized: No players have been added to the participant list yet. At least
+      one player must be assigned!
+    m_Metadata:
+      m_Items: []
+  - m_Id: 75
+    m_Localized: OK
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76
+    m_Localized: Options
+    m_Metadata:
+      m_Items: []
+  - m_Id: 77
+    m_Localized: Order
+    m_Metadata:
+      m_Items: []
+  - m_Id: 78
+    m_Localized: Participants
+    m_Metadata:
+      m_Items: []
+  - m_Id: 79
+    m_Localized: Penalties
+    m_Metadata:
+      m_Items: []
+  - m_Id: 80
+    m_Localized: Penalty clips
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81
+    m_Localized: Play sound
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82
+    m_Localized: Determines whether sounds should be used within the app (e. g. score
+      announcements in X01)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 83
+    m_Localized: Players
+    m_Metadata:
+      m_Items: []
+  - m_Id: 84
+    m_Localized: Points
+    m_Metadata:
+      m_Items: []
+  - m_Id: 85
+    m_Localized: Preferences
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86
+    m_Localized: Pro
+    m_Metadata:
+      m_Items: []
+  - m_Id: 87
+    m_Localized: Random
+    m_Metadata:
+      m_Items: []
+  - m_Id: 88
+    m_Localized: Random order
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89
+    m_Localized: Recorder
+    m_Metadata:
+      m_Items: []
+  - m_Id: 90
+    m_Localized: Red
+    m_Metadata:
+      m_Items: []
+  - m_Id: 91
+    m_Localized: Rename player {name}
+    m_Metadata:
+      m_Items: []
+  - m_Id: 92
+    m_Localized: Save
+    m_Metadata:
+      m_Items: []
+  - m_Id: 93
+    m_Localized: Save game
+    m_Metadata:
+      m_Items: []
+  - m_Id: 94
+    m_Localized: Score clips
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95
+    m_Localized: Scoring
+    m_Metadata:
+      m_Items: []
+  - m_Id: 96
+    m_Localized: Share
+    m_Metadata:
+      m_Items: []
+  - m_Id: 97
+    m_Localized: Check out my new Darts app that I found on GitHub! https://github.com/fabicodestube-dotcom/Dart-Penalty-Playback/
+    m_Metadata:
+      m_Items: []
+  - m_Id: 98
+    m_Localized: Special clips
+    m_Metadata:
+      m_Items: []
+  - m_Id: 99
+    m_Localized: Statistics
+    m_Metadata:
+      m_Items: []
+  - m_Id: 100
+    m_Localized: Strong
+    m_Metadata:
+      m_Items: []
+  - m_Id: 101
+    m_Localized: Sudden death
+    m_Metadata:
+      m_Items: []
+  - m_Id: 102
+    m_Localized: Sum
+    m_Metadata:
+      m_Items: []
+  - m_Id: 103
+    m_Localized: Support
+    m_Metadata:
+      m_Items: []
+  - m_Id: 104
+    m_Localized: If you want to support the app, feel free to donate via one of the
+      following options.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 105
+    m_Localized: Targets
+    m_Metadata:
+      m_Items: []
+  - m_Id: 106
+    m_Localized: Theme
+    m_Metadata:
+      m_Items: []
+  - m_Id: 107
+    m_Localized: Three ones
+    m_Metadata:
+      m_Items: []
+  - m_Id: 108
+    m_Localized: Penalty if you hit the 1 field 3 times in a row with 3 darts (multiplier
+      does not matter)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 109
+    m_Localized: Throws
+    m_Metadata:
+      m_Items: []
+  - m_Id: 110
+    m_Localized: Today
+    m_Metadata:
+      m_Items: []
+  - m_Id: 111
+    m_Localized: Trim silence
+    m_Metadata:
+      m_Items: []
+  - m_Id: 112
+    m_Localized: Undo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 113
+    m_Localized: Unselect all
+    m_Metadata:
+      m_Items: []
+  - m_Id: 114
+    m_Localized: Vibration
+    m_Metadata:
+      m_Items: []
+  - m_Id: 115
+    m_Localized: Volume
+    m_Metadata:
+      m_Items: []
+  - m_Id: 116
+    m_Localized: Wall
+    m_Metadata:
+      m_Items: []
+  - m_Id: 117
+    m_Localized: Wall hit, which can be entered via button click instead of a 0-dart
+    m_Metadata:
+      m_Items: []
+  - m_Id: 118
+    m_Localized: Weak
+    m_Metadata:
+      m_Items: []
+  - m_Id: 705069411422208
+    m_Localized: Hit
+    m_Metadata:
+      m_Items: []
+  - m_Id: 705069428199424
+    m_Localized: Miss
+    m_Metadata:
+      m_Items: []
+  - m_Id: 705069428199425
+    m_Localized: Summary
+    m_Metadata:
+      m_Items: []
+  - m_Id: 710215969230848
+    m_Localized: Do you really want to delete the displayed game? This can't be undone!
+    m_Metadata:
+      m_Items: []
+  - m_Id: 710510380011520
+    m_Localized: Settings
+    m_Metadata:
+      m_Items: []
+  - m_Id: 722577082241024
+    m_Localized: Apply
+    m_Metadata:
+      m_Items: []
+  - m_Id: 723894773174272
+    m_Localized: No X01 games available
+    m_Metadata:
+      m_Items: []
+  - m_Id: 723894777368576
+    m_Localized: No Cricket games available
+    m_Metadata:
+      m_Items: []
+  - m_Id: 723894777368577
+    m_Localized: No Around the Clock games available
+    m_Metadata:
+      m_Items: []
+  references:
+    version: 2
+    RefIds: []

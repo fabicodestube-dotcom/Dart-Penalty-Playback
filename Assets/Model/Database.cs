@@ -7,11 +7,7 @@ using System;
 [System.Serializable]
 public class Database
 {
-    // =========================================================
-    // DATA STORAGE
-    // =========================================================
-
-    [JsonProperty] private List<Game> games;
+    [JsonProperty] private List<GameSummary> gameSummaries;
     [JsonProperty] private List<BasePlayer> activePlayers;
     [JsonProperty] private List<BasePlayer> reservePlayers;
 
@@ -19,17 +15,11 @@ public class Database
     [JsonProperty] private CricketGameSettings cricketSettings;
     [JsonProperty] private ATCGameSettings atcSettings;
 
-
     [JsonProperty] private SetsAndLegs persistentSetsAndLegs = SetsAndLegs.BestOf;
     [JsonProperty] private int persistentSetCount = 1;
-    [JsonProperty]private int persistentLegCount = 1;
+    [JsonProperty] private int persistentLegCount = 1;
 
     [JsonProperty] private GameMode lastGameMode;
-
-// ================= PUBLIC GETTERS =================
-
-    // PLAYERS - QUERIES
-    // =========================================================
 
     public List<BasePlayer> GetPlayers()
     {
@@ -81,14 +71,16 @@ public class Database
         return null;
     }
 
-    // GAMES - CORE
-    // =========================================================
-
-    public List<Game> GetGames()
+    public List<GameSummary> GetGameSummaries()
     {
-        return games
+        return gameSummaries
             .OrderByDescending(g => g.GetSortTimestamp())
             .ToList();
+    }
+
+    public GameSummary GetGameSummary(Guid id)
+    {
+        return gameSummaries.FirstOrDefault(g => g.Id == id);
     }
 
     public X01GameSettings GetX01Settings()
@@ -126,22 +118,14 @@ public class Database
         return persistentLegCount;
     }
 
-// ================= PUBLIC METHODS =================
-
-    // CONSTRUCTOR / INITIALIZATION
-    // =========================================================
-
     public Database()
     {
-        games = new List<Game>();
+        gameSummaries = new List<GameSummary>();
         activePlayers = new List<BasePlayer>();
         reservePlayers = new List<BasePlayer>();
-        
+
         ApplyStandardSettings();
     }
-
-    // PLAYERS - CRUD
-    // =========================================================
 
     public Guid AddPlayer(string playerName)
     {
@@ -190,7 +174,6 @@ public class Database
             return;
         }
 
-        // Soft Delete: nur Flag setzen, keine physische Entfernung
         player.Delete();
 
         MovePlayerToReserveForDelete(player);
@@ -198,12 +181,8 @@ public class Database
         Debug.Log($"Player {player.GetName()} mit ID {playerID} wurde deaktiviert (Soft Delete).");
     }
 
-    // PLAYER STATE MANAGEMENT
-    // =========================================================
-
     public void SetPlayers(List<Guid> activeIDs, List<Guid> reserveIDs)
     {
-        // Snapshot aller Spieler, um stabile Referenzen zu behalten
         List<BasePlayer> allPlayersSnapshot = activePlayers
             .Concat(reservePlayers)
             .ToList();
@@ -211,7 +190,6 @@ public class Database
         List<BasePlayer> newActive = new List<BasePlayer>();
         List<BasePlayer> newReserve = new List<BasePlayer>();
 
-        // Active Liste rekonstruieren
         foreach (Guid id in activeIDs)
         {
             BasePlayer p = allPlayersSnapshot.FirstOrDefault(x => x.GetID() == id);
@@ -220,7 +198,6 @@ public class Database
                 newActive.Add(p);
         }
 
-        // Reserve Liste rekonstruieren
         foreach (Guid id in reserveIDs)
         {
             BasePlayer p = allPlayersSnapshot.FirstOrDefault(x => x.GetID() == id);
@@ -229,7 +206,6 @@ public class Database
                 newReserve.Add(p);
         }
 
-        // atomarer Swap der Listen
         activePlayers = newActive;
         reservePlayers = newReserve;
     }
@@ -261,47 +237,45 @@ public class Database
             player.ResetTimeStats();
         }
 
-        foreach (var game in games)
-        {
-            if (game.IsFinished())
-            {
-                foreach (var playerId in game.GetPlayerIDs())
-                {
-                    GetPlayerByID(playerId)?.ApplyTimebasedGameStats(game);
-                }
-            }    
-        }
-    }
+        var allStats = SqliteDatabaseRepository.LoadAllPlayerGameStats();
 
-    public Game LoadGame(Guid id)
-    {
-        return games
-            .FirstOrDefault(g => g.GetID() == id);
+        foreach (var kvp in allStats)
+        {
+            var summary = GetGameSummary(kvp.Key);
+            if (summary == null || !summary.IsFinished)
+                continue;
+
+            foreach (var playerStat in kvp.Value)
+            {
+                var player = GetPlayerByID(playerStat.Key);
+                if (player == null)
+                    continue;
+
+                player.ApplyTimebasedGameStatsFromSummary(summary, playerStat.Value, 0f);
+            }
+        }
     }
 
     public GameMode? DeleteGame(Guid id)
     {
-        var game = games.FirstOrDefault(g => g.GetID() == id);
+        var summary = gameSummaries.FirstOrDefault(g => g.Id == id);
 
-        if (game == null)
+        if (summary == null)
         {
             Debug.LogWarning($"Kein Game mit ID {id} gefunden.");
             return null;
         }
 
-        games.Remove(game);
+        gameSummaries.Remove(summary);
 
         Debug.Log($"Game mit ID {id} wurde gelöscht.");
 
-        return game.GetGameMode();
+        return summary.GameMode;
     }
-
-    // GAMES - X01
-    // =========================================================
 
     public X01Game PrepareX01Game(X01GameSettings d)
     {
-        X01GameSettings data = (X01GameSettings) d.Clone();
+        X01GameSettings data = (X01GameSettings)d.Clone();
 
         StorePersistentSetsAndLegs(data.setsAndLegsMode, data.setCount, data.legCount);
 
@@ -310,15 +284,10 @@ public class Database
         foreach (BasePlayer p in activePlayers)
             playerIDs.Add(p.GetID());
 
-        // Penalty Settings aus globaler App-Konfiguration kopieren
         data.Penalties = AppSettingsManager.Instance.Settings.Penalties.Clone();
-
-        // Sound Settings aus globaler App-Konfiguration kopieren
         data.soundEnabled = AppSettingsManager.Instance.Settings.Sound.Enabled;
 
         X01Game newGame = new X01Game(Guid.NewGuid(), data, playerIDs);
-
-        games.Add(newGame);
 
         return newGame;
     }
@@ -332,15 +301,10 @@ public class Database
         foreach (BasePlayer p in activePlayers)
             playerIDs.Add(p.GetID());
 
-        // Penalty Settings aus globaler App-Konfiguration kopieren
         data.Penalties = AppSettingsManager.Instance.Settings.Penalties.Clone();
-
-        // Sound Settings aus globaler App-Konfiguration kopieren
         data.soundEnabled = AppSettingsManager.Instance.Settings.Sound.Enabled;
 
         CricketGame newGame = new CricketGame(Guid.NewGuid(), data, playerIDs);
-
-        games.Add(newGame);
 
         return newGame;
     }
@@ -354,31 +318,17 @@ public class Database
         foreach (BasePlayer p in activePlayers)
             playerIDs.Add(p.GetID());
 
-        // Penalty Settings aus globaler App-Konfiguration kopieren
         data.Penalties = AppSettingsManager.Instance.Settings.Penalties.Clone();
-
-        // Sound Settings aus globaler App-Konfiguration kopieren
         data.soundEnabled = AppSettingsManager.Instance.Settings.Sound.Enabled;
 
         ATCGame newGame = new ATCGame(Guid.NewGuid(), data, playerIDs);
 
-        games.Add(newGame);
-
         return newGame;
     }
 
-    // GAMES - GENERAL UTIL
-    // =========================================================
-
     public void InitializeAfterLoad()
     {
-        // 🔥 Integrity Check direkt beim Laden der Datenbank
         RunIntegrityCheck();
-
-        // foreach (var game in games)
-        // {
-        //     game.InitializeAfterLoad();
-        // }
     }
 
     public void DeleteGames(GameMode? mode = null)
@@ -387,12 +337,12 @@ public class Database
 
         if (mode == null)
         {
-            removed = games.Count;
-            games.Clear();
+            removed = gameSummaries.Count;
+            gameSummaries.Clear();
         }
         else
         {
-            removed = games.RemoveAll(g => g.GetGameMode() == mode.Value);
+            removed = gameSummaries.RemoveAll(g => g.GameMode == mode.Value);
         }
 
         Debug.Log($"[Database] {removed} Games gelöscht.");
@@ -403,13 +353,6 @@ public class Database
         lastGameMode = mode;
     }
 
-    // INTEGRITY SYSTEM (ADDED - NO LOGIC CHANGES ELSEWHERE)
-    // =========================================================
-
-    /// <summary>
-    /// Entfernt dauerhaft (Hard Delete) alle gelöschten Spieler,
-    /// die in keinem Game mehr referenziert werden.
-    /// </summary>
     public void RunIntegrityCheck()
     {
         List<BasePlayer> deletedPlayers = GetAllPlayers()
@@ -420,8 +363,8 @@ public class Database
         {
             Guid id = player.GetID();
 
-            bool stillUsed = games.Any(g =>
-                g.GetPlayerIDs().Contains(id)
+            bool stillUsed = gameSummaries.Any(g =>
+                g.PlayerIds.Contains(id)
             );
 
             if (!stillUsed)
@@ -433,8 +376,6 @@ public class Database
             }
         }
     }
-
-// ================= PRIVATE HELPERS =================
 
     private void MovePlayerToReserveForDelete(BasePlayer p)
     {
@@ -467,10 +408,8 @@ public class Database
     {
         cricketSettings = new CricketGameSettings
         {
-            // Default: points on, normal mode
             pointsEnabled = true,
             cutThroatEnabled = false,
-
             setCount = 1,
             legCount = 1
         };
@@ -511,91 +450,111 @@ public class Database
         return candidate;
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    public void AddLoadedPlayer(BasePlayer player)
+    {
+        if (player == null)
+            return;
+
+        if (activePlayers.Any(p => p.GetID() == player.GetID()))
+            return;
+
+        if (reservePlayers.Any(p => p.GetID() == player.GetID()))
+            return;
+
+        reservePlayers.Add(player);
+    }
+
+    internal void AddGameSummary(GameSummary summary)
+    {
+        if (summary == null)
+            return;
+
+        var existing = gameSummaries.FirstOrDefault(g => g.Id == summary.Id);
+        if (existing != null)
+            gameSummaries.Remove(existing);
+
+        gameSummaries.Add(summary);
+    }
+
+    internal void RemoveGameSummary(Guid id)
+    {
+        var summary = gameSummaries.FirstOrDefault(g => g.Id == id);
+        if (summary != null)
+            gameSummaries.Remove(summary);
+    }
+
+    internal void UpdateSetupStartPositionsFromLists()
+    {
+        for (int i = 0; i < activePlayers.Count; i++)
+            activePlayers[i].SetSetupStartPosition(i);
+
+        foreach (var player in reservePlayers)
+            player.SetSetupStartPosition(-1);
+    }
+
+    internal void ApplySetupPlayerOrderFromFlags()
+    {
+        var allPlayers = GetAllPlayers();
+
+        var newActive = allPlayers
+            .Where(p => !p.GotDeleted() && p.GetSetupStartPosition() >= 0)
+            .OrderBy(p => p.GetSetupStartPosition())
+            .ToList();
+
+        if (newActive.Count == 0 && activePlayers.Count > 0)
+            return;
+
+        activePlayers = newActive;
+        reservePlayers = allPlayers
+            .Where(p => !newActive.Contains(p))
+            .ToList();
+    }
+
+    internal void SetX01Settings(X01GameSettings x01Settings)
+    {
+        if (x01Settings != null)
+            this.x01Settings = x01Settings;
+    }
+
+    internal void SetCricketSettings(CricketGameSettings cricketSettings)
+    {
+        if (cricketSettings != null)
+            this.cricketSettings = cricketSettings;
+    }
+
+    internal void SetATCSettings(ATCGameSettings atcSettings)
+    {
+        if (atcSettings != null)
+            this.atcSettings = atcSettings;
+    }
+
+    internal void SetSetupState(GameMode gameMode, SetsAndLegs setsAndLegsMode, int setCount, int legCount)
+    {
+        lastGameMode = gameMode;
+        StorePersistentSetsAndLegs(setsAndLegsMode, System.Math.Max(1, setCount), System.Math.Max(1, legCount));
+    }
+
+    internal void RebuildAllPlayerStatistics()
+    {
+        foreach (var player in GetAllPlayers())
+            player.ResetAllStats();
+
+        var allStats = SqliteDatabaseRepository.LoadAllPlayerGameStats();
+
+        foreach (var kvp in allStats)
+        {
+            var summary = GetGameSummary(kvp.Key);
+            if (summary == null || !summary.IsFinished)
+                continue;
+
+            foreach (var playerStat in kvp.Value)
+            {
+                var player = GetPlayerByID(playerStat.Key);
+                if (player == null)
+                    continue;
+
+                player.ApplyGameStatsFromSummary(summary, playerStat.Value, 0f);
+            }
+        }
+    }
 }

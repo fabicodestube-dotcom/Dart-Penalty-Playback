@@ -1,0 +1,550 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9620f8c34305754d8cc9a7e49e852d9, type: 3}
+  m_Name: LocalizationTable_it
+  m_EditorClassIdentifier: Unity.Localization::UnityEngine.Localization.Tables.StringTable
+  m_LocaleId:
+    m_Code: it
+  m_SharedData: {fileID: 11400000, guid: 69cc5fdb8958e6e33a772797f9dc50e8, type: 2}
+  m_Metadata:
+    m_Items: []
+  m_TableData:
+  - m_Id: 1
+    m_Localized: 30 giorni
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2
+    m_Localized: 365 giorni
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3
+    m_Localized: 7 giorni
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4
+    m_Localized: Interrompi gioco
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5
+    m_Localized: "Il gioco non \xE8 ancora finito. Vuoi salvare il gioco per continuarlo
+      pi\xF9 tardi o vuoi interromperlo?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 6
+    m_Localized: Informazioni
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7
+    m_Localized: Vibrazione attiva
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8
+    m_Localized: Determina se deve verificarsi un feedback aptico durante l'inserimento
+      degli input
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9
+    m_Localized: Aggiungi bot
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10
+    m_Localized: Tutto
+    m_Metadata:
+      m_Items: []
+  - m_Id: 11
+    m_Localized: Crescente
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12
+    m_Localized: Audio
+    m_Metadata:
+      m_Items: []
+  - m_Id: 13
+    m_Localized: Blu
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14
+    m_Localized: Bronzo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15
+    m_Localized: Sballato
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16
+    m_Localized: Anulla
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17
+    m_Localized: Soffitto
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18
+    m_Localized: "Colpo al soffitto, che pu\xF2 essere inserito tramite clic del
+      pulsante invece di una freccetta da 0"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 19
+    m_Localized: Clip
+    m_Metadata:
+      m_Items: []
+  - m_Id: 20
+    m_Localized: Conferma
+    m_Metadata:
+      m_Items: []
+  - m_Id: 21
+    m_Localized: Costi
+    m_Metadata:
+      m_Items: []
+  - m_Id: 22
+    m_Localized: Browser clip personalizzati
+    m_Metadata:
+      m_Items: []
+  - m_Id: 23
+    m_Localized: Clip personalizzate
+    m_Metadata:
+      m_Items: []
+  - m_Id: 24
+    m_Localized: Suono personalizzato
+    m_Metadata:
+      m_Items: []
+  - m_Id: 25
+    m_Localized: I suoni personalizzati sono registrati dall'utente, altrimenti viene
+      utilizzato il pacchetto predefinito
+    m_Metadata:
+      m_Items: []
+  - m_Id: 26
+    m_Localized: Ciano
+    m_Metadata:
+      m_Items: []
+  - m_Id: 27
+    m_Localized: Elimina tutti i giochi
+    m_Metadata:
+      m_Items: []
+  - m_Id: 28
+    m_Localized: "Sei sicuro di voler eliminare tutti i giochi registrati? Questa
+      azione nicht pu\xF2 essere annullata!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 29
+    m_Localized: Elimina i giochi Around the Clock
+    m_Metadata:
+      m_Items: []
+  - m_Id: 30
+    m_Localized: "Sei sicuro di voler eliminare tutti i giochi Around the Clock?
+      Questa azione non pu\xF2 essere annullata!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 31
+    m_Localized: Elimina clip
+    m_Metadata:
+      m_Items: []
+  - m_Id: 32
+    m_Localized: "Sei sicuro di voler eliminare il clip attualmente visualizzato?
+      Questa azione non pu\xF2 essere annullata!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33
+    m_Localized: Elimina i giochi Cricket
+    m_Metadata:
+      m_Items: []
+  - m_Id: 34
+    m_Localized: "Sei sicuro di voler eliminare tutti i giochi Cricket? Questa azione
+      non pu\xF2 essere annullata!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 35
+    m_Localized: Elimina giocatore
+    m_Metadata:
+      m_Items: []
+  - m_Id: 36
+    m_Localized: "Sei sicuro di voler eliminare il giocatore {name}? Questa azione
+      non pu\xF2 essere annullata!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 37
+    m_Localized: Elimina i giochi X01
+    m_Metadata:
+      m_Items: []
+  - m_Id: 38
+    m_Localized: Sei sicuro di voler eliminare tutti i giochi X01? Questa azione
+      non kann essere annullata!
+    m_Metadata:
+      m_Items: []
+  - m_Id: 39
+    m_Localized: Decrescente
+    m_Metadata:
+      m_Items: []
+  - m_Id: 40
+    m_Localized: Non salvare
+    m_Metadata:
+      m_Items: []
+  - m_Id: 41
+    m_Localized: Facile
+    m_Metadata:
+      m_Items: []
+  - m_Id: 42
+    m_Localized: Flitra per giocatori
+    m_Metadata:
+      m_Items: []
+  - m_Id: 43
+    m_Localized: Terminato
+    m_Metadata:
+      m_Items: []
+  - m_Id: 44
+    m_Localized: Gioco non ancora salvato
+    m_Metadata:
+      m_Items: []
+  - m_Id: 45
+    m_Localized: "Il gioco non \xE8 ancora stato salvato. Vuoi salvarlo ora?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 46
+    m_Localized: Game over
+    m_Metadata:
+      m_Items: []
+  - m_Id: 47
+    m_Localized: Avvia gioco
+    m_Metadata:
+      m_Items: []
+  - m_Id: 48
+    m_Localized: Oro
+    m_Metadata:
+      m_Items: []
+  - m_Id: 49
+    m_Localized: Verde
+    m_Metadata:
+      m_Items: []
+  - m_Id: 50
+    m_Localized: Difficile
+    m_Metadata:
+      m_Items: []
+  - m_Id: 51
+    m_Localized: Classifiche
+    m_Metadata:
+      m_Items: []
+  - m_Id: 52
+    m_Localized: Cronologia
+    m_Metadata:
+      m_Items: []
+  - m_Id: 53
+    m_Localized: Colpi
+    m_Metadata:
+      m_Items: []
+  - m_Id: 54
+    m_Localized: Home
+    m_Metadata:
+      m_Items: []
+  - m_Id: 55
+    m_Localized: In corso
+    m_Metadata:
+      m_Items: []
+  - m_Id: 56
+    m_Localized: Giocatori inattivi
+    m_Metadata:
+      m_Items: []
+  - m_Id: 57
+    m_Localized: "Intensit\xE0"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 58
+    m_Localized: Sconfitta
+    m_Metadata:
+      m_Items: []
+  - m_Id: 59
+    m_Localized: "Penalit\xE0 per la partecipazione a un gioco senza emergerne come
+      vincitore"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 60
+    m_Localized: Numero fortunato
+    m_Metadata:
+      m_Items: []
+  - m_Id: 61
+    m_Localized: "Penalit\xE0 se raggiungi un punteggio che \xE8 un numero a cifre
+      ripetute (es. 111, 222, ecc.)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 62
+    m_Localized: Seleziona tutto
+    m_Metadata:
+      m_Items: []
+  - m_Id: 63
+    m_Localized: Contrassegni
+    m_Metadata:
+      m_Items: []
+  - m_Id: 64
+    m_Localized: Contrassegni per round
+    m_Metadata:
+      m_Items: []
+  - m_Id: 65
+    m_Localized: Medio
+    m_Metadata:
+      m_Items: []
+  - m_Id: 66
+    m_Localized: "Modalit\xE0"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 67
+    m_Localized: Nuovo giocatore
+    m_Metadata:
+      m_Items: []
+  - m_Id: 68
+    m_Localized: "Il nome \xE8 troppo corto (min. 2 caratteri)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 69
+    m_Localized: Nessun colpo sul bersaglio
+    m_Metadata:
+      m_Items: []
+  - m_Id: 70
+    m_Localized: "Penalit\xE0 se tutte le freccette colpiscono il muro o il soffitto"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 71
+    m_Localized: Nessun clip registrato
+    m_Metadata:
+      m_Items: []
+  - m_Id: 72
+    m_Localized: Nessun gioco disponibile
+    m_Metadata:
+      m_Items: []
+  - m_Id: 73
+    m_Localized: Nessun giocatore aggiunto
+    m_Metadata:
+      m_Items: []
+  - m_Id: 74
+    m_Localized: Non sono ancora stati aggiunti giocatori alla lista dei partecipanti.
+      Deve essere assegnato almeno un giocatore!
+    m_Metadata:
+      m_Items: []
+  - m_Id: 75
+    m_Localized: OK
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76
+    m_Localized: Opzioni
+    m_Metadata:
+      m_Items: []
+  - m_Id: 77
+    m_Localized: Ordine
+    m_Metadata:
+      m_Items: []
+  - m_Id: 78
+    m_Localized: Partecipanti
+    m_Metadata:
+      m_Items: []
+  - m_Id: 79
+    m_Localized: "Penalit\xE0"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 80
+    m_Localized: "Clip di penalit\xE0"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81
+    m_Localized: Riproduci suono
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82
+    m_Localized: Determina se utilizzare i suoni all'interno dell'app (es. annunci
+      dei punteggi in X01)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 83
+    m_Localized: Giocatori
+    m_Metadata:
+      m_Items: []
+  - m_Id: 84
+    m_Localized: Punti
+    m_Metadata:
+      m_Items: []
+  - m_Id: 85
+    m_Localized: Preferenze
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86
+    m_Localized: Pro
+    m_Metadata:
+      m_Items: []
+  - m_Id: 87
+    m_Localized: Casuale
+    m_Metadata:
+      m_Items: []
+  - m_Id: 88
+    m_Localized: Ordine casuale
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89
+    m_Localized: Registratore
+    m_Metadata:
+      m_Items: []
+  - m_Id: 90
+    m_Localized: Rosso
+    m_Metadata:
+      m_Items: []
+  - m_Id: 91
+    m_Localized: Rinomina giocatore {name}
+    m_Metadata:
+      m_Items: []
+  - m_Id: 92
+    m_Localized: Salva
+    m_Metadata:
+      m_Items: []
+  - m_Id: 93
+    m_Localized: Salva gioco
+    m_Metadata:
+      m_Items: []
+  - m_Id: 94
+    m_Localized: Clip di punteggio
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95
+    m_Localized: Punteggio
+    m_Metadata:
+      m_Items: []
+  - m_Id: 96
+    m_Localized: Condividi
+    m_Metadata:
+      m_Items: []
+  - m_Id: 97
+    m_Localized: Dai un'occhiata alla mia nuova app per le freccette che ho trovato
+      su GitHub! https://github.com/fabicodestube-dotcom/Dart-Penalty-Playback/
+    m_Metadata:
+      m_Items: []
+  - m_Id: 98
+    m_Localized: Clip speciali
+    m_Metadata:
+      m_Items: []
+  - m_Id: 99
+    m_Localized: Statistiche
+    m_Metadata:
+      m_Items: []
+  - m_Id: 100
+    m_Localized: Forte
+    m_Metadata:
+      m_Items: []
+  - m_Id: 101
+    m_Localized: Sudden death
+    m_Metadata:
+      m_Items: []
+  - m_Id: 102
+    m_Localized: Somma
+    m_Metadata:
+      m_Items: []
+  - m_Id: 103
+    m_Localized: Supporto
+    m_Metadata:
+      m_Items: []
+  - m_Id: 104
+    m_Localized: Se vuoi supportare l'app, sentiti libero di donare tramite una delle
+      seguenti opzioni.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 105
+    m_Localized: Obiettivi
+    m_Metadata:
+      m_Items: []
+  - m_Id: 106
+    m_Localized: Tema
+    m_Metadata:
+      m_Items: []
+  - m_Id: 107
+    m_Localized: Tre uni
+    m_Metadata:
+      m_Items: []
+  - m_Id: 108
+    m_Localized: "Penalit\xE0 se colpisci il settore dell'1 per 3 volte di seguito
+      con 3 freccette (il moltiplicatore non ha importanza)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 109
+    m_Localized: Lanci
+    m_Metadata:
+      m_Items: []
+  - m_Id: 110
+    m_Localized: Oggi
+    m_Metadata:
+      m_Items: []
+  - m_Id: 111
+    m_Localized: Taglia silenzio
+    m_Metadata:
+      m_Items: []
+  - m_Id: 112
+    m_Localized: Annulla
+    m_Metadata:
+      m_Items: []
+  - m_Id: 113
+    m_Localized: Deseleziona tutto
+    m_Metadata:
+      m_Items: []
+  - m_Id: 114
+    m_Localized: Vibrazione
+    m_Metadata:
+      m_Items: []
+  - m_Id: 115
+    m_Localized: Volume
+    m_Metadata:
+      m_Items: []
+  - m_Id: 116
+    m_Localized: Muro
+    m_Metadata:
+      m_Items: []
+  - m_Id: 117
+    m_Localized: "Colpo al muro, che pu\xF2 essere inserito tramite clic del pulsante
+      invece di una freccetta da 0"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 118
+    m_Localized: Debole
+    m_Metadata:
+      m_Items: []
+  - m_Id: 705069411422208
+    m_Localized: Colpito
+    m_Metadata:
+      m_Items: []
+  - m_Id: 705069428199424
+    m_Localized: Mancato
+    m_Metadata:
+      m_Items: []
+  - m_Id: 705069428199425
+    m_Localized: Riepilogo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 710215969230848
+    m_Localized: "Vuoi davvero eliminare il gioco visualizzato? L'azione non pu\xF2
+      essere annullata!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 710510380011520
+    m_Localized: Impostazioni
+    m_Metadata:
+      m_Items: []
+  - m_Id: 722577082241024
+    m_Localized: Applica
+    m_Metadata:
+      m_Items: []
+  - m_Id: 723894773174272
+    m_Localized: Nessun gioco X01 disponibile
+    m_Metadata:
+      m_Items: []
+  - m_Id: 723894777368576
+    m_Localized: Nessun gioco Cricket disponibile
+    m_Metadata:
+      m_Items: []
+  - m_Id: 723894777368577
+    m_Localized: Nessun gioco Around the Clock disponibile
+    m_Metadata:
+      m_Items: []
+  references:
+    version: 2
+    RefIds: []

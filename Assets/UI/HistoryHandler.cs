@@ -42,117 +42,108 @@ public class HistoryHandler : MonoBehaviour, IUIScreen
     private GameObject cricketHeadline;
     private GameObject atcHeadline;
 
-    private HashSet<Guid> existingGameIds = new HashSet<Guid>(); 
+    private HashSet<Guid> existingGameIds = new HashSet<Guid>();
 
     private int deleteIndex;
 
-
-    // =========================
-    // UI LIFECYCLE
-    // =========================
     private void Start()
     {
         StartCoroutine(BuildAllPages());
         appHandler.OnDeleteGame += HandleDeleteGame;
         appHandler.OnAddGame += HandleAddGame;
-        // Reagiert auf Batch-Löschungen (ganzer Modus) und komplette Löschungen
         appHandler.OnDeleteGamesOfMode += HandleDeleteGamesOfMode;
         appHandler.OnAllGamesDeleted += HandleAllGamesDeleted;
     }
 
-    // =========================
-    // PAGE BUILDING
-    // =========================
-
     private IEnumerator BuildAllPages()
     {
         ClearAllItems();
-        var games = appHandler.GetGames();
+        var summaries = appHandler.GetGameSummaries();
 
-        // Deaktiviere LayoutGroups für schnelleres Laden
         DisableLayoutGroups(allGamesParent, x01GamesParent, atcGamesParent, cricketGamesParent);
 
         try
         {
-            // 1. Alle Spiele einsortieren (falls vorhanden)
-            if (games != null && games.Count > 0)
+            if (summaries != null && summaries.Count > 0)
             {
-                foreach (var g in games)
+                foreach (var s in summaries)
                 {
-                    CreateItem(g, allGamesParent, allItems, allItemLookup);
+                    CreateItem(s, allGamesParent, allItems, allItemLookup);
 
-                    if (g.GetGameMode() == GameMode.X01)
-                        CreateItem(g, x01GamesParent, x01Items, x01ItemLookup);
-                    else if (g.GetGameMode() == GameMode.ATC)
-                        CreateItem(g, atcGamesParent, atcItems, atcItemLookup);
-                    else if (g.GetGameMode() == GameMode.Cricket)
-                        CreateItem(g, cricketGamesParent, cricketItems, cricketItemLookup);
+                    if (s.GameMode == GameMode.X01)
+                        CreateItem(s, x01GamesParent, x01Items, x01ItemLookup);
+                    else if (s.GameMode == GameMode.ATC)
+                        CreateItem(s, atcGamesParent, atcItems, atcItemLookup);
+                    else if (s.GameMode == GameMode.Cricket)
+                        CreateItem(s, cricketGamesParent, cricketItems, cricketItemLookup);
                 }
             }
 
-            // 2. Jetzt für jede Seite prüfen: Ist sie leer geblieben?
             if (allItems.Count == 0)
-                allHeadline = CreateHeadline(allGamesParent, "No_games_available");
+                allHeadline = CreateHeadline(allGamesParent, "No_games_available", "No games available");
 
             if (x01Items.Count == 0)
-                x01Headline = CreateHeadline(x01GamesParent, "No_games_available_x01");
+                x01Headline = CreateHeadline(x01GamesParent, "No_games_available_x01", "No X01 games available");
 
             if (atcItems.Count == 0)
-                atcHeadline = CreateHeadline(atcGamesParent, "No_games_available_atc");
+                atcHeadline = CreateHeadline(atcGamesParent, "No_games_available_atc", "No Around the Clock games available");
 
             if (cricketItems.Count == 0)
-                cricketHeadline = CreateHeadline(cricketGamesParent, "No_games_available_cricket");
+                cricketHeadline = CreateHeadline(cricketGamesParent, "No_games_available_cricket", "No Cricket games available");
 
         }
         finally
         {
-            // Reaktiviere LayoutGroups und rebuild einmalig
             EnableLayoutGroups(allGamesParent, x01GamesParent, atcGamesParent, cricketGamesParent);
         }
 
         yield return null;
     }
 
-
-    private GameObject CreateHeadline(Transform parent, string localizationKey)
+    private GameObject CreateHeadline(Transform parent, string localizationKey, string fallbackText)
     {
         if (prefabHeadline == null || parent == null)
             return null;
 
-        // 1. Prefab wie gewohnt instanziieren
         var go = Instantiate(prefabHeadline, parent);
         var tmp = go.GetComponent<TMP_Text>();
 
         if (tmp != null)
         {
-            // 2. Die Localization-Komponente an das neue GameObject hängen
-            var localizeEvent = go.AddComponent<LocalizeStringEvent>();
-            
-            // 3. Dem Event sagen, aus welcher Tabelle und welcher Key genutzt werden soll
-            // Ersetze "DeineTableName" mit dem exakten Namen deiner String Table in Unity!
+            // Sofort sinnvoller Text, damit nie das Prefab-Default ("Titel") steht.
+            tmp.text = fallbackText;
+
+            var localizeEvent = go.GetComponent<LocalizeStringEvent>()
+                ?? go.AddComponent<LocalizeStringEvent>();
+
+            // Listener VOR dem Setzen der Referenz anhängen, sonst kann das
+            // (asynchrone) Update verloren gehen.
+            localizeEvent.OnUpdateString.RemoveAllListeners();
+            localizeEvent.OnUpdateString.AddListener(localizedValue =>
+            {
+                if (!string.IsNullOrEmpty(localizedValue))
+                    tmp.text = localizedValue;
+            });
             localizeEvent.StringReference = new LocalizedString("LocalizationTable", localizationKey);
-            
-            // 4. Das Event mit dem Textfeld verknüpfen
-            // Sobald das Spiel startet (und bei jedem Sprachwechsel), wird dieser Listener gefeuert
-            localizeEvent.OnUpdateString.AddListener(localizedValue => tmp.text = localizedValue);
+            localizeEvent.RefreshString();
         }
 
         return go;
     }
 
     private void CreateItem(
-        Game g,
+        GameSummary summary,
         Transform parent,
         List<HistoryItem> list,
         Dictionary<Guid, HistoryItem> lookup)
     {
-        existingGameIds.Add(g.GetID());
+        existingGameIds.Add(summary.Id);
 
         HistoryItem item = Instantiate(prefab, parent);
-        item.Setup(appHandler, g, HistoryItemMode.History, OnGameClicked);
+        item.Setup(appHandler, summary, HistoryItemMode.History, OnGameClicked);
 
         list.Add(item);
-        lookup[g.GetID()] = item;
+        lookup[summary.Id] = item;
     }
 
     private void ClearAllItems()
@@ -167,7 +158,6 @@ public class HistoryHandler : MonoBehaviour, IUIScreen
         ClearParent(atcGamesParent);
         ClearParent(cricketGamesParent);
 
-        // Listen trotzdem leeren (wichtig!)
         allItems.Clear();
         x01Items.Clear();
         atcItems.Clear();
@@ -188,43 +178,26 @@ public class HistoryHandler : MonoBehaviour, IUIScreen
         }
     }
 
-
-    // =========================
-    // USER INTERACTION
-    // =========================
-
-    private void OnGameClicked(Game game)
+    private void OnGameClicked(Guid gameId)
     {
-        // Speichert ausgewähltes Spiel global im AppHandler
-        appHandler.SetSelectedGame(game);
-
-        // Wechselt in die Detailansicht
+        appHandler.SetSelectedGame(null);
+        appHandler.SetLastClickedGameId(gameId);
         windowHandler.GoTo(ScreenId.GameDetail);
     }
 
-
-    // =========================
-    // DELETE FLOW
-    // =========================
-
     public void OnClickDeleteButton()
     {
-        // Aktuelle Page wird als Ziel für Löschung gespeichert
         deleteIndex = swipeMenu.GetCurrentPage();
-
-        // Zeigt entsprechendes Popup an
         windowHandler.ShowPopup(popups[deleteIndex]);
     }
 
     public void AbortDelete()
     {
-        // Schließt Popup ohne Aktion
         windowHandler.HidePopup();
     }
 
     public void ConfirmDelete()
     {
-        // Löschen abhängig von aktuell ausgewählter Seite
         if (deleteIndex == 0)
         {
             appHandler.DeleteAllGames();
@@ -246,7 +219,6 @@ public class HistoryHandler : MonoBehaviour, IUIScreen
             Debug.Log("[HistoryHandler] Unbekannter Index beim Löschen!");
         }
 
-        // UI: Popup schließen. Änderungen werden inkrementell durch die Event-Handler verarbeitet (kein Full-Rebuild mehr)
         windowHandler.HidePopup();
     }
 
@@ -258,9 +230,6 @@ public class HistoryHandler : MonoBehaviour, IUIScreen
 
         try
         {
-            // ------------------------
-            // ALL
-            // ------------------------
             if (allItemLookup.TryGetValue(gameId, out var allItem))
             {
                 Destroy(allItem.gameObject);
@@ -274,9 +243,6 @@ public class HistoryHandler : MonoBehaviour, IUIScreen
                     $"[HistoryHandler] ALL Item NICHT gefunden für Guid={gameId}");
             }
 
-            // ------------------------
-            // Mode bestimmen
-            // ------------------------
             List<HistoryItem> targetList = null;
             Dictionary<Guid, HistoryItem> targetLookup = null;
 
@@ -298,9 +264,6 @@ public class HistoryHandler : MonoBehaviour, IUIScreen
                     break;
             }
 
-            // ------------------------
-            // Mode-Liste
-            // ------------------------
             if (targetLookup != null)
             {
                 if (targetLookup.TryGetValue(gameId, out var item))
@@ -317,27 +280,24 @@ public class HistoryHandler : MonoBehaviour, IUIScreen
                 }
             }
 
-            // ------------------------
-            // Platzhalter prüfen
-            // ------------------------
-            if (allItems.Count == 0) //&& allHeadline == null)
+            if (allItems.Count == 0 && allHeadline == null)
             {
-                allHeadline = CreateHeadline(allGamesParent, "No_games_available");
+                allHeadline = CreateHeadline(allGamesParent, "No_games_available", "No games available");
             }
 
             if (x01Items.Count == 0 && x01Headline == null)
             {
-                x01Headline = CreateHeadline(x01GamesParent, "No_games_available_x01");
+                x01Headline = CreateHeadline(x01GamesParent, "No_games_available_x01", "No X01 games available");
             }
 
             if (cricketItems.Count == 0 && cricketHeadline == null)
             {
-                cricketHeadline = CreateHeadline(cricketGamesParent, "No_games_available_cricket");
+                cricketHeadline = CreateHeadline(cricketGamesParent, "No_games_available_cricket", "No Cricket games available");
             }
 
             if (atcItems.Count == 0 && atcHeadline == null)
             {
-                atcHeadline = CreateHeadline(atcGamesParent, "No_games_available_atc");
+                atcHeadline = CreateHeadline(atcGamesParent, "No_games_available_atc", "No Around the Clock games available");
             }
         }
         finally
@@ -346,9 +306,6 @@ public class HistoryHandler : MonoBehaviour, IUIScreen
         }
     }
 
-    // ------------------------
-    // Batch-Delete Handler
-    // ------------------------
     private void HandleDeleteGamesOfMode(GameMode mode)
     {
         DisableLayoutGroups(allGamesParent, x01GamesParent, atcGamesParent, cricketGamesParent);
@@ -357,64 +314,29 @@ public class HistoryHandler : MonoBehaviour, IUIScreen
         {
             if (mode == GameMode.X01)
             {
-                var toRemove = x01Items.ToList();
-                foreach (var item in toRemove)
-                {
-                    var id = item.GetGameID();
-                    Destroy(item.gameObject);
+                RemoveModeItems(x01Items, x01ItemLookup);
 
-                    allItems.Remove(item);
-                    allItemLookup.Remove(id);
-                    existingGameIds.Remove(id);
-                }
-
-                x01Items.Clear();
-                x01ItemLookup.Clear();
-
-                // Placeholder für leere Seite
-                x01Headline = CreateHeadline(x01GamesParent, "No_games_available_x01");
+                if (x01Headline == null)
+                    x01Headline = CreateHeadline(x01GamesParent, "No_games_available_x01", "No X01 games available");
             }
             else if (mode == GameMode.Cricket)
             {
-                var toRemove = cricketItems.ToList();
-                foreach (var item in toRemove)
-                {
-                    var id = item.GetGameID();
-                    Destroy(item.gameObject);
+                RemoveModeItems(cricketItems, cricketItemLookup);
 
-                    allItems.Remove(item);
-                    allItemLookup.Remove(id);
-                    existingGameIds.Remove(id);
-                }
-
-                cricketItems.Clear();
-                cricketItemLookup.Clear();
-
-                cricketHeadline = CreateHeadline(cricketGamesParent, "No_games_available_cricket");
+                if (cricketHeadline == null)
+                    cricketHeadline = CreateHeadline(cricketGamesParent, "No_games_available_cricket", "No Cricket games available");
             }
             else if (mode == GameMode.ATC)
             {
-                var toRemove = atcItems.ToList();
-                foreach (var item in toRemove)
-                {
-                    var id = item.GetGameID();
-                    Destroy(item.gameObject);
+                RemoveModeItems(atcItems, atcItemLookup);
 
-                    allItems.Remove(item);
-                    allItemLookup.Remove(id);
-                    existingGameIds.Remove(id);
-                }
-
-                atcItems.Clear();
-                atcItemLookup.Clear();
-
-                atcHeadline = CreateHeadline(atcGamesParent, "No_games_available_atc");
+                if (atcHeadline == null)
+                    atcHeadline = CreateHeadline(atcGamesParent, "No_games_available_atc", "No Around the Clock games available");
             }
 
-            // Falls die ALL-Seite danach leer ist: placeholder setzen
-            if (allItems.Count == 0)
+            if (allItems.Count == 0 && allHeadline == null)
             {
-                allHeadline = CreateHeadline(allGamesParent, "No_games_available");
+                allHeadline = CreateHeadline(allGamesParent, "No_games_available", "No games available");
             }
         }
         finally
@@ -429,13 +351,12 @@ public class HistoryHandler : MonoBehaviour, IUIScreen
 
         try
         {
-            // Entferne alle Items und setze Platzhalter
             ClearAllItems();
 
-            allHeadline = CreateHeadline(allGamesParent, "No_games_available");
-            x01Headline = CreateHeadline(x01GamesParent, "No_games_available_x01");
-            atcHeadline = CreateHeadline(atcGamesParent, "No_games_available_atc");
-            cricketHeadline = CreateHeadline(cricketGamesParent, "No_games_available_cricket");
+            allHeadline = CreateHeadline(allGamesParent, "No_games_available", "No games available");
+            x01Headline = CreateHeadline(x01GamesParent, "No_games_available_x01", "No X01 games available");
+            atcHeadline = CreateHeadline(atcGamesParent, "No_games_available_atc", "No Around the Clock games available");
+            cricketHeadline = CreateHeadline(cricketGamesParent, "No_games_available_cricket", "No Cricket games available");
         }
         finally
         {
@@ -447,26 +368,29 @@ public class HistoryHandler : MonoBehaviour, IUIScreen
     {
         if (game == null) return;
 
-        if (existingGameIds.Contains(game.GetID()))
+        var summary = appHandler.GetGameSummary(game.GetID());
+        if (summary == null) return;
+
+        if (existingGameIds.Contains(summary.Id))
         {
             DisableLayoutGroups(allGamesParent, x01GamesParent, atcGamesParent, cricketGamesParent);
 
             try
             {
-                UpdateAndMoveToTop(allItemLookup, allItems, game);
+                UpdateAndMoveToTop(allItemLookup, allItems, summary);
 
-                switch (game.GetGameMode())
+                switch (summary.GameMode)
                 {
                     case GameMode.X01:
-                        UpdateAndMoveToTop(x01ItemLookup, x01Items, game);
+                        UpdateAndMoveToTop(x01ItemLookup, x01Items, summary);
                         break;
 
                     case GameMode.Cricket:
-                        UpdateAndMoveToTop(cricketItemLookup, cricketItems, game);
+                        UpdateAndMoveToTop(cricketItemLookup, cricketItems, summary);
                         break;
 
                     case GameMode.ATC:
-                        UpdateAndMoveToTop(atcItemLookup, atcItems, game);
+                        UpdateAndMoveToTop(atcItemLookup, atcItems, summary);
                         break;
                 }
             }
@@ -478,86 +402,80 @@ public class HistoryHandler : MonoBehaviour, IUIScreen
             return;
         }
 
-        else
+        existingGameIds.Add(summary.Id);
+
+        DisableLayoutGroups(allGamesParent, x01GamesParent, atcGamesParent, cricketGamesParent);
+
+        try
         {
-            existingGameIds.Add(game.GetID());
+            RemoveHeadline(ref allHeadline);
 
-            // Deaktiviere LayoutGroups für schnelleres Hinzufügen
-            DisableLayoutGroups(allGamesParent, x01GamesParent, atcGamesParent, cricketGamesParent);
+            var allItem = Instantiate(prefab, allGamesParent);
+            allItem.Setup(appHandler, summary, HistoryItemMode.History, OnGameClicked);
+            allItem.transform.SetSiblingIndex(0);
+            allItems.Insert(0, allItem);
+            allItemLookup[summary.Id] = allItem;
 
-            try
+            switch (summary.GameMode)
             {
-                // Placeholder der ALL-Seite entfernen
-                RemoveHeadline(ref allHeadline);
-
-                // --- ALL LISTE ---
-                var allItem = Instantiate(prefab, allGamesParent);
-                allItem.Setup(appHandler, game, HistoryItemMode.History, OnGameClicked);
-                allItem.transform.SetSiblingIndex(0);
-                allItems.Insert(0, allItem);
-                allItemLookup[game.GetID()] = allItem;
-
-                switch (game.GetGameMode())
+                case GameMode.X01:
                 {
-                    case GameMode.X01:
-                    {
-                        RemoveHeadline(ref x01Headline);
+                    RemoveHeadline(ref x01Headline);
 
-                        var item = Instantiate(prefab, x01GamesParent);
-                        item.Setup(appHandler, game, HistoryItemMode.History, OnGameClicked);
-                        item.transform.SetSiblingIndex(0);
+                    var item = Instantiate(prefab, x01GamesParent);
+                    item.Setup(appHandler, summary, HistoryItemMode.History, OnGameClicked);
+                    item.transform.SetSiblingIndex(0);
 
-                        x01Items.Insert(0, item);
-                        x01ItemLookup[game.GetID()] = item;
+                    x01Items.Insert(0, item);
+                    x01ItemLookup[summary.Id] = item;
 
-                        break;
-                    }
+                    break;
+                }
 
-                    case GameMode.Cricket:
-                    {
-                        RemoveHeadline(ref cricketHeadline);
+                case GameMode.Cricket:
+                {
+                    RemoveHeadline(ref cricketHeadline);
 
-                        var item = Instantiate(prefab, cricketGamesParent);
-                        item.Setup(appHandler, game, HistoryItemMode.History, OnGameClicked);
-                        item.transform.SetSiblingIndex(0);
+                    var item = Instantiate(prefab, cricketGamesParent);
+                    item.Setup(appHandler, summary, HistoryItemMode.History, OnGameClicked);
+                    item.transform.SetSiblingIndex(0);
 
-                        cricketItems.Insert(0, item);
-                        cricketItemLookup[game.GetID()] = item;
+                    cricketItems.Insert(0, item);
+                    cricketItemLookup[summary.Id] = item;
 
-                        break;
-                    }
+                    break;
+                }
 
-                    case GameMode.ATC:
-                    {
-                        RemoveHeadline(ref atcHeadline);
+                case GameMode.ATC:
+                {
+                    RemoveHeadline(ref atcHeadline);
 
-                        var item = Instantiate(prefab, atcGamesParent);
-                        item.Setup(appHandler, game, HistoryItemMode.History, OnGameClicked);
-                        item.transform.SetSiblingIndex(0);
+                    var item = Instantiate(prefab, atcGamesParent);
+                    item.Setup(appHandler, summary, HistoryItemMode.History, OnGameClicked);
+                    item.transform.SetSiblingIndex(0);
 
-                        atcItems.Insert(0, item);
-                        atcItemLookup[game.GetID()] = item;
+                    atcItems.Insert(0, item);
+                    atcItemLookup[summary.Id] = item;
 
-                        break;
-                    }
+                    break;
                 }
             }
-            finally
-            {
-                EnableLayoutGroups(allGamesParent, x01GamesParent, atcGamesParent, cricketGamesParent);
-            }
+        }
+        finally
+        {
+            EnableLayoutGroups(allGamesParent, x01GamesParent, atcGamesParent, cricketGamesParent);
         }
     }
 
     private void UpdateAndMoveToTop(
         Dictionary<Guid, HistoryItem> lookup,
         List<HistoryItem> list,
-        Game game)
+        GameSummary summary)
     {
-        if (!lookup.TryGetValue(game.GetID(), out var item))
+        if (!lookup.TryGetValue(summary.Id, out var item))
             return;
 
-        item.Setup(appHandler, game, HistoryItemMode.History, OnGameClicked);
+        item.Setup(appHandler, summary, HistoryItemMode.History, OnGameClicked);
 
         item.transform.SetAsFirstSibling();
 
@@ -572,6 +490,30 @@ public class HistoryHandler : MonoBehaviour, IUIScreen
             Destroy(headline);
             headline = null;
         }
+    }
+
+    /// <summary>
+    /// Entfernt alle Items eines Modus-Tabs mitsamt ihren Duplikaten im All-Tab.
+    /// </summary>
+    private void RemoveModeItems(List<HistoryItem> modeItems, Dictionary<Guid, HistoryItem> modeLookup)
+    {
+        foreach (var item in modeItems.ToList())
+        {
+            var id = item.GetGameID();
+            Destroy(item.gameObject);
+
+            if (allItemLookup.TryGetValue(id, out var allItem))
+            {
+                Destroy(allItem.gameObject);
+                allItems.Remove(allItem);
+                allItemLookup.Remove(id);
+            }
+
+            existingGameIds.Remove(id);
+        }
+
+        modeItems.Clear();
+        modeLookup.Clear();
     }
 
     private void DisableLayoutGroups(params Transform[] parents)
@@ -611,7 +553,7 @@ public class HistoryHandler : MonoBehaviour, IUIScreen
 
     public void OnShow()
     {
-        
+
     }
 
     public void OnHide()

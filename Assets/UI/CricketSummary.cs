@@ -12,36 +12,58 @@ public class CricketSummary : MonoBehaviour
 
     public HistoryItem item;
 
+    private GameSummary gameSummary;
     private Game game;
 
-
-    public void ShowSummary(Game game)
+    public void ShowSummary(GameSummary summary)
     {
-        item.Setup(appHandler, game, HistoryItemMode.Summary);
-        this.game = game;
+        gameSummary = summary;
+        item.Setup(appHandler, summary, HistoryItemMode.Summary);
     }
 
     public void OnClickShowStatistic()
     {
-        appHandler.SetSelectedGame(game);
+        if (gameSummary == null) return;
+
+        var loadedGame = appHandler.LoadGameById(gameSummary.Id);
+        if (loadedGame != null)
+        {
+            appHandler.SetSelectedGame(loadedGame);
+        }
         windowHandler.GoTo(ScreenId.GameDetail);
     }
 
     public void OnClickUndoLastDart()
     {
-        cricketGameEngine.Undo();
+        if (gameSummary == null) return;
+
+        var loadedGame = appHandler.LoadGameById(gameSummary.Id);
+        if (loadedGame != null)
+        {
+            appHandler.SetSelectedGame(loadedGame);
+            cricketGameEngine.LoadGame((CricketGame)loadedGame);
+            cricketGameEngine.Undo();
+        }
         windowHandler.GoTo(ScreenId.CricketGame);
     }
 
     public void OnClickSaveGame()
     {
-        appHandler.SaveDatabase();
+        if (gameSummary == null) return;
+
+        var loadedGame = appHandler.LoadGameById(gameSummary.Id);
+        if (loadedGame != null)
+        {
+            appHandler.SaveGame(loadedGame);
+        }
         windowHandler.GoTo(ScreenId.Zoggen);
     }
 
     public void OnClickDeleteGame()
     {
-        appHandler.DeleteGame(game.GetID());
+        if (gameSummary == null) return;
+
+        appHandler.DeleteGame(gameSummary.Id);
         windowHandler.GoTo(ScreenId.Zoggen);
     }
 

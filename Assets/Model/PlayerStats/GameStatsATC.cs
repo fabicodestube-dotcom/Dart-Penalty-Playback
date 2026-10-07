@@ -56,6 +56,11 @@ public class GameStatsATC : GameStats
     // CONSTRUCTOR
     // =========================================================
 
+    public GameStatsATC() : base(Guid.Empty)
+    {
+        EnsureTargetDictionaries();
+    }
+
     public GameStatsATC(Guid playerID) : base(playerID)
     {
         EnsureTargetDictionaries();

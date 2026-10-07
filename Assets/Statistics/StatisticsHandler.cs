@@ -192,15 +192,25 @@ public class StatisticsHandler : MonoBehaviour, IUIScreen
     {
         CollectVisiblePlayerData(out var playerIds, out var playerNames);
 
+        // Für echte Zeiträume einmalig Pro-Spiel-Stats + Summaries (Datum/Modus) laden.
+        // AllTime nutzt weiterhin die vorberechneten Aggregat-Tabellen.
+        Dictionary<Guid, Dictionary<Guid, GameStats>> perGameStats = null;
+        Dictionary<Guid, GameSummary> summariesById = null;
+        if (range != StatisticsRange.AllTime)
+        {
+            perGameStats = SqliteDatabaseRepository.LoadAllPlayerGameStats();
+            summariesById = appHandler.GetGameSummaries().ToDictionary(s => s.Id);
+        }
+
         StatisticsPageBuildHelper.BeginBatch(
             allGamesParent, x01GamesParent, cricketGamesParent, atcGamesParent);
 
         try
         {
-            yield return BuildAllGamesStatsForRange(range, playerIds, playerNames);
-            yield return BuildX01StatsForRange(range, playerIds, playerNames);
-            yield return BuildCricketStatsForRange(range, playerIds, playerNames);
-            yield return BuildATCStatsForRange(range, playerIds, playerNames);
+            yield return BuildAllGamesStatsForRange(range, playerIds, playerNames, perGameStats, summariesById);
+            yield return BuildX01StatsForRange(range, playerIds, playerNames, perGameStats, summariesById);
+            yield return BuildCricketStatsForRange(range, playerIds, playerNames, perGameStats, summariesById);
+            yield return BuildATCStatsForRange(range, playerIds, playerNames, perGameStats, summariesById);
         }
         finally
         {
@@ -219,64 +229,178 @@ public class StatisticsHandler : MonoBehaviour, IUIScreen
             playerNames.Add(appHandler.GetPlayerByID(id).GetName());
     }
 
-    private IEnumerator BuildAllGamesStatsForRange(StatisticsRange range, List<Guid> playerIds, List<string> playerNames)
+    private IEnumerator BuildAllGamesStatsForRange(
+        StatisticsRange range,
+        List<Guid> playerIds,
+        List<string> playerNames,
+        Dictionary<Guid, Dictionary<Guid, GameStats>> perGameStats,
+        Dictionary<Guid, GameSummary> summariesById)
     {
-        var stats = new List<GameStats>(playerIds.Count);
+        List<GameStats> stats;
 
-        foreach (Guid id in playerIds)
+        if (range == StatisticsRange.AllTime)
         {
-            var player = appHandler.GetPlayerByID(id);
-            stats.Add(range == StatisticsRange.AllTime
-                ? GetAllModeAllTimeStatsForPlayer(player)
-                : GetAllModeSpecificTimeStatsForPlayer(player, range));
+            stats = new List<GameStats>(playerIds.Count);
+
+            foreach (Guid id in playerIds)
+            {
+                var playerStats = SqliteDatabaseRepository.LoadPlayerStatsAll(id);
+                stats.Add(playerStats ?? new GameStats(id));
+            }
+        }
+        else
+        {
+            stats = AggregateForPlayers(playerIds, perGameStats, summariesById, range, null, pid => new GameStats(pid));
         }
 
         yield return GetAllPage(range).ShowStatsAsync(stats, playerNames);
     }
 
-    private IEnumerator BuildX01StatsForRange(StatisticsRange range, List<Guid> playerIds, List<string> playerNames)
+    private IEnumerator BuildX01StatsForRange(
+        StatisticsRange range,
+        List<Guid> playerIds,
+        List<string> playerNames,
+        Dictionary<Guid, Dictionary<Guid, GameStats>> perGameStats,
+        Dictionary<Guid, GameSummary> summariesById)
     {
-        var stats = new List<GameStatsX01>(playerIds.Count);
+        List<GameStatsX01> stats;
 
-        foreach (Guid id in playerIds)
+        if (range == StatisticsRange.AllTime)
         {
-            var player = appHandler.GetPlayerByID(id);
-            stats.Add(range == StatisticsRange.AllTime
-                ? player.GetX01Stats()
-                : (GameStatsX01)player.GetTimebasedStats(range, GameMode.X01));
+            stats = new List<GameStatsX01>(playerIds.Count);
+
+            foreach (Guid id in playerIds)
+            {
+                var playerStats = SqliteDatabaseRepository.LoadPlayerStatsForMode(id, GameMode.X01);
+                stats.Add(playerStats as GameStatsX01 ?? new GameStatsX01(id));
+            }
+        }
+        else
+        {
+            stats = AggregateForPlayers(playerIds, perGameStats, summariesById, range, GameMode.X01, pid => new GameStatsX01(pid));
         }
 
         yield return GetX01Page(range).ShowStatsAsync(stats, playerNames);
     }
 
-    private IEnumerator BuildCricketStatsForRange(StatisticsRange range, List<Guid> playerIds, List<string> playerNames)
+    private IEnumerator BuildCricketStatsForRange(
+        StatisticsRange range,
+        List<Guid> playerIds,
+        List<string> playerNames,
+        Dictionary<Guid, Dictionary<Guid, GameStats>> perGameStats,
+        Dictionary<Guid, GameSummary> summariesById)
     {
-        var stats = new List<GameStatsCricket>(playerIds.Count);
+        List<GameStatsCricket> stats;
 
-        foreach (Guid id in playerIds)
+        if (range == StatisticsRange.AllTime)
         {
-            var player = appHandler.GetPlayerByID(id);
-            stats.Add(range == StatisticsRange.AllTime
-                ? player.GetCricketStats()
-                : (GameStatsCricket)player.GetTimebasedStats(range, GameMode.Cricket));
+            stats = new List<GameStatsCricket>(playerIds.Count);
+
+            foreach (Guid id in playerIds)
+            {
+                var playerStats = SqliteDatabaseRepository.LoadPlayerStatsForMode(id, GameMode.Cricket);
+                stats.Add(playerStats as GameStatsCricket ?? new GameStatsCricket(id));
+            }
+        }
+        else
+        {
+            stats = AggregateForPlayers(playerIds, perGameStats, summariesById, range, GameMode.Cricket, pid => new GameStatsCricket(pid));
         }
 
         yield return GetCricketPage(range).ShowStatsAsync(stats, playerNames);
     }
 
-    private IEnumerator BuildATCStatsForRange(StatisticsRange range, List<Guid> playerIds, List<string> playerNames)
+    private IEnumerator BuildATCStatsForRange(
+        StatisticsRange range,
+        List<Guid> playerIds,
+        List<string> playerNames,
+        Dictionary<Guid, Dictionary<Guid, GameStats>> perGameStats,
+        Dictionary<Guid, GameSummary> summariesById)
     {
-        var stats = new List<GameStatsATC>(playerIds.Count);
+        List<GameStatsATC> stats;
 
-        foreach (Guid id in playerIds)
+        if (range == StatisticsRange.AllTime)
         {
-            var player = appHandler.GetPlayerByID(id);
-            stats.Add(range == StatisticsRange.AllTime
-                ? player.GetATCStats()
-                : (GameStatsATC)player.GetTimebasedStats(range, GameMode.ATC));
+            stats = new List<GameStatsATC>(playerIds.Count);
+
+            foreach (Guid id in playerIds)
+            {
+                var playerStats = SqliteDatabaseRepository.LoadPlayerStatsForMode(id, GameMode.ATC);
+                stats.Add(playerStats as GameStatsATC ?? new GameStatsATC(id));
+            }
+        }
+        else
+        {
+            stats = AggregateForPlayers(playerIds, perGameStats, summariesById, range, GameMode.ATC, pid => new GameStatsATC(pid));
         }
 
         yield return GetATCPage(range).ShowStatsAsync(stats, playerNames);
+    }
+
+    /// <summary>
+    /// Aggregiert Pro-Spiel-Stats über alle beendeten Spiele im Zeitraum.
+    /// Gleiche Semantik wie die All-Time-Aggregate (AddGameStat pro Spiel).
+    /// </summary>
+    private List<T> AggregateForPlayers<T>(
+        List<Guid> playerIds,
+        Dictionary<Guid, Dictionary<Guid, GameStats>> perGameStats,
+        Dictionary<Guid, GameSummary> summariesById,
+        StatisticsRange range,
+        GameMode? mode,
+        Func<Guid, T> createEmpty) where T : GameStats
+    {
+        var aggregated = playerIds.ToDictionary(pid => pid, pid => createEmpty(pid));
+        var today = DateTime.Now.Date;
+
+        if (perGameStats == null || summariesById == null)
+            return playerIds.Select(pid => aggregated[pid]).ToList();
+
+        foreach (var gameEntry in perGameStats)
+        {
+            if (!summariesById.TryGetValue(gameEntry.Key, out var summary) || !summary.IsFinished)
+                continue;
+
+            if (mode.HasValue && summary.GameMode != mode.Value)
+                continue;
+
+            var gameDate = (summary.FinishedAt ?? summary.LastActivityAt).Date;
+            if (!IsInRange(gameDate, range, today))
+                continue;
+
+            foreach (var playerEntry in gameEntry.Value)
+            {
+                if (!aggregated.TryGetValue(playerEntry.Key, out var target))
+                    continue;
+
+                target.AddGameStat(playerEntry.Value, gameEntry.Key, playerEntry.Value.totalPenaltyCost);
+            }
+        }
+
+        return playerIds.Select(pid => aggregated[pid]).ToList();
+    }
+
+    private static bool IsInRange(DateTime gameDate, StatisticsRange range, DateTime today)
+    {
+        switch (range)
+        {
+            case StatisticsRange.Today:
+                return gameDate == today;
+
+            case StatisticsRange.ThisWeek:
+                // Kalenderwoche, Montag als Wochenstart.
+                var monday = today.AddDays(-(((int)today.DayOfWeek + 6) % 7));
+                return gameDate >= monday && gameDate <= today;
+
+            case StatisticsRange.ThisMonth:
+                return gameDate.Year == today.Year && gameDate.Month == today.Month;
+
+            case StatisticsRange.ThisYear:
+                return gameDate.Year == today.Year;
+
+            case StatisticsRange.AllTime:
+            default:
+                return true;
+        }
     }
 
     private StatisticsPageAll GetAllPage(StatisticsRange range)
@@ -331,151 +455,7 @@ public class StatisticsHandler : MonoBehaviour, IUIScreen
         };
     }
 
-    private GameStats GetAllModeAllTimeStatsForPlayer(BasePlayer player)
-    {
-        var sx01 = player.GetX01Stats();
-        var scr = player.GetCricketStats();
-        var satc = player.GetATCStats();
 
-        int participated = 0;
-        int won = 0;
-        int wallCount = 0;
-        int ceilingCount = 0;
-        int allMissCount = 0;
-        int threeOnesCount = 0;
-        int schnapsCount = 0;
-        int lostGame = 0;
-
-        if (sx01 != null)
-        {
-            participated += sx01.gameCount;
-            won += sx01.gamesWon;
-            wallCount += sx01.wallCount;
-            ceilingCount += sx01.ceilingCount;
-            allMissCount += sx01.allMissCount;
-            threeOnesCount += sx01.tripleOnesCount;
-            schnapsCount += sx01.tripleDigitCount;
-            lostGame += sx01.lostGame;
-        }
-
-        if (scr != null)
-        {
-            participated += scr.gameCount;
-            won += scr.gamesWon;
-            wallCount += scr.wallCount;
-            ceilingCount += scr.ceilingCount;
-            allMissCount += scr.allMissCount;
-            threeOnesCount += scr.tripleOnesCount;
-            schnapsCount += scr.tripleDigitCount;
-            lostGame += scr.lostGame;
-        }
-
-        if (satc != null)
-        {
-            participated += satc.gameCount;
-            won += satc.gamesWon;
-            wallCount += satc.wallCount;
-            ceilingCount += satc.ceilingCount;
-            allMissCount += satc.allMissCount;
-            threeOnesCount += satc.tripleOnesCount;
-            schnapsCount += satc.tripleDigitCount;
-            lostGame += satc.lostGame;
-        }
-
-        float totalCost = (sx01?.totalPenaltyCost ?? 0f) + (scr?.totalPenaltyCost ?? 0f) + (satc?.totalPenaltyCost ?? 0f);
-        int totalLegsPlayed = (sx01?.totalLegsCount ?? 0) + (scr?.totalLegsCount ?? 0) + (satc?.totalLegsCount ?? 0);
-        int totalLegsWon = (sx01?.totalLegsWon ?? 0) + (scr?.totalLegsWon ?? 0) + (satc?.totalLegsWon ?? 0);
-
-        GameStats temp = new GameStats(player.GetID())
-        {
-            gameCount = participated,
-            gamesWon = won,
-            wallCount = wallCount,
-            ceilingCount = ceilingCount,
-            allMissCount = allMissCount,
-            tripleOnesCount = threeOnesCount,
-            tripleDigitCount = schnapsCount,
-            lostGame = lostGame,
-            totalPenaltyCost = totalCost,
-            totalLegsCount = totalLegsPlayed,
-            totalLegsWon = totalLegsWon
-        };
-
-        return temp;
-    }
-
-    private GameStats GetAllModeSpecificTimeStatsForPlayer(BasePlayer player, StatisticsRange range)
-    {
-        var sx01 = player.GetTimebasedStats(range, GameMode.X01);
-        var scr = player.GetTimebasedStats(range, GameMode.Cricket);
-        var satc = player.GetTimebasedStats(range, GameMode.ATC);
-
-        int participated = 0;
-        int won = 0;
-        int wallCount = 0;
-        int ceilingCount = 0;
-        int allMissCount = 0;
-        int threeOnesCount = 0;
-        int schnapsCount = 0;
-        int lostGame = 0;
-
-        if (sx01 != null)
-        {
-            participated += sx01.gameCount;
-            won += sx01.gamesWon;
-            wallCount += sx01.wallCount;
-            ceilingCount += sx01.ceilingCount;
-            allMissCount += sx01.allMissCount;
-            threeOnesCount += sx01.tripleOnesCount;
-            schnapsCount += sx01.tripleDigitCount;
-            lostGame += sx01.lostGame;
-        }
-
-        if (scr != null)
-        {
-            participated += scr.gameCount;
-            won += scr.gamesWon;
-            wallCount += scr.wallCount;
-            ceilingCount += scr.ceilingCount;
-            allMissCount += scr.allMissCount;
-            threeOnesCount += scr.tripleOnesCount;
-            schnapsCount += scr.tripleDigitCount;
-            lostGame += scr.lostGame;
-        }
-
-        if (satc != null)
-        {
-            participated += satc.gameCount;
-            won += satc.gamesWon;
-            wallCount += satc.wallCount;
-            ceilingCount += satc.ceilingCount;
-            allMissCount += satc.allMissCount;
-            threeOnesCount += satc.tripleOnesCount;
-            schnapsCount += satc.tripleDigitCount;
-            lostGame += satc.lostGame;
-        }
-
-        float totalCost = (sx01?.totalPenaltyCost ?? 0f) + (scr?.totalPenaltyCost ?? 0f) + (satc?.totalPenaltyCost ?? 0f);
-        int totalLegsPlayed = (sx01?.totalLegsCount ?? 0) + (scr?.totalLegsCount ?? 0) + (satc?.totalLegsCount ?? 0);
-        int totalLegsWon = (sx01?.totalLegsWon ?? 0) + (scr?.totalLegsWon ?? 0) + (satc?.totalLegsWon ?? 0);
-
-        GameStats temp = new GameStats(player.GetID())
-        {
-            gameCount = participated,
-            gamesWon = won,
-            wallCount = wallCount,
-            ceilingCount = ceilingCount,
-            allMissCount = allMissCount,
-            tripleOnesCount = threeOnesCount,
-            tripleDigitCount = schnapsCount,
-            lostGame = lostGame,
-            totalPenaltyCost = totalCost,
-            totalLegsCount = totalLegsPlayed,
-            totalLegsWon = totalLegsWon
-        };
-
-        return temp;
-    }
 
 
     // =========================

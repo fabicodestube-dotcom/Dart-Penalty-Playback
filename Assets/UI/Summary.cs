@@ -14,50 +14,73 @@ public class Summary : MonoBehaviour
 
     public HistoryItem item;
 
+    private GameSummary gameSummary;
     private Game game;
 
-
-    public void ShowSummary(Game game)
+    public void ShowSummary(GameSummary summary)
     {
-        item.Setup(appHandler, game, HistoryItemMode.Summary);
-        this.game = game;
+        gameSummary = summary;
+        item.Setup(appHandler, summary, HistoryItemMode.Summary);
     }
 
     public void OnClickShowStatistic()
     {
-        appHandler.SetSelectedGame(game);
+        if (gameSummary == null) return;
+
+        var loadedGame = appHandler.LoadGameById(gameSummary.Id);
+        if (loadedGame != null)
+        {
+            appHandler.SetSelectedGame(loadedGame);
+        }
         windowHandler.GoTo(ScreenId.GameDetail);
     }
 
     public void OnClickUndoLastDart()
     {
-        if (game.GetGameMode() == GameMode.X01)
+        if (gameSummary == null) return;
+
+        var loadedGame = appHandler.LoadGameById(gameSummary.Id);
+        if (loadedGame == null) return;
+
+        appHandler.SetSelectedGame(loadedGame);
+
+        if (gameSummary.GameMode == GameMode.X01)
         {
             windowHandler.GoTo(ScreenId.X01Game);
+            x01GameEngine.LoadGame((X01Game)loadedGame);
             x01GameEngine.Undo();
         }
-        else if (game.GetGameMode() == GameMode.Cricket)
+        else if (gameSummary.GameMode == GameMode.Cricket)
         {
             windowHandler.GoTo(ScreenId.CricketGame);
+            cricketGameEngine.LoadGame((CricketGame)loadedGame);
             cricketGameEngine.Undo();
         }
-
-        else if (game.GetGameMode() == GameMode.ATC)
+        else if (gameSummary.GameMode == GameMode.ATC)
         {
             windowHandler.GoTo(ScreenId.ATCGame);
+            atcGameEngine.LoadGame((ATCGame)loadedGame);
             atcGameEngine.Undo();
         }
     }
 
     public void OnClickSaveGame()
     {
-        appHandler.SaveGame(game);
+        if (gameSummary == null) return;
+
+        var loadedGame = appHandler.LoadGameById(gameSummary.Id);
+        if (loadedGame != null)
+        {
+            appHandler.SaveGame(loadedGame);
+        }
         windowHandler.GoTo(ScreenId.Zoggen);
     }
 
     public void OnClickDeleteGame()
     {
-        appHandler.DeleteGame(game.GetID());
+        if (gameSummary == null) return;
+
+        appHandler.DeleteGame(gameSummary.Id);
         windowHandler.GoTo(ScreenId.Zoggen);
     }
 

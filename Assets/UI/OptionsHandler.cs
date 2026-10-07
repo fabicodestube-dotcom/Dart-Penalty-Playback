@@ -1,6 +1,9 @@
+using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Localization;
+using UnityEngine.Localization.Settings;
 using UnityEngine.UI;
 
 public class OptionsHandler : MonoBehaviour
@@ -10,20 +13,28 @@ public class OptionsHandler : MonoBehaviour
 
     public List<UISwitchBinder> binders;
 
+    // Language
+    [Header("Language Settings")]
+    public UIScreen popupLanguages;
+    public TMP_Text selectedLanguageText;
 
     // Volume
+    [Header("Volume Settings")]
     [SerializeField] private Slider volumeSlider;
 
     // Vibration
+    [Header("Vibration Settings")]
     [SerializeField] private SingleSelectionGroup vibrationStrengthSelection;
 
     // Penalties
+    [Header("Penalty Settings")]
     public TMP_InputField penaltyWall;
     public TMP_InputField penaltyCeiling;
     public TMP_InputField penaltyAllMiss;
     public TMP_InputField penaltyTripleOnes;
     public TMP_InputField penaltySchnapszahl;
     public TMP_InputField penaltyLostGame;
+
 
 
 
@@ -37,12 +48,62 @@ public class OptionsHandler : MonoBehaviour
     }
 
 
+
+private void UpdateLanguageText(string locale)
+{
+    if (selectedLanguageText == null) return;
+
+    // Fallback: If no locale string is passed, load the one saved in your AppSettings
+    if (string.IsNullOrEmpty(locale))
+    {
+        locale = AppSettingsManager.Instance.Settings.Language.lastLocaleCode;
+    }
+
+    // Modern switch statement to display the correct name for each locale code
+    switch (locale.ToLower())
+    {
+        case "de":
+            selectedLanguageText.text = "Deutsch";
+            break;
+        case "en":
+            selectedLanguageText.text = "English";
+            break;
+        case "fr":
+            selectedLanguageText.text = "Français";
+            break;
+        case "es":
+            selectedLanguageText.text = "Español";
+            break;
+        case "ru":
+            selectedLanguageText.text = "Русский";
+            break;
+        case "pl":
+            selectedLanguageText.text = "Polski";
+            break;
+        case "it":
+            selectedLanguageText.text = "Italiano";
+            break;
+        case "tr":
+            selectedLanguageText.text = "Türkçe";
+            break;
+        default:
+            // Fallback in case a locale is requested that is not yet configured
+            selectedLanguageText.text = "English"; 
+            Debug.LogWarning($"[LanguageUI] Unhandled locale code: {locale}. Defaulting to English.");
+            break;
+    }
+}
+
+
+
     // =========================
     // INITIALIZATION
     // =========================
 
     private void InitializeUI()
     {
+        UpdateLanguageText(AppSettingsManager.Instance.Settings.Language.lastLocaleCode);
+
         foreach (var binder in binders)
         {
             binder.Initialize(this);
@@ -180,6 +241,33 @@ public class OptionsHandler : MonoBehaviour
     {
         windowHandler.GoBack();
     }
+
+    // =========================
+    // LANGUAGE HANDLING
+    // =========================
+
+    public void ShowPopupLanguages()
+    {
+        if (popupLanguages != null)
+        {
+            windowHandler.ShowPopup(popupLanguages);
+        }
+    }
+
+    public void ReturnFromPopupLanguages()
+    {
+        windowHandler.HidePopup();
+    }
+
+    public void SetLanguage(string localeCode)
+    {
+        AppSettingsManager.Instance.SetLanguage(localeCode);
+        UpdateLanguageText(localeCode);
+        ReturnFromPopupLanguages();
+    }
+
+
+
 
     // =========================
     // THEME HANDLING

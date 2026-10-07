@@ -1,0 +1,552 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9620f8c34305754d8cc9a7e49e852d9, type: 3}
+  m_Name: LocalizationTable_pl
+  m_EditorClassIdentifier: Unity.Localization::UnityEngine.Localization.Tables.StringTable
+  m_LocaleId:
+    m_Code: pl
+  m_SharedData: {fileID: 11400000, guid: 69cc5fdb8958e6e33a772797f9dc50e8, type: 2}
+  m_Metadata:
+    m_Items: []
+  m_TableData:
+  - m_Id: 1
+    m_Localized: 30 dni
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2
+    m_Localized: 365 dni
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3
+    m_Localized: 7 dni
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4
+    m_Localized: "Przerwij gr\u0119"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5
+    m_Localized: "Gra nie zosta\u0142a jeszcze zako\u0144czona. Czy chcesz zapisa\u0107
+      gr\u0119, aby m\xF3c j\u0105 kontynuowa\u0107 p\xF3\u017Aniej, czy chcesz j\u0105
+      przerwa\u0107?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 6
+    m_Localized: O programie
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7
+    m_Localized: Wibracje aktywne
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8
+    m_Localized: "Okre\u015Bla, czy podczas wprowadzania danych ma wyst\u0119powa\u0107
+      reakcja haptyczna"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9
+    m_Localized: Dodaj bota
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10
+    m_Localized: Wszystko
+    m_Metadata:
+      m_Items: []
+  - m_Id: 11
+    m_Localized: "Rosn\u0105co"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12
+    m_Localized: Audio
+    m_Metadata:
+      m_Items: []
+  - m_Id: 13
+    m_Localized: Niebieski
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14
+    m_Localized: "Br\u0105z"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15
+    m_Localized: "Prze\u0142amanie"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16
+    m_Localized: Anuluj
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17
+    m_Localized: Sufit
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18
+    m_Localized: "Trafienie w sufit, kt\xF3re mo\u017Cna wprowadzi\u0107 klikni\u0119ciem
+      przycisku zamiast rzutki 0"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 19
+    m_Localized: Klipy
+    m_Metadata:
+      m_Items: []
+  - m_Id: 20
+    m_Localized: "Potwierd\u017A"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 21
+    m_Localized: Koszty
+    m_Metadata:
+      m_Items: []
+  - m_Id: 22
+    m_Localized: "Przegl\u0105darka w\u0142asnych klip\xF3w"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 23
+    m_Localized: "W\u0142asne klipy"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 24
+    m_Localized: "W\u0142asny d\u017Awi\u0119k"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 25
+    m_Localized: "W\u0142asne d\u017Awi\u0119ki to d\u017Awi\u0119ki nagrane przez
+      u\u017Cytkownika, w przeciwnym razie u\u017Cywany jest pakiet domy\u015Blny"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 26
+    m_Localized: Cyjan
+    m_Metadata:
+      m_Items: []
+  - m_Id: 27
+    m_Localized: "Usu\u0144 wszystkie gry"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 28
+    m_Localized: "Czy na pewno chcesz usun\u0105\u0107 wszystkie zapisane gry? Tej
+      operacji nie mo\u017Cna cofn\u0105\u0107!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 29
+    m_Localized: "Usu\u0144 gry Around the Clock"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 30
+    m_Localized: "Czy na pewno chcesz usun\u0105\u0107 wszystkie gry Around the Clock?
+      Tej operacji nie mo\u017Cna cofn\u0105\u0107!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 31
+    m_Localized: "Usu\u0144 klip"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 32
+    m_Localized: "Czy na pewno chcesz usun\u0105\u0107 aktualnie wy\u015Bwietlany
+      klip? Tej operacji nie mo\u017Cna cofn\u0105\u0107!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33
+    m_Localized: "Usu\u0144 gry Cricket"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 34
+    m_Localized: "Czy na pewno chcesz usun\u0105\u0107 wszystkie gry Cricket? Tej
+      operacji nie mo\u017Cna cofn\u0105\u0107!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 35
+    m_Localized: "Usu\u0144 gracza"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 36
+    m_Localized: "Czy na pewno chcesz usun\u0105\u0107 gracza {name}? Tej operacji
+      nie mo\u017Cna cofn\u0105\u0107!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 37
+    m_Localized: "Usu\u0144 gry X01"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 38
+    m_Localized: "Czy na pewno chcesz usun\u0105\u0107 wszystkie gry X01? Tej operacji
+      nie mo\u017Cna cofn\u0105\u0107!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 39
+    m_Localized: "Malej\u0105co"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 40
+    m_Localized: Nie zapisuj
+    m_Metadata:
+      m_Items: []
+  - m_Id: 41
+    m_Localized: "\u0141atwy"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 42
+    m_Localized: "Filtruj wed\u0142ug graczy"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 43
+    m_Localized: "Zako\u0144czono"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 44
+    m_Localized: "Gra nie zosta\u0142a jeszcze zapisana"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 45
+    m_Localized: "Gra nie zosta\u0142a jeszcze zapisana. Czy chcesz j\u0105 teraz
+      zapisa\u0107?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 46
+    m_Localized: Koniec gry
+    m_Metadata:
+      m_Items: []
+  - m_Id: 47
+    m_Localized: "Uruchom gr\u0119"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 48
+    m_Localized: "Z\u0142oto"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 49
+    m_Localized: Zielony
+    m_Metadata:
+      m_Items: []
+  - m_Id: 50
+    m_Localized: Trudny
+    m_Metadata:
+      m_Items: []
+  - m_Id: 51
+    m_Localized: Najlepsze wyniki
+    m_Metadata:
+      m_Items: []
+  - m_Id: 52
+    m_Localized: Historia
+    m_Metadata:
+      m_Items: []
+  - m_Id: 53
+    m_Localized: Trafienia
+    m_Metadata:
+      m_Items: []
+  - m_Id: 54
+    m_Localized: "Strona g\u0142\xF3wna"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 55
+    m_Localized: W toku
+    m_Metadata:
+      m_Items: []
+  - m_Id: 56
+    m_Localized: Nieaktywni gracze
+    m_Metadata:
+      m_Items: []
+  - m_Id: 57
+    m_Localized: "Intensywno\u015B\u0107"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 58
+    m_Localized: Przegrana
+    m_Metadata:
+      m_Items: []
+  - m_Id: 59
+    m_Localized: "Kara za udzia\u0142 w grze bez wy\u0142onienia si\u0119 jako zwyci\u0119zca"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 60
+    m_Localized: "Szcz\u0119\u015Bliwa liczba"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 61
+    m_Localized: "Kara, je\u015Bli osi\u0105gniesz wynik b\u0119d\u0105cy repdigit
+      (np. 111, 222 itd.)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 62
+    m_Localized: Zaznacz wszystko
+    m_Metadata:
+      m_Items: []
+  - m_Id: 63
+    m_Localized: Oznaczenia
+    m_Metadata:
+      m_Items: []
+  - m_Id: 64
+    m_Localized: "Oznaczenia na rund\u0119"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 65
+    m_Localized: "\u015Aredni"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 66
+    m_Localized: Tryb
+    m_Metadata:
+      m_Items: []
+  - m_Id: 67
+    m_Localized: Nowy gracz
+    m_Metadata:
+      m_Items: []
+  - m_Id: 68
+    m_Localized: "Nazwa jest za kr\xF3tka (min. 2 znaki)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 69
+    m_Localized: "Brak trafienia w tarcz\u0119"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 70
+    m_Localized: "Kara, je\u015Bli wszystkie rzutki trafi\u0105 w \u015Bcian\u0119
+      lub sufit"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 71
+    m_Localized: "Brak nagranych klip\xF3w"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 72
+    m_Localized: "Brak dost\u0119pnych gier"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 73
+    m_Localized: Nie dodano graczy
+    m_Metadata:
+      m_Items: []
+  - m_Id: 74
+    m_Localized: "Nie dodano jeszcze \u017Cadnych graczy do listy uczestnik\xF3w.
+      Musi by\u0107 przypisany co najmniej jeden gracz!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 75
+    m_Localized: OK
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76
+    m_Localized: Opcje
+    m_Metadata:
+      m_Items: []
+  - m_Id: 77
+    m_Localized: "Kolejno\u015B\u0107"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 78
+    m_Localized: Uczestnicy
+    m_Metadata:
+      m_Items: []
+  - m_Id: 79
+    m_Localized: Kary
+    m_Metadata:
+      m_Items: []
+  - m_Id: 80
+    m_Localized: Klipy z karami
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81
+    m_Localized: "Odtw\xF3rz d\u017Awi\u0119k"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82
+    m_Localized: "Okre\u015Bla, czy w aplikacji maj\u0105 by\u0107 u\u017Cywane d\u017Awi\u0119ki
+      (np. og\u0142aszanie wynik\xF3w w X01)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 83
+    m_Localized: Gracze
+    m_Metadata:
+      m_Items: []
+  - m_Id: 84
+    m_Localized: Punkty
+    m_Metadata:
+      m_Items: []
+  - m_Id: 85
+    m_Localized: Preferencje
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86
+    m_Localized: Pro
+    m_Metadata:
+      m_Items: []
+  - m_Id: 87
+    m_Localized: Losowo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 88
+    m_Localized: "Losowa kolejno\u015B\u0107"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89
+    m_Localized: Rejestrator
+    m_Metadata:
+      m_Items: []
+  - m_Id: 90
+    m_Localized: Czerwony
+    m_Metadata:
+      m_Items: []
+  - m_Id: 91
+    m_Localized: "Zmie\u0144 nazw\u0119 gracza {name}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 92
+    m_Localized: Zapisz
+    m_Metadata:
+      m_Items: []
+  - m_Id: 93
+    m_Localized: "Zapisz gr\u0119"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 94
+    m_Localized: Klipy z wynikami
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95
+    m_Localized: Punktacja
+    m_Metadata:
+      m_Items: []
+  - m_Id: 96
+    m_Localized: "Udost\u0119pnij"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 97
+    m_Localized: "Sprawd\u017A moj\u0105 now\u0105 aplikacj\u0119 do rzutek, kt\xF3r\u0105
+      znalaz\u0142em na GitHubie! https://github.com/fabicodestube-dotcom/Dart-Penalty-Playback/"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 98
+    m_Localized: Klipy specjalne
+    m_Metadata:
+      m_Items: []
+  - m_Id: 99
+    m_Localized: Statystyki
+    m_Metadata:
+      m_Items: []
+  - m_Id: 100
+    m_Localized: Silny
+    m_Metadata:
+      m_Items: []
+  - m_Id: 101
+    m_Localized: "Nag\u0142a \u015Bmier\u0107"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 102
+    m_Localized: Suma
+    m_Metadata:
+      m_Items: []
+  - m_Id: 103
+    m_Localized: Wsparcie
+    m_Metadata:
+      m_Items: []
+  - m_Id: 104
+    m_Localized: "Je\u015Bli chcesz wesprze\u0107 aplikacj\u0119, mo\u017Cesz przekaza\u0107
+      darowizn\u0119 za pomoc\u0105 jednej z poni\u017Cszych opcji."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 105
+    m_Localized: Cele
+    m_Metadata:
+      m_Items: []
+  - m_Id: 106
+    m_Localized: Motyw
+    m_Metadata:
+      m_Items: []
+  - m_Id: 107
+    m_Localized: Trzy jedynki
+    m_Metadata:
+      m_Items: []
+  - m_Id: 108
+    m_Localized: "Kara, je\u015Bli trafisz w pole 1 trzy razy z rz\u0119du trzema
+      rzutkami (mno\u017Cnik nie ma znaczenia)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 109
+    m_Localized: Rzuty
+    m_Metadata:
+      m_Items: []
+  - m_Id: 110
+    m_Localized: Dzisiaj
+    m_Metadata:
+      m_Items: []
+  - m_Id: 111
+    m_Localized: "Usu\u0144 cisz\u0119"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 112
+    m_Localized: Cofnij
+    m_Metadata:
+      m_Items: []
+  - m_Id: 113
+    m_Localized: Odznacz wszystko
+    m_Metadata:
+      m_Items: []
+  - m_Id: 114
+    m_Localized: Wibracje
+    m_Metadata:
+      m_Items: []
+  - m_Id: 115
+    m_Localized: "G\u0142o\u015Bno\u015B\u0107"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 116
+    m_Localized: "\u015Aciana"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 117
+    m_Localized: "Trafienie w \u015Bcian\u0119, kt\xF3re mo\u017Cna wprowadzi\u0107
+      klikni\u0119ciem przycisku zamiast rzutki 0"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 118
+    m_Localized: "S\u0142aby"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 705069411422208
+    m_Localized: Trafienie
+    m_Metadata:
+      m_Items: []
+  - m_Id: 705069428199424
+    m_Localized: Chybienie
+    m_Metadata:
+      m_Items: []
+  - m_Id: 705069428199425
+    m_Localized: Podsumowanie
+    m_Metadata:
+      m_Items: []
+  - m_Id: 710215969230848
+    m_Localized: "Czy na pewno chcesz usun\u0105\u0107 wy\u015Bwietlon\u0105 gr\u0119?
+      Tego kroku nie mo\u017Cna cofn\u0105\u0107!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 710510380011520
+    m_Localized: Ustawienia
+    m_Metadata:
+      m_Items: []
+  - m_Id: 722577082241024
+    m_Localized: Zastosuj
+    m_Metadata:
+      m_Items: []
+  - m_Id: 723894773174272
+    m_Localized: "Brak dost\u0119pnych gier X01"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 723894777368576
+    m_Localized: "Brak dost\u0119pnych gier w Krykieta"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 723894777368577
+    m_Localized: "Brak dost\u0119pnych gier Around the Clock"
+    m_Metadata:
+      m_Items: []
+  references:
+    version: 2
+    RefIds: []

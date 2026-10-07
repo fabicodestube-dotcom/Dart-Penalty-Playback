@@ -17,6 +17,7 @@ public abstract class BasePlayer
     // =========================================================
     [JsonProperty] protected bool showInStatistics;
     [JsonProperty] protected bool deletedFlag;
+    [JsonProperty] protected int setupStartPosition = -1;
 
     // =========================================================
     // ALL-TIME STATS
@@ -316,7 +317,6 @@ public abstract class BasePlayer
             {
                 GameStatsX01 s = stats as GameStatsX01;
 
-                // TimeBased
                 ApplyToTimeRanges(game,
                     x01TodayStats,
                     x01WeekStats,
@@ -360,6 +360,180 @@ public abstract class BasePlayer
         }
     }
 
+    public void ApplyTimebasedGameStatsFromSummary(GameSummary summary, GameStats stats, float penaltyCost)
+    {
+        if (summary == null || stats == null)
+            return;
+
+        if (!summary.PlayerIds.Contains(id))
+            return;
+
+        switch (summary.GameMode)
+        {
+            case GameMode.X01:
+            {
+                GameStatsX01 s = stats as GameStatsX01;
+                if (s == null) return;
+
+                ApplyToTimeRangesFromSummary(summary,
+                    x01TodayStats,
+                    x01WeekStats,
+                    x01MonthStats,
+                    x01YearStats,
+                    s,
+                    penaltyCost);
+
+                break;
+            }
+
+            case GameMode.Cricket:
+            {
+                GameStatsCricket s = stats as GameStatsCricket;
+                if (s == null) return;
+
+                ApplyToTimeRangesFromSummary(summary,
+                    cricketTodayStats,
+                    cricketWeekStats,
+                    cricketMonthStats,
+                    cricketYearStats,
+                    s,
+                    penaltyCost);
+
+                break;
+            }
+
+            case GameMode.ATC:
+            {
+                GameStatsATC s = stats as GameStatsATC;
+                if (s == null) return;
+
+                ApplyToTimeRangesFromSummary(summary,
+                    atcTodayStats,
+                    atcWeekStats,
+                    atcMonthStats,
+                    atcYearStats,
+                    s,
+                    penaltyCost);
+
+                break;
+            }
+        }
+    }
+
+    public void ApplyGameStatsFromSummary(GameSummary summary, GameStats stats, float penaltyCost)
+    {
+        if (summary == null || stats == null)
+            return;
+
+        if (!summary.PlayerIds.Contains(id))
+            return;
+
+        switch (summary.GameMode)
+        {
+            case GameMode.X01:
+            {
+                GameStatsX01 s = stats as GameStatsX01;
+                if (s == null) return;
+
+                GetX01Stats().AddGameStat(s, summary.Id, penaltyCost);
+                ApplyToTimeRangesFromSummary(summary,
+                    x01TodayStats,
+                    x01WeekStats,
+                    x01MonthStats,
+                    x01YearStats,
+                    s,
+                    penaltyCost);
+
+                break;
+            }
+
+            case GameMode.Cricket:
+            {
+                GameStatsCricket s = stats as GameStatsCricket;
+                if (s == null) return;
+
+                GetCricketStats().AddGameStat(s, summary.Id, penaltyCost);
+                ApplyToTimeRangesFromSummary(summary,
+                    cricketTodayStats,
+                    cricketWeekStats,
+                    cricketMonthStats,
+                    cricketYearStats,
+                    s,
+                    penaltyCost);
+
+                break;
+            }
+
+            case GameMode.ATC:
+            {
+                GameStatsATC s = stats as GameStatsATC;
+                if (s == null) return;
+
+                GetATCStats().AddGameStat(s, summary.Id, penaltyCost);
+                ApplyToTimeRangesFromSummary(summary,
+                    atcTodayStats,
+                    atcWeekStats,
+                    atcMonthStats,
+                    atcYearStats,
+                    s,
+                    penaltyCost);
+
+                break;
+            }
+        }
+    }
+
+    public void RemoveGameStatsFromSummary(GameSummary summary, GameStats stats)
+    {
+        if (summary == null || stats == null)
+            return;
+
+        if (!summary.PlayerIds.Contains(id))
+            return;
+
+        switch (summary.GameMode)
+        {
+            case GameMode.X01:
+                GameStatsX01 sx = stats as GameStatsX01;
+                if (sx == null) return;
+
+                GetX01Stats().RemoveGameStat(sx, summary.Id);
+                RemoveFromTimeRangesFromSummary(summary,
+                    x01TodayStats,
+                    x01WeekStats,
+                    x01MonthStats,
+                    x01YearStats,
+                    sx);
+                break;
+
+            case GameMode.Cricket:
+                GameStatsCricket sc = stats as GameStatsCricket;
+                if (sc == null) return;
+
+                GetCricketStats().RemoveGameStat(sc, summary.Id);
+                RemoveFromTimeRangesFromSummary(summary,
+                    cricketTodayStats,
+                    cricketWeekStats,
+                    cricketMonthStats,
+                    cricketYearStats,
+                    sc);
+                break;
+
+            case GameMode.ATC:
+                GameStatsATC sa = stats as GameStatsATC;
+                if (sa == null) return;
+
+                GetATCStats().RemoveGameStat(sa, summary.Id);
+                RemoveFromTimeRangesFromSummary(summary,
+                    atcTodayStats,
+                    atcWeekStats,
+                    atcMonthStats,
+                    atcYearStats,
+                    sa);
+                break;
+        }
+    }
+
     private void ApplyToTimeRanges<T>(
     Game game,
     T today,
@@ -381,6 +555,29 @@ public abstract class BasePlayer
 
         if (IsInRange(game, StatisticsRange.ThisYear))
             year.AddGameStat(stats, game.GetID(), penaltyCost);
+    }
+
+    private void ApplyToTimeRangesFromSummary<T>(
+        GameSummary summary,
+        T today,
+        T week,
+        T month,
+        T year,
+        T stats,
+        float penaltyCost)
+        where T : GameStats
+    {
+        if (IsInRangeFromSummary(summary, StatisticsRange.Today))
+            today.AddGameStat(stats, summary.Id, penaltyCost);
+
+        if (IsInRangeFromSummary(summary, StatisticsRange.ThisWeek))
+            week.AddGameStat(stats, summary.Id, penaltyCost);
+
+        if (IsInRangeFromSummary(summary, StatisticsRange.ThisMonth))
+            month.AddGameStat(stats, summary.Id, penaltyCost);
+
+        if (IsInRangeFromSummary(summary, StatisticsRange.ThisYear))
+            year.AddGameStat(stats, summary.Id, penaltyCost);
     }
 
 
@@ -464,6 +661,28 @@ public abstract class BasePlayer
             year.RemoveGameStat(stats, game.GetID());
     }
 
+    private void RemoveFromTimeRangesFromSummary<T>(
+        GameSummary summary,
+        T today,
+        T week,
+        T month,
+        T year,
+        T stats)
+        where T : GameStats
+    {
+        if (IsInRangeFromSummary(summary, StatisticsRange.Today))
+            today.RemoveGameStat(stats, summary.Id);
+
+        if (IsInRangeFromSummary(summary, StatisticsRange.ThisWeek))
+            week.RemoveGameStat(stats, summary.Id);
+
+        if (IsInRangeFromSummary(summary, StatisticsRange.ThisMonth))
+            month.RemoveGameStat(stats, summary.Id);
+
+        if (IsInRangeFromSummary(summary, StatisticsRange.ThisYear))
+            year.RemoveGameStat(stats, summary.Id);
+    }
+
     // =========================================================
     // DATE FILTERING
     // =========================================================
@@ -505,4 +724,49 @@ public abstract class BasePlayer
                 return false;
         }
     }
+
+    private bool IsInRangeFromSummary(GameSummary summary, StatisticsRange range)
+    {
+        DateTime? gameDateNullable = summary.FinishedAt;
+
+        if (!gameDateNullable.HasValue)
+            return false;
+
+        DateTime gameDate = gameDateNullable.Value;
+        DateTime now = DateTime.Now;
+
+        switch (range)
+        {
+            case StatisticsRange.Today:
+                return gameDate.Date == now.Date;
+
+            case StatisticsRange.ThisWeek:
+            {
+                DateTime monday =
+                    now.Date.AddDays(-(((int)now.DayOfWeek + 6) % 7));
+
+                return gameDate >= monday;
+            }
+
+            case StatisticsRange.ThisMonth:
+                return gameDate.Month == now.Month &&
+                    gameDate.Year == now.Year;
+
+            case StatisticsRange.ThisYear:
+                return gameDate.Year == now.Year;
+
+            case StatisticsRange.AllTime:
+                return true;
+
+            default:
+                return false;
+        }
+    }
+
+    internal void SetSetupStartPosition(int setupStartPosition)
+    {
+        this.setupStartPosition = setupStartPosition;
+    }
+
+    internal int GetSetupStartPosition() => setupStartPosition;
 }

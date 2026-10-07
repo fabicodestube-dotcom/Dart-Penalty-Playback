@@ -625,7 +625,10 @@ public class ATCGame : Game
             .GroupBy(p => p)
             .ToDictionary(g => g.Key, g => g.Count());
 
-        int legsToWin = (GetSettingsAsATC().legCount / 2) + 1;
+        var s = GetSettingsAsATC();
+        int legsToWin = s.setsAndLegsMode == SetsAndLegs.FirstTo
+            ? s.legCount
+            : (s.legCount / 2) + 1;
 
         foreach (var kv in groups)
             if (kv.Value >= legsToWin)

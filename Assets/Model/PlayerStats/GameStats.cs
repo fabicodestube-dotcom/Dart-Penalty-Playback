@@ -69,7 +69,7 @@ public class GameStats
         appliedGameIds.Add(gameId);
         gameCount++;
 
-        gamesWon += stats.gamesWon;
+        gamesWon += Math.Min(stats.gamesWon, 1);
 
         gamePenaltyCosts[gameId] = penaltyCost;
         totalPenaltyCost = gamePenaltyCosts.Values.Sum();

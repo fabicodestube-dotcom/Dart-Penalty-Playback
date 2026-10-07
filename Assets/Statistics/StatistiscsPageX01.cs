@@ -179,8 +179,8 @@ public class StatisticsPageX01 : MonoBehaviour
             var stats = gameStatsX01s[i];
             string key = playerNames[i];
 
-            int participated = stats?.gameCount == 0 ? 0 : stats.gameCount;
-            int won = stats?.gamesWon == 0? 0 : stats.gamesWon;
+            int participated = stats?.gameCount ?? 0;
+            int won = stats?.gamesWon ?? 0;
 
             float pct = participated == 0 ? 0f : (won / (float)participated) * 100f;
 
@@ -315,7 +315,7 @@ public class StatisticsPageX01 : MonoBehaviour
             scoringTable.AddOrUpdateRow(key, key, new TableCellData[]
             {
                 stats?.averagePointsPerTurn.ToString("0.00") ?? "0.00",
-                $"{stats.first9Average : 0.00}",
+                $"{stats?.first9Average ?? 0 : 0.00}",
                 stats?.bestTurnPoints.ToString() ?? "0"
             }, false);
 

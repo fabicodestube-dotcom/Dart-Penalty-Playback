@@ -81,19 +81,22 @@ public class SetupHandler : MonoBehaviour, IUIScreen
 
     private void ApplyStoredSettings()
     {
+        appHandler.ApplyPlayerSetupStartOrderFromFlags();
+
         ApplyX01Settings();
         ApplyCricketSettings();
         ApplyATCSettings();
         ApplySetsAndLegs();
 
-        if (appHandler.GetLastGameMode() == GameMode.X01)
+        var currentMode = ResolveSelectedGameMode();
+        if (currentMode == GameMode.X01)
         {
             topGroup.Init(0);
             x01Panel.SetActive(true);
             cricketPanel.SetActive(false);
             atcPanel.SetActive(false);
         }
-        else if (appHandler.GetLastGameMode() == GameMode.Cricket)
+        else if (currentMode == GameMode.Cricket)
         {
             topGroup.Init(1);
             x01Panel.SetActive(false);
@@ -101,13 +104,39 @@ public class SetupHandler : MonoBehaviour, IUIScreen
             atcPanel.SetActive(false);
         }
 
-        else if (appHandler.GetLastGameMode() == GameMode.ATC)
+        else if (currentMode == GameMode.ATC)
         {
             topGroup.Init(2);
             x01Panel.SetActive(false);
             cricketPanel.SetActive(false);
             atcPanel.SetActive(true);
         }
+        else
+        {
+            topGroup.Init(0);
+            x01Panel.SetActive(true);
+            cricketPanel.SetActive(false);
+            atcPanel.SetActive(false);
+            appHandler.SetLastGameMode(GameMode.X01);
+        }
+    }
+
+    private GameMode ResolveSelectedGameMode()
+    {
+        var storedMode = appHandler.GetLastGameMode();
+        if (storedMode != GameMode.All)
+            return storedMode;
+
+        if (x01Panel != null && x01Panel.activeSelf)
+            return GameMode.X01;
+
+        if (cricketPanel != null && cricketPanel.activeSelf)
+            return GameMode.Cricket;
+
+        if (atcPanel != null && atcPanel.activeSelf)
+            return GameMode.ATC;
+
+        return GameMode.X01;
     }
 
     private void ApplyX01Settings()
@@ -197,6 +226,7 @@ public class SetupHandler : MonoBehaviour, IUIScreen
     {
         x01Settings.pointTarget = points;
         x01PointsLabel.text = points.ToString();
+        appHandler.SetX01Settings(x01Settings);
     }
 
     public void X01SetCheckinTypeStraightIn() => X01SetCheckinType(CheckinType.StraightIn);
@@ -207,6 +237,7 @@ public class SetupHandler : MonoBehaviour, IUIScreen
     {
         x01Settings.checkinType = type;
         x01CheckinLabel.text = type.ToDescription();
+        appHandler.SetX01Settings(x01Settings);
     }
 
     public void X01SetCheckoutTypeSingle() => X01SetCheckoutType(CheckoutType.Single);
@@ -217,6 +248,7 @@ public class SetupHandler : MonoBehaviour, IUIScreen
     {
         x01Settings.checkoutType = type;
         x01CheckoutLabel.text = type.ToString();
+        appHandler.SetX01Settings(x01Settings);
     }
 
  
@@ -232,6 +264,7 @@ public class SetupHandler : MonoBehaviour, IUIScreen
         cricketModeCanvas.interactable = true;
         cricketModeCanvas.blocksRaycasts = true;
         cricketPointsLabel.text = "On";
+        appHandler.SetCricketSettings(cricketSettings);
     }
 
     public void CricketPointsOff()
@@ -241,18 +274,21 @@ public class SetupHandler : MonoBehaviour, IUIScreen
         cricketModeCanvas.interactable = false;
         cricketModeCanvas.blocksRaycasts = false;
         cricketPointsLabel.text = "Off";
+        appHandler.SetCricketSettings(cricketSettings);
     }
 
     public void CricketModeNormal()
     {
         cricketSettings.cutThroatEnabled = false;
         cricketModeLabel.text = "Normal";
+        appHandler.SetCricketSettings(cricketSettings);
     }
 
     public void CricketModeCutThroat()
     {
         cricketSettings.cutThroatEnabled = true;
         cricketModeLabel.text = "Cutthroat";
+        appHandler.SetCricketSettings(cricketSettings);
     }
 
 
@@ -264,44 +300,52 @@ public class SetupHandler : MonoBehaviour, IUIScreen
     {
         atcSettings.targetType = ATCTargetType.Singles;
         atcTargetLabel.text = "Singles";
+        appHandler.SetATCSettings(atcSettings);
     }
     public void ATCTargetDoubles(){
         atcSettings.targetType = ATCTargetType.Doubles;
         atcTargetLabel.text = "Doubles";
+        appHandler.SetATCSettings(atcSettings);
     }
     public void ATCTargetTriples()
     {
         atcSettings.targetType = ATCTargetType.Triples;
         atcTargetLabel.text = "Triples";
+        appHandler.SetATCSettings(atcSettings);
     }
 
     public void ATCOrderAscending()
     {
         atcSettings.order = ATCOrder.Ascending;
         atcOrderLabel.text = "Ascending";
+        appHandler.SetATCSettings(atcSettings);
     }
     // keep spelling as requested for button binding
     public void ATCOrderDecending()
     {
         atcSettings.order = ATCOrder.Descending;
         atcOrderLabel.text = "Descending";
+        appHandler.SetATCSettings(atcSettings);
     }
     public void ATCOrderRight()
     {
         atcSettings.order = ATCOrder.Right;
         atcOrderLabel.text = "Right";
+        appHandler.SetATCSettings(atcSettings);
     }
 
     public void ATCOrderLeft()
     {
         atcSettings.order = ATCOrder.Left;
         atcOrderLabel.text = "Left";
+        appHandler.SetATCSettings(atcSettings);
     }
 
     public void ATCOrderRandom()
     {
         atcSettings.order = ATCOrder.Random;
         atcOrderLabel.text = "Random";
+        appHandler.SetATCSettings(atcSettings);
     }
 
 
@@ -312,6 +356,7 @@ public class SetupHandler : MonoBehaviour, IUIScreen
         // Bei FirstTo auch gerade Werte erlauben
         setsScrollView.ShowEvenButtons(true);
         legsScrollView.ShowEvenButtons(true);
+        appHandler.SetSetupState(appHandler.GetLastGameMode(), setsAndLegsMode, setCount, legCount);
     }
 
     public void SetSetsAndLegsModeBestOf()
@@ -326,6 +371,7 @@ public class SetupHandler : MonoBehaviour, IUIScreen
 
         setsScrollView.ShowEvenButtons(false);
         legsScrollView.ShowEvenButtons(false);
+        appHandler.SetSetupState(appHandler.GetLastGameMode(), setsAndLegsMode, setCount, legCount);
     }
 
     public void SetSetCount(int count)
@@ -337,6 +383,7 @@ public class SetupHandler : MonoBehaviour, IUIScreen
 
         setCount = count;
         setCountLabel.text = count.ToString();
+        appHandler.SetSetupState(appHandler.GetLastGameMode(), setsAndLegsMode, setCount, legCount);
     }
 
     public void SetLegCount(int count)
@@ -348,6 +395,7 @@ public class SetupHandler : MonoBehaviour, IUIScreen
 
         legCount = count;
         legCountLabel.text = count.ToString();
+        appHandler.SetSetupState(appHandler.GetLastGameMode(), setsAndLegsMode, setCount, legCount);
     }
 
     public void AddBot()
@@ -392,7 +440,8 @@ public class SetupHandler : MonoBehaviour, IUIScreen
             EnsureEngineReferences();
             CheckForShuffeling();
 
-            GameMode gameMode = appHandler.GetLastGameMode();
+            GameMode gameMode = ResolveSelectedGameMode();
+            appHandler.SetLastGameMode(gameMode);
 
             if (gameMode == GameMode.X01)
             {
@@ -428,6 +477,17 @@ public class SetupHandler : MonoBehaviour, IUIScreen
                 //settingsCopy.Print();
                 windowHandler.GoTo(ScreenId.ATCGame);
                 atcGameEngine.StartGame(game);
+            }
+            else
+            {
+                appHandler.SetLastGameMode(GameMode.X01);
+                X01GameSettings settingsCopy = (X01GameSettings)x01Settings.Clone();
+                settingsCopy.setsAndLegsMode = setsAndLegsMode;
+                settingsCopy.setCount = setCount;
+                settingsCopy.legCount = legCount;
+                X01Game game = appHandler.PrepareX01Game(settingsCopy);
+                windowHandler.GoTo(ScreenId.X01Game);
+                x01GameEngine.StartGame(game);
             }
         }
     }

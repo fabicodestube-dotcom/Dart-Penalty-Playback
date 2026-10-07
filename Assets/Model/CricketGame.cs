@@ -445,7 +445,9 @@ public class CricketGame : Game
             .GroupBy(p => p)
             .ToDictionary(g => g.Key, g => g.Count());
 
-        int legsToWin = (GetSettingsAsCricket().legCount / 2) + 1;
+        int legsToWin = GetSettingsAsCricket().setsAndLegsMode == SetsAndLegs.FirstTo
+            ? GetSettingsAsCricket().legCount
+            : (GetSettingsAsCricket().legCount / 2) + 1;
         foreach (var kv in groups)
             if (kv.Value >= legsToWin)
                 return kv.Key;

@@ -1,5 +1,6 @@
 using TMPro;
 using UnityEngine;
+using Newtonsoft.Json;
 
 public class HistoryItemHeadline : MonoBehaviour
 {
@@ -18,13 +19,13 @@ public class HistoryItemHeadline : MonoBehaviour
     public TMP_Text textPenaltySchnapszahl;
     public TMP_Text textPenaltyLose;
 
-    public void Initialize (Game g)
+    public void Initialize(GameSummary summary)
     {
-        var finishedAt = g.GetFinishedAt();
+        var finishedAt = summary.FinishedAt;
 
         textDate.text = finishedAt.HasValue
             ? finishedAt.Value.ToString("dd.MM.yyyy HH:mm")
-            : g.GetLastActivityAt().ToString("dd.MM.yyyy HH:mm");
+            : summary.LastActivityAt.ToString("dd.MM.yyyy HH:mm");
 
         if (finishedAt.HasValue)
         {
@@ -37,33 +38,97 @@ public class HistoryItemHeadline : MonoBehaviour
             textGameStatusRunning.SetActive(true);
         }
 
-        if (g is X01Game)
+        if (summary.GameMode == GameMode.X01)
         {
-            textSettings.text = "X01 (" + g.GetSettings().GetString() + ")";
+            textSettings.text = "X01 (" + GetSettingsString(summary) + ")";
         }
-        else if (g is CricketGame)
+        else if (summary.GameMode == GameMode.Cricket)
         {
-            textSettings.text = "Cricket (" + g.GetSettings().GetString() + ")";
+            textSettings.text = "Cricket (" + GetSettingsString(summary) + ")";
         }
-        else if (g is ATCGame)
+        else if (summary.GameMode == GameMode.ATC)
         {
-            textSettings.text = "ATC (" + g.GetSettings().GetString() + ")";
+            textSettings.text = "ATC (" + GetSettingsString(summary) + ")";
         }
 
-        RenderPenalties(g);
+        RenderPenalties(summary);
     }
 
-    private void RenderPenalties(Game g)
+    private string GetSettingsString(GameSummary summary)
     {
-        var settings = g.GetSettings();
+        var settings = GetSettings(summary);
+        return settings?.GetString() ?? "";
+    }
+
+    private void RenderPenalties(GameSummary summary)
+    {
+        var settings = GetSettings(summary);
 
         if (settings == null)
         {
-            Debug.LogWarning(" No settings found for game ID " + g.GetID());
+            Debug.LogWarning(" No settings found for game ID " + summary.Id);
             return;
         }
 
         SetupPenaltyCosts(settings);
+    }
+
+    private GameSettings GetSettings(GameSummary summary)
+    {
+        if (!string.IsNullOrEmpty(summary.SettingsJson))
+        {
+            try
+            {
+                GameSettings settings = summary.GameMode switch
+                {
+                    GameMode.X01 => JsonConvert.DeserializeObject<X01GameSettings>(summary.SettingsJson),
+                    GameMode.Cricket => JsonConvert.DeserializeObject<CricketGameSettings>(summary.SettingsJson),
+                    GameMode.ATC => JsonConvert.DeserializeObject<ATCGameSettings>(summary.SettingsJson),
+                    _ => null
+                };
+                if (settings != null)
+                    return settings;
+            }
+            catch
+            {
+            }
+        }
+
+        return summary.GameMode switch
+        {
+            GameMode.X01 => new X01GameSettings
+            {
+                pointTarget = 501,
+                checkinType = CheckinType.StraightIn,
+                checkoutType = CheckoutType.Double,
+                setsAndLegsMode = SetsAndLegs.BestOf,
+                setCount = 1,
+                legCount = 1,
+                soundEnabled = true,
+                Penalties = new PenaltySettings()
+            },
+            GameMode.Cricket => new CricketGameSettings
+            {
+                pointsEnabled = true,
+                cutThroatEnabled = false,
+                setsAndLegsMode = SetsAndLegs.BestOf,
+                setCount = 1,
+                legCount = 1,
+                soundEnabled = true,
+                Penalties = new PenaltySettings()
+            },
+            GameMode.ATC => new ATCGameSettings
+            {
+                targetType = ATCTargetType.Singles,
+                order = ATCOrder.Ascending,
+                setsAndLegsMode = SetsAndLegs.BestOf,
+                setCount = 1,
+                legCount = 1,
+                soundEnabled = true,
+                Penalties = new PenaltySettings()
+            },
+            _ => null
+        };
     }
 
     private void SetupPenaltyCosts(GameSettings settings)

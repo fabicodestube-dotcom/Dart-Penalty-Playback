@@ -1,7 +1,9 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using Newtonsoft.Json;
 
 public abstract class GameEngine : MonoBehaviour
 {
@@ -31,12 +33,15 @@ public abstract class GameEngine : MonoBehaviour
 
     public virtual void LoadGame(Game game)
     {
+        Debug.Log("[GameEngine] LoadGame: " + game.GetID());
         if (game == null)
             return;
 
         game.InitializeAfterLoad();
 
         InitializeGame(game);
+
+        Debug.Log("[GameEngine] Settings: " + game.GetSettings().GetString());
     }
 
     protected virtual void InitializeGame(Game game)
@@ -142,8 +147,62 @@ public abstract class GameEngine : MonoBehaviour
 
         game.CalculatePlayerStatsOnSave();
 
-        summary.ShowSummary(game);
+        var summaryObj = CreateGameSummaryFromGame(game);
+        appHandler.SaveGame(game);
+        summary.ShowSummary(summaryObj);
         windowHandler.GoTo(ScreenId.Summary);
+    }
+
+    protected GameSummary CreateGameSummaryFromGame(Game game)
+    {
+        var summary = new GameSummary
+        {
+            Id = game.GetID(),
+            GameMode = game.GetGameMode(),
+            CreatedAt = game.GetCreatedAt(),
+            LastActivityAt = game.GetLastActivityAt(),
+            FinishedAt = game.GetFinishedAt(),
+            CurrentPlayerIndex = game.GetPlayerIDs().IndexOf(game.GetCurrentPlayerId()),
+            StartingPlayerIndex = 0,
+            WinnerPlayerId = game.GetMatchWinnerId(),
+            PlayerIds = new List<Guid>(game.GetPlayerIDs()),
+            SettingsJson = Newtonsoft.Json.JsonConvert.SerializeObject(game.GetSettings())
+        };
+
+        var stats = game.GetPlayerStats();
+        foreach (var pid in game.GetPlayerIDs())
+        {
+            stats.TryGetValue(pid, out var ps);
+            var entry = new PlayerSummaryEntry
+            {
+                PlayerId = pid,
+                Score = GetScoreForPlayer(game, pid),
+                SetsWon = game.GetWonSets(pid),
+                LegsWon = game.IsFinished() ? 0 : game.GetWonLegs(pid),
+                TargetsHit = game is ATCGame atc ? atc.GetTargetsHit(pid) : 0,
+                TotalTargets = game is ATCGame atc2 ? atc2.GetTotalTargets() : 0,
+                WallCount = ps?.wallCount ?? 0,
+                CeilingCount = ps?.ceilingCount ?? 0,
+                AllMissCount = ps?.allMissCount ?? 0,
+                ThreeOnesCount = ps?.tripleOnesCount ?? 0,
+                TripleDigitCount = ps?.tripleDigitCount ?? 0,
+                LostGameCount = ps?.lostGame ?? 0
+            };
+            summary.PlayerEntries.Add(entry);
+        }
+
+        return summary;
+    }
+
+    private int GetScoreForPlayer(Game game, Guid pid)
+    {
+        return game switch
+        {
+            X01Game x01 => x01.GetScore(pid),
+            CricketGame cricket => cricket.GetScore(pid),
+            ATCGame atc => atc.GetTargetsHit(pid),
+            _ => 0
+        };
     }
 
     protected void ShowPausePanel()

@@ -7,12 +7,17 @@ using UnityEngine;
 [System.Serializable]
 public class AppSettings
 {
+    [JsonProperty] public LanguageSaveData Language = new LanguageSaveData();
     [JsonProperty] public ThemeColorScheme Theme = ThemeColorScheme.Green;
-
     [JsonProperty] public SoundSettings Sound = new SoundSettings();
     [JsonProperty] public VibrationSettings Vibration = new VibrationSettings();
-
     [JsonProperty] public PenaltySettings Penalties = new PenaltySettings();
+}
+
+[System.Serializable]
+public class LanguageSaveData
+{
+    public string lastLocaleCode = "en"; 
 }
 
 [System.Serializable]

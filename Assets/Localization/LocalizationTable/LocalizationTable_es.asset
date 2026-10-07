@@ -1,0 +1,550 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9620f8c34305754d8cc9a7e49e852d9, type: 3}
+  m_Name: LocalizationTable_es
+  m_EditorClassIdentifier: Unity.Localization::UnityEngine.Localization.Tables.StringTable
+  m_LocaleId:
+    m_Code: es
+  m_SharedData: {fileID: 11400000, guid: 69cc5fdb8958e6e33a772797f9dc50e8, type: 2}
+  m_Metadata:
+    m_Items: []
+  m_TableData:
+  - m_Id: 1
+    m_Localized: "30 d\xEDas"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2
+    m_Localized: "365 d\xEDas"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3
+    m_Localized: "7 d\xEDas"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4
+    m_Localized: Abortar juego
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5
+    m_Localized: "El juego a\xFAn no ha terminado. \xBFTe gustar\xEDa guardar el
+      juego para continuarlo m\xE1s tarde, o prefieres abortarlo?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 6
+    m_Localized: Acerca de
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7
+    m_Localized: "Vibraci\xF3n activa"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8
+    m_Localized: "Determina si debe producirse una respuesta h\xE1ptica al introducir
+      datos"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9
+    m_Localized: "A\xF1adir bot"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10
+    m_Localized: Todo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 11
+    m_Localized: Ascendente
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12
+    m_Localized: Audio
+    m_Metadata:
+      m_Items: []
+  - m_Id: 13
+    m_Localized: Azul
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14
+    m_Localized: Bronce
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15
+    m_Localized: Bust
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16
+    m_Localized: Cancelar
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17
+    m_Localized: Techo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18
+    m_Localized: "Impacto en el techo, que se puede introducir haciendo clic en un
+      bot\xF3n en lugar de un dardo de 0"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 19
+    m_Localized: Clips
+    m_Metadata:
+      m_Items: []
+  - m_Id: 20
+    m_Localized: Confirmar
+    m_Metadata:
+      m_Items: []
+  - m_Id: 21
+    m_Localized: Costos
+    m_Metadata:
+      m_Items: []
+  - m_Id: 22
+    m_Localized: Navegador de clips personalizados
+    m_Metadata:
+      m_Items: []
+  - m_Id: 23
+    m_Localized: Clips personalizados
+    m_Metadata:
+      m_Items: []
+  - m_Id: 24
+    m_Localized: Sonido personalizado
+    m_Metadata:
+      m_Items: []
+  - m_Id: 25
+    m_Localized: Los sonidos personalizados son sonidos grabados por el usuario;
+      de lo contrario, se utiliza el paquete predeterminado
+    m_Metadata:
+      m_Items: []
+  - m_Id: 26
+    m_Localized: Cian
+    m_Metadata:
+      m_Items: []
+  - m_Id: 27
+    m_Localized: Eliminar todos los juegos
+    m_Metadata:
+      m_Items: []
+  - m_Id: 28
+    m_Localized: "\xBFEst\xE1s seguro de que deseas eliminar todos los juegos grabados?
+      \xA1Esta acci\xF3n no se puede deshacer!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 29
+    m_Localized: Eliminar juegos de Around the Clock
+    m_Metadata:
+      m_Items: []
+  - m_Id: 30
+    m_Localized: "\xBFEst\xE1s seguro de que deseas eliminar todos los juegos de
+      Around the Clock? \xA1Esta acci\xF3n no se puede deshacer!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 31
+    m_Localized: Eliminar clip
+    m_Metadata:
+      m_Items: []
+  - m_Id: 32
+    m_Localized: "\xBFEst\xE1s seguro de que deseas eliminar el clip que se muestra
+      actualmente? \xA1Esta acci\xF3n no se puede deshacer!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33
+    m_Localized: Eliminar juegos de Cricket
+    m_Metadata:
+      m_Items: []
+  - m_Id: 34
+    m_Localized: "\xBFEst\xE1s seguro de que deseas eliminar todos los juegos de
+      Cricket? \xA1Esta acci\xF3n no se puede deshacer!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 35
+    m_Localized: Eliminar jugador
+    m_Metadata:
+      m_Items: []
+  - m_Id: 36
+    m_Localized: "\xBFEst\xE1s seguro de que deseas eliminar al jugador {name}? \xA1Esta
+      acci\xF3n no se puede deshacer!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 37
+    m_Localized: Eliminar juegos de X01
+    m_Metadata:
+      m_Items: []
+  - m_Id: 38
+    m_Localized: "\xBFEst\xE1s seguro de que deseas eliminar todos los juegos de
+      X01? \xA1Esta acci\xF3n no se puede deshacer!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 39
+    m_Localized: Descendente
+    m_Metadata:
+      m_Items: []
+  - m_Id: 40
+    m_Localized: No guardar
+    m_Metadata:
+      m_Items: []
+  - m_Id: 41
+    m_Localized: "F\xE1cil"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 42
+    m_Localized: Filtrar por jugadores
+    m_Metadata:
+      m_Items: []
+  - m_Id: 43
+    m_Localized: Terminado
+    m_Metadata:
+      m_Items: []
+  - m_Id: 44
+    m_Localized: "Juego no guardado a\xFAn"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 45
+    m_Localized: "El juego a\xFAn no se ha guardado. \xBFTe gustar\xEDa guardarlo
+      ahora?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 46
+    m_Localized: Fin del juego
+    m_Metadata:
+      m_Items: []
+  - m_Id: 47
+    m_Localized: Iniciar juego
+    m_Metadata:
+      m_Items: []
+  - m_Id: 48
+    m_Localized: Oro
+    m_Metadata:
+      m_Items: []
+  - m_Id: 49
+    m_Localized: Verde
+    m_Metadata:
+      m_Items: []
+  - m_Id: 50
+    m_Localized: "Dif\xEDcil"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 51
+    m_Localized: "Puntajes m\xE1ximos"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 52
+    m_Localized: Historial
+    m_Metadata:
+      m_Items: []
+  - m_Id: 53
+    m_Localized: Aciertos
+    m_Metadata:
+      m_Items: []
+  - m_Id: 54
+    m_Localized: Inicio
+    m_Metadata:
+      m_Items: []
+  - m_Id: 55
+    m_Localized: En progreso
+    m_Metadata:
+      m_Items: []
+  - m_Id: 56
+    m_Localized: Jugadores inactivos
+    m_Metadata:
+      m_Items: []
+  - m_Id: 57
+    m_Localized: Intensidad
+    m_Metadata:
+      m_Items: []
+  - m_Id: 58
+    m_Localized: Derrota
+    m_Metadata:
+      m_Items: []
+  - m_Id: 59
+    m_Localized: "Penalizaci\xF3n por participar en un juego sin resultar ganador"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 60
+    m_Localized: "N\xFAmero de la suerte"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 61
+    m_Localized: "Penalizaci\xF3n si alcanzas una puntuaci\xF3n que sea un n\xFAmero
+      de d\xEDgitos repetidos (por ejemplo, 111, 222, etc.)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 62
+    m_Localized: Marcar todo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 63
+    m_Localized: Marcas
+    m_Metadata:
+      m_Items: []
+  - m_Id: 64
+    m_Localized: Marcas por ronda
+    m_Metadata:
+      m_Items: []
+  - m_Id: 65
+    m_Localized: Medio
+    m_Metadata:
+      m_Items: []
+  - m_Id: 66
+    m_Localized: Modo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 67
+    m_Localized: Nuevo jugador
+    m_Metadata:
+      m_Items: []
+  - m_Id: 68
+    m_Localized: "El nombre es demasiado corto (m\xEDn. 2 caracteres)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 69
+    m_Localized: Sin impacto en la diana
+    m_Metadata:
+      m_Items: []
+  - m_Id: 70
+    m_Localized: "Penalizaci\xF3n si dardos impactan en la pared o el techo"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 71
+    m_Localized: No hay clips grabados
+    m_Metadata:
+      m_Items: []
+  - m_Id: 72
+    m_Localized: No hay juegos disponibles
+    m_Metadata:
+      m_Items: []
+  - m_Id: 73
+    m_Localized: "No se han a\xF1adido jugadores"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 74
+    m_Localized: "A\xFAn no se han a\xF1adido jugadores a la lista de participantes.
+      \xA1Se debe asignar al menos un jugador!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 75
+    m_Localized: Aceptar
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76
+    m_Localized: Opciones
+    m_Metadata:
+      m_Items: []
+  - m_Id: 77
+    m_Localized: Orden
+    m_Metadata:
+      m_Items: []
+  - m_Id: 78
+    m_Localized: Participantes
+    m_Metadata:
+      m_Items: []
+  - m_Id: 79
+    m_Localized: Penalizaciones
+    m_Metadata:
+      m_Items: []
+  - m_Id: 80
+    m_Localized: "Clips de penalizaci\xF3n"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81
+    m_Localized: Reproducir sonido
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82
+    m_Localized: "Determina si se deben usar sonidos dentro de la aplicaci\xF3n (por
+      ejemplo, anuncios de puntuaci\xF3n en X01)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 83
+    m_Localized: Jugadores
+    m_Metadata:
+      m_Items: []
+  - m_Id: 84
+    m_Localized: Puntos
+    m_Metadata:
+      m_Items: []
+  - m_Id: 85
+    m_Localized: Preferencias
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86
+    m_Localized: Pro
+    m_Metadata:
+      m_Items: []
+  - m_Id: 87
+    m_Localized: Aleatorio
+    m_Metadata:
+      m_Items: []
+  - m_Id: 88
+    m_Localized: Orden aleatorio
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89
+    m_Localized: Grabador
+    m_Metadata:
+      m_Items: []
+  - m_Id: 90
+    m_Localized: Rojo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 91
+    m_Localized: Renombrar jugador {name}
+    m_Metadata:
+      m_Items: []
+  - m_Id: 92
+    m_Localized: Guardar
+    m_Metadata:
+      m_Items: []
+  - m_Id: 93
+    m_Localized: Guardar juego
+    m_Metadata:
+      m_Items: []
+  - m_Id: 94
+    m_Localized: "Clips de puntuaci\xF3n"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95
+    m_Localized: "Anotaci\xF3n"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 96
+    m_Localized: Compartir
+    m_Metadata:
+      m_Items: []
+  - m_Id: 97
+    m_Localized: "\xA1Mira mi nueva aplicaci\xF3n de dardos que encontr\xE9 en GitHub!
+      https://github.com/fabicodestube-dotcom/Dart-Penalty-Playback/"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 98
+    m_Localized: Clips especiales
+    m_Metadata:
+      m_Items: []
+  - m_Id: 99
+    m_Localized: "Estad\xEDsticas"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 100
+    m_Localized: Fuerte
+    m_Metadata:
+      m_Items: []
+  - m_Id: 101
+    m_Localized: "Muerte s\xFAbita"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 102
+    m_Localized: Suma
+    m_Metadata:
+      m_Items: []
+  - m_Id: 103
+    m_Localized: Apoyar
+    m_Metadata:
+      m_Items: []
+  - m_Id: 104
+    m_Localized: "Si deseas apoyar la aplicaci\xF3n, si\xE9ntete libre de donar a
+      trav\xE9s de una de las siguientes opciones."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 105
+    m_Localized: Objetivos
+    m_Metadata:
+      m_Items: []
+  - m_Id: 106
+    m_Localized: Tema
+    m_Metadata:
+      m_Items: []
+  - m_Id: 107
+    m_Localized: Tres unos
+    m_Metadata:
+      m_Items: []
+  - m_Id: 108
+    m_Localized: "Penalizaci\xF3n si aciertas en el sector de la 1 tres veces seguidas
+      con 3 dardos (el multiplicador no importa)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 109
+    m_Localized: Lanzamientos
+    m_Metadata:
+      m_Items: []
+  - m_Id: 110
+    m_Localized: Hoy
+    m_Metadata:
+      m_Items: []
+  - m_Id: 111
+    m_Localized: Recortar silencio
+    m_Metadata:
+      m_Items: []
+  - m_Id: 112
+    m_Localized: Deshacer
+    m_Metadata:
+      m_Items: []
+  - m_Id: 113
+    m_Localized: Desmarcar todo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 114
+    m_Localized: "Vibraci\xF3n"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 115
+    m_Localized: Volumen
+    m_Metadata:
+      m_Items: []
+  - m_Id: 116
+    m_Localized: Pared
+    m_Metadata:
+      m_Items: []
+  - m_Id: 117
+    m_Localized: "Impacto en la pared, que se puede introducir haciendo clic en un
+      bot\xF3n en lugar de un dardo de 0"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 118
+    m_Localized: "D\xE9bil"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 705069411422208
+    m_Localized: Impacto
+    m_Metadata:
+      m_Items: []
+  - m_Id: 705069428199424
+    m_Localized: Fallo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 705069428199425
+    m_Localized: Resumen
+    m_Metadata:
+      m_Items: []
+  - m_Id: 710215969230848
+    m_Localized: "\xBFRealmente quieres borrar el juego mostrado? \xA1Esto nicht
+      se puede deshacer!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 710510380011520
+    m_Localized: Ajustes
+    m_Metadata:
+      m_Items: []
+  - m_Id: 722577082241024
+    m_Localized: Aplicar
+    m_Metadata:
+      m_Items: []
+  - m_Id: 723894773174272
+    m_Localized: No hay juegos X01 disponibles
+    m_Metadata:
+      m_Items: []
+  - m_Id: 723894777368576
+    m_Localized: No hay juegos de Cricket disponibles
+    m_Metadata:
+      m_Items: []
+  - m_Id: 723894777368577
+    m_Localized: No hay juegos Around the Clock disponibles
+    m_Metadata:
+      m_Items: []
+  references:
+    version: 2
+    RefIds: []

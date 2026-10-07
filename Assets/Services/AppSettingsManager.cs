@@ -1,6 +1,9 @@
 using System.IO;
 using UnityEngine;
 using Newtonsoft.Json;
+using System.Collections;
+using UnityEngine.Localization.Settings;
+using UnityEngine.Localization;
 
 public class AppSettingsManager : MonoBehaviour
 {
@@ -8,7 +11,8 @@ public class AppSettingsManager : MonoBehaviour
 
     public AppSettings Settings { get; private set; }
 
-    private string filePath;
+    private string legacyFilePath;
+    private bool isChangingLanguage = false;
 
     private void Awake()
     {
@@ -22,7 +26,7 @@ public class AppSettingsManager : MonoBehaviour
         Instance = this;
         DontDestroyOnLoad(gameObject);
 
-        filePath = Path.Combine(Application.persistentDataPath, "appsettings.json");
+        legacyFilePath = Path.Combine(Application.persistentDataPath, "appsettings.json");
 
         Load();
     }
@@ -32,34 +36,41 @@ public class AppSettingsManager : MonoBehaviour
     // =========================================================
     public void Load()
     {
-        if (!File.Exists(filePath))
+        try
         {
-            Debug.Log("[Settings] No settings file found -> create defaults");
-            CreateDefaultSettings();
-            Save();
-
-            ApplyLoadedSettings(); // 🔥 wichtig
+            Settings = SqliteDatabaseService.LoadSettings();
+            Debug.Log("[Settings] Loaded from SQLite");
+            EnsureDefaults();
+            ApplyLoadedSettings();
             return;
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogWarning($"[Settings] SQLite load failed: {e.Message}. Falling back to legacy JSON migration.");
         }
 
         try
         {
-            string json = File.ReadAllText(filePath);
-            Settings = JsonConvert.DeserializeObject<AppSettings>(json);
-
-            Debug.Log("[Settings] Loaded from file");
-
-            EnsureDefaults();
-
-            ApplyLoadedSettings(); // 🔥 wichtig
+            if (File.Exists(legacyFilePath))
+            {
+                string json = File.ReadAllText(legacyFilePath);
+                Settings = JsonConvert.DeserializeObject<AppSettings>(json) ?? new AppSettings();
+                EnsureDefaults();
+                Save();
+                Debug.Log("[Settings] Migrated legacy JSON settings into SQLite");
+                ApplyLoadedSettings();
+                return;
+            }
         }
-        catch (System.Exception e)
+        catch (System.Exception legacyException)
         {
-            Debug.LogError($"[Settings] Load failed: {e.Message}");
-            CreateDefaultSettings();
-
-            ApplyLoadedSettings(); // 🔥 wichtig
+            Debug.LogError($"[Settings] Legacy JSON migration failed: {legacyException.Message}");
         }
+
+        Debug.Log("[Settings] No settings found -> create defaults");
+        CreateDefaultSettings();
+        Save();
+        ApplyLoadedSettings();
     }
 
     // =========================================================
@@ -69,13 +80,47 @@ public class AppSettingsManager : MonoBehaviour
     {
         try
         {
-            string json = JsonConvert.SerializeObject(Settings, Formatting.Indented);
-            File.WriteAllText(filePath, json);
+            SqliteDatabaseService.SaveSettings(Settings);
+            Debug.Log("[Settings] Saved to SQLite");
         }
         catch (System.Exception e)
         {
             Debug.LogError($"[Settings] Save failed: {e.Message}");
         }
+    }
+
+    // =========================
+    // LANGUAGE SETTINGS
+    // =========================
+
+    public void SetLanguage(string localeCode)
+    {
+        StartCoroutine(ChangeLocaleCoroutine(localeCode));
+    }
+
+    private IEnumerator ChangeLocaleCoroutine(string localeCode)
+    {
+        isChangingLanguage = true;
+        
+        // Wait for system initialization to complete before changing the locale
+        yield return LocalizationSettings.InitializationOperation;
+
+        // Find the target locale based on the provided locale code
+        Locale targetLocale = LocalizationSettings.AvailableLocales.Locales.Find(
+            locale => locale.Identifier.Code == localeCode
+        );
+
+        if (targetLocale != null)
+        {
+            LocalizationSettings.SelectedLocale = targetLocale;
+            Debug.Log($"Language successfully changed to: {localeCode}");
+        }
+        else
+        {
+            Debug.LogWarning($"Language code '{localeCode}' was not found in the available locales!");
+        }
+
+        isChangingLanguage = false;
     }
 
     // =========================
@@ -234,10 +279,30 @@ public class AppSettingsManager : MonoBehaviour
     {
         if (Settings == null)
             return;
-            
-        // 🎨 Theme anwenden
+        
+        // Start a coroutine to wait for the localization system before applying the language
+        StartCoroutine(InitializeLanguageRoutine());
+
+        // 🎨 Apply theme (themes can usually be applied instantly)
         ThemeManager.Instance.Initialize(Settings.Theme);
     }
+
+
+    private IEnumerator InitializeLanguageRoutine()
+    {
+        // Wait until Unity's localization system is fully initialized
+        yield return UnityEngine.Localization.Settings.LocalizationSettings.InitializationOperation;
+
+        // If the file was newly created, this contains "en", otherwise the saved code
+        string codeToLoad = Settings.Language.lastLocaleCode;
+        
+        Debug.Log($"[Settings] Localization ready. Applying saved locale: {codeToLoad}");
+
+        // Calls your coroutine/method to trigger the language switch in Unity
+        SetLanguage(codeToLoad); 
+    }
+
+
 
 
     private void OnApplicationPause(bool paused)

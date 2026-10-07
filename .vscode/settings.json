@@ -68,7 +68,6 @@
         "*.slnx": "*.csproj"
     },
     "dotnet.defaultSolution": "Darts.slnx",
-
     "cline.provider": "ollama",
     "cline.ollamaModel": "deepseek-coder:6.7b",
     "cline.ollamaBaseUrl": "http://localhost:11434",

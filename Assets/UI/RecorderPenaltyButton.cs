@@ -27,22 +27,22 @@ public class RecorderPenaltyButton : MonoBehaviour
         switch (penaltyType)
         {
             case PenaltyType.Wall:
-                staticText.text = "Wand";
+                staticText.text = "Wall";
                 break;
             case PenaltyType.Ceiling:
-                staticText.text = "Decke";
+                staticText.text = "Ceiling";
                 break;
             case PenaltyType.AllMiss:
-                staticText.text = "3xMiss";
+                staticText.text = "No board hit";
                 break;
             case PenaltyType.ThreeOnes:
-                staticText.text = "3x1";
+                staticText.text = "Three Ones";
                 break;
             case PenaltyType.Schnapszahl:
-                staticText.text = "Schnapszahl";
+                staticText.text = "Lucky number";
                 break;
             case PenaltyType.LostGame:
-                staticText.text = "LostGame";
+                staticText.text = "Lose";
                 break;
         }
     }

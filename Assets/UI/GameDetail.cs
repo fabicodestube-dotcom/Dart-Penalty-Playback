@@ -4,6 +4,7 @@ using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using Newtonsoft.Json;
 
 public class GameDetail : UIScreen, IUIScreen
 {
@@ -38,11 +39,11 @@ public class GameDetail : UIScreen, IUIScreen
     public GameObject buttonContinue;
     public GameObject buttonDelete;
 
-    private Game game;
+    private GameSummary gameSummary;
+    private Dictionary<Guid, GameStats> playerStats;
     private readonly Dictionary<string, TableView> cachedTables = new Dictionary<string, TableView>();
     private readonly List<HitSectorChart> x01HitSectorCharts = new List<HitSectorChart>();
     private GameObject x01HitSectorHeadline;
-    
 
     private void Awake()
     {
@@ -51,37 +52,59 @@ public class GameDetail : UIScreen, IUIScreen
 
     public void OnShow()
     {
-        game = appHandler.GetSelectedGame();
-
-        if (game == null)
+        var selectedGame = appHandler.GetSelectedGame();
+        if (selectedGame != null)
         {
-            Debug.LogError("GameDetail: no selected game");
+            gameSummary = appHandler.GetGameSummary(selectedGame.GetID());
+        }
+        else
+        {
+            gameSummary = appHandler.GetGameSummary(appHandler.GetLastClickedGameId());
+        }
+
+        if (gameSummary == null)
+        {
+            Debug.LogError("GameDetail: no game summary found");
             return;
         }
+
+        playerStats = LoadPlayerStatsForGame(gameSummary.Id);
 
         if (buttonDelete != null)
             buttonDelete.SetActive(true);
 
         if (buttonContinue != null)
-            buttonContinue.SetActive(game != null && !game.IsFinished());
+            buttonContinue.SetActive(gameSummary != null && !gameSummary.IsFinished);
 
         if (historyItemHeadline != null)
-            historyItemHeadline.Initialize(game);
+            historyItemHeadline.Initialize(gameSummary);
 
         HideAllCachedSections();
 
-        if (game.GetGameMode() == GameMode.X01)
+        if (gameSummary.GameMode == GameMode.X01)
             PopulateX01Details();
-        else if (game.GetGameMode() == GameMode.Cricket)
+        else if (gameSummary.GameMode == GameMode.Cricket)
             PopulateCricketDetails();
-        else if (game.GetGameMode() == GameMode.ATC)
+        else if (gameSummary.GameMode == GameMode.ATC)
             PopulateATCDetails();
 
-        // Ensure buttons are at the bottom of the scroll content
         if (buttonContinue != null)
             buttonContinue.transform.SetAsLastSibling();
         if (buttonDelete != null)
             buttonDelete.transform.SetAsLastSibling();
+    }
+
+    private Guid GetLastClickedGameId()
+    {
+        return Guid.Empty;
+    }
+
+    private Dictionary<Guid, GameStats> LoadPlayerStatsForGame(Guid gameId)
+    {
+        var allStats = SqliteDatabaseRepository.LoadAllPlayerGameStats();
+        if (allStats.TryGetValue(gameId, out var stats))
+            return stats;
+        return new Dictionary<Guid, GameStats>();
     }
 
     private void ClearContent()
@@ -92,8 +115,7 @@ public class GameDetail : UIScreen, IUIScreen
 
             if (historyItemHeadline != null && child == historyItemHeadline.gameObject)
                 continue;
-            
-            // Keep action buttons (they should remain in scroll content)
+
             if (buttonContinue != null && child == buttonContinue) continue;
             if (buttonDelete != null && child == buttonDelete) continue;
 
@@ -111,7 +133,6 @@ public class GameDetail : UIScreen, IUIScreen
 
         ClearContent();
 
-        // Create X01 tables
         CreateCachedTable("X01_PlayerSummary", "Player", new TableCellData[] { "Sets", "Legs", "Score" });
 
         CreateCachedTable("X01_Penalties", "Strafen", new TableCellData[]
@@ -130,7 +151,7 @@ public class GameDetail : UIScreen, IUIScreen
 
         CreateCachedTable("X01_Throws", "Throws",
             new TableCellData[] { "Throws", "Double %", "Triple %" });
-        
+
         CreateCachedTable("X01_Scoring", "Scoring",
             new TableCellData[] { "ø Points", "ø First-9", "Max Score" });
 
@@ -140,7 +161,6 @@ public class GameDetail : UIScreen, IUIScreen
         CreateCachedTable("X01_Checkouts", "Checkouts",
             new TableCellData[] { "Max Checkout", "Attempts", "Favorite" });
 
-        // Create Cricket tables
         CreateCachedTable("Cricket_PlayerSummary", "Players", new TableCellData[] { "Sets", "Legs", "Score" });
         CreateCachedTable("Cricket_Penalties", "Penalties", new TableCellData[]
         {
@@ -159,7 +179,6 @@ public class GameDetail : UIScreen, IUIScreen
         CreateCachedTable("Cricket_Highscores", "Highscores", new TableCellData[] { "9 Marks", "White Horse", "Same Triple" });
         CreateCachedTable("Cricket_Preferences", "Preferences", new TableCellData[] { "First closed", "Last closed", "Most Points" });
 
-        // Create ATC tables
         CreateCachedTable("ATC_PlayerSummary", "Player", new TableCellData[] { "Sets", "Legs", "Targets" });
         CreateCachedTable("ATC_Penalties", "Strafen", new TableCellData[]
         {
@@ -193,37 +212,25 @@ public class GameDetail : UIScreen, IUIScreen
         cachedTables[key] = table;
     }
 
-
     private void PopulateX01Details()
     {
-        var x01 = game as X01Game;
-        if (x01 == null)
-        {
-            Debug.LogError("Game is not X01");
-            return;
-        }
+        var playerIDs = gameSummary.PlayerIds;
+        var statsDict = playerStats;
 
-        var playerIDs = x01.GetPlayerIDs();
-        // Hol dir das Dictionary mit den Basis-Stats
-        var statsDict = x01.GetPlayerStats();
-
-        // =====================================================
-        // PLAYER SUMMARY
-        // =====================================================
         var playerTable = GetCachedTable("X01_PlayerSummary");
         playerTable.gameObject.SetActive(true);
 
         var activeX01PlayerKeys = new HashSet<string>();
         foreach (var pid in playerIDs)
         {
-            var stats = statsDict[pid] as GameStatsX01;
+            var stats = statsDict.TryGetValue(pid, out var s) ? s as GameStatsX01 : null;
             string key = pid.ToString();
 
             playerTable.AddOrUpdateRow(key, GetPlayerName(pid), new TableCellData[]
             {
-                stats.totalSetsWon.ToString(),
-                stats.currentLegCount.ToString(),
-                x01.GetScore(pid).ToString()
+                stats?.totalSetsWon.ToString() ?? "0",
+                stats?.currentLegCount.ToString() ?? "0",
+                GetScoreForPlayer(pid).ToString()
             }, false);
 
             playerTable.SetRowActive(key, true);
@@ -238,39 +245,25 @@ public class GameDetail : UIScreen, IUIScreen
 
         playerTable.RefreshLayout();
 
-        // =====================================================
-        // PENALTIES (JETZT AUS STATS!)
-        // =====================================================
         var table = GetCachedTable("X01_Penalties");
-
-        TableCellData[] penaltyHeader =
-        {
-            new TableCellData { text = "Wall", icon = iconWall, isIcon = true },
-            new TableCellData { text = "Decke", icon = iconCeiling, isIcon = true },
-            new TableCellData { text = "AllMiss", icon = iconAllMiss, isIcon = true },
-            new TableCellData { text = "3x1", icon = iconTripleOnes, isIcon = true },
-            new TableCellData { text = "3xX", icon = iconTripleDigit, isIcon = true },
-            new TableCellData { text = "lost", icon = iconLostGame, isIcon = true },            
-            "Summe"
-        };
 
         table.gameObject.SetActive(true);
 
         var activeX01PenaltyKeys = new HashSet<string>();
         foreach (var pid in playerIDs)
         {
-            var stats = statsDict[pid];
+            var stats = statsDict.TryGetValue(pid, out var s) ? s : null;
             string key = pid.ToString();
 
             table.AddOrUpdateRow(key, GetPlayerName(pid), new TableCellData[]
             {
-                stats.wallCount.ToString(),
-                stats.ceilingCount.ToString(),
-                stats.allMissCount.ToString(),
-                stats.tripleOnesCount.ToString(),
-                stats.tripleDigitCount.ToString(),
-                stats.lostGame.ToString(),
-                stats.GetTotalPenaltyCosts().ToString()
+                stats?.wallCount.ToString() ?? "0",
+                stats?.ceilingCount.ToString() ?? "0",
+                stats?.allMissCount.ToString() ?? "0",
+                stats?.tripleOnesCount.ToString() ?? "0",
+                stats?.tripleDigitCount.ToString() ?? "0",
+                stats?.lostGame.ToString() ?? "0",
+                stats?.GetTotalPenaltyCosts().ToString() ?? "0"
             }, false);
 
             table.SetRowActive(key, true);
@@ -285,10 +278,6 @@ public class GameDetail : UIScreen, IUIScreen
 
         table.RefreshLayout();
 
-
-        // =====================================================
-        // TABLE 1: LEGS
-        // =====================================================
         CreateTable(
             GameMode.X01,
             "X01_Legs",
@@ -297,21 +286,19 @@ public class GameDetail : UIScreen, IUIScreen
             pid =>
             {
                 if (!statsDict.TryGetValue(pid, out var s)) return null;
-                int played = s.totalLegsCount;
+                var stats = s as GameStatsX01;
+                if (stats == null) return null;
 
                 return new TableCellData[]
                 {
-                    played.ToString(),
-                    s.totalLegsWon.ToString(),
-                    $"{s.totalLegWinRate * 100:0.00}%"
+                    stats.totalLegsCount.ToString(),
+                    stats.totalLegsWon.ToString(),
+                    $"{stats.totalLegWinRate * 100:0.00}%"
                 };
             },
             playerIDs
         );
 
-        // =====================================================
-        // TABLE 2: THROWS
-        // =====================================================
         CreateTable(
             GameMode.X01,
             "X01_Throws",
@@ -334,9 +321,6 @@ public class GameDetail : UIScreen, IUIScreen
             playerIDs
         );
 
-        // =====================================================
-        // TABLE 3: SCORING
-        // =====================================================
         CreateTable(
             GameMode.X01,
             "X01_Scoring",
@@ -350,7 +334,6 @@ public class GameDetail : UIScreen, IUIScreen
                 var stats = baseStats as GameStatsX01;
                 if (stats == null) return null;
 
-                // Use cached favorite double computation from stats (no LINQ overhead)
                 return new TableCellData[]
                 {
                     $"{stats.averagePointsPerTurn : 0.00}",
@@ -361,9 +344,6 @@ public class GameDetail : UIScreen, IUIScreen
             playerIDs
         );
 
-        // =====================================================
-        // TABLE 4: HIGH SCORES
-        // =====================================================
         CreateTable(
             GameMode.X01,
             "X01_HighScores",
@@ -387,9 +367,6 @@ public class GameDetail : UIScreen, IUIScreen
             playerIDs
         );
 
-        // =====================================================
-        // TABLE 5: CHECKOUTS
-        // =====================================================
         CreateTable(
             GameMode.X01,
             "X01_Checkouts",
@@ -403,7 +380,6 @@ public class GameDetail : UIScreen, IUIScreen
                 var stats = baseStats as GameStatsX01;
                 if (stats == null) return null;
 
-                // Use cached favorite double computation from stats (no LINQ overhead)
                 return new TableCellData[]
                 {
                     $"{stats.highestCheckout}",
@@ -414,10 +390,6 @@ public class GameDetail : UIScreen, IUIScreen
             playerIDs
         );
 
-
-        // =====================================================
-        // HIT SECTOR HEADLINE
-        // =====================================================
         if (x01HitSectorHeadline == null)
         {
             x01HitSectorHeadline = Instantiate(prefabHeadline, contentParent);
@@ -429,9 +401,6 @@ public class GameDetail : UIScreen, IUIScreen
         }
         x01HitSectorHeadline.SetActive(true);
 
-        // =====================================================
-        // HIT SECTOR CHARTS (bleibt wie bisher, da nicht in Stats)
-        // =====================================================
         if (prefabHitSectorChart != null)
         {
             var labelOrder = BuildHitSectorLabelOrder();
@@ -444,47 +413,33 @@ public class GameDetail : UIScreen, IUIScreen
                 var chart = x01HitSectorCharts[i];
                 chart.gameObject.SetActive(true);
 
-                GameStatsX01 stats = (GameStatsX01)statsDict[pid];
+                GameStatsX01 stats = statsDict.TryGetValue(pid, out var s) ? s as GameStatsX01 : null;
                 string playerName = appHandler.GetPlayerNameByID(pid);
 
-                //chart.Build(playerName, labelOrder);
-                chart.SetData(playerName, stats.GetHitSector);
+                chart.SetData(playerName, stats?.GetHitSector);
             }
         }
     }
 
-    
-
     private void PopulateCricketDetails()
     {
-        var cricket = game as CricketGame;
-        if (cricket == null)
-        {
-            Debug.LogError("Game is not Cricket");
-            return;
-        }
+        var playerIDs = gameSummary.PlayerIds;
+        var statsDict = playerStats;
 
-        var playerIDs = cricket.GetPlayerIDs();
-        // Hol dir das Dictionary mit den Basis-Stats
-        var statsDict = cricket.GetPlayerStats();
-
-        // =====================================================
-        // PLAYER SUMMARY
-        // =====================================================
         var playerTable = GetCachedTable("Cricket_PlayerSummary");
         playerTable.gameObject.SetActive(true);
 
         var activePlayerKeys = new HashSet<string>();
         foreach (var pid in playerIDs)
         {
-            var stats = statsDict[pid] as GameStatsCricket;
+            var stats = statsDict.TryGetValue(pid, out var s) ? s as GameStatsCricket : null;
             string key = pid.ToString();
 
             playerTable.AddOrUpdateRow(key, GetPlayerName(pid), new TableCellData[]
             {
-                stats.totalSetsWon.ToString(),
-                stats.currentLegCount.ToString(),
-                cricket.GetScore(pid).ToString() // 🔥 bleibt im Game
+                stats?.totalSetsWon.ToString() ?? "0",
+                stats?.currentLegCount.ToString() ?? "0",
+                GetScoreForPlayer(pid).ToString()
             }, false);
 
             playerTable.SetRowActive(key, true);
@@ -499,39 +454,25 @@ public class GameDetail : UIScreen, IUIScreen
 
         playerTable.RefreshLayout();
 
-        // =====================================================
-        // PENALTIES (JETZT AUS STATS!)
-        // =====================================================
         var table = GetCachedTable("Cricket_Penalties");
-
-        TableCellData[] penaltyHeader =
-        {
-            new TableCellData { text = "Wall", icon = iconWall, isIcon = true },
-            new TableCellData { text = "Decke", icon = iconCeiling, isIcon = true },
-            new TableCellData { text = "AllMiss", icon = iconAllMiss, isIcon = true },
-            new TableCellData { text = "3x1", icon = iconTripleOnes, isIcon = true },
-            new TableCellData { text = "3xX", icon = iconTripleDigit, isIcon = true },
-            new TableCellData { text = "lost", icon = iconLostGame, isIcon = true },            
-            "Summe"
-        };
 
         table.gameObject.SetActive(true);
 
         var activePenaltyKeys = new HashSet<string>();
         foreach (var pid in playerIDs)
         {
-            var stats = statsDict[pid];
+            var stats = statsDict.TryGetValue(pid, out var s) ? s : null;
             string key = pid.ToString();
 
             table.AddOrUpdateRow(key, GetPlayerName(pid), new TableCellData[]
             {
-                stats.wallCount.ToString(),
-                stats.ceilingCount.ToString(),
-                stats.allMissCount.ToString(),
-                stats.tripleOnesCount.ToString(),
-                stats.tripleDigitCount.ToString(),
-                stats.lostGame.ToString(),
-                stats.GetTotalPenaltyCosts().ToString()
+                stats?.wallCount.ToString() ?? "0",
+                stats?.ceilingCount.ToString() ?? "0",
+                stats?.allMissCount.ToString() ?? "0",
+                stats?.tripleOnesCount.ToString() ?? "0",
+                stats?.tripleDigitCount.ToString() ?? "0",
+                stats?.lostGame.ToString() ?? "0",
+                stats?.GetTotalPenaltyCosts().ToString() ?? "0"
             }, false);
 
             table.SetRowActive(key, true);
@@ -546,9 +487,6 @@ public class GameDetail : UIScreen, IUIScreen
 
         table.RefreshLayout();
 
-        // =====================================================
-        // LEGS
-        // =====================================================
         CreateTable(
             GameMode.Cricket,
             "Cricket_Legs",
@@ -556,7 +494,8 @@ public class GameDetail : UIScreen, IUIScreen
             new TableCellData[] { "Played", "Won", "Win %" },
             pid =>
             {
-                var stats = statsDict[pid];
+                var stats = statsDict.TryGetValue(pid, out var s) ? s : null;
+                if (stats == null) return null;
                 int played = stats.totalLegsCount;
 
                 return new TableCellData[]
@@ -569,9 +508,6 @@ public class GameDetail : UIScreen, IUIScreen
             playerIDs
         );
 
-        // =====================================================
-        // SCORING
-        // =====================================================
         CreateTable(
             GameMode.Cricket,
             "Cricket_Throws",
@@ -579,21 +515,18 @@ public class GameDetail : UIScreen, IUIScreen
             new TableCellData[] { "Throws", "Double %", "Triple %" },
             pid =>
             {
-                var stats = statsDict[pid];
+                var stats = statsDict.TryGetValue(pid, out var s) ? s : null;
 
                 return new TableCellData[]
                 {
-                    stats.totalThrowsCount.ToString(),
-                    $"{stats.doublePercentage * 100:0.00}%",
-                    $"{stats.triplePercentage * 100:0.00}%"
+                    stats?.totalThrowsCount.ToString() ?? "0",
+                    $"{stats?.doublePercentage * 100 ?? 0:0.00}%",
+                    $"{stats?.triplePercentage * 100 ?? 0:0.00}%"
                 };
             },
             playerIDs
         );
 
-        // =====================================================
-        // SCORES
-        // =====================================================
         CreateTable(
             GameMode.Cricket,
             "Cricket_Scores",
@@ -601,7 +534,8 @@ public class GameDetail : UIScreen, IUIScreen
             new TableCellData[] { "Ø Points/Turn", "Max Points", "Overkill Points" },
             pid =>
             {
-                var stats = statsDict[pid] as GameStatsCricket;
+                var stats = statsDict.TryGetValue(pid, out var s) ? s as GameStatsCricket : null;
+                if (stats == null) return null;
 
                 return new TableCellData[]
                 {
@@ -613,9 +547,6 @@ public class GameDetail : UIScreen, IUIScreen
             playerIDs
         );
 
-        // =====================================================
-        // MARKS PER ROUND
-        // =====================================================
         CreateTable(
             GameMode.Cricket,
             "Cricket_MPR",
@@ -623,7 +554,8 @@ public class GameDetail : UIScreen, IUIScreen
             new TableCellData[] { "MPR", "Marks", "Max MPR" },
             pid =>
             {
-                var stats = statsDict[pid] as GameStatsCricket;
+                var stats = statsDict.TryGetValue(pid, out var s) ? s as GameStatsCricket : null;
+                if (stats == null) return null;
 
                 return new TableCellData[]
                 {
@@ -635,9 +567,6 @@ public class GameDetail : UIScreen, IUIScreen
             playerIDs
         );
 
-        // =====================================================
-        // HIGHSCORES
-        // =====================================================
         CreateTable(
             GameMode.Cricket,
             "Cricket_Highscores",
@@ -645,7 +574,8 @@ public class GameDetail : UIScreen, IUIScreen
             new TableCellData[] { "9 Marks", "White Horse", "Same Triple" },
             pid =>
             {
-                var stats = statsDict[pid] as GameStatsCricket;
+                var stats = statsDict.TryGetValue(pid, out var s) ? s as GameStatsCricket : null;
+                if (stats == null) return null;
 
                 return new TableCellData[]
                 {
@@ -657,9 +587,6 @@ public class GameDetail : UIScreen, IUIScreen
             playerIDs
         );
 
-        // =====================================================
-        // PREFERENCES
-        // =====================================================
         CreateTable(
             GameMode.Cricket,
             "Cricket_Preferences",
@@ -667,7 +594,8 @@ public class GameDetail : UIScreen, IUIScreen
             new TableCellData[] { "First Closed", "Last Closed", "Most Points" },
             pid =>
             {
-                var stats = statsDict[pid] as GameStatsCricket;
+                var stats = statsDict.TryGetValue(pid, out var s) ? s as GameStatsCricket : null;
+                if (stats == null) return null;
 
                 return new TableCellData[]
                 {
@@ -680,37 +608,25 @@ public class GameDetail : UIScreen, IUIScreen
         );
     }
 
-
     private void PopulateATCDetails()
     {
-        var atc = game as ATCGame;
-        if (atc == null)
-        {
-            Debug.LogError("Game is not ATC");
-            return;
-        }
+        var playerIDs = gameSummary.PlayerIds;
+        var statsDict = playerStats;
 
-        var playerIDs = atc.GetPlayerIDs();
-        // Hol dir das Dictionary mit den Basis-Stats
-        var statsDict = atc.GetPlayerStats();
-
-        // =====================================================
-        // TABLE 1: PLAYER SUMMARY
-        // =====================================================
         var playerTable = GetCachedTable("ATC_PlayerSummary");
         playerTable.gameObject.SetActive(true);
 
         var activeATCPlayerKeys = new HashSet<string>();
         foreach (var pid in playerIDs)
         {
-            var stats = statsDict[pid] as GameStatsATC;
+            var stats = statsDict.TryGetValue(pid, out var s) ? s as GameStatsATC : null;
             string key = pid.ToString();
 
             playerTable.AddOrUpdateRow(key, GetPlayerName(pid), new TableCellData[]
             {
-                stats.totalSetsWon.ToString(),
-                stats.currentLegCount.ToString(),
-                atc.GetTargetsHit(pid) + "/" + atc.GetTotalTargets() // 🔥 bleibt im Game
+                stats?.totalSetsWon.ToString() ?? "0",
+                stats?.currentLegCount.ToString() ?? "0",
+                (stats?.targetsHit ?? 0) + "/" + (stats?.totalTargets ?? 0)
             }, false);
 
             playerTable.SetRowActive(key, true);
@@ -725,39 +641,25 @@ public class GameDetail : UIScreen, IUIScreen
 
         playerTable.RefreshLayout();
 
-        // =====================================================
-        // TABLE 2: PENALTIES (JETZT AUS STATS!)
-        // =====================================================
         var table = GetCachedTable("ATC_Penalties");
-
-        TableCellData[] penaltyHeader =
-        {
-            new TableCellData { text = "Wall", icon = iconWall, isIcon = true },
-            new TableCellData { text = "Decke", icon = iconCeiling, isIcon = true },
-            new TableCellData { text = "AllMiss", icon = iconAllMiss, isIcon = true },
-            new TableCellData { text = "3x1", icon = iconTripleOnes, isIcon = true },
-            new TableCellData { text = "3xX", icon = iconTripleDigit, isIcon = true },
-            new TableCellData { text = "lost", icon = iconLostGame, isIcon = true },            
-            "Summe"
-        };
 
         table.gameObject.SetActive(true);
 
         var activeATCPenaltyKeys = new HashSet<string>();
         foreach (var pid in playerIDs)
         {
-            var stats = statsDict[pid];
+            var stats = statsDict.TryGetValue(pid, out var s) ? s : null;
             string key = pid.ToString();
 
             table.AddOrUpdateRow(key, GetPlayerName(pid), new TableCellData[]
             {
-                stats.wallCount.ToString(),
-                stats.ceilingCount.ToString(),
-                stats.allMissCount.ToString(),
-                stats.tripleOnesCount.ToString(),
-                stats.tripleDigitCount.ToString(),
-                stats.lostGame.ToString(),
-                stats.GetTotalPenaltyCosts().ToString()
+                stats?.wallCount.ToString() ?? "0",
+                stats?.ceilingCount.ToString() ?? "0",
+                stats?.allMissCount.ToString() ?? "0",
+                stats?.tripleOnesCount.ToString() ?? "0",
+                stats?.tripleDigitCount.ToString() ?? "0",
+                stats?.lostGame.ToString() ?? "0",
+                stats?.GetTotalPenaltyCosts().ToString() ?? "0"
             }, false);
 
             table.SetRowActive(key, true);
@@ -772,9 +674,6 @@ public class GameDetail : UIScreen, IUIScreen
 
         table.RefreshLayout();
 
-        // =====================================================
-        // TABLE 3: LEGS
-        // =====================================================
         CreateTable(
             GameMode.ATC,
             "ATC_Legs",
@@ -782,7 +681,8 @@ public class GameDetail : UIScreen, IUIScreen
             new TableCellData[] { "Played", "Won", "Win %" },
             pid =>
             {
-                var stats = statsDict[pid];
+                var stats = statsDict.TryGetValue(pid, out var s) ? s : null;
+                if (stats == null) return null;
                 int played = stats.totalLegsCount;
 
                 return new TableCellData[]
@@ -795,31 +695,24 @@ public class GameDetail : UIScreen, IUIScreen
             playerIDs
         );
 
-
-        // =====================================================
-        // TABLE 4: SCORING (Nutzt Base Stats & ATC Stats)
-        // =====================================================
         CreateTable(
             GameMode.ATC,
             "ATC_Scoring",
             "Scoring",
             new TableCellData[] { "Throws", "Hits", "Hit %" },
-            pid => 
+            pid =>
             {
-                var stats = statsDict[pid] as GameStatsATC;
+                var stats = statsDict.TryGetValue(pid, out var s) ? s as GameStatsATC : null;
                 return new TableCellData[]
                 {
-                    stats?.totalThrowsCount.ToString() ?? "0", // Aus Basisklasse
-                    stats?.targetsHit.ToString() ?? "0",       // Aus ATC-Klasse
-                    $"{stats?.hitPercentage * 100 ?? 0:0.00}%"        // Aus ATC-Klasse
+                    stats?.totalThrowsCount.ToString() ?? "0",
+                    stats?.targetsHit.ToString() ?? "0",
+                    $"{stats?.hitPercentage * 100 ?? 0:0.00}%"
                 };
             },
             playerIDs
         );
 
-        // =====================================================
-        // TABLE 5: STREAKS & CHOKES
-        // =====================================================
         CreateTable(
             GameMode.ATC,
             "ATC_Streaks",
@@ -827,13 +720,11 @@ public class GameDetail : UIScreen, IUIScreen
             new TableCellData[] { "1st Dart Hit %", "Longest Streak", "Biggest Choke" },
             pid =>
             {
-                var stats = statsDict[pid] as GameStatsATC;
+                var stats = statsDict.TryGetValue(pid, out var s) ? s as GameStatsATC : null;
                 if (stats == null) return new TableCellData[] { "0%", "0", "-" };
 
-                // Choke-Daten abrufen
                 var (target, attempts) = stats.GetChoke();
-                
-                // Formatierung: "Ziel (Versuche)", z.B. "20 (12)" oder "-" wenn kein Treffer
+
                 string chokeDisplay = target != -1 ? $"{target} ({attempts})" : "-";
 
                 return new TableCellData[]
@@ -846,9 +737,6 @@ public class GameDetail : UIScreen, IUIScreen
             playerIDs
         );
 
-        // =====================================================
-        // TABLE 6: HISHCORES
-        // =====================================================
         CreateTable(
             GameMode.ATC,
             "ATC_Highscores",
@@ -856,7 +744,7 @@ public class GameDetail : UIScreen, IUIScreen
             new TableCellData[] { "3 Hits +", "6 Hits +", "9 Hits +", "12 Hits +" },
             pid =>
             {
-                var stats = statsDict[pid] as GameStatsATC;
+                var stats = statsDict.TryGetValue(pid, out var s) ? s as GameStatsATC : null;
                 if (stats == null) return new TableCellData[] { "0", "0", "0", "0" };
 
                 return new TableCellData[]
@@ -871,7 +759,11 @@ public class GameDetail : UIScreen, IUIScreen
         );
     }
 
-    
+    private int GetScoreForPlayer(Guid pid)
+    {
+        var entry = gameSummary.PlayerEntries.FirstOrDefault(e => e.PlayerId == pid);
+        return entry?.Score ?? 0;
+    }
 
     private void EnsureX01HitSectorCharts(int requestedCount, List<string> labelOrder)
     {
@@ -896,7 +788,6 @@ public class GameDetail : UIScreen, IUIScreen
 
     private List<string> BuildHitSectorLabelOrder()
     {
-        // Order: singles first, then doubles, then triples (no T25). Keep 0 first.
         var list = new List<string> { "0" };
 
         for (int i = 1; i <= 20; i++)
@@ -911,10 +802,6 @@ public class GameDetail : UIScreen, IUIScreen
             list.Add("T" + i);
         return list;
     }
-
-    // =========================================================
-    // GENERIC TABLE BUILDER
-    // =========================================================
 
     private void CreateTable(
         GameMode mode,
@@ -975,17 +862,11 @@ public class GameDetail : UIScreen, IUIScreen
         }
     }
 
-
     private string GetPlayerName(Guid pid)
     {
         var name = appHandler != null ? appHandler.GetPlayerNameByID(pid) : null;
         return string.IsNullOrWhiteSpace(name) ? $"Player {pid}" : name;
     }
-
-
-    // =========================================================
-    // BUTTON CALLBACKS
-    // =========================================================
 
     public void OnClickDeleteGame()
     {
@@ -994,13 +875,13 @@ public class GameDetail : UIScreen, IUIScreen
 
     public void ConfirmDeleteGame()
     {
-        if (game == null)
+        if (gameSummary == null)
         {
-            Debug.LogError("GameDetail: no selected game for delete");
+            Debug.LogError("GameDetail: no game summary for delete");
             return;
         }
 
-        appHandler.DeleteGame(game.GetID());
+        appHandler.DeleteGame(gameSummary.Id);
 
         windowHandler.HidePopup();
         windowHandler.GoBack();
@@ -1013,19 +894,26 @@ public class GameDetail : UIScreen, IUIScreen
 
     public void OnClickContinueGame()
     {
-        if (game == null)
+        if (gameSummary == null)
         {
-            Debug.LogError("GameDetail: no selected game for continue");
+            Debug.LogError("GameDetail: no game summary for continue");
             return;
         }
 
-        if (game.IsFinished())
+        if (gameSummary.IsFinished)
         {
             Debug.LogWarning("GameDetail: game is finished, cannot continue");
             return;
         }
 
-        switch (game.GetGameMode())
+        var game = appHandler.LoadGameById(gameSummary.Id);
+        if (game == null)
+        {
+            Debug.LogError("GameDetail: failed to load game for continue");
+            return;
+        }
+
+        switch (gameSummary.GameMode)
         {
             case GameMode.X01:
                 if (x01GameEngine == null || windowHandler == null)
@@ -1034,7 +922,7 @@ public class GameDetail : UIScreen, IUIScreen
                     return;
                 }
                 windowHandler.GoTo(ScreenId.X01Game);
-                x01GameEngine.LoadGame((X01Game) game);
+                x01GameEngine.LoadGame((X01Game)game);
                 break;
 
             case GameMode.ATC:
@@ -1044,7 +932,7 @@ public class GameDetail : UIScreen, IUIScreen
                     return;
                 }
                 windowHandler.GoTo(ScreenId.ATCGame);
-                atcGameEngine.LoadGame((ATCGame) game);
+                atcGameEngine.LoadGame((ATCGame)game);
                 break;
 
             case GameMode.Cricket:
@@ -1054,7 +942,7 @@ public class GameDetail : UIScreen, IUIScreen
                     return;
                 }
                 windowHandler.GoTo(ScreenId.CricketGame);
-                cricketGameEngine.LoadGame((CricketGame) game);
+                cricketGameEngine.LoadGame((CricketGame)game);
                 break;
         }
     }
@@ -1074,9 +962,6 @@ public class GameDetail : UIScreen, IUIScreen
             Debug.LogError("GameDetail: No ScrollRect found for resetting scroll position");
             return;
         }
-
-        // wichtig: erst Layout aktualisieren lassen
-        //Canvas.ForceUpdateCanvases();
 
         scrollRect.verticalNormalizedPosition = 1f;
     }

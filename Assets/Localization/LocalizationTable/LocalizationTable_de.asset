@@ -1,0 +1,549 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9620f8c34305754d8cc9a7e49e852d9, type: 3}
+  m_Name: LocalizationTable_de
+  m_EditorClassIdentifier: Unity.Localization::UnityEngine.Localization.Tables.StringTable
+  m_LocaleId:
+    m_Code: de
+  m_SharedData: {fileID: 11400000, guid: 69cc5fdb8958e6e33a772797f9dc50e8, type: 2}
+  m_Metadata:
+    m_Items: []
+  m_TableData:
+  - m_Id: 1
+    m_Localized: 30 Tage
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2
+    m_Localized: 365 Tage
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3
+    m_Localized: 7 Tage
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4
+    m_Localized: Spiel verwerfen
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5
+    m_Localized: "Das Spiel ist noch nicht beendet. M\xF6chtest du das Spiel speichern,
+      um es sp\xE4ter fortzusetzen, oder m\xF6chtest du es abbrechen?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 6
+    m_Localized: "\xDCber"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7
+    m_Localized: Vibration aktivieren
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8
+    m_Localized: Bestimmt, ob bei Eingaben ein haptisches Feedback erfolgen soll
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9
+    m_Localized: "Bot hinzuf\xFCgen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10
+    m_Localized: Alle
+    m_Metadata:
+      m_Items: []
+  - m_Id: 11
+    m_Localized: Aufsteigend
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12
+    m_Localized: Audio
+    m_Metadata:
+      m_Items: []
+  - m_Id: 13
+    m_Localized: Blau
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14
+    m_Localized: Bronze
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15
+    m_Localized: Verlauf
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16
+    m_Localized: Abbrechen
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17
+    m_Localized: Decke
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18
+    m_Localized: Deckentreffer, der per Tastendruck statt eines 0-Darts eingegeben
+      werden kann
+    m_Metadata:
+      m_Items: []
+  - m_Id: 19
+    m_Localized: Clips
+    m_Metadata:
+      m_Items: []
+  - m_Id: 20
+    m_Localized: "Best\xE4tigen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 21
+    m_Localized: Kosten
+    m_Metadata:
+      m_Items: []
+  - m_Id: 22
+    m_Localized: Eigener Clip-Browser
+    m_Metadata:
+      m_Items: []
+  - m_Id: 23
+    m_Localized: Eigene Clips
+    m_Metadata:
+      m_Items: []
+  - m_Id: 24
+    m_Localized: Eigener Sound
+    m_Metadata:
+      m_Items: []
+  - m_Id: 25
+    m_Localized: Eigene Sounds sind vom Benutzer aufgenommene Sounds, andernfalls
+      wird das Standardpaket verwendet
+    m_Metadata:
+      m_Items: []
+  - m_Id: 26
+    m_Localized: Cyan
+    m_Metadata:
+      m_Items: []
+  - m_Id: 27
+    m_Localized: "Alle Spiele l\xF6schen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 28
+    m_Localized: "Bist du sicher, dass du alle aufgezeichneten Spiele l\xF6schen
+      m\xF6chtest? Diese Aktion kann nicht r\xFCckg\xE4ngig gemacht werden!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 29
+    m_Localized: "\u201EAround the Clock\u201C-Spiele l\xF6schen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 30
+    m_Localized: "Bist du sicher, dass du alle \u201EAround the Clock\u201C-Spiele
+      l\xF6schen m\xF6chtest? Diese Aktion kann nicht r\xFCckg\xE4ngig gemacht werden!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 31
+    m_Localized: "Clip l\xF6schen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 32
+    m_Localized: "Bist du sicher, dass du den aktuell angezeigten Clip l\xF6schen
+      m\xF6chtest? Diese Aktion kann nicht r\xFCckg\xE4ngig gemacht werden!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33
+    m_Localized: "\u201ECricket\u201C-Spiele l\xF6schen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 34
+    m_Localized: "Bist du sicher, dass du alle \u201ECricket\u201C-Spiele l\xF6schen
+      m\xF6chtest? Diese Aktion kann nicht r\xFCckg\xE4ngig gemacht werden!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 35
+    m_Localized: "Spieler l\xF6schen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 36
+    m_Localized: "Bist du sicher, dass du den Spieler {name} l\xF6schen m\xF6chtest?
+      Diese Aktion kann nicht r\xFCckg\xE4ngig gemacht werden!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 37
+    m_Localized: "\u201EX01\u201C-Spiele l\xF6schen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 38
+    m_Localized: "Bist du sicher, dass du alle \u201EX01\u201C-Spiele l\xF6schen
+      m\xF6chtest? Diese Aktion kann nicht r\xFCckg\xE4ngig gemacht werden!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 39
+    m_Localized: Absteigend
+    m_Metadata:
+      m_Items: []
+  - m_Id: 40
+    m_Localized: Nicht speichern
+    m_Metadata:
+      m_Items: []
+  - m_Id: 41
+    m_Localized: Einfach
+    m_Metadata:
+      m_Items: []
+  - m_Id: 42
+    m_Localized: Nach Spielern filtern
+    m_Metadata:
+      m_Items: []
+  - m_Id: 43
+    m_Localized: Beendet
+    m_Metadata:
+      m_Items: []
+  - m_Id: 44
+    m_Localized: Spiel noch nicht gespeichert
+    m_Metadata:
+      m_Items: []
+  - m_Id: 45
+    m_Localized: "Das Spiel wurde noch nicht gespeichert. M\xF6chtest du es jetzt
+      speichern?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 46
+    m_Localized: Spiel vorbei
+    m_Metadata:
+      m_Items: []
+  - m_Id: 47
+    m_Localized: Spiel starten
+    m_Metadata:
+      m_Items: []
+  - m_Id: 48
+    m_Localized: Gold
+    m_Metadata:
+      m_Items: []
+  - m_Id: 49
+    m_Localized: "Gr\xFCn"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 50
+    m_Localized: Schwer
+    m_Metadata:
+      m_Items: []
+  - m_Id: 51
+    m_Localized: Bestenlisten
+    m_Metadata:
+      m_Items: []
+  - m_Id: 52
+    m_Localized: Verlauf
+    m_Metadata:
+      m_Items: []
+  - m_Id: 53
+    m_Localized: Treffer
+    m_Metadata:
+      m_Items: []
+  - m_Id: 54
+    m_Localized: Startseite
+    m_Metadata:
+      m_Items: []
+  - m_Id: 55
+    m_Localized: Laufend
+    m_Metadata:
+      m_Items: []
+  - m_Id: 56
+    m_Localized: Inaktive Spieler
+    m_Metadata:
+      m_Items: []
+  - m_Id: 57
+    m_Localized: "Intensit\xE4t"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 58
+    m_Localized: Verlieren
+    m_Metadata:
+      m_Items: []
+  - m_Id: 59
+    m_Localized: "Strafe f\xFCr die Teilnahme an einem Spiel, ohne als Sieger hervorzugehen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 60
+    m_Localized: Schnapszahl
+    m_Metadata:
+      m_Items: []
+  - m_Id: 61
+    m_Localized: Strafe, wenn du einen Punktestand erreichst, der eine Schnapszahl
+      ist (z. B. 111, 222 usw.)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 62
+    m_Localized: Alles markieren
+    m_Metadata:
+      m_Items: []
+  - m_Id: 63
+    m_Localized: Marks
+    m_Metadata:
+      m_Items: []
+  - m_Id: 64
+    m_Localized: Marks pro Runde
+    m_Metadata:
+      m_Items: []
+  - m_Id: 65
+    m_Localized: Mittel
+    m_Metadata:
+      m_Items: []
+  - m_Id: 66
+    m_Localized: Modus
+    m_Metadata:
+      m_Items: []
+  - m_Id: 67
+    m_Localized: Neuer Spieler
+    m_Metadata:
+      m_Items: []
+  - m_Id: 68
+    m_Localized: Name ist zu kurz (mind. 2 Zeichen)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 69
+    m_Localized: Kein Scheibentreffer
+    m_Metadata:
+      m_Items: []
+  - m_Id: 70
+    m_Localized: Strafe, wenn alle Darts Wand- oder Deckentreffer sind
+    m_Metadata:
+      m_Items: []
+  - m_Id: 71
+    m_Localized: Keine Clips aufgezeichnet
+    m_Metadata:
+      m_Items: []
+  - m_Id: 72
+    m_Localized: Keine Spiele vorhanden
+    m_Metadata:
+      m_Items: []
+  - m_Id: 73
+    m_Localized: "Keine Spieler hinzugef\xFCgt"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 74
+    m_Localized: "Es wurden noch keine Spieler zur Teilnehmerliste hinzugef\xFCgt.
+      Mindestens ein Spieler muss zugewiesen werden!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 75
+    m_Localized: OK
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76
+    m_Localized: Optionen
+    m_Metadata:
+      m_Items: []
+  - m_Id: 77
+    m_Localized: Reihenfolge
+    m_Metadata:
+      m_Items: []
+  - m_Id: 78
+    m_Localized: Teilnehmer
+    m_Metadata:
+      m_Items: []
+  - m_Id: 79
+    m_Localized: Strafen
+    m_Metadata:
+      m_Items: []
+  - m_Id: 80
+    m_Localized: Straf-Clips
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81
+    m_Localized: Sound abspielen
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82
+    m_Localized: Bestimmt, ob Sounds in der App verwendet werden sollen (z. B. Ansage
+      der Punktzahlen in X01)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 83
+    m_Localized: Spieler
+    m_Metadata:
+      m_Items: []
+  - m_Id: 84
+    m_Localized: Punkte
+    m_Metadata:
+      m_Items: []
+  - m_Id: 85
+    m_Localized: Einstellungen
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86
+    m_Localized: Pro
+    m_Metadata:
+      m_Items: []
+  - m_Id: 87
+    m_Localized: Zufall
+    m_Metadata:
+      m_Items: []
+  - m_Id: 88
+    m_Localized: "Zuf\xE4llige Reihenfolge"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89
+    m_Localized: Recorder
+    m_Metadata:
+      m_Items: []
+  - m_Id: 90
+    m_Localized: Rot
+    m_Metadata:
+      m_Items: []
+  - m_Id: 91
+    m_Localized: Spieler {name} umbenennen
+    m_Metadata:
+      m_Items: []
+  - m_Id: 92
+    m_Localized: Speichern
+    m_Metadata:
+      m_Items: []
+  - m_Id: 93
+    m_Localized: Spiel speichern
+    m_Metadata:
+      m_Items: []
+  - m_Id: 94
+    m_Localized: Punkte-Clips
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95
+    m_Localized: Punkteerfassung
+    m_Metadata:
+      m_Items: []
+  - m_Id: 96
+    m_Localized: Teilen
+    m_Metadata:
+      m_Items: []
+  - m_Id: 97
+    m_Localized: Schau dir meine neue Darts-App an, die ich auf GitHub gefunden habe!
+      https://github.com/fabicodestube-dotcom/Dart-Penalty-Playback/
+    m_Metadata:
+      m_Items: []
+  - m_Id: 98
+    m_Localized: Spezial-Clips
+    m_Metadata:
+      m_Items: []
+  - m_Id: 99
+    m_Localized: Statistiken
+    m_Metadata:
+      m_Items: []
+  - m_Id: 100
+    m_Localized: Stark
+    m_Metadata:
+      m_Items: []
+  - m_Id: 101
+    m_Localized: Sudden Death
+    m_Metadata:
+      m_Items: []
+  - m_Id: 102
+    m_Localized: Summe
+    m_Metadata:
+      m_Items: []
+  - m_Id: 103
+    m_Localized: "Unterst\xFCtzen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 104
+    m_Localized: "Wenn du die App unterst\xFCtzen m\xF6chtest, kannst du gerne \xFCber
+      eine der folgenden Optionen spenden."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 105
+    m_Localized: Ziele
+    m_Metadata:
+      m_Items: []
+  - m_Id: 106
+    m_Localized: Design
+    m_Metadata:
+      m_Items: []
+  - m_Id: 107
+    m_Localized: Drei Einsen
+    m_Metadata:
+      m_Items: []
+  - m_Id: 108
+    m_Localized: Strafe, wenn du das 1er-Feld dreimal hintereinander mit 3 Darts
+      triffst (Multiplikator spielt keine Rolle)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 109
+    m_Localized: "W\xFCrfe"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 110
+    m_Localized: Heute
+    m_Metadata:
+      m_Items: []
+  - m_Id: 111
+    m_Localized: Stille trimmen
+    m_Metadata:
+      m_Items: []
+  - m_Id: 112
+    m_Localized: "R\xFCckg\xE4ngig"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 113
+    m_Localized: Auswahl aufheben
+    m_Metadata:
+      m_Items: []
+  - m_Id: 114
+    m_Localized: Vibration
+    m_Metadata:
+      m_Items: []
+  - m_Id: 115
+    m_Localized: "Lautst\xE4rke"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 116
+    m_Localized: Wand
+    m_Metadata:
+      m_Items: []
+  - m_Id: 117
+    m_Localized: Wandtreffer, der per Tastendruck statt eines 0-Darts eingegeben
+      werden kann
+    m_Metadata:
+      m_Items: []
+  - m_Id: 118
+    m_Localized: Schwach
+    m_Metadata:
+      m_Items: []
+  - m_Id: 705069411422208
+    m_Localized: Treffer
+    m_Metadata:
+      m_Items: []
+  - m_Id: 705069428199424
+    m_Localized: Fehlschuss
+    m_Metadata:
+      m_Items: []
+  - m_Id: 705069428199425
+    m_Localized: Zusammenfassung
+    m_Metadata:
+      m_Items: []
+  - m_Id: 710215969230848
+    m_Localized: "M\xF6chtest du das angezeigte Spiel wirklich l\xF6schen? Dies kann
+      nicht r\xFCckg\xE4ngig gemacht werden!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 710510380011520
+    m_Localized: Einstellungen
+    m_Metadata:
+      m_Items: []
+  - m_Id: 722577082241024
+    m_Localized: Anwenden
+    m_Metadata:
+      m_Items: []
+  - m_Id: 723894773174272
+    m_Localized: Keine X01-Spiele vorhanden
+    m_Metadata:
+      m_Items: []
+  - m_Id: 723894777368576
+    m_Localized: Keine Cricket-Spiele vorhanden
+    m_Metadata:
+      m_Items: []
+  - m_Id: 723894777368577
+    m_Localized: Keine Around the Clock-Spiele vorhanden
+    m_Metadata:
+      m_Items: []
+  references:
+    version: 2
+    RefIds: []

@@ -1,0 +1,549 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9620f8c34305754d8cc9a7e49e852d9, type: 3}
+  m_Name: LocalizationTable_tr
+  m_EditorClassIdentifier: Unity.Localization::UnityEngine.Localization.Tables.StringTable
+  m_LocaleId:
+    m_Code: tr
+  m_SharedData: {fileID: 11400000, guid: 69cc5fdb8958e6e33a772797f9dc50e8, type: 2}
+  m_Metadata:
+    m_Items: []
+  m_TableData:
+  - m_Id: 1
+    m_Localized: "30 g\xFCn"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 2
+    m_Localized: "365 g\xFCn"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3
+    m_Localized: "7 g\xFCn"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4
+    m_Localized: Oyunu iptal et
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5
+    m_Localized: "Oyun hen\xFCz bitmedi. Oyunu daha sonra devam ettirmek \xFCzere
+      kaydetmek mi istersiniz, yoksa iptal etmek mi istersiniz?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 6
+    m_Localized: "Hakk\u0131nda"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7
+    m_Localized: "Titre\u015Fim aktif"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8
+    m_Localized: "Giri\u015Fler yap\u0131l\u0131rken dokunsal geri bildirimin ger\xE7ekle\u015Fip
+      ger\xE7ekle\u015Fmeyece\u011Fini belirler"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 9
+    m_Localized: Bot ekle
+    m_Metadata:
+      m_Items: []
+  - m_Id: 10
+    m_Localized: Hepsi
+    m_Metadata:
+      m_Items: []
+  - m_Id: 11
+    m_Localized: Artan
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12
+    m_Localized: Ses
+    m_Metadata:
+      m_Items: []
+  - m_Id: 13
+    m_Localized: Mavi
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14
+    m_Localized: Bronz
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15
+    m_Localized: Bust
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16
+    m_Localized: "\u0130ptal"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17
+    m_Localized: Tavan
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18
+    m_Localized: "0-ok yerine buton t\u0131klamas\u0131yla girilebilen tavan vuru\u015Fu"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 19
+    m_Localized: Klipler
+    m_Metadata:
+      m_Items: []
+  - m_Id: 20
+    m_Localized: Onayla
+    m_Metadata:
+      m_Items: []
+  - m_Id: 21
+    m_Localized: Maliyetler
+    m_Metadata:
+      m_Items: []
+  - m_Id: 22
+    m_Localized: "\xD6zel klip taray\u0131c\u0131s\u0131"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 23
+    m_Localized: "\xD6zel klipler"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 24
+    m_Localized: "\xD6zel ses"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 25
+    m_Localized: "\xD6zel sesler kullan\u0131c\u0131 taraf\u0131ndan kaydedilen seslerdir,
+      aksi takdirde varsay\u0131lan paket kullan\u0131l\u0131r"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 26
+    m_Localized: "Camg\xF6be\u011Fi"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 27
+    m_Localized: "T\xFCm oyunlar\u0131 sil"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 28
+    m_Localized: "T\xFCm kaydedilen oyunlar\u0131 silmek istedi\u011Finizden emin
+      misiniz? Bu i\u015Flem geri al\u0131namaz!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 29
+    m_Localized: "Around the Clock oyunlar\u0131n\u0131 sil"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 30
+    m_Localized: "T\xFCm Around the Clock oyunlar\u0131n\u0131 silmek istedi\u011Finizden
+      emin misiniz? Bu i\u015Flem geri al\u0131namaz!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 31
+    m_Localized: Klibi sil
+    m_Metadata:
+      m_Items: []
+  - m_Id: 32
+    m_Localized: "\u015Eu anda g\xF6r\xFCnt\xFClenen klibi silmek istedi\u011Finizden
+      emin misiniz? Bu i\u015Flem geri al\u0131namaz!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33
+    m_Localized: "Cricket oyunlar\u0131n\u0131 sil"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 34
+    m_Localized: "T\xFCm Cricket oyunlar\u0131n\u0131 silmek istedi\u011Finizden
+      emin misiniz? Bu i\u015Flem geri al\u0131namaz!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 35
+    m_Localized: Oyuncuyu sil
+    m_Metadata:
+      m_Items: []
+  - m_Id: 36
+    m_Localized: "{name} isimli oyuncuyu silmek istedi\u011Finizden emin misiniz?
+      Bu i\u015Flem geri al\u0131namaz!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 37
+    m_Localized: "X01 oyunlar\u0131n\u0131 sil"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 38
+    m_Localized: "T\xFCm X01 oyunlar\u0131n\u0131 silmek istedi\u011Finizden emin
+      misiniz? Bu i\u015Flem geri al\u0131namaz!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 39
+    m_Localized: Azalan
+    m_Metadata:
+      m_Items: []
+  - m_Id: 40
+    m_Localized: Kaydetme
+    m_Metadata:
+      m_Items: []
+  - m_Id: 41
+    m_Localized: Kolay
+    m_Metadata:
+      m_Items: []
+  - m_Id: 42
+    m_Localized: "Oyunculara g\xF6re filtrele"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 43
+    m_Localized: Bitti
+    m_Metadata:
+      m_Items: []
+  - m_Id: 44
+    m_Localized: "Oyun hen\xFCz kaydedilmedi"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 45
+    m_Localized: "Oyun hen\xFCz kaydedilmedi. \u015Eimdi kaydetmek ister misiniz?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 46
+    m_Localized: Oyun bitti
+    m_Metadata:
+      m_Items: []
+  - m_Id: 47
+    m_Localized: "Oyunu ba\u015Flat"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 48
+    m_Localized: "Alt\u0131n"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 49
+    m_Localized: "Ye\u015Fil"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 50
+    m_Localized: Zor
+    m_Metadata:
+      m_Items: []
+  - m_Id: 51
+    m_Localized: "Y\xFCksek skorlar"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 52
+    m_Localized: "Ge\xE7mi\u015F"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 53
+    m_Localized: Isabetler
+    m_Metadata:
+      m_Items: []
+  - m_Id: 54
+    m_Localized: Ana sayfa
+    m_Metadata:
+      m_Items: []
+  - m_Id: 55
+    m_Localized: Devam ediyor
+    m_Metadata:
+      m_Items: []
+  - m_Id: 56
+    m_Localized: Aktif olmayan oyuncular
+    m_Metadata:
+      m_Items: []
+  - m_Id: 57
+    m_Localized: "Yo\u011Funluk"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 58
+    m_Localized: Kaybetme
+    m_Metadata:
+      m_Items: []
+  - m_Id: 59
+    m_Localized: "Kazanan olarak \xE7\u0131kmadan bir oyuna kat\u0131lman\u0131n
+      cezas\u0131"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 60
+    m_Localized: "\u015Eansl\u0131 numara"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 61
+    m_Localized: "Ayn\u0131 rakamlardan olu\u015Fan bir skora (\xF6rn. 111, 222 vb.)
+      ula\u015Ft\u0131\u011F\u0131n\u0131zda verilen ceza"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 62
+    m_Localized: "Hepsini i\u015Faretle"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 63
+    m_Localized: "\u0130\u015Faretler"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 64
+    m_Localized: "Tur ba\u015F\u0131na i\u015Faretler"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 65
+    m_Localized: Orta
+    m_Metadata:
+      m_Items: []
+  - m_Id: 66
+    m_Localized: Mod
+    m_Metadata:
+      m_Items: []
+  - m_Id: 67
+    m_Localized: Yeni oyuncu
+    m_Metadata:
+      m_Items: []
+  - m_Id: 68
+    m_Localized: "\u0130sim \xE7ok k\u0131sa (en az 2 karakter)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 69
+    m_Localized: Borda isabet yok
+    m_Metadata:
+      m_Items: []
+  - m_Id: 70
+    m_Localized: "T\xFCm oklar\u0131n duvara veya tavana gelmesi durumunda verilen
+      ceza"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 71
+    m_Localized: "Kaydedilmi\u015F klip yok"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 72
+    m_Localized: Mevcut oyun yok
+    m_Metadata:
+      m_Items: []
+  - m_Id: 73
+    m_Localized: Oyuncu eklenmedi
+    m_Metadata:
+      m_Items: []
+  - m_Id: 74
+    m_Localized: "Kat\u0131l\u0131mc\u0131 listesine hen\xFCz oyuncu eklenmedi. En
+      az bir oyuncu atanmal\u0131d\u0131r!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 75
+    m_Localized: Tamam
+    m_Metadata:
+      m_Items: []
+  - m_Id: 76
+    m_Localized: Ayarlar
+    m_Metadata:
+      m_Items: []
+  - m_Id: 77
+    m_Localized: "S\u0131ra"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 78
+    m_Localized: "Kat\u0131l\u0131mc\u0131lar"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 79
+    m_Localized: Cezalar
+    m_Metadata:
+      m_Items: []
+  - m_Id: 80
+    m_Localized: Ceza klipleri
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81
+    m_Localized: Sesi oynat
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82
+    m_Localized: "Uygulama i\xE7inde seslerin kullan\u0131l\u0131p kullan\u0131lmayaca\u011F\u0131n\u0131
+      belirler (\xF6rn. X01'de skor anonslar\u0131)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 83
+    m_Localized: Oyuncular
+    m_Metadata:
+      m_Items: []
+  - m_Id: 84
+    m_Localized: Puanlar
+    m_Metadata:
+      m_Items: []
+  - m_Id: 85
+    m_Localized: Tercihler
+    m_Metadata:
+      m_Items: []
+  - m_Id: 86
+    m_Localized: Pro
+    m_Metadata:
+      m_Items: []
+  - m_Id: 87
+    m_Localized: Rastgele
+    m_Metadata:
+      m_Items: []
+  - m_Id: 88
+    m_Localized: "Rastgele s\u0131ralama"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89
+    m_Localized: Kaydedici
+    m_Metadata:
+      m_Items: []
+  - m_Id: 90
+    m_Localized: "K\u0131rm\u0131z\u0131"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 91
+    m_Localized: "{name} oyuncusunu yeniden adland\u0131r"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 92
+    m_Localized: Kaydet
+    m_Metadata:
+      m_Items: []
+  - m_Id: 93
+    m_Localized: Oyunu kaydet
+    m_Metadata:
+      m_Items: []
+  - m_Id: 94
+    m_Localized: Skor klipleri
+    m_Metadata:
+      m_Items: []
+  - m_Id: 95
+    m_Localized: Skorlama
+    m_Metadata:
+      m_Items: []
+  - m_Id: 96
+    m_Localized: "Payla\u015F"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 97
+    m_Localized: "GitHub'da buldu\u011Fum yeni Dart uygulamama g\xF6z at\u0131n!
+      https://github.com/fabicodestube-dotcom/Dart-Penalty-Playback/"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 98
+    m_Localized: "\xD6zel klipler"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 99
+    m_Localized: "\u0130statistikler"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 100
+    m_Localized: "G\xFC\xE7l\xFC"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 101
+    m_Localized: "Aniden \xF6l\xFCm"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 102
+    m_Localized: Toplam
+    m_Metadata:
+      m_Items: []
+  - m_Id: 103
+    m_Localized: Destekle
+    m_Metadata:
+      m_Items: []
+  - m_Id: 104
+    m_Localized: "Uygulamay\u0131 desteklemek isterseniz, a\u015Fa\u011F\u0131daki
+      se\xE7eneklerden biriyle ba\u011F\u0131\u015Fta bulunabilirsiniz."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 105
+    m_Localized: Hedefler
+    m_Metadata:
+      m_Items: []
+  - m_Id: 106
+    m_Localized: Tema
+    m_Metadata:
+      m_Items: []
+  - m_Id: 107
+    m_Localized: "\xDC\xE7 tane bir"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 108
+    m_Localized: "3 okla arka arkaya 3 kez 1 alan\u0131n\u0131 vurdu\u011Funuzda
+      verilen ceza (\xE7arpan\u0131n \xF6nemi yoktur)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 109
+    m_Localized: "At\u0131\u015Flar"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 110
+    m_Localized: "Bug\xFCn"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 111
+    m_Localized: "Sessizli\u011Fi k\u0131rp"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 112
+    m_Localized: Geri al
+    m_Metadata:
+      m_Items: []
+  - m_Id: 113
+    m_Localized: "Se\xE7imi kald\u0131r"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 114
+    m_Localized: "Titre\u015Fim"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 115
+    m_Localized: Ses seviyesi
+    m_Metadata:
+      m_Items: []
+  - m_Id: 116
+    m_Localized: Duvar
+    m_Metadata:
+      m_Items: []
+  - m_Id: 117
+    m_Localized: "0-ok yerine buton t\u0131klamas\u0131yla girilebilen duvar vuru\u015Fu"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 118
+    m_Localized: "Zay\u0131f"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 705069411422208
+    m_Localized: Isabet
+    m_Metadata:
+      m_Items: []
+  - m_Id: 705069428199424
+    m_Localized: Iskat
+    m_Metadata:
+      m_Items: []
+  - m_Id: 705069428199425
+    m_Localized: "\xD6zet"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 710215969230848
+    m_Localized: "G\xF6r\xFCnt\xFClenen oyunu ger\xE7ekten silmek istiyor musunuz?
+      Bu i\u015Flem geri al\u0131namaz!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 710510380011520
+    m_Localized: Ayarlar
+    m_Metadata:
+      m_Items: []
+  - m_Id: 722577082241024
+    m_Localized: Uygula
+    m_Metadata:
+      m_Items: []
+  - m_Id: 723894773174272
+    m_Localized: Mevcut X01 oyunu yok
+    m_Metadata:
+      m_Items: []
+  - m_Id: 723894777368576
+    m_Localized: Mevcut Kriket oyunu yok
+    m_Metadata:
+      m_Items: []
+  - m_Id: 723894777368577
+    m_Localized: Mevcut Around the Clock oyunu yok
+    m_Metadata:
+      m_Items: []
+  references:
+    version: 2
+    RefIds: []

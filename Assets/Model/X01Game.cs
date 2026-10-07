@@ -496,8 +496,75 @@ public class X01Game : Game
     {
         base.CalculatePlayerStatsOnSave();
 
-        // Hier X01-spezifische Kacke
-    } 
+        if (playerStats == null || playerIDs == null)
+            return;
+
+        foreach (var playerId in playerIDs)
+        {
+            if (!playerStats.TryGetValue(playerId, out var stats) || stats is not GameStatsX01 x01Stats)
+                continue;
+
+            ResetX01StatsForRebuild(x01Stats);
+
+            foreach (var set in sets)
+            {
+                foreach (var leg in set.GetLegs())
+                {
+                    foreach (var turn in leg.GetTurns().Where(t => t.PlayerId == playerId && t.GetThrows().Count > 0))
+                    {
+                        if (turn.IsBust)
+                            continue;
+
+                        int remainingBeforeTurn = turn.ScoreBeforeTurn;
+                        foreach (var dart in turn.GetThrows())
+                        {
+                            if (IsCheckable(remainingBeforeTurn, GetSettingsAsX01().checkoutType))
+                                x01Stats.RegisterCheckoutAttempt();
+
+                            remainingBeforeTurn -= dart.GetScore();
+                        }
+
+                        x01Stats.RegisterTurn(turn);
+
+                        if (turn.ScoreBeforeTurn > 0 && turn.GetTurnScore() == turn.ScoreBeforeTurn)
+                            x01Stats.RegisterCheckout(turn);
+                    }
+                }
+            }
+        }
+    }
+
+    private void ResetX01StatsForRebuild(GameStatsX01 stats)
+    {
+        if (stats == null)
+            return;
+
+        stats.turnCount = 0;
+        stats.turnSum = 0;
+        stats.averagePointsPerTurn = 0f;
+        stats.bestTurnPoints = 0;
+        stats.first9Points = 0;
+        stats.first9Average = 0f;
+        stats.count60Plus = 0;
+        stats.count100Plus = 0;
+        stats.count140Plus = 0;
+        stats.count180 = 0;
+        stats.checkoutTurns.Clear();
+        stats.highestCheckout = 0;
+        stats.checkoutAttemptCount = 0f;
+
+        stats.hitSectorCounts = new Dictionary<string, int>();
+        stats.hitSectorCounts["0"] = 0;
+        for (int i = 1; i <= 20; i++)
+        {
+            stats.hitSectorCounts[i.ToString()] = 0;
+            stats.hitSectorCounts["D" + i] = 0;
+            stats.hitSectorCounts["T" + i] = 0;
+        }
+
+        stats.hitSectorCounts["25"] = 0;
+        stats.hitSectorCounts["D25"] = 0;
+    }
 
 
     // =========================================================
@@ -510,14 +577,17 @@ public class X01Game : Game
     {
         var legWinners = set.GetLegs()
             .Select(l => GetLegWinner(l))
-            .Where(w => w != null)
+            .Where(w => w != Guid.Empty)
             .ToList();
 
         var groups = legWinners
             .GroupBy(p => p)
             .ToDictionary(g => g.Key, g => g.Count());
 
-        int legsToWin = (GetSettingsAsX01().legCount / 2) + 1;
+        var s = GetSettingsAsX01();
+        int legsToWin = s.setsAndLegsMode == SetsAndLegs.FirstTo
+            ? s.legCount
+            : (s.legCount / 2) + 1;
 
         foreach (var kv in groups)
             if (kv.Value >= legsToWin)

@@ -1,9 +1,10 @@
+#if UNITY_EDITOR
+
 using UnityEngine;
 using UnityEditor;
 using TMPro;
 using System.Collections.Generic;
 
-#if UNITY_EDITOR
 public class FontFilterAsset : EditorWindow
 {
     

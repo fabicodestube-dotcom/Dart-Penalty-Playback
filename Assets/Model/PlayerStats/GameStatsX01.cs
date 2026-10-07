@@ -41,6 +41,18 @@ public class GameStatsX01 : GameStats
      [JsonProperty] public int startingPoints;
 
 
+    public GameStatsX01() : base(Guid.Empty)
+    {
+        InitHitSectors();
+        EnsureInternalStructures();
+    }
+
+    public GameStatsX01(Guid playerID) : base(playerID)
+    {
+        InitHitSectors();
+        EnsureInternalStructures();
+    }
+
     public GameStatsX01(Guid playerID, int startingPoints) : base(playerID)
     {
         this.startingPoints = startingPoints;

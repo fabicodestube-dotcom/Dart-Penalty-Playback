@@ -18,7 +18,7 @@ public class HistoryItem : MonoBehaviour
     public GameObject playerPrefab;
     public GameObject dividerPrefab;
     public Transform contentParent;
-    
+
     [Header("Header UI Elements")]
     public TMP_Text textDate;
     public TMP_Text textSettings;
@@ -27,37 +27,37 @@ public class HistoryItem : MonoBehaviour
 
 
     private List<GameObject> items;
-    private Game game;
-    private System.Action<Game> onClick;
+    private GameSummary gameSummary;
+    private System.Action<Guid> onClick;
     private HistoryItemMode mode;
 
 
-    public void Setup(AppHandler appHandler, Game game, HistoryItemMode mode, System.Action<Game> onClick = null)
+    public void Setup(AppHandler appHandler, GameSummary summary, HistoryItemMode mode, System.Action<Guid> onClick = null)
     {
-        this.game = game;
+        this.gameSummary = summary;
         this.mode = mode;
         this.onClick = onClick;
 
-        RenderHeader(game);
-        RenderBody(appHandler, game);
+        RenderHeader(summary);
+        RenderBody(appHandler, summary);
 
         ApplyInteraction();
 
-        headline.Initialize(game);
+        headline.Initialize(summary);
     }
 
     public Guid GetGameID()
     {
-        return game.GetID();
+        return gameSummary.Id;
     }
 
-    private void RenderHeader(Game g)
+    private void RenderHeader(GameSummary summary)
     {
-        var finishedAt = g.GetFinishedAt();
+        var finishedAt = summary.FinishedAt;
 
         textDate.text = finishedAt.HasValue
             ? finishedAt.Value.ToString("dd.MM.yyyy HH:mm")
-            : $"Spiel läuft noch (Stand: {g.GetLastActivityAt():dd.MM.yyyy HH:mm})";
+            : $"Spiel läuft noch (Stand: {summary.LastActivityAt:dd.MM.yyyy HH:mm})";
 
         if (finishedAt.HasValue)
         {
@@ -70,132 +70,134 @@ public class HistoryItem : MonoBehaviour
             textGameStatusRunning.SetActive(true);
         }
 
-        if (g is X01Game)
+        if (summary.GameMode == GameMode.X01)
         {
-            textSettings.text = "X01 (" + g.GetSettings().GetString() + ")";
+            textSettings.text = "X01 (" + GetSettingsString(summary) + ")";
         }
-        else if (g is CricketGame)
+        else if (summary.GameMode == GameMode.Cricket)
         {
-            textSettings.text = "Cricket (" + g.GetSettings().GetString() + ")";
+            textSettings.text = "Cricket (" + GetSettingsString(summary) + ")";
         }
-        else if (g is ATCGame)
+        else if (summary.GameMode == GameMode.ATC)
         {
-            textSettings.text = "ATC (" + g.GetSettings().GetString() + ")";
+            textSettings.text = "ATC (" + GetSettingsString(summary) + ")";
         }
     }
 
-    private void RenderPenalties(Game g)
+    private string GetSettingsString(GameSummary summary)
     {
-        var settings = g.GetSettings();
+        if (string.IsNullOrEmpty(summary.SettingsJson))
+            return "";
 
-        if (settings == null)
+        try
         {
-            Debug.LogWarning(" No settings found for game ID " + g.GetID());
-            return;
+            var settings = Newtonsoft.Json.JsonConvert.DeserializeObject<GameSettings>(summary.SettingsJson);
+            return settings?.GetString() ?? "";
+        }
+        catch
+        {
+            return "";
         }
     }
 
-    private void RenderBody(AppHandler appHandler, Game g)
+    private void RenderBody(AppHandler appHandler, GameSummary summary)
     {
         Clear();
 
-        if (g.GetGameMode() == GameMode.X01)
+        var playerEntries = summary.PlayerEntries;
+        if (summary.GameMode == GameMode.X01)
         {
-            var game = (X01Game)g;
-
-            var playerIDs = game.GetPlayerIDs();
-
-            var sortedPlayers = playerIDs
-                .OrderByDescending(p => game.GetWonSets(p))
-                .ThenByDescending(p => game.GetWonLegs(p))
+            var sortedPlayers = playerEntries
+                .OrderByDescending(p => p.SetsWon)
+                .ThenByDescending(p => p.LegsWon)
                 .ToList();
-
-            var stats = game.GetPlayerStats();
 
             for (int i = 0; i < sortedPlayers.Count; i++)
             {
-                Guid pid = sortedPlayers[i];
+                var entry = sortedPlayers[i];
 
                 var go = Instantiate(playerPrefab, contentParent);
                 var item = go.GetComponent<HistoryItemPlayerPrefab>();
 
-                var turns = game.GetAllTurns(pid);
-
                 item.ShowPlayer(
                     rank: i + 1,
-                    playerName: appHandler.GetPlayerNameByID(pid),
-                    metricLabel: "Punkte: " + game.GetScore(pid).ToString(),
-                    stats: stats[pid]
+                    playerName: appHandler.GetPlayerNameByID(entry.PlayerId),
+                    metricLabel: "Punkte: " + entry.Score.ToString(),
+                    stats: BuildPenaltyStats(entry),
+                    setsWonOverride: entry.SetsWon,
+                    legsWonOverride: summary.IsFinished ? 0 : entry.LegsWon
                 );
 
                 items.Add(item.gameObject);
                 CreateDividerIfNeeded(i, sortedPlayers.Count);
             }
         }
-        else if (g.GetGameMode() == GameMode.Cricket)
+        else if (summary.GameMode == GameMode.Cricket)
         {
-            var game = (CricketGame)g;
-
-            var playerIDs = game.GetPlayerIDs();
-
-            var sortedPlayers = playerIDs
-                .OrderByDescending(p => game.GetWonSets(p))
-                .ThenByDescending(p => game.GetWonLegsTotal(p))
+            var sortedPlayers = playerEntries
+                .OrderByDescending(p => p.SetsWon)
+                .ThenByDescending(p => p.LegsWon)
                 .ToList();
-
 
             for (int i = 0; i < sortedPlayers.Count; i++)
             {
-                Guid pid = sortedPlayers[i];
+                var entry = sortedPlayers[i];
 
                 var go = Instantiate(playerPrefab, contentParent);
                 var item = go.GetComponent<HistoryItemPlayerPrefab>();
 
-                var turns = game.GetAllTurns(pid);
-
                 item.ShowPlayer(
                     rank: i + 1,
-                    playerName: appHandler.GetPlayerNameByID(pid),
-                    metricLabel: "Punkte: " + game.GetScore(pid).ToString(),
-                    stats: game.GetPlayerStats()[pid]
+                    playerName: appHandler.GetPlayerNameByID(entry.PlayerId),
+                    metricLabel: "Punkte: " + entry.Score.ToString(),
+                    stats: BuildPenaltyStats(entry),
+                    setsWonOverride: entry.SetsWon,
+                    legsWonOverride: summary.IsFinished ? 0 : entry.LegsWon
                 );
 
                 items.Add(item.gameObject);
                 CreateDividerIfNeeded(i, sortedPlayers.Count);
             }
         }
-        else if (g.GetGameMode() == GameMode.ATC)
+        else if (summary.GameMode == GameMode.ATC)
         {
-            var game = (ATCGame)g;
-
-            var playerIDs = game.GetPlayerIDs();
-
-            var sortedPlayers = playerIDs
-                .OrderByDescending(p => game.GetWonSetsTotal(p))
-                .ThenByDescending(p => game.GetWonLegsTotal(p))
+            var sortedPlayers = playerEntries
+                .OrderByDescending(p => p.TargetsHit)
                 .ToList();
 
             for (int i = 0; i < sortedPlayers.Count; i++)
             {
-                Guid pid = sortedPlayers[i];
+                var entry = sortedPlayers[i];
 
                 var go = Instantiate(playerPrefab, contentParent);
                 var item = go.GetComponent<HistoryItemPlayerPrefab>();
 
-                var turns = game.GetAllTurns(pid);
-                var stats = game.GetPlayerStats()[pid];
-
                 item.ShowPlayer(
                     rank: i + 1,
-                    playerName: appHandler.GetPlayerNameByID(pid),
-                    metricLabel: "Stand: " + $"{game.GetTargetsHit(pid)} / {game.GetTotalTargets()}",
-                    stats: game.GetPlayerStats()[pid]
+                    playerName: appHandler.GetPlayerNameByID(entry.PlayerId),
+                    metricLabel: "Stand: " + $"{entry.TargetsHit} / {entry.TotalTargets}",
+                    stats: BuildPenaltyStats(entry),
+                    setsWonOverride: entry.SetsWon,
+                    legsWonOverride: summary.IsFinished ? 0 : entry.LegsWon
                 );
 
                 items.Add(item.gameObject);
                 CreateDividerIfNeeded(i, sortedPlayers.Count);
             }
         }
+    }
+
+    private static GameStats BuildPenaltyStats(PlayerSummaryEntry entry)
+    {
+        return new GameStats(entry.PlayerId)
+        {
+            wallCount = entry.WallCount,
+            ceilingCount = entry.CeilingCount,
+            allMissCount = entry.AllMissCount,
+            tripleOnesCount = entry.ThreeOnesCount,
+            tripleDigitCount = entry.TripleDigitCount,
+            lostGame = entry.LostGameCount
+        };
     }
 
     private void Clear()
@@ -221,7 +223,7 @@ public class HistoryItem : MonoBehaviour
         {
             button.interactable = true;
             button.onClick.RemoveAllListeners();
-            button.onClick.AddListener(() => onClick?.Invoke(game));
+            button.onClick.AddListener(() => onClick?.Invoke(gameSummary.Id));
         }
         else
         {

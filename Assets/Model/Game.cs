@@ -64,6 +64,7 @@ public abstract class Game
         return gameMode;
     }
     public List<Guid> GetPlayerIDs() => playerIDs;
+    public List<Set> GetSets() => sets;
     public GameSettings GetSettings()
     {
         return settings.Clone();
@@ -73,6 +74,7 @@ public abstract class Game
 
     public bool IsFinished() => finishedAt.HasValue;
     public DateTime? GetFinishedAt() => finishedAt;
+    public Guid? GetMatchWinnerId() => matchWinnerId;
 
     public DateTime GetCreatedAt() => createdAt;
     public DateTime GetLastActivityAt() => lastActivityAt;
@@ -82,6 +84,10 @@ public abstract class Game
     /// </summary>
     public DateTime GetSortTimestamp() => finishedAt ?? lastActivityAt;
 
+    public void SetCreatedAt(DateTime createdAt) => this.createdAt = createdAt;
+    public void SetLastActivityAt(DateTime lastActivityAt) => this.lastActivityAt = lastActivityAt;
+    public void SetFinishedAt(DateTime? finishedAt) => this.finishedAt = finishedAt;
+
 
     // =========================================================
     // LIFECYCLE & TIMESTAMPS
@@ -89,12 +95,18 @@ public abstract class Game
 
     public virtual void InitializeAfterLoad()
     {
-        if (createdAt == default)
+        // Wenn das Jahr kleiner als 2000 ist, wurde es nicht korrekt geladen/gesetzt
+        if (createdAt.Year < 2000)
             createdAt = finishedAt ?? DateTime.Now;
 
-        if (lastActivityAt == default)
+        if (lastActivityAt.Year < 2000)
             lastActivityAt = finishedAt ?? createdAt;
+
+        // Normales deutsches Format für leichtere Lesbarkeit im Log
+        Debug.Log("Created at: " + createdAt.ToString("dd.MM.yyyy HH:mm:ss") + 
+                ", Last activity at: " + lastActivityAt.ToString("dd.MM.yyyy HH:mm:ss"));
     }
+
 
     protected void InitializeTimestampsOnCreate()
     {
@@ -103,6 +115,11 @@ public abstract class Game
     }
 
     protected void TouchActivity()
+    {
+        lastActivityAt = DateTime.Now;
+    }
+
+    public void MarkSavedNow()
     {
         lastActivityAt = DateTime.Now;
     }
@@ -315,7 +332,6 @@ public abstract class Game
 
         OnMatchWon?.Invoke(winnerId);
     }
-
     protected bool IsMatchFinished(Guid? playerId)
     {
         int setsWon = GetWonSets(playerId);
@@ -454,19 +470,20 @@ public abstract class Game
         foreach (Guid playerGUID in playerIDs)
         {
             playerStats[playerGUID].ResetForStatCalculation();
+            playerStats[playerGUID].gamesWon = 0;
         }
     }
 
     private void StatsRegisterGameParticipation()
     {
-        if (matchWinnerId != Guid.Empty)
+        if (!finishedAt.HasValue)
             return;
 
         foreach (Guid playerGUID in playerIDs)
         {
             playerStats[playerGUID].gameCount = 1;
 
-            if (playerGUID == matchWinnerId)
+            if (matchWinnerId.HasValue && matchWinnerId.Value != Guid.Empty && playerGUID == matchWinnerId.Value)
             {
                 playerStats[playerGUID].RegisterGameWon();
             }
