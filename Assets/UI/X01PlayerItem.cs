@@ -3,11 +3,12 @@ using TMPro;
 using System.Linq;
 using UnityEngine.UI;
 using System.Collections.Generic;
+using System.Collections;
 
 public class X01PlayerItem : MonoBehaviour
 {
     public TMP_Text nameText, remainingPointsText, avgText, wonLegsText, wonSetsText, lastTurnScoreText;
-    public TMP_Text dartsThrownText; // <-- Neues Feld für die Anzahl geworfener Darts
+    public TMP_Text dartsThrownText; 
     public Image highlightPanel;
     public TMP_Text[] lastThrowTexts = new TMP_Text[3];
     public Image[] wallImages = new Image[3];
@@ -15,12 +16,49 @@ public class X01PlayerItem : MonoBehaviour
 
     public List<Image> imagesDarts;
 
+    [Header("Glow Animation Setup")]
+    public Image glowFrameImage;          // Das innere Image (das du per Code färbst)
+    public BorderGlowAnimator glowAnimator; // Referenz auf den Animator am Glow-Image
+
     private static readonly Color colorBlack = new Color(20f/255f, 20f/255f, 20f/255f);
     private static readonly Color colorRed = new Color(165f/255f, 42f/255f, 42f/255f);
+
+    private void Awake()
+    {
+        // Fallback: Animator am Glow-Image selbst finden, falls im Prefab nicht verdrahtet
+        if (glowAnimator == null && glowFrameImage != null)
+            glowAnimator = glowFrameImage.GetComponent<BorderGlowAnimator>();
+
+        // Reine Anzeige-Texte: aus dem Touch-Raycast nehmen (Klicks laufen
+        // über die Button-Grafik des Items, nicht über einzelne Texte).
+        foreach (var text in GetComponentsInChildren<TMP_Text>(true))
+            text.raycastTarget = false;
+    }
 
     public void Bind(X01UIStats stats)
     {
         highlightPanel.gameObject.SetActive(stats.isActive);
+
+        // --- Glow nur beim aktiven Spieler, gesteuert über den Animator ---
+        if (stats.isActive)
+        {
+            if (glowFrameImage != null)
+            {
+                glowFrameImage.gameObject.SetActive(true);
+                if (glowAnimator != null)
+                    glowAnimator.StartGlow();
+            }
+        }
+        else
+        {
+            if (glowAnimator != null)
+                glowAnimator.StopGlow();
+            if (glowFrameImage != null)
+            {
+                glowFrameImage.gameObject.SetActive(false);
+            }
+        }
+        // ------------------------------------------
 
         nameText.text = stats.playerName;
         remainingPointsText.text = stats.currentScore.ToString();
@@ -94,7 +132,7 @@ public class X01PlayerItem : MonoBehaviour
         {
             DartMultiplier.Double => "D" + t.Value.ToString(),
             DartMultiplier.Triple => "T" + t.Value.ToString(),
-            _ => t.Value.ToString() // Single: nur Zahl
+            _ => t.Value.ToString()
         };
     }
 
@@ -103,5 +141,11 @@ public class X01PlayerItem : MonoBehaviour
         lastThrowTexts[i].gameObject.SetActive(false);
         wallImages[i].gameObject.SetActive(false);
         ceilingImages[i].gameObject.SetActive(false);
+    }
+
+    private void OnDisable()
+    {
+        if (glowAnimator != null)
+            glowAnimator.StopGlow();
     }
 }

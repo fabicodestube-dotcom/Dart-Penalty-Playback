@@ -20,6 +20,11 @@ public class GameStatsCricket : GameStats
     [JsonProperty] public Dictionary<int, int> turnMarks = new Dictionary<int, int>(); // Marks pro Turn
     [JsonProperty] public Dictionary<int, int> turnOverkills = new Dictionary<int, int>(); // Overkill-Punkte pro Turn
     [JsonProperty] public float maxMPR = 0f; // Höchste MPR einer Runde
+
+    // Aggregierte TurnScores/Overkills pro Spiel (für AllTime-Average/Max/Overkill).
+    // turnScores/turnOverkills enthalten den Merge aller Spiele mit fortlaufendem Index.
+    [JsonProperty] public Dictionary<string, Dictionary<int, int>> gameTurnScores = new Dictionary<string, Dictionary<int, int>>();
+    [JsonProperty] public Dictionary<string, Dictionary<int, int>> gameTurnOverkills = new Dictionary<string, Dictionary<int, int>>();
     
     // Preferences
     [JsonProperty] public int firstClosedField = -1;
@@ -82,7 +87,35 @@ public class GameStatsCricket : GameStats
         whiteHorseTurns += cricket.whiteHorseTurns;
         sameTripleTurns += cricket.sameTripleTurns;
 
+        // TurnScores/Overkills pro Spiel merken und gemergt aggregieren,
+        // damit Average/Max/Overkill über alle Zeiten stimmen.
+        gameTurnScores ??= new Dictionary<string, Dictionary<int, int>>();
+        gameTurnOverkills ??= new Dictionary<string, Dictionary<int, int>>();
+        gameTurnScores[gameId.ToString()] = new Dictionary<int, int>(cricket.turnScores);
+        gameTurnOverkills[gameId.ToString()] = new Dictionary<int, int>(cricket.turnOverkills);
+        RebuildMergedTurnScores();
+
         RecalculateAggregatedValues();
+    }
+
+    private void RebuildMergedTurnScores()
+    {
+        turnScores.Clear();
+        turnOverkills.Clear();
+
+        int idx = 0;
+        foreach (var kv in gameTurnScores)
+        {
+            foreach (var e in kv.Value.OrderBy(x => x.Key))
+                turnScores[idx++] = e.Value;
+        }
+
+        int oidx = 0;
+        foreach (var kv in gameTurnOverkills)
+        {
+            foreach (var e in kv.Value.OrderBy(x => x.Key))
+                turnOverkills[oidx++] = e.Value;
+        }
     }
 
     public override void RemoveGameStat(GameStats stats, Guid gameId)
@@ -107,6 +140,12 @@ public class GameStatsCricket : GameStats
         nineMarkTurns = Math.Max(0, nineMarkTurns - cricket.nineMarkTurns);
         whiteHorseTurns = Math.Max(0, whiteHorseTurns - cricket.whiteHorseTurns);
         sameTripleTurns = Math.Max(0, sameTripleTurns - cricket.sameTripleTurns);
+
+        // Aggregierte TurnScores/Overkills symmetrisch abbauen
+        gameTurnScores?.Remove(gameId.ToString());
+        gameTurnOverkills?.Remove(gameId.ToString());
+        if (gameTurnScores != null && gameTurnOverkills != null)
+            RebuildMergedTurnScores();
 
         // Maximalwerte neu berechnen
         if (cricket.maxMPR >= maxMPR)

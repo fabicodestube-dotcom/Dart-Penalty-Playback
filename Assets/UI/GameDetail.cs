@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using TMPro;
@@ -39,14 +39,21 @@ public class GameDetail : UIScreen, IUIScreen
     public GameObject buttonContinue;
     public GameObject buttonDelete;
 
+    [Header("Penalty-Spalten-Detail")]
+    [Tooltip("Detail-Popup für Header-Taps (optional, sonst Auto-Find).")]
+    public PenaltyDetailPopup columnDetailPopup;
+
     private GameSummary gameSummary;
     private Dictionary<Guid, GameStats> playerStats;
     private readonly Dictionary<string, TableView> cachedTables = new Dictionary<string, TableView>();
     private readonly List<HitSectorChart> x01HitSectorCharts = new List<HitSectorChart>();
     private GameObject x01HitSectorHeadline;
+    private readonly List<HitSectorChart> atcHitSectorCharts = new List<HitSectorChart>();
+    private GameObject atcHitSectorHeadline;
 
-    private void Awake()
+    protected override void Awake()
     {
+        base.Awake();
         InitializeCachedTables();
     }
 
@@ -135,16 +142,7 @@ public class GameDetail : UIScreen, IUIScreen
 
         CreateCachedTable("X01_PlayerSummary", "Player", new TableCellData[] { "Sets", "Legs", "Score" });
 
-        CreateCachedTable("X01_Penalties", "Strafen", new TableCellData[]
-        {
-            new TableCellData { text = "Wall", icon = iconWall, isIcon = true },
-            new TableCellData { text = "Decke", icon = iconCeiling, isIcon = true },
-            new TableCellData { text = "AllMiss", icon = iconAllMiss, isIcon = true },
-            new TableCellData { text = "3x1", icon = iconTripleOnes, isIcon = true },
-            new TableCellData { text = "3xX", icon = iconTripleDigit, isIcon = true },
-            new TableCellData { text = "lost", icon = iconLostGame, isIcon = true },
-            "Summe"
-        });
+        CreateCachedTable("X01_Penalties", "Strafen", new TableCellData[] { "Anzahl", "Kosten", "Details" });
 
         CreateCachedTable("X01_Legs", "Legs",
             new TableCellData[] { "Played", "Won", "Win %" });
@@ -162,16 +160,7 @@ public class GameDetail : UIScreen, IUIScreen
             new TableCellData[] { "Max Checkout", "Attempts", "Favorite" });
 
         CreateCachedTable("Cricket_PlayerSummary", "Players", new TableCellData[] { "Sets", "Legs", "Score" });
-        CreateCachedTable("Cricket_Penalties", "Penalties", new TableCellData[]
-        {
-            new TableCellData { text = "Wall", icon = iconWall, isIcon = true },
-            new TableCellData { text = "Decke", icon = iconCeiling, isIcon = true },
-            new TableCellData { text = "AllMiss", icon = iconAllMiss, isIcon = true },
-            new TableCellData { text = "3x1", icon = iconTripleOnes, isIcon = true },
-            new TableCellData { text = "3xX", icon = iconTripleDigit, isIcon = true },
-            new TableCellData { text = "lost", icon = iconLostGame, isIcon = true },
-            "Summe"
-        });
+        CreateCachedTable("Cricket_Penalties", "Penalties", new TableCellData[] { "Anzahl", "Kosten", "Details" });
         CreateCachedTable("Cricket_Legs", "Legs", new TableCellData[] { "Played", "Won", "Win %" });
         CreateCachedTable("Cricket_Throws", "Throws", new TableCellData[] { "Throws", "Double %", "Triple %" });
         CreateCachedTable("Cricket_Scores", "Points", new TableCellData[] { "Ø Points/Turn", "Max Points", "Overkill Points" });
@@ -180,16 +169,7 @@ public class GameDetail : UIScreen, IUIScreen
         CreateCachedTable("Cricket_Preferences", "Preferences", new TableCellData[] { "First closed", "Last closed", "Most Points" });
 
         CreateCachedTable("ATC_PlayerSummary", "Player", new TableCellData[] { "Sets", "Legs", "Targets" });
-        CreateCachedTable("ATC_Penalties", "Strafen", new TableCellData[]
-        {
-            new TableCellData { text = "Wall", icon = iconWall, isIcon = true },
-            new TableCellData { text = "Decke", icon = iconCeiling, isIcon = true },
-            new TableCellData { text = "AllMiss", icon = iconAllMiss, isIcon = true },
-            new TableCellData { text = "3x1", icon = iconTripleOnes, isIcon = true },
-            new TableCellData { text = "3xX", icon = iconTripleDigit, isIcon = true },
-            new TableCellData { text = "lost", icon = iconLostGame, isIcon = true },
-            "Summe"
-        });
+        CreateCachedTable("ATC_Penalties", "Strafen", new TableCellData[] { "Anzahl", "Kosten", "Details" });
         CreateCachedTable("ATC_Legs", "Legs", new TableCellData[] { "Played", "Won", "Win %" });
         CreateCachedTable("ATC_Scoring", "Scoring", new TableCellData[] { "Throws", "Hits", "Hit %" });
         CreateCachedTable("ATC_Streaks", "Streaks & Chokes", new TableCellData[] { "First Dart Hit %", "Longest Streak", "Biggest Choke" });
@@ -245,38 +225,7 @@ public class GameDetail : UIScreen, IUIScreen
 
         playerTable.RefreshLayout();
 
-        var table = GetCachedTable("X01_Penalties");
-
-        table.gameObject.SetActive(true);
-
-        var activeX01PenaltyKeys = new HashSet<string>();
-        foreach (var pid in playerIDs)
-        {
-            var stats = statsDict.TryGetValue(pid, out var s) ? s : null;
-            string key = pid.ToString();
-
-            table.AddOrUpdateRow(key, GetPlayerName(pid), new TableCellData[]
-            {
-                stats?.wallCount.ToString() ?? "0",
-                stats?.ceilingCount.ToString() ?? "0",
-                stats?.allMissCount.ToString() ?? "0",
-                stats?.tripleOnesCount.ToString() ?? "0",
-                stats?.tripleDigitCount.ToString() ?? "0",
-                stats?.lostGame.ToString() ?? "0",
-                stats?.GetTotalPenaltyCosts().ToString() ?? "0"
-            }, false);
-
-            table.SetRowActive(key, true);
-            activeX01PenaltyKeys.Add(key);
-        }
-
-        foreach (var existingKey in table.GetRowKeys())
-        {
-            if (!activeX01PenaltyKeys.Contains(existingKey))
-                table.SetRowActive(existingKey, false);
-        }
-
-        table.RefreshLayout();
+        FillSimplePenaltyTable("X01_Penalties", playerIDs, statsDict);
 
         CreateTable(
             GameMode.X01,
@@ -454,38 +403,7 @@ public class GameDetail : UIScreen, IUIScreen
 
         playerTable.RefreshLayout();
 
-        var table = GetCachedTable("Cricket_Penalties");
-
-        table.gameObject.SetActive(true);
-
-        var activePenaltyKeys = new HashSet<string>();
-        foreach (var pid in playerIDs)
-        {
-            var stats = statsDict.TryGetValue(pid, out var s) ? s : null;
-            string key = pid.ToString();
-
-            table.AddOrUpdateRow(key, GetPlayerName(pid), new TableCellData[]
-            {
-                stats?.wallCount.ToString() ?? "0",
-                stats?.ceilingCount.ToString() ?? "0",
-                stats?.allMissCount.ToString() ?? "0",
-                stats?.tripleOnesCount.ToString() ?? "0",
-                stats?.tripleDigitCount.ToString() ?? "0",
-                stats?.lostGame.ToString() ?? "0",
-                stats?.GetTotalPenaltyCosts().ToString() ?? "0"
-            }, false);
-
-            table.SetRowActive(key, true);
-            activePenaltyKeys.Add(key);
-        }
-
-        foreach (var existingKey in table.GetRowKeys())
-        {
-            if (!activePenaltyKeys.Contains(existingKey))
-                table.SetRowActive(existingKey, false);
-        }
-
-        table.RefreshLayout();
+        FillSimplePenaltyTable("Cricket_Penalties", playerIDs, statsDict);
 
         CreateTable(
             GameMode.Cricket,
@@ -527,25 +445,43 @@ public class GameDetail : UIScreen, IUIScreen
             playerIDs
         );
 
-        CreateTable(
-            GameMode.Cricket,
-            "Cricket_Scores",
-            "Punkte",
-            new TableCellData[] { "Ø Points/Turn", "Max Points", "Overkill Points" },
-            pid =>
-            {
-                var stats = statsDict.TryGetValue(pid, out var s) ? s as GameStatsCricket : null;
-                if (stats == null) return null;
+        // Points-Tabelle nur bei "Punkte an": ohne Punkte sind alle Werte
+        // per Design 0 (kein Overflow-Scoring). Fail-open: bei unlesbaren
+        // Settings wird die Tabelle wie bisher angezeigt.
+        bool showPointsTable = true;
+        try
+        {
+            var cricketSettings = JsonConvert.DeserializeObject<CricketGameSettings>(gameSummary.SettingsJson);
+            if (cricketSettings != null)
+                showPointsTable = cricketSettings.pointsEnabled;
+        }
+        catch (Exception)
+        {
+            showPointsTable = true;
+        }
 
-                return new TableCellData[]
+        if (showPointsTable)
+        {
+            CreateTable(
+                GameMode.Cricket,
+                "Cricket_Scores",
+                "Punkte",
+                new TableCellData[] { "Ø Points/Turn", "Max Points", "Overkill Points" },
+                pid =>
                 {
-                    $"{stats.AverageScorePerTurn:0.00}",
-                    stats.MaxScoreInTurn.ToString(),
-                    stats.TotalOverkillPoints.ToString()
-                };
-            },
-            playerIDs
-        );
+                    var stats = statsDict.TryGetValue(pid, out var s) ? s as GameStatsCricket : null;
+                    if (stats == null) return null;
+
+                    return new TableCellData[]
+                    {
+                        $"{stats.AverageScorePerTurn:0.00}",
+                        stats.MaxScoreInTurn.ToString(),
+                        stats.TotalOverkillPoints.ToString()
+                    };
+                },
+                playerIDs
+            );
+        }
 
         CreateTable(
             GameMode.Cricket,
@@ -641,38 +577,7 @@ public class GameDetail : UIScreen, IUIScreen
 
         playerTable.RefreshLayout();
 
-        var table = GetCachedTable("ATC_Penalties");
-
-        table.gameObject.SetActive(true);
-
-        var activeATCPenaltyKeys = new HashSet<string>();
-        foreach (var pid in playerIDs)
-        {
-            var stats = statsDict.TryGetValue(pid, out var s) ? s : null;
-            string key = pid.ToString();
-
-            table.AddOrUpdateRow(key, GetPlayerName(pid), new TableCellData[]
-            {
-                stats?.wallCount.ToString() ?? "0",
-                stats?.ceilingCount.ToString() ?? "0",
-                stats?.allMissCount.ToString() ?? "0",
-                stats?.tripleOnesCount.ToString() ?? "0",
-                stats?.tripleDigitCount.ToString() ?? "0",
-                stats?.lostGame.ToString() ?? "0",
-                stats?.GetTotalPenaltyCosts().ToString() ?? "0"
-            }, false);
-
-            table.SetRowActive(key, true);
-            activeATCPenaltyKeys.Add(key);
-        }
-
-        foreach (var existingKey in table.GetRowKeys())
-        {
-            if (!activeATCPenaltyKeys.Contains(existingKey))
-                table.SetRowActive(existingKey, false);
-        }
-
-        table.RefreshLayout();
+        FillSimplePenaltyTable("ATC_Penalties", playerIDs, statsDict);
 
         CreateTable(
             GameMode.ATC,
@@ -757,6 +662,47 @@ public class GameDetail : UIScreen, IUIScreen
             },
             playerIDs
         );
+
+        // Versuche pro Feld (X01-Prefab wiederverwendet, auf ATC-Keys beschnitten)
+        if (prefabHitSectorChart != null)
+        {
+            if (atcHitSectorHeadline == null)
+            {
+                atcHitSectorHeadline = Instantiate(prefabHeadline, contentParent);
+                var atcHeadlineText = atcHitSectorHeadline.GetComponentInChildren<TMP_Text>();
+                if (atcHeadlineText != null)
+                    atcHeadlineText.text = "Versuche pro Feld";
+            }
+            atcHitSectorHeadline.SetActive(true);
+
+            while (atcHitSectorCharts.Count < playerIDs.Count)
+            {
+                var newChart = Instantiate(prefabHitSectorChart, contentParent).GetComponent<HitSectorChart>();
+                if (newChart == null)
+                {
+                    Debug.LogError("prefabHitSectorChart has no HitSectorChart component");
+                    break;
+                }
+                newChart.gameObject.SetActive(false);
+                atcHitSectorCharts.Add(newChart);
+            }
+
+            for (int i = 0; i < atcHitSectorCharts.Count; i++)
+            {
+                var chart = atcHitSectorCharts[i];
+                if (chart == null)
+                    continue;
+
+                if (i < playerIDs.Count)
+                {
+                    var pid = playerIDs[i];
+                    var stats = statsDict.TryGetValue(pid, out var s) ? s as GameStatsATC : null;
+                    ATCAttemptsChart.SetupChart(chart, GetPlayerName(pid), stats?.throwSectorCounts);
+                }
+                else
+                    chart.gameObject.SetActive(false);
+            }
+        }
     }
 
     private int GetScoreForPlayer(Guid pid)
@@ -860,6 +806,77 @@ public class GameDetail : UIScreen, IUIScreen
             if (chart != null)
                 chart.gameObject.SetActive(false);
         }
+
+        if (atcHitSectorHeadline != null)
+            atcHitSectorHeadline.SetActive(false);
+
+        foreach (var chart in atcHitSectorCharts)
+        {
+            if (chart != null)
+                chart.gameObject.SetActive(false);
+        }
+    }
+
+    private PenaltyDetailPopup ColumnPopup
+    {
+        get
+        {
+            if (columnDetailPopup == null)
+                columnDetailPopup = PenaltyDetailPopup.FindVisibleInstance();
+            return columnDetailPopup;
+        }
+    }
+
+    /// <summary>
+    /// Füllt die einfache Penalty-Tabelle: Name | Anzahl | Kosten | › Details.
+    /// Header statisch (einmalig bei Erstellung), Zeilen mit Detail-Tap pro
+    /// Spieler (Popup: PenaltyDetailPopup.ShowPlayerPenalties).
+    /// </summary>
+    private void FillSimplePenaltyTable(
+        string tableKey, List<Guid> playerIDs, Dictionary<Guid, GameStats> statsDict)
+    {
+        var table = GetCachedTable(tableKey);
+        if (table == null || gameSummary == null)
+            return;
+
+        table.gameObject.SetActive(true);
+
+        var popup = ColumnPopup;
+        var activeKeys = new HashSet<string>();
+        foreach (var pid in playerIDs)
+        {
+            statsDict.TryGetValue(pid, out var stats);
+            string key = pid.ToString();
+            string playerName = GetPlayerName(pid);
+
+            var entry = gameSummary.PlayerEntries?.Find(e => e != null && e.PlayerId == pid);
+            int count = PenaltyDisplay.TotalPenaltyCount(entry);
+            string cost = stats?.GetTotalPenaltyCosts().ToString("0") ?? "0";
+
+            table.AddOrUpdateRow(key, playerName, new TableCellData[]
+            {
+                count.ToString(),
+                cost,
+                "› Details"
+            }, false);
+
+            table.SetRowActive(key, true);
+            activeKeys.Add(key);
+
+            if (popup != null && table.TryGetRow(key, out var rowGo) && rowGo != null)
+            {
+                var row = rowGo.GetComponent<DynamicTableRow>();
+                row?.WireCellTaps(_ => popup.ShowPlayerPenalties(gameSummary, pid, playerName));
+            }
+        }
+
+        foreach (var existingKey in table.GetRowKeys())
+        {
+            if (!activeKeys.Contains(existingKey))
+                table.SetRowActive(existingKey, false);
+        }
+
+        table.RefreshLayout();
     }
 
     private string GetPlayerName(Guid pid)

@@ -49,10 +49,10 @@ public class X01GameEngine : GameEngine
         game.OnLegWon += HandleLegWon;
         game.OnSetWon += HandleSetWon;
         game.OnMatchWon += HandleMatchWon;
-        game.OnPenaltyTriggered += HandlePenalty;
+        game.OnCustomPenaltyTriggered += HandleCustomPenaltyAudio;
+        game.OnCustomAudioEvent += HandleCustomAudioEvent;
         game.OnTurnCompleted += HandleTurnCompleted;
         ((X01Game) game).OnCheckoutAvailable += HandleCheckoutAvailable;
-        ((X01Game) game).OnFourTwenty += HandleFourTwenty;
         game.OnBotCheck += HandleBotCheck;
         ((X01Game) game).OnSuddenDeath += HandleSuddenDeath;
     }
@@ -77,7 +77,7 @@ public class X01GameEngine : GameEngine
 
         ((X01Game) game).Undo();
         StopBotTurn();
-        audioManager.PlaySpecialClip(SpecialAudioType.Undo);
+        audioManager.PlayCustomEvent(SeededAudioEvents.UndoId);
         playerList.RefreshUI(GetUIStats());
         HandleUndoBotState();
     }
@@ -118,7 +118,7 @@ public class X01GameEngine : GameEngine
 
         if (turn.IsBust)
         {
-            audioManager.PlaySpecialClip(SpecialAudioType.Bust);
+            audioManager.PlayCustomEvent(SeededAudioEvents.BustId);
         }
         else
         {
@@ -159,13 +159,6 @@ public class X01GameEngine : GameEngine
         }
     }
 
-    private void HandlePenalty(Guid playerId, PenaltyType type, Turn turn)
-    {
-        playerList.RefreshUI(GetUIStats());
-
-        audioManager.PlayPenalty(type);
-    }
-
     private void HandleLegWon(Guid playerId)
     {
         Debug.Log($"[ENGINE] Spieler {playerId} hat ein Leg gewonnen");
@@ -193,12 +186,9 @@ public class X01GameEngine : GameEngine
         checkoutHandler.Show(option);
     }
 
-    private void HandleFourTwenty(Guid playerId)
-    {
-        Debug.Log($"[ENGINE] 🎉 Spieler {playerId} hat genau 420 Punkte!");
-        
-        audioManager.PlaySpecialClip(SpecialAudioType.FourTwenty);
-    }
+    // Hinweis: 420 feuert als Custom-Event (ScoreReached x01_420) über die
+    // Turn-Auswertung (EvaluateCustomAudioEvents) — bewusst KEIN expliziter
+    // OnFourTwenty-Hook mehr, der würde pro 420-Turn doppelt spielen.
 
 
     // =========================================================
@@ -257,10 +247,10 @@ public class X01GameEngine : GameEngine
         game.OnLegWon -= HandleLegWon;
         game.OnSetWon -= HandleSetWon;
         game.OnMatchWon -= HandleMatchWon;
-        game.OnPenaltyTriggered -= HandlePenalty;
+        game.OnCustomPenaltyTriggered -= HandleCustomPenaltyAudio;
+        game.OnCustomAudioEvent -= HandleCustomAudioEvent;
         game.OnTurnCompleted -= HandleTurnCompleted;
         ((X01Game) game).OnCheckoutAvailable -= HandleCheckoutAvailable;
-        ((X01Game) game).OnFourTwenty -= HandleFourTwenty;
         game.OnBotCheck -= HandleBotCheck;
         ((X01Game) game).OnSuddenDeath -= HandleSuddenDeath;
     }
@@ -269,6 +259,9 @@ public class X01GameEngine : GameEngine
 
     private void HandleSuddenDeath()
     {
-        audioManager.PlaySpecialClip(SpecialAudioType.SuddenDeath);
+        // Expliziter Moment (Einmaligkeit + Undo-Konsistenz steuert das
+        // suddenDeathTriggered-Flag im X01Game): spielt das Custom-Event,
+        // Fallback ist der bisherige Sudden-Death-Sound.
+        audioManager.PlayCustomEvent(SeededAudioEvents.SuddenDeathId);
     }
 }

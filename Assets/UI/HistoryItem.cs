@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using TMPro;
@@ -31,19 +31,54 @@ public class HistoryItem : MonoBehaviour
     private System.Action<Guid> onClick;
     private HistoryItemMode mode;
 
+    private readonly Stack<GameObject> playerRowPool = new Stack<GameObject>();
+    private readonly Stack<GameObject> dividerPool = new Stack<GameObject>();
+
+    private static readonly Dictionary<string, string> settingsLabelCache = new Dictionary<string, string>();
+
+    private void Awake()
+    {
+        DisableTextRaycasts();
+    }
+
+    private void DisableTextRaycasts()
+    {
+        var texts = GetComponentsInChildren<TMP_Text>(true);
+        foreach (var text in texts)
+            text.raycastTarget = false;
+    }
 
     public void Setup(AppHandler appHandler, GameSummary summary, HistoryItemMode mode, System.Action<Guid> onClick = null)
+    {
+        Setup(appHandler, summary, mode, onClick, null);
+    }
+
+    public void Setup(AppHandler appHandler, GameSummary summary, HistoryItemMode mode, System.Action<Guid> onClick, System.Func<Guid, string> playerNameResolver)
     {
         this.gameSummary = summary;
         this.mode = mode;
         this.onClick = onClick;
 
         RenderHeader(summary);
-        RenderBody(appHandler, summary);
+        RenderBody(appHandler, summary, playerNameResolver);
 
         ApplyInteraction();
 
         headline.Initialize(summary);
+    }
+
+    /// <summary>
+    /// Bereitet das Item für die Wiederverwendung aus dem Pool vor.
+    /// Lässt gepoolte Player-Rows/Divider bestehen (nur deaktiviert),
+    /// damit der nächste Setup-Aufruf ohne Instantiate auskommt.
+    /// </summary>
+    public void PrepareForPool()
+    {
+        Clear();
+        onClick = null;
+        var button = GetComponent<UnityEngine.UI.Button>();
+        if (button != null)
+            button.onClick.RemoveAllListeners();
     }
 
     public Guid GetGameID()
@@ -89,10 +124,17 @@ public class HistoryItem : MonoBehaviour
         if (string.IsNullOrEmpty(summary.SettingsJson))
             return "";
 
+        if (settingsLabelCache.TryGetValue(summary.SettingsJson, out var cached))
+            return cached;
+
         try
         {
             var settings = Newtonsoft.Json.JsonConvert.DeserializeObject<GameSettings>(summary.SettingsJson);
-            return settings?.GetString() ?? "";
+            var label = settings?.GetString() ?? "";
+            if (settingsLabelCache.Count > 200)
+                settingsLabelCache.Clear();
+            settingsLabelCache[summary.SettingsJson] = label;
+            return label;
         }
         catch
         {
@@ -100,7 +142,19 @@ public class HistoryItem : MonoBehaviour
         }
     }
 
-    private void RenderBody(AppHandler appHandler, GameSummary summary)
+    private string ResolvePlayerName(AppHandler appHandler, Guid playerId, System.Func<Guid, string> resolver)
+    {
+        if (resolver != null)
+        {
+            var resolved = resolver(playerId);
+            if (!string.IsNullOrEmpty(resolved))
+                return resolved;
+        }
+
+        return appHandler.GetPlayerNameByID(playerId);
+    }
+
+    private void RenderBody(AppHandler appHandler, GameSummary summary, System.Func<Guid, string> playerNameResolver = null)
     {
         Clear();
 
@@ -116,14 +170,14 @@ public class HistoryItem : MonoBehaviour
             {
                 var entry = sortedPlayers[i];
 
-                var go = Instantiate(playerPrefab, contentParent);
+                var go = GetPooledPlayerRow();
                 var item = go.GetComponent<HistoryItemPlayerPrefab>();
 
                 item.ShowPlayer(
                     rank: i + 1,
-                    playerName: appHandler.GetPlayerNameByID(entry.PlayerId),
+                    playerName: ResolvePlayerName(appHandler, entry.PlayerId, playerNameResolver),
                     metricLabel: "Punkte: " + entry.Score.ToString(),
-                    stats: BuildPenaltyStats(entry),
+                    stats: BuildPenaltyStats(entry, summary),
                     setsWonOverride: entry.SetsWon,
                     legsWonOverride: summary.IsFinished ? 0 : entry.LegsWon
                 );
@@ -143,14 +197,14 @@ public class HistoryItem : MonoBehaviour
             {
                 var entry = sortedPlayers[i];
 
-                var go = Instantiate(playerPrefab, contentParent);
+                var go = GetPooledPlayerRow();
                 var item = go.GetComponent<HistoryItemPlayerPrefab>();
 
                 item.ShowPlayer(
                     rank: i + 1,
-                    playerName: appHandler.GetPlayerNameByID(entry.PlayerId),
+                    playerName: ResolvePlayerName(appHandler, entry.PlayerId, playerNameResolver),
                     metricLabel: "Punkte: " + entry.Score.ToString(),
-                    stats: BuildPenaltyStats(entry),
+                    stats: BuildPenaltyStats(entry, summary),
                     setsWonOverride: entry.SetsWon,
                     legsWonOverride: summary.IsFinished ? 0 : entry.LegsWon
                 );
@@ -169,14 +223,14 @@ public class HistoryItem : MonoBehaviour
             {
                 var entry = sortedPlayers[i];
 
-                var go = Instantiate(playerPrefab, contentParent);
+                var go = GetPooledPlayerRow();
                 var item = go.GetComponent<HistoryItemPlayerPrefab>();
 
                 item.ShowPlayer(
                     rank: i + 1,
-                    playerName: appHandler.GetPlayerNameByID(entry.PlayerId),
+                    playerName: ResolvePlayerName(appHandler, entry.PlayerId, playerNameResolver),
                     metricLabel: "Stand: " + $"{entry.TargetsHit} / {entry.TotalTargets}",
-                    stats: BuildPenaltyStats(entry),
+                    stats: BuildPenaltyStats(entry, summary),
                     setsWonOverride: entry.SetsWon,
                     legsWonOverride: summary.IsFinished ? 0 : entry.LegsWon
                 );
@@ -187,9 +241,9 @@ public class HistoryItem : MonoBehaviour
         }
     }
 
-    private static GameStats BuildPenaltyStats(PlayerSummaryEntry entry)
+    private static GameStats BuildPenaltyStats(PlayerSummaryEntry entry, GameSummary summary)
     {
-        return new GameStats(entry.PlayerId)
+        var stats = new GameStats(entry.PlayerId)
         {
             wallCount = entry.WallCount,
             ceilingCount = entry.CeilingCount,
@@ -198,6 +252,23 @@ public class HistoryItem : MonoBehaviour
             tripleDigitCount = entry.TripleDigitCount,
             lostGame = entry.LostGameCount
         };
+
+        // Custom-Anteil der Gesamtkosten aus dem Spiel-Snapshot (Kosten zum
+        // Spielzeitpunkt) — sonst zeigte GetTotalPenaltyCosts() nur Legacy.
+        if (entry.CustomPenaltyCounts != null && summary?.CustomPenaltySnapshot != null)
+        {
+            foreach (var kvp in entry.CustomPenaltyCounts)
+            {
+                if (kvp.Value <= 0)
+                    continue;
+
+                var def = summary.CustomPenaltySnapshot.Find(d => d != null && d.id == kvp.Key);
+                if (def != null)
+                    stats.AddCustomPenaltyCost(kvp.Value * def.cost);
+            }
+        }
+
+        return stats;
     }
 
     private void Clear()
@@ -205,7 +276,15 @@ public class HistoryItem : MonoBehaviour
         if (items != null)
         {
             foreach (var go in items)
-                Destroy(go);
+            {
+                if (go == null)
+                    continue;
+                go.SetActive(false);
+                if (go.GetComponent<HistoryItemPlayerPrefab>() != null)
+                    playerRowPool.Push(go);
+                else
+                    dividerPool.Push(go);
+            }
 
             items.Clear();
         }
@@ -213,6 +292,38 @@ public class HistoryItem : MonoBehaviour
         {
             items = new List<GameObject>();
         }
+    }
+
+    private GameObject GetPooledPlayerRow()
+    {
+        while (playerRowPool.Count > 0)
+        {
+            var go = playerRowPool.Pop();
+            if (go == null)
+                continue;
+            go.transform.SetParent(contentParent, false);
+            go.transform.SetAsLastSibling();
+            go.SetActive(true);
+            return go;
+        }
+
+        return Instantiate(playerPrefab, contentParent);
+    }
+
+    private GameObject GetPooledDivider()
+    {
+        while (dividerPool.Count > 0)
+        {
+            var go = dividerPool.Pop();
+            if (go == null)
+                continue;
+            go.transform.SetParent(contentParent, false);
+            go.transform.SetAsLastSibling();
+            go.SetActive(true);
+            return go;
+        }
+
+        return Instantiate(dividerPrefab, contentParent);
     }
 
     private void ApplyInteraction()
@@ -235,7 +346,7 @@ public class HistoryItem : MonoBehaviour
     {
         if (dividerPrefab != null && index < totalCount - 1)
         {
-            var divider = Instantiate(dividerPrefab, contentParent);
+            var divider = GetPooledDivider();
             items.Add(divider);
         }
     }

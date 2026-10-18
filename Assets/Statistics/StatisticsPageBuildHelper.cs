@@ -80,7 +80,9 @@ public static class StatisticsPageBuildHelper
         if (pageLayout != null)
             pageLayout.enabled = true;
 
-        pageParent.gameObject.SetActive(restoreActive);
+        if (pageParent.gameObject.activeSelf != restoreActive)
+            pageParent.gameObject.SetActive(restoreActive);
+
         LayoutRebuilder.MarkLayoutForRebuild((RectTransform)pageParent);
     }
 }

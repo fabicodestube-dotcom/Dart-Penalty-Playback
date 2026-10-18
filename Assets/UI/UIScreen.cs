@@ -9,7 +9,7 @@ public class UIScreen : MonoBehaviour
     [Header("Lifecycle")]
     public bool deactivateWhenHidden;
 
-    void Awake()
+    protected virtual void Awake()
     {
         if (rect == null) rect = GetComponent<RectTransform>();
         if (canvasGroup == null) canvasGroup = GetComponent<CanvasGroup>();

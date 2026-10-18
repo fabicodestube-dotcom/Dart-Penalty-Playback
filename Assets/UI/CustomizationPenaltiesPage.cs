@@ -1,0 +1,271 @@
+using TMPro;
+using UnityEngine;
+
+/// <summary>
+/// Tab 2 des Customization-Screens: Penalties (Turn-Patterns, exakte Scores,
+/// Leg-/Set-/Game-Events). Einheitliche Rows (CustomizationListItem): Name,
+/// Clip-Anzahl/-Icon, Recorder, Edit, Delete, Toggle direkt in der Zeile.
+/// Neu/Edit/Delete laufen über den Editor (PenaltyEditorPopup); Löschen nur
+/// wenn nicht builtIn, mit Warnung bei Clips.
+/// </summary>
+public class CustomizationPenaltiesPage : MonoBehaviour, ICustomizationRowOwner
+{
+    [Header("Control")]
+    public WindowHandler windowHandler;
+
+    [Header("Liste")]
+    public Transform listParent;
+    public GameObject rowPrefab;
+
+    [Header("Editor")]
+    public PenaltyEditorPopup editor;
+
+    [Header("Clips (Szene-Umbau, optional)")]
+    public ClipNavigationHelper clipNav;
+
+    [Header("Delete-Popup (Ja/Nein)")]
+    public UIScreen deletePopup;
+    public TMP_Text deletePopupText;
+
+    private string pendingDeleteId;
+
+    /// <summary>
+    /// Lebende Rows pro Penalty-ID. Refresh gleicht ab statt alles neu zu
+    /// bauen: Neue sind im selben Frame sichtbar, Bestehende werden nur
+    /// aktualisiert, Verschwundene fliegen raus. Kein Flackern, kein Warten.
+    /// </summary>
+    private readonly System.Collections.Generic.Dictionary<string, CustomizationListItem> rowsById =
+        new System.Collections.Generic.Dictionary<string, CustomizationListItem>();
+
+    private void Awake()
+    {
+        if (editor == null)
+            editor = FindAnyObjectByType<PenaltyEditorPopup>();
+
+        if (windowHandler == null)
+            windowHandler = FindAnyObjectByType<WindowHandler>();
+
+        if (clipNav == null)
+            clipNav = FindAnyObjectByType<ClipNavigationHelper>();
+    }
+
+    private void OnEnable()
+    {
+        if (editor == null)
+            editor = FindAnyObjectByType<PenaltyEditorPopup>();
+
+        Refresh();
+    }
+
+    public void Refresh()
+    {
+        if (listParent == null || rowPrefab == null)
+            return;
+
+        var wanted = new System.Collections.Generic.HashSet<string>();
+
+        int sibling = 0;
+        // Alle Einträge (Seeds + Customs) aus einer Tabelle.
+        foreach (var def in CustomizationStore.GetPenalties())
+        {
+            if (def == null || string.IsNullOrEmpty(def.id))
+                continue;
+
+            wanted.Add(def.id);
+
+            if (!rowsById.TryGetValue(def.id, out var row) || row == null)
+            {
+                row = AddRow(def.id, def.name, def.enabled, def.builtIn);
+                if (row == null)
+                    continue;
+                rowsById[def.id] = row;
+            }
+            else
+            {
+                // Bestehende Row nur aktualisieren (kein Instantiate).
+                row.Setup(this, def.id, def.name, !def.builtIn, def.enabled, true);
+            }
+
+            row.transform.SetSiblingIndex(sibling++);
+        }
+
+        // Verschwundene Rows entfernen.
+        var gone = new System.Collections.Generic.List<string>();
+        foreach (var kvp in rowsById)
+        {
+            if (!wanted.Contains(kvp.Key))
+                gone.Add(kvp.Key);
+        }
+        foreach (var id in gone)
+        {
+            if (rowsById.TryGetValue(id, out var row) && row != null)
+                Destroy(row.gameObject);
+            rowsById.Remove(id);
+        }
+    }
+
+    private CustomizationListItem AddRow(string id, string name, bool enabled, bool builtIn)
+    {
+        var go = Instantiate(rowPrefab, listParent);
+        var row = go.GetComponent<CustomizationListItem>();
+
+        if (row == null)
+        {
+            Debug.LogError("CustomizationPenaltiesPage: rowPrefab ohne CustomizationListItem.");
+            Destroy(go);
+            return null;
+        }
+
+        row.Setup(this, id, name, !builtIn, enabled, true);
+        return row;
+    }
+
+    public void OnClickNewPenalty()
+    {
+        // Der Editor ist ein UIScreen (id Popup) und zeigt sich selbst
+        // über den WindowHandler an (analog zu deletePopup).
+        if (editor == null)
+            editor = FindAnyObjectByType<PenaltyEditorPopup>();
+
+        if (editor != null)
+            editor.ShowNew(this);
+    }
+
+    public void OnClickNewScore()
+    {
+        if (editor == null)
+            editor = FindAnyObjectByType<PenaltyEditorPopup>();
+
+        if (editor != null)
+            editor.ShowNew(this, PenaltyConditionKind.ExactScore);
+    }
+
+    /// <summary>Neu-Buttons Game-Events (OnClick mit int: 0=Leg, 1=Set, 2=Game).</summary>
+    public void OnClickNewGameEvent(int kindIndex)
+    {
+        if (editor == null)
+            editor = FindAnyObjectByType<PenaltyEditorPopup>();
+
+        if (editor != null)
+        {
+            editor.ShowNew(this, kindIndex switch
+            {
+                1 => PenaltyConditionKind.SetLost,
+                2 => PenaltyConditionKind.GameLost,
+                _ => PenaltyConditionKind.LegLost
+            });
+        }
+    }
+
+    public void OnClickEditPenalty(string id)
+    {
+        if (editor == null)
+            editor = FindAnyObjectByType<PenaltyEditorPopup>();
+
+        if (editor != null)
+            editor.ShowEdit(this, id);
+    }
+
+    // ---- ICustomizationRowOwner (einheitliches Listen-Item) ----
+
+    public void OnRowEdit(string id) => OnClickEditPenalty(id);
+
+    public void OnRowDelete(string id) => OnClickDeletePenalty(id);
+
+    public void OnRowOpenClips(string id) => OnClickOpenClips(id);
+
+    public int GetRowClipCount(string id) => GetClipCount(id);
+
+    /// <summary>Toggle direkt in der Zeile: enabled speichern (Changed → Refresh).</summary>
+    public void OnRowToggle(string id, bool enabled)
+    {
+        if (string.IsNullOrEmpty(id))
+            return;
+
+        var def = CustomizationStore.GetPenalties().Find(x => x != null && x.id == id);
+        if (def == null || def.enabled == enabled)
+            return;
+
+        def.enabled = enabled;
+        CustomizationStore.SavePenalty(def);
+
+        // Direkt-Refresh (sofort sichtbar; Changed-Event aktualisiert ggf. zusätzlich).
+        Refresh();
+    }
+
+    /// <summary>Clip-Button einer Penalty-Row: öffnet den ClipBrowser für diese ID.</summary>
+    public void OnClickOpenClips(string id)
+    {
+        if (string.IsNullOrEmpty(id))
+            return;
+
+        if (clipNav == null)
+            clipNav = FindAnyObjectByType<ClipNavigationHelper>();
+        if (clipNav == null)
+            return;
+
+        string label = CustomizationStore.GetPenalties()
+            .Find(x => x != null && x.id == id)?.name ?? id;
+
+        clipNav.OpenCustomClips(id, label);
+    }
+
+    /// <summary>Clip-Anzahl für den Row-Indikator.</summary>
+    public int GetClipCount(string id)
+    {
+        if (string.IsNullOrEmpty(id) || AudioLibrary.Instance == null)
+            return 0;
+
+        return AudioLibrary.Instance.GetCustomClipCount(id);
+    }
+
+    public void OnClickDeletePenalty(string id)
+    {
+        if (string.IsNullOrEmpty(id))
+            return;
+
+        pendingDeleteId = id;
+
+        int clipCount = AudioLibrary.Instance != null
+            ? AudioLibrary.Instance.GetCustomClipCount(id)
+            : 0;
+
+        if (deletePopupText != null)
+        {
+            deletePopupText.text = clipCount > 0
+                ? $"Penalty löschen? Es sind noch {clipCount} Audio-Clips damit verbunden."
+                : "Penalty wirklich löschen?";
+        }
+
+        if (windowHandler != null && deletePopup != null)
+            windowHandler.ShowPopup(deletePopup);
+        else
+            ConfirmDeletePenalty();
+    }
+
+    public void ConfirmDeletePenalty()
+    {
+        if (!string.IsNullOrEmpty(pendingDeleteId)
+            && AppSettingsManager.Instance != null)
+        {
+            CustomizationStore.DeletePenalty(pendingDeleteId);
+        }
+
+        pendingDeleteId = null;
+
+        if (windowHandler != null)
+            windowHandler.HidePopup();
+
+        // Direkt-Refresh (sofort sichtbar; Changed-Event aktualisiert ggf.
+        // zusätzlich — dank Abgleich praktisch gratis).
+        Refresh();
+    }
+
+    public void CancelDeletePenalty()
+    {
+        pendingDeleteId = null;
+
+        if (windowHandler != null)
+            windowHandler.HidePopup();
+    }
+}

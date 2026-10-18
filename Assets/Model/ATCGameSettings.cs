@@ -10,6 +10,56 @@ public enum ATCTargetType
     [JsonProperty] Singles,
     [JsonProperty] Doubles,
     [JsonProperty] Triples,
+    [JsonProperty] SinglesDoubles,
+    [JsonProperty] SinglesTriples,
+    [JsonProperty] DoublesTriples,
+    [JsonProperty] Everything,
+}
+
+public static class ATCTargetTypeExtensions
+{
+    /// <summary>Anzeigename für Setup-Label und Spielzusammenfassungen.</summary>
+    public static string ToDisplayName(this ATCTargetType type)
+    {
+        return type switch
+        {
+            ATCTargetType.Singles => "Singles",
+            ATCTargetType.Doubles => "Doubles",
+            ATCTargetType.Triples => "Triples",
+            ATCTargetType.SinglesDoubles => "Singles + Doubles",
+            ATCTargetType.SinglesTriples => "Singles + Triples",
+            ATCTargetType.DoublesTriples => "Doubles + Triples",
+            ATCTargetType.Everything => "Everything",
+            _ => type.ToString()
+        };
+    }
+
+    /// <summary>Ist der Single-Ring für diesen Modus ein gültiger Treffer?</summary>
+    public static bool IncludesSingles(this ATCTargetType type)
+    {
+        return type is ATCTargetType.Singles
+            or ATCTargetType.SinglesDoubles
+            or ATCTargetType.SinglesTriples
+            or ATCTargetType.Everything;
+    }
+
+    /// <summary>Ist der Double-Ring für diesen Modus ein gültiger Treffer?</summary>
+    public static bool IncludesDoubles(this ATCTargetType type)
+    {
+        return type is ATCTargetType.Doubles
+            or ATCTargetType.SinglesDoubles
+            or ATCTargetType.DoublesTriples
+            or ATCTargetType.Everything;
+    }
+
+    /// <summary>Ist der Triple-Ring für diesen Modus ein gültiger Treffer?</summary>
+    public static bool IncludesTriples(this ATCTargetType type)
+    {
+        return type is ATCTargetType.Triples
+            or ATCTargetType.SinglesTriples
+            or ATCTargetType.DoublesTriples
+            or ATCTargetType.Everything;
+    }
 }
 
 
@@ -32,7 +82,7 @@ public class ATCGameSettings : GameSettings
 
     public override string GetString()
     {
-        string target = targetType.ToString();
+        string target = targetType.ToDisplayName();
         string ord = order.ToString();
 
         string setText = setCount == 1 ? "Set" : "Sets";
@@ -60,17 +110,10 @@ public class ATCGameSettings : GameSettings
 
     public TargetOption GetTargetOption()
     {
-        switch (targetType)
-        {
-            case ATCTargetType.Singles:
-                return new TargetOption(singles: true, doubles: false, triples: false);
-            case ATCTargetType.Doubles:
-                return new TargetOption(singles: false, doubles: true, triples: false);
-            case ATCTargetType.Triples:
-                return new TargetOption(singles: false, doubles: false, triples: true);
-            default:
-                return new TargetOption(singles: true, doubles: false, triples: false);
-        }
+        return new TargetOption(
+            singles: targetType.IncludesSingles(),
+            doubles: targetType.IncludesDoubles(),
+            triples: targetType.IncludesTriples());
     }
 
     public override GameSettings Clone()

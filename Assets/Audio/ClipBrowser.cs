@@ -65,6 +65,8 @@ public class ClipBrowser : MonoBehaviour
     private int currentScore;
     private PenaltyType currentPenaltyType;
     private SpecialAudioType currentSpecialType;
+    private string currentCustomKey;
+    private string currentCustomLabel;
     private Coroutine playStateRoutine;
     private bool isLocked;
 
@@ -167,6 +169,10 @@ public class ClipBrowser : MonoBehaviour
                 AudioLibrary.Instance.ReplaceSpecialClip(currentSpecialType, currentIndex, trimmed);
                 //Debug.Log("Fehlt noch: Speichern des zugeschnittenen Clips in der AudioLibrary.");
                 break;
+
+            case AudioCategory.Custom:
+                AudioLibrary.Instance.ReplaceCustomClip(currentCustomKey, currentIndex, trimmed);
+                break;
         }
 
         CancelCut();
@@ -262,6 +268,18 @@ public class ClipBrowser : MonoBehaviour
     {
         currentCategory = AudioCategory.Special;
         currentSpecialType = type;
+
+        SetClipsInternal(newClips);
+    }
+
+    /// <summary>
+    /// Clips für Custom-Penalty oder Custom-Audio-Event (stabile String-ID).
+    /// </summary>
+    public void SetCustomClips(string customKey, string label, List<AudioClip> newClips)
+    {
+        currentCategory = AudioCategory.Custom;
+        currentCustomKey = customKey;
+        currentCustomLabel = string.IsNullOrEmpty(label) ? customKey : label;
 
         SetClipsInternal(newClips);
     }
@@ -435,6 +453,10 @@ public class ClipBrowser : MonoBehaviour
             case AudioCategory.Special:
                 deleted = AudioLibrary.Instance.DeleteSpecialClip(currentSpecialType, currentIndex);
                 break;
+
+            case AudioCategory.Custom:
+                deleted = AudioLibrary.Instance.DeleteCustomClip(currentCustomKey, currentIndex);
+                break;
         }
 
         windowHandler.HidePopup();
@@ -489,6 +511,10 @@ public class ClipBrowser : MonoBehaviour
             case AudioCategory.Special:
                 AudioLibrary.Instance.AddSpecialClip(currentSpecialType, clip);
                 break;
+
+            case AudioCategory.Custom:
+                AudioLibrary.Instance.AddCustomClip(currentCustomKey, clip);
+                break;
         }
 
         ReloadCurrentList();
@@ -536,6 +562,10 @@ public class ClipBrowser : MonoBehaviour
 
             case AudioCategory.Special:
                 clips = AudioLibrary.Instance.GetRuntimeSpecialList(currentSpecialType);
+                break;
+
+            case AudioCategory.Custom:
+                clips = AudioLibrary.Instance.GetRuntimeCustomList(currentCustomKey);
                 break;
         }
 
@@ -618,6 +648,10 @@ public class ClipBrowser : MonoBehaviour
             case AudioCategory.Special:
                 specification = currentSpecialType.ToString();
                 break;
+
+            case AudioCategory.Custom:
+                specification = currentCustomLabel;
+                break;
         }
 
         headline.text = $"{categoryText} ({specification})";
@@ -666,6 +700,10 @@ public class ClipBrowser : MonoBehaviour
 
             case AudioCategory.Special:
                 specPart = currentSpecialType.ToString();
+                break;
+
+            case AudioCategory.Custom:
+                specPart = currentCustomLabel;
                 break;
         }
 

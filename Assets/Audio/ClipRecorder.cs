@@ -29,11 +29,17 @@ public class ClipRecorder : MonoBehaviour
     public int sampleRate = 44100;
     public float blinkFrequency = 1.5f;
 
-    [Tooltip("Ziel-Peak für normalisierte Aufnahmen")]
-    public float normalizeTargetPeak = 1.2f;
+    [Tooltip("Sicherer Maximal-Peak nach Normalisierung (0.89 = -1 dB, verhindert Clipping). Wird auf max. 0.99 begrenzt.")]
+    public float normalizeTargetPeak = 0.89f;
 
-    [Tooltip("Optionaler Referenzclip")]
+    [Tooltip("Optionaler Referenzclip - seine Lautheit (RMS) ist das Ziel für alle Aufnahmen")]
     public AudioClip normalizationReferenceClip;
+
+    [Tooltip("Minimaler Gain (Aufnahmen werden nie leiser als das gemacht)")]
+    public float minNormalizationGain = 0.25f;
+
+    [Tooltip("Maximaler Gain (begrenzt, wie stark leise Aufnahmen verstärkt werden). 10-15 für Handy-Mics.")]
+    public float maxNormalizationGain = 15f;
 
     [Header("Silence Trimming")]
     [SerializeField] private float minThreshold = 0.01f;
@@ -418,8 +424,9 @@ public class ClipRecorder : MonoBehaviour
         if (clip == null)
             return null;
 
-        if (normalizeTargetPeak <= 0f)
-            return clip;
+        // Legacy-Werte aus Prefabs (z.B. 1.2) heilen: physikalisch max. 0.99
+        float ceiling = normalizeTargetPeak <= 0f ? 0.89f : normalizeTargetPeak;
+        ceiling = Mathf.Clamp(ceiling, 0.05f, 0.99f);
 
         int sampleCount = clip.samples * clip.channels;
 
@@ -427,36 +434,63 @@ public class ClipRecorder : MonoBehaviour
 
         clip.GetData(samples, 0);
 
-        float peak = 0f;
+        ComputeStats(samples, out float recPeak, out float recRms);
 
-        for (int i = 0; i < sampleCount; i++)
-        {
-            float abs = Mathf.Abs(samples[i]);
-
-            if (abs > peak)
-                peak = abs;
-        }
-
-        if (peak <= 0f)
+        if (recPeak <= 1e-6f || recRms <= 1e-6f)
             return clip;
 
-        float desiredPeak = normalizeTargetPeak;
+        float gain;
 
         if (referenceClip != null)
         {
-            float referencePeak =
-                GetClipPeak(referenceClip);
+            ComputeClipStats(referenceClip, out float refPeak, out float refRms);
 
-            desiredPeak =
-                Mathf.Max(desiredPeak, referencePeak);
+            if (refRms > 1e-6f)
+            {
+                // Echte Lautheits-Angleichung: gleiche RMS wie Referenz
+                gain = refRms / recRms;
+            }
+            else if (refPeak > 1e-6f)
+            {
+                gain = refPeak / recPeak;
+            }
+            else
+            {
+                gain = ceiling / recPeak;
+            }
+        }
+        else
+        {
+            // Fallback ohne Referenz: klassische Peak-Normalisierung
+            gain = ceiling / recPeak;
         }
 
-        float gain = desiredPeak / peak;
-        gain = Mathf.Clamp(gain, 0f, 5f);
+        float minGain = Mathf.Max(0.01f, minNormalizationGain);
+        float maxGain = Mathf.Max(minGain, maxNormalizationGain);
+        gain = Mathf.Clamp(gain, minGain, maxGain);
 
         for (int i = 0; i < sampleCount; i++)
         {
             samples[i] *= gain;
+        }
+
+        // Limiter: stellt sicher, dass wir nie über ceiling clippen
+        // (schützt WavUtility 16-bit Konvertierung vor Verzerrung)
+        float outPeak = 0f;
+        for (int i = 0; i < sampleCount; i++)
+        {
+            float abs = Mathf.Abs(samples[i]);
+            if (abs > outPeak)
+                outPeak = abs;
+        }
+
+        if (outPeak > ceiling && outPeak > 1e-6f)
+        {
+            float limiterScale = ceiling / outPeak;
+            for (int i = 0; i < sampleCount; i++)
+            {
+                samples[i] *= limiterScale;
+            }
         }
 
         AudioClip normalizedClip =
@@ -473,28 +507,64 @@ public class ClipRecorder : MonoBehaviour
         return normalizedClip;
     }
 
-    private float GetClipPeak(AudioClip clip)
+    /// <summary>
+    /// Berechnet Peak + RMS. Entfernt vorher den DC-Offset (Mittelwert),
+    /// damit ein Offset nicht die Lautheitsmessung verfälscht.
+    /// </summary>
+    private void ComputeStats(float[] samples, out float peak, out float rms)
     {
-        if (clip == null)
-            return 0f;
+        peak = 0f;
+        rms = 0f;
 
-        int sampleCount = clip.samples * clip.channels;
+        if (samples == null || samples.Length == 0)
+            return;
 
-        float[] samples = new float[sampleCount];
+        double sum = 0.0;
+        for (int i = 0; i < samples.Length; i++)
+            sum += samples[i];
+        float mean = (float)(sum / samples.Length);
 
-        clip.GetData(samples, 0);
-
-        float peak = 0f;
-
-        for (int i = 0; i < sampleCount; i++)
+        double sumSq = 0.0;
+        for (int i = 0; i < samples.Length; i++)
         {
-            float abs = Mathf.Abs(samples[i]);
-
+            float s = samples[i] - mean;
+            samples[i] = s;
+            float abs = Mathf.Abs(s);
             if (abs > peak)
                 peak = abs;
+            sumSq += (double)s * s;
         }
 
+        rms = Mathf.Sqrt((float)(sumSq / samples.Length));
+    }
+
+    private void ComputeClipStats(AudioClip clip, out float peak, out float rms)
+    {
+        peak = 0f;
+        rms = 0f;
+
+        if (clip == null)
+            return;
+
+        int sampleCount = clip.samples * clip.channels;
+        if (sampleCount <= 0)
+            return;
+
+        float[] samples = new float[sampleCount];
+        clip.GetData(samples, 0);
+        ComputeStats(samples, out peak, out rms);
+    }
+
+    private float GetClipPeak(AudioClip clip)
+    {
+        ComputeClipStats(clip, out float peak, out _);
         return peak;
+    }
+
+    private float GetClipRms(AudioClip clip)
+    {
+        ComputeClipStats(clip, out _, out float rms);
+        return rms;
     }
 
     private void UpdateRecordingWaveform()

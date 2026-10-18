@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.Networking;
 using UnityEngine.UIElements;
@@ -70,6 +71,12 @@ public class AudioLibrary : MonoBehaviour
     private Dictionary<PenaltyType, List<AudioClip>> runtimePenaltyClips = new();
     private Dictionary<SpecialAudioType, List<AudioClip>> runtimeSpecialClips = new();
 
+    /// <summary>
+    /// Clips für Custom-Penalties und Custom-Audio-Events, geschlüsselt per
+    /// stabiler String-ID (GUID). Damit bleiben Clips beim Editieren verlinkt.
+    /// </summary>
+    private Dictionary<string, List<AudioClip>> runtimeCustomClips = new();
+
     private Dictionary<string, AudioClip> lastPlayedClips = new();
 
     // =========================================================
@@ -79,6 +86,7 @@ public class AudioLibrary : MonoBehaviour
     private Dictionary<int, int> scoreCounters = new();
     private Dictionary<PenaltyType, int> penaltyCounters = new();
     private Dictionary<SpecialAudioType, int> specialCounters = new();
+    private Dictionary<string, int> customCounters = new();
 
     // =========================================================
     // PATHS
@@ -112,6 +120,33 @@ public class AudioLibrary : MonoBehaviour
     // EVENTS
     // =========================================================
     public event Action<AudioCategory> OnLibraryChanged;
+
+    /// <summary>
+    /// Feuert OnLibraryChanged ausfallsicher: Snapshot der Subscriber plus
+    /// try/catch pro Empfänger — ein fehlerhafter Subscriber (z.B. zerstörte
+    /// Row) bricht die Kette für alle anderen nicht mehr ab. Zentrale Stelle
+    /// für alle Library-Refreshes (Load-Ende, Add/Delete/Replace).
+    /// </summary>
+    private void NotifyLibraryChanged(AudioCategory category)
+    {
+        Debug.Log("Notify Library Changed: " + category);
+        var handler = OnLibraryChanged;
+        if (handler == null)
+            return;
+
+        foreach (Action<AudioCategory> subscriber in handler.GetInvocationList())
+        {
+            Debug.Log("Notifying subscriber: " + subscriber.Method.Name);
+            try
+            {
+                subscriber?.Invoke(category);
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogWarning($"[AUDIO] Library-Subscriber fehlerhaft ({category}): {e.Message}");
+            }
+        }
+    }
 
     // =========================================================
     // SINGLETON
@@ -154,6 +189,28 @@ public class AudioLibrary : MonoBehaviour
     private string BuildSpecialFileName(SpecialAudioType type, int index)
         => $"special_{type.ToString().ToLower()}_{index}.wav";
 
+    private string BuildCustomFileName(string customKey, int index)
+        => $"custom_{SanitizeKey(customKey)}_{index}.wav";
+
+    /// <summary>Dateisystem-sicherer Anteil aus beliebiger String-ID.</summary>
+    private static string SanitizeKey(string customKey)
+    {
+        if (string.IsNullOrEmpty(customKey))
+            return "key";
+
+        var chars = customKey.ToLowerInvariant().ToCharArray();
+        for (int i = 0; i < chars.Length; i++)
+        {
+            char c = chars[i];
+            bool ok = (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9');
+            if (!ok)
+                chars[i] = '_';
+        }
+
+        string result = new string(chars);
+        return string.IsNullOrEmpty(result) ? "key" : result;
+    }
+
     private string GetFullPath(string folder, string fileName)
         => Path.Combine(folder, fileName);
 
@@ -180,14 +237,9 @@ public class AudioLibrary : MonoBehaviour
 
         SaveWav(path, clip);
         
-        SaveEntry(new RecordedAudioClipDto
-        {
-            category = AudioCategory.Score,
-            score = score,
-            filePath = path
-        });
+        InsertClipIndex(AudioCategory.Score, score, default, default, null, fileName, index);
 
-        OnLibraryChanged?.Invoke(AudioCategory.Score);
+        NotifyLibraryChanged(AudioCategory.Score);
         return path;
     }
 
@@ -212,14 +264,9 @@ public class AudioLibrary : MonoBehaviour
 
         SaveWav(path, clip);
         
-        SaveEntry(new RecordedAudioClipDto
-        {
-            category = AudioCategory.Penalty,
-            penaltyType = type,
-            filePath = path
-        });
+        InsertClipIndex(AudioCategory.Penalty, 0, type, default, null, fileName, index);
 
-        OnLibraryChanged?.Invoke(AudioCategory.Penalty);
+        NotifyLibraryChanged(AudioCategory.Penalty);
         return path;
     }
 
@@ -242,15 +289,81 @@ public class AudioLibrary : MonoBehaviour
 
         SaveWav(path, clip);
 
-        SaveEntry(new RecordedAudioClipDto
-        {
-            category = AudioCategory.Special,
-            specialType = type,
-            filePath = path
-        });
+        InsertClipIndex(AudioCategory.Special, 0, default, type, null, fileName, index);
 
-        OnLibraryChanged?.Invoke(AudioCategory.Special);
+        NotifyLibraryChanged(AudioCategory.Special);
         return path;
+    }
+
+    /// <summary>
+    /// Clip für Custom-Penalty oder Custom-Audio-Event (stabile String-ID).
+    /// </summary>
+    public string AddCustomClip(string customKey, AudioClip clip)
+    {
+        if (clip == null || string.IsNullOrEmpty(customKey)) return null;
+
+        if (!customCounters.ContainsKey(customKey))
+            customCounters[customKey] = 0;
+
+        int index = ++customCounters[customKey];
+
+        string fileName = BuildCustomFileName(customKey, index);
+        string path = GetFullPath(SpecialFolder, fileName);
+
+        if (!runtimeCustomClips.ContainsKey(customKey))
+            runtimeCustomClips[customKey] = new List<AudioClip>();
+
+        runtimeCustomClips[customKey].Add(clip);
+
+        SaveWav(path, clip);
+
+        InsertClipIndex(AudioCategory.Custom, 0, default, default, customKey, fileName, index);
+
+        NotifyLibraryChanged(AudioCategory.Custom);
+        return path;
+    }
+
+    /// <summary>Aufgerufen vom AudioManager für Custom-Penalty/Event-Sounds.</summary>
+    public AudioClip GetCustomClip(string customKey)
+    {
+        if (!IsSoundEnabled() || string.IsNullOrEmpty(customKey))
+            return null;
+
+        if (UseCustomSounds()
+            && runtimeCustomClips.TryGetValue(customKey, out var runtimeClips))
+        {
+            var clip = GetRandomClip(runtimeClips, $"custom_{customKey}");
+            if (clip != null) return clip;
+        }
+
+        return null;
+    }
+
+    /// <summary>Aufgerufen vom Recorder/Browser-UI (z.B. für Delete-Warnung).</summary>
+    public List<AudioClip> GetRuntimeCustomList(string customKey)
+        => !string.IsNullOrEmpty(customKey) && runtimeCustomClips.TryGetValue(customKey, out var l) ? l : null;
+
+    public int GetCustomClipCount(string customKey)
+        => GetRuntimeCustomList(customKey)?.Count ?? 0;
+
+    public bool DeleteCustomClip(string customKey, int index)
+    {
+        if (string.IsNullOrEmpty(customKey)) return false;
+
+        if (!runtimeCustomClips.TryGetValue(customKey, out var list))
+            return false;
+
+        return DeleteRecordedClip(list, index, AudioCategory.Custom, 0, default, default, customKey);
+    }
+
+    public bool ReplaceCustomClip(string customKey, int index, AudioClip newClip)
+    {
+        if (newClip == null || string.IsNullOrEmpty(customKey)) return false;
+
+        if (!runtimeCustomClips.TryGetValue(customKey, out var list))
+            return false;
+
+        return ReplaceRecordedClip(list, index, AudioCategory.Custom, 0, default, default, newClip, customKey);
     }
 
 
@@ -294,59 +407,47 @@ public class AudioLibrary : MonoBehaviour
     int score,
     PenaltyType penaltyType,
     SpecialAudioType specialType,
-    AudioClip newClip)
+    AudioClip newClip,
+    string customKey = null)
     {
         if (list == null || index < 0 || index >= list.Count)
             return false;
 
-        var db = LoadDatabase();
+        var rows = SqliteDatabaseRepository.LoadAllRecordedClips();
 
         int matchCount = 0;
-        int targetIndex = -1;
+        SqliteDatabaseRepository.RecordedClipRow target = null;
 
-        for (int i = 0; i < db.entries.Count; i++)
+        foreach (var row in rows)
         {
-            var entry = db.entries[i];
-
-            if (entry.category != category)
-                continue;
-
-            bool matches = category switch
-            {
-                AudioCategory.Score => entry.score == score,
-                AudioCategory.Penalty => entry.penaltyType == penaltyType,
-                AudioCategory.Special => entry.specialType == specialType,
-                _ => false
-            };
-
-            if (!matches)
+            if (!RowMatches(row, category, score, penaltyType, specialType, customKey))
                 continue;
 
             if (matchCount == index)
             {
-                targetIndex = i;
+                target = row;
                 break;
             }
 
             matchCount++;
         }
 
-        if (targetIndex < 0)
+        if (target == null)
             return false;
 
-        var oldEntry = db.entries[targetIndex];
+        if (!Enum.TryParse<AudioCategory>(target.Category, out var targetCategory))
+            return false;
+
+        string path = GetFullPath(FolderForCategory(targetCategory), target.FileName);
 
         // =====================================
-        // FILE REPLACEMENT
+        // FILE REPLACEMENT (Index bleibt gleich)
         // =====================================
 
-        if (!string.IsNullOrEmpty(oldEntry.filePath))
-        {
-            if (File.Exists(oldEntry.filePath))
-                File.Delete(oldEntry.filePath);
-        }
+        if (File.Exists(path))
+            File.Delete(path);
 
-        SaveWav(oldEntry.filePath, newClip);
+        SaveWav(path, newClip);
 
         // =====================================
         // UPDATE RUNTIME LIST
@@ -354,13 +455,7 @@ public class AudioLibrary : MonoBehaviour
 
         list[index] = newClip;
 
-        // =====================================
-        // DATABASE ENTRY bleibt gleich (nur file ersetzt)
-        // =====================================
-
-        File.WriteAllText(SaveFilePath, JsonUtility.ToJson(db, true));
-
-        OnLibraryChanged?.Invoke(category);
+        NotifyLibraryChanged(category);
 
         return true;
     }
@@ -395,62 +490,45 @@ public class AudioLibrary : MonoBehaviour
         return DeleteRecordedClip(list, index, AudioCategory.Special, default, default, type);
     }
 
-    private bool DeleteRecordedClip(List<AudioClip> list, int index, AudioCategory category, int score, PenaltyType penaltyType, SpecialAudioType specialType)
+    private bool DeleteRecordedClip(List<AudioClip> list, int index, AudioCategory category, int score, PenaltyType penaltyType, SpecialAudioType specialType, string customKey = null)
     {
         if (list == null || index < 0 || index >= list.Count)
             return false;
 
-        var db = LoadDatabase();
+        var rows = SqliteDatabaseRepository.LoadAllRecordedClips();
+
         int matchCount = 0;
-        int removeIndex = -1;
+        SqliteDatabaseRepository.RecordedClipRow target = null;
 
-        for (int i = 0; i < db.entries.Count; i++)
+        foreach (var row in rows)
         {
-            var entry = db.entries[i];
-            bool matches = entry.category == category;
-
-            if (matches)
-            {
-                switch (category)
-                {
-                    case AudioCategory.Score:
-                        matches = entry.score == score;
-                        break;
-                    case AudioCategory.Penalty:
-                        matches = entry.penaltyType == penaltyType;
-                        break;
-                    case AudioCategory.Special:
-                        matches = entry.specialType == specialType;
-                        break;
-                }
-            }
-
-            if (!matches)
+            if (!RowMatches(row, category, score, penaltyType, specialType, customKey))
                 continue;
 
             if (matchCount == index)
             {
-                removeIndex = i;
+                target = row;
                 break;
             }
 
             matchCount++;
         }
 
-        if (removeIndex < 0)
+        if (target == null)
             return false;
 
-        var removedEntry = db.entries[removeIndex];
-        db.entries.RemoveAt(removeIndex);
-        File.WriteAllText(SaveFilePath, JsonUtility.ToJson(db, true));
+        SqliteDatabaseRepository.DeleteRecordedClipById(target.Id);
 
-        if (!string.IsNullOrEmpty(removedEntry.filePath) && File.Exists(removedEntry.filePath))
+        if (Enum.TryParse<AudioCategory>(target.Category, out var targetCategory)
+            && !string.IsNullOrEmpty(target.FileName))
         {
-            File.Delete(removedEntry.filePath);
+            string path = GetFullPath(FolderForCategory(targetCategory), target.FileName);
+            if (File.Exists(path))
+                File.Delete(path);
         }
 
         list.RemoveAt(index);
-        OnLibraryChanged?.Invoke(category);
+        NotifyLibraryChanged(category);
         return true;
     }
 
@@ -666,23 +744,102 @@ public class AudioLibrary : MonoBehaviour
     }
 
     // =========================================================
-    // PERSISTENCE
+    // PERSISTENCE (SQLite-Index, ersetzt audio_library.json)
     // =========================================================
 
-    private void SaveEntry(RecordedAudioClipDto entry)
+    /// <summary>
+    /// Trägt eine Aufnahme in den SQLite-Index ein (eine Zeile statt
+    /// Full-File-Rewrite). Nur der Dateiname wird gespeichert, der Ordner
+    /// wird pro Kategorie abgeleitet — keine absoluten Pfade mehr.
+    /// </summary>
+    private void InsertClipIndex(AudioCategory category, int score, PenaltyType penaltyType,
+        SpecialAudioType specialType, string customKey, string fileName, int slotIndex)
     {
-        var db = LoadDatabase();
-        db.entries.Add(entry);
-
-        File.WriteAllText(SaveFilePath, JsonUtility.ToJson(db, true));
+        SqliteDatabaseRepository.InsertRecordedClip(
+            category.ToString(),
+            score,
+            category == AudioCategory.Penalty ? penaltyType.ToString() : null,
+            category == AudioCategory.Special ? specialType.ToString() : null,
+            category == AudioCategory.Custom ? customKey : null,
+            fileName,
+            slotIndex);
     }
 
-    private AudioLibraryDatabase LoadDatabase()
+    private string FolderForCategory(AudioCategory category)
     {
-        if (!File.Exists(SaveFilePath))
-            return new AudioLibraryDatabase();
+        return category switch
+        {
+            AudioCategory.Score => ScoresFolder,
+            AudioCategory.Penalty => PenaltiesFolder,
+            _ => SpecialFolder
+        };
+    }
 
-        return JsonUtility.FromJson<AudioLibraryDatabase>(File.ReadAllText(SaveFilePath));
+    private static bool RowMatches(SqliteDatabaseRepository.RecordedClipRow row,
+        AudioCategory category, int score, PenaltyType penaltyType,
+        SpecialAudioType specialType, string customKey)
+    {
+        if (row == null || row.Category != category.ToString())
+            return false;
+
+        return category switch
+        {
+            AudioCategory.Score => row.Score == score,
+            AudioCategory.Penalty => row.PenaltyType == penaltyType.ToString(),
+            AudioCategory.Special => row.SpecialType == specialType.ToString(),
+            AudioCategory.Custom => row.CustomKey == customKey,
+            _ => false
+        };
+    }
+
+    /// <summary>
+    /// Einmalige Migration: alte audio_library.json → SQLite-Tabelle.
+    /// Danach wird die JSON zu .migrated umbenannt (Rollback möglich).
+    /// </summary>
+    private void MigrateJsonIndexIfNeeded()
+    {
+        if (SqliteDatabaseRepository.CountRecordedClips() > 0)
+            return;
+
+        if (!File.Exists(SaveFilePath))
+            return;
+
+        AudioLibraryDatabase legacy = null;
+        try
+        {
+            legacy = JsonUtility.FromJson<AudioLibraryDatabase>(File.ReadAllText(SaveFilePath));
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning("[AUDIO] JSON-Migration übersprungen (unlesbar): " + e.Message);
+            return;
+        }
+
+        if (legacy?.entries == null)
+            return;
+
+        foreach (var entry in legacy.entries)
+        {
+            if (entry == null || string.IsNullOrEmpty(entry.filePath))
+                continue;
+
+            string fileName = Path.GetFileName(entry.filePath);
+            if (string.IsNullOrEmpty(fileName))
+                continue;
+
+            InsertClipIndex(entry.category, entry.score, entry.penaltyType,
+                entry.specialType, entry.customKey, fileName, ParseFileIndex(entry.filePath));
+        }
+
+        try
+        {
+            File.Move(SaveFilePath, SaveFilePath + ".migrated");
+            Debug.Log("[AUDIO] Audio-Index nach SQLite migriert.");
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning("[AUDIO] JSON konnte nach Migration nicht umbenannt werden: " + e.Message);
+        }
     }
 
     private IEnumerator LoadLibrary()
@@ -692,20 +849,412 @@ public class AudioLibrary : MonoBehaviour
 
         _loadedOnce = true;
 
+        // TEMP-Diagnose (Race Library-Load vs. UI): fliegt nach Verifikation raus.
+        float loadStart = Time.realtimeSinceStartup;
+        int loadOk = 0;
+        int loadFailed = 0;
+
         runtimeScoreClips.Clear();
         runtimePenaltyClips.Clear();
         runtimeSpecialClips.Clear();
+        runtimeCustomClips.Clear();
 
-        var db = LoadDatabase();
+        try
+        {
+            MigrateJsonIndexIfNeeded();
 
-        foreach (var entry in db.entries)
-            yield return LoadClip(entry);
+            var rows = SqliteDatabaseRepository.LoadAllRecordedClips();
+            rows ??= new List<SqliteDatabaseRepository.RecordedClipRow>();
 
-        IsReady = true;
+            // Einmaliges Seeding aus StreamingAssets beim allerersten Start.
+            // Prüfung über Persistenz-Flag (nicht über DB-Leerheit), damit
+            // manuell gelöschte Clips nicht erneut geseedet werden.
+            string seeded = SqliteDatabaseRepository.GetSetting("audio_clips_seeded");
+            if (seeded != "1")
+            {
+                string sourceRoot = Path.Combine(Application.streamingAssetsPath, "AudioFiles");
+                string subFolder = WillBePublished ? "Default" : "Custom";
+                string sourceFolder = Path.Combine(sourceRoot, subFolder);
+
+                if (Directory.Exists(sourceFolder))
+                {
+                    Debug.Log($"[AUDIO] Starte Clip-Seeding aus {sourceFolder}");
+                    yield return SeedBuiltInClips(sourceFolder);
+                    SqliteDatabaseRepository.SetSetting("audio_clips_seeded", "1");
+                }
+                else
+                {
+                    Debug.LogWarning($"[AUDIO] Seed-Quelle nicht gefunden: {sourceFolder}");
+                    SqliteDatabaseRepository.SetSetting("audio_clips_seeded", "1");
+                }
+
+                // Nach dem Seeding die DB-Zeilen neu abfragen, damit die
+                // nachfolgende Lade-Schleife die frisch eingefügten Clips lädt.
+                rows = SqliteDatabaseRepository.LoadAllRecordedClips();
+                rows ??= new List<SqliteDatabaseRepository.RecordedClipRow>();
+            }
+
+            Debug.Log($"[AUDIO] TEMP LoadLibrary Start: {rows?.Count ?? 0} DB-Zeilen");
+
+            foreach (var row in rows)
+            {
+                if (row == null || string.IsNullOrEmpty(row.FileName))
+                    continue;
+
+                if (!Enum.TryParse<AudioCategory>(row.Category, out var category))
+                    continue;
+
+                string path = GetFullPath(FolderForCategory(category), row.FileName);
+                if (!File.Exists(path))
+                    continue;
+
+                // LoadClip wirft nie (härtet intern): Yield ohne try/catch
+                // außenrum (CS1626 verbietet yield in try+catch).
+                var dto = DtoFromRow(row, category, path);
+                if (dto == null)
+                    continue;
+
+                var fileResult = new ClipLoadResult();
+                yield return LoadClip(dto, fileResult);
+
+                if (fileResult.Ok)
+                    loadOk++;
+                else
+                    loadFailed++;
+            }
+
+            try
+            {
+                RestoreCounters(rows);
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogWarning($"[AUDIO] Counter-Wiederherstellung fehlgeschlagen: {e.Message}");
+            }
+        }
+        finally
+        {
+            IsReady = true;
+
+            // TEMP-Diagnose (s.o.).
+            Debug.Log($"[AUDIO] TEMP LoadLibrary Ende: ok={loadOk} fehler={loadFailed} " +
+                $"dauer={(Time.realtimeSinceStartup - loadStart):F1}s — feuere Refresh-Events");
+
+            // Nachlade-Refresh: Subscriber (Customization-Rows, Score-Grid)
+            // wurden ggf. mit leeren Counts aufgebaut, bevor Clips geladen
+            // waren. Liegt im finally → feuert IMMER, damit das UI aus jedem
+            // Ladezustand heraus konsistent wird.
+            NotifyLibraryChanged(AudioCategory.Score);
+            NotifyLibraryChanged(AudioCategory.Penalty);
+            NotifyLibraryChanged(AudioCategory.Special);
+            NotifyLibraryChanged(AudioCategory.Custom);
+        }
     }
 
-    private IEnumerator LoadClip(RecordedAudioClipDto dto)
+    // =========================================================
+    // SEEDING (initiale Clips aus StreamingAssets beim ersten Start)
+    // =========================================================
+
+    /// <summary>
+    /// Seeds initiale Audio-Clips aus StreamingAssets in die SQLite-Datenbank.
+    /// Wird nur einmalig beim allerersten Start aufgerufen (gesteuert über das
+    /// Persistenz-Flag "audio_clips_seeded").
+    ///
+    /// Die Clips werden hier nur als Datei kopiert und in die DB eingetragen.
+    /// Das eigentliche Laden in die Runtime-Dicts übernimmt die normale
+    /// Lade-Schleife in LoadLibrary() danach — damit gibt es kein Doppel-Laden.
+    ///
+    /// Ordnerstruktur (app-orientiert):
+    ///   Sectors/         → Tab 1 Bereiche (wall, ceiling) → AudioCategory.Custom
+    ///   Penalties/       → Tab 2 Penalties                 → AudioCategory.Custom
+    ///   AudioEvents/     → Tab 3 Audio-Events
+    ///     Global/        → undo, start_game, match_won     → AudioCategory.Custom
+    ///     X01/           → bust, sudden_death, 420         → AudioCategory.Custom
+    ///     Cricket/       → marks                           → AudioCategory.Custom
+    ///     ATC/           → hits, atc_streak                → AudioCategory.Custom
+    ///     Score/         → 0-180                           → AudioCategory.Score
+    ///
+    /// Alle Custom-Kategorien landen in SpecialFolder, Score in ScoresFolder.
+    /// </summary>
+    private IEnumerator SeedBuiltInClips(string sourceFolder)
     {
+        int seeded = 0;
+
+        // ---------- Sectors (Tab 1: Bereiche) ----------
+        string sectorsFolder = Path.Combine(sourceFolder, "Sectors");
+        if (Directory.Exists(sectorsFolder))
+        {
+            seeded += SeedCustomFolder(sectorsFolder, ResolveSectorCustomKey, "Sectors");
+        }
+
+        // ---------- Penalties (Tab 2) ----------
+        string penaltiesFolder = Path.Combine(sourceFolder, "Penalties");
+        if (Directory.Exists(penaltiesFolder))
+        {
+            seeded += SeedCustomFolder(penaltiesFolder, ResolvePenaltyCustomKey, "Penalties");
+        }
+
+        // ---------- Schnapszahlen (111-999) als Penalty-Clips ----------
+        if (Directory.Exists(penaltiesFolder))
+        {
+            var digitFiles = Directory.GetFiles(penaltiesFolder, "tripledigit*.wav")
+                .Concat(Directory.GetFiles(penaltiesFolder, "triple_digit*.wav"))
+                .ToArray();
+            if (digitFiles.Length > 0)
+            {
+                var slotIndexByScore = new Dictionary<int, int>();
+
+                foreach (var score in new[] { 111, 222, 333, 444, 555, 666, 777, 888, 999 })
+                {
+                    string customKey = $"builtin:score{score}";
+                    if (!slotIndexByScore.TryGetValue(score, out int slotIndex))
+                        slotIndex = 0;
+
+                    foreach (var digitFile in digitFiles)
+                    {
+                        string fileName = Path.GetFileName(digitFile);
+                        string targetPath = GetFullPath(SpecialFolder, fileName);
+                        if (!File.Exists(targetPath))
+                            File.Copy(digitFile, targetPath, true);
+
+                        slotIndex++;
+                        slotIndexByScore[score] = slotIndex;
+
+                        SqliteDatabaseRepository.InsertRecordedClip(
+                            AudioCategory.Custom.ToString(), 0, null, null, customKey,
+                            fileName, slotIndex);
+                        seeded++;
+                    }
+                }
+            }
+        }
+
+        // ---------- AudioEvents (Tab 3) ----------
+        string audioEventsFolder = Path.Combine(sourceFolder, "AudioEvents");
+        if (Directory.Exists(audioEventsFolder))
+        {
+            foreach (var subDir in Directory.GetDirectories(audioEventsFolder))
+            {
+                string subDirName = Path.GetFileName(subDir);
+
+                if (string.Equals(subDirName, "Score", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Score-Clips (0-180) als AudioCategory.Score
+                    foreach (var filePath in Directory.GetFiles(subDir, "*.wav"))
+                    {
+                        string fileName = Path.GetFileName(filePath);
+                        string baseName = Path.GetFileNameWithoutExtension(fileName);
+                        if (!int.TryParse(baseName, out int score))
+                            continue;
+
+                        string targetPath = GetFullPath(ScoresFolder, fileName);
+                        if (!File.Exists(targetPath))
+                            File.Copy(filePath, targetPath, true);
+
+                        SqliteDatabaseRepository.InsertRecordedClip(
+                            AudioCategory.Score.ToString(), score, null, null, null,
+                            fileName, 1);
+                        seeded++;
+                    }
+                }
+                else
+                {
+                    // Alle anderen Event-Subfolder als AudioCategory.Custom
+                    seeded += SeedCustomFolder(subDir, ResolveEventCustomKey, "AudioEvents/" + subDirName);
+                }
+            }
+        }
+
+        Debug.Log($"[AUDIO] Seeding abgeschlossen: {seeded} Clips in DB eingetragen.");
+        yield break;
+    }
+
+    /// <summary>
+    /// Seeds alle WAV-Dateien eines Ordners als AudioCategory.Custom mit dem
+    /// übergebenen Key-Resolver. Zielordner ist immer SpecialFolder (damit
+    /// FolderForCategory(Custom) sie beim Laden findet).
+    /// </summary>
+    private int SeedCustomFolder(string folderPath, Func<string, string> resolveKey, string logTag)
+    {
+        int seeded = 0;
+        var slotIndexByKey = new Dictionary<string, int>();
+
+        foreach (var filePath in Directory.GetFiles(folderPath, "*.wav"))
+        {
+            string fileName = Path.GetFileName(filePath);
+            string baseName = Path.GetFileNameWithoutExtension(fileName);
+            string key = StripTrailingDigitsAndUnderscores(baseName).ToLowerInvariant();
+
+            string customKey = resolveKey(key);
+            if (string.IsNullOrEmpty(customKey))
+                continue;
+
+            if (!slotIndexByKey.TryGetValue(customKey, out int slotIndex))
+                slotIndex = 0;
+            slotIndex++;
+
+            string targetPath = GetFullPath(SpecialFolder, fileName);
+            if (!File.Exists(targetPath))
+                File.Copy(filePath, targetPath, true);
+
+            SqliteDatabaseRepository.InsertRecordedClip(
+                AudioCategory.Custom.ToString(), 0, null, null, customKey,
+                fileName, slotIndex);
+            slotIndexByKey[customKey] = slotIndex;
+            seeded++;
+        }
+
+        Debug.Log($"[AUDIO] {logTag}: {seeded} Clips eingeseedet.");
+        return seeded;
+    }
+
+    /// <summary>Entfernt alle nachfolgenden Ziffern und Unterstriche (z.B. "wall1" → "wall", "triple1_1" → "triple").
+    /// Wenn der Name nur aus Ziffern/Unterstrichen besteht, wird der ursprüngliche Name zurückgegeben.</summary>
+    private static string StripTrailingDigitsAndUnderscores(string name)
+    {
+        int i = name.Length;
+        while (i > 0)
+        {
+            char c = name[i - 1];
+            if (char.IsDigit(c) || c == '_')
+                i--;
+            else
+                break;
+        }
+        return i == 0 ? name : name.Substring(0, i);
+    }
+
+    private static string ResolveSectorCustomKey(string key)
+    {
+        switch (key)
+        {
+            case "wall": return "custom_wall";
+            case "ceiling": return "custom_ceiling";
+            default: return null;
+        }
+    }
+
+    private static string ResolvePenaltyCustomKey(string key)
+    {
+        switch (key)
+        {
+            case "wall": return "custom_wall";
+            case "ceiling": return "custom_ceiling";
+            case "triple_wall": return "builtin:allmiss";
+            case "triple_ones": return "builtin:threeones";
+            case "triple": return "builtin:threeones";
+            case "triple_miss": return "builtin:allmiss";
+            case "triple_digit": return null; // wird als Score-Clip bei Schnapszahlen behandelt
+            case "tripledigit": return null;  // wird als Score-Clip bei Schnapszahlen behandelt
+            default: return null;
+        }
+    }
+
+    private static string ResolveEventCustomKey(string key)
+    {
+        switch (key)
+        {
+            case "undo": return "menu_undo";
+            case "start_game": return "menu_startgame";
+            case "match_won": return "menu_matchwon";
+            case "bust": return "x01_bust";
+            case "sudden_death": return "x01_suddendeath";
+            case "suddendeath": return "x01_suddendeath";
+            case "420": return "x01_420";
+            case "four_twenty": return "x01_420";
+            case "marks": return "cricket_marks";
+            case "hits": return "atc_hits";
+            case "atc_streak": return "atc_streak";
+            default: return null;
+        }
+    }
+
+    private static RecordedAudioClipDto DtoFromRow(
+        SqliteDatabaseRepository.RecordedClipRow row, AudioCategory category, string path)
+    {
+        var dto = new RecordedAudioClipDto
+        {
+            category = category,
+            filePath = path,
+            score = row.Score,
+            customKey = row.CustomKey
+        };
+
+        if (!string.IsNullOrEmpty(row.PenaltyType)
+            && Enum.TryParse<PenaltyType>(row.PenaltyType, out var penaltyType))
+            dto.penaltyType = penaltyType;
+
+        if (!string.IsNullOrEmpty(row.SpecialType)
+            && Enum.TryParse<SpecialAudioType>(row.SpecialType, out var specialType))
+            dto.specialType = specialType;
+
+        return dto;
+    }
+
+    /// <summary>
+    /// Stellt File-Counter aus slot_index wieder her (kein Filename-Parsing).
+    /// </summary>
+    private void RestoreCounters(List<SqliteDatabaseRepository.RecordedClipRow> rows)
+    {
+        scoreCounters.Clear();
+        penaltyCounters.Clear();
+        specialCounters.Clear();
+        customCounters.Clear();
+
+        if (rows == null)
+            return;
+
+        foreach (var row in rows)
+        {
+            if (row == null || row.SlotIndex <= 0)
+                continue;
+
+            if (!Enum.TryParse<AudioCategory>(row.Category, out var category))
+                continue;
+
+            switch (category)
+            {
+                case AudioCategory.Score:
+                    scoreCounters[row.Score] = Mathf.Max(
+                        scoreCounters.TryGetValue(row.Score, out int s) ? s : 0, row.SlotIndex);
+                    break;
+                case AudioCategory.Penalty:
+                    if (Enum.TryParse<PenaltyType>(row.PenaltyType, out var penaltyType))
+                        penaltyCounters[penaltyType] = Mathf.Max(
+                            penaltyCounters.TryGetValue(penaltyType, out int p) ? p : 0, row.SlotIndex);
+                    break;
+                case AudioCategory.Special:
+                    if (Enum.TryParse<SpecialAudioType>(row.SpecialType, out var specialType))
+                        specialCounters[specialType] = Mathf.Max(
+                            specialCounters.TryGetValue(specialType, out int sp) ? sp : 0, row.SlotIndex);
+                    break;
+                case AudioCategory.Custom:
+                    if (!string.IsNullOrEmpty(row.CustomKey))
+                        customCounters[row.CustomKey] = Mathf.Max(
+                            customCounters.TryGetValue(row.CustomKey, out int c) ? c : 0, row.SlotIndex);
+                    break;
+            }
+        }
+    }
+
+    /// <summary>Ergebnis eines einzelnen Clip-Loads (Coroutine-Rückgabe).</summary>
+    private sealed class ClipLoadResult
+    {
+        public bool Ok;
+    }
+
+    /// <summary>
+    /// Lädt einen Clip ausfallsicher (wirft nie): Request-Fehler, korrupte
+    /// Dateien und Dict-Probleme werden geloggt + übersprungen, damit ein
+    /// einzelner fauler Clip den Gesamt-Load nicht abbricht.
+    /// HINWEIS: Kein yield innerhalb von try/catch (CS1626) — nur der
+    /// Request steht außerhalb, alles Abwehrende in sync-Blöcken.
+    /// </summary>
+    private IEnumerator LoadClip(RecordedAudioClipDto dto, ClipLoadResult result)
+    {
+        if (dto == null || string.IsNullOrEmpty(dto.filePath))
+            yield break;
+
         if (!File.Exists(dto.filePath))
             yield break;
 
@@ -718,29 +1267,69 @@ public class AudioLibrary : MonoBehaviour
 
         if (req.result != UnityWebRequest.Result.Success)
         {
-            Debug.LogError($"Audio load failed: {dto.filePath}");
+            Debug.LogWarning($"[AUDIO] TEMP Clip-Request fehlgeschlagen ({dto.filePath}): {req.error}");
             yield break;
         }
 
-        var clip = DownloadHandlerAudioClip.GetContent(req);
-
-        switch (dto.category)
+        AudioClip clip = null;
+        try
         {
-            case AudioCategory.Score:
-                runtimeScoreClips.TryAdd(dto.score, new List<AudioClip>());
-                runtimeScoreClips[dto.score].Add(clip);
-                break;
-
-            case AudioCategory.Penalty:
-                runtimePenaltyClips.TryAdd(dto.penaltyType, new List<AudioClip>());
-                runtimePenaltyClips[dto.penaltyType].Add(clip);
-                break;
-
-            case AudioCategory.Special:
-                runtimeSpecialClips.TryAdd(dto.specialType, new List<AudioClip>());
-                runtimeSpecialClips[dto.specialType].Add(clip);
-                break;
+            clip = DownloadHandlerAudioClip.GetContent(req);
         }
+        catch (System.Exception e)
+        {
+            Debug.LogWarning($"[AUDIO] TEMP Clip-Decode fehlgeschlagen ({dto.filePath}): {e.Message}");
+            yield break;
+        }
+
+        if (clip == null)
+            yield break;
+
+        try
+        {
+            switch (dto.category)
+            {
+                case AudioCategory.Score:
+                    runtimeScoreClips.TryAdd(dto.score, new List<AudioClip>());
+                    runtimeScoreClips[dto.score].Add(clip);
+                    break;
+
+                case AudioCategory.Penalty:
+                    runtimePenaltyClips.TryAdd(dto.penaltyType, new List<AudioClip>());
+                    runtimePenaltyClips[dto.penaltyType].Add(clip);
+                    break;
+
+                case AudioCategory.Special:
+                    runtimeSpecialClips.TryAdd(dto.specialType, new List<AudioClip>());
+                    runtimeSpecialClips[dto.specialType].Add(clip);
+                    break;
+
+                case AudioCategory.Custom:
+                    if (string.IsNullOrEmpty(dto.customKey))
+                        break;
+
+                    runtimeCustomClips.TryAdd(dto.customKey, new List<AudioClip>());
+                    runtimeCustomClips[dto.customKey].Add(clip);
+                    break;
+            }
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogWarning($"[AUDIO] TEMP Clip-Registrierung fehlgeschlagen ({dto.filePath}): {e.Message}");
+            yield break;
+        }
+
+        result.Ok = true;
+    }
+
+    private static int ParseFileIndex(string filePath)
+    {
+        string name = Path.GetFileNameWithoutExtension(filePath);
+        int sep = name.LastIndexOf('_');
+        if (sep < 0)
+            return 0;
+
+        return int.TryParse(name.Substring(sep + 1), out int index) ? index : 0;
     }
 
     private bool IsSoundEnabled()
@@ -778,6 +1367,7 @@ public class RecordedAudioClipDto
     public int score;
     public PenaltyType penaltyType;
     public SpecialAudioType specialType;
+    public string customKey;
     public string filePath;
 }
 
@@ -791,7 +1381,8 @@ public enum AudioCategory
 {
     Score,
     Penalty,
-    Special
+    Special,
+    Custom
 }
 
 public enum SpecialAudioType

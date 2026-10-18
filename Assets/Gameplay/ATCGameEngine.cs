@@ -66,9 +66,9 @@ public class ATCGameEngine : GameEngine
         game.OnLegWon += HandleLegWon;
         game.OnSetWon += HandleSetWon;
         game.OnMatchWon += HandleMatchWon;
-        game.OnPenaltyTriggered += HandlePenalty;
+        game.OnCustomPenaltyTriggered += HandleCustomPenaltyAudio;
+        game.OnCustomAudioEvent += HandleCustomAudioEvent;
         ((ATCGame) game).OnATCTurnCompleted += HandleTurnCompleted;
-        ((ATCGame) game).OnStreakStarted += HandleATCStreak;
         game.OnBotCheck += HandleBotCheck;
     }
 
@@ -76,11 +76,10 @@ public class ATCGameEngine : GameEngine
     // EVENT HANDLERS
     // =========================
 
-    private void HandleATCStreak(Guid playerId)
-    {
-        if (audioManager != null)
-            audioManager.PlaySpecialClip(SpecialAudioType.ATCStreak);
-    }
+    // Hinweis: Streak + Hits feuern als Custom-Events (atc_streak /
+    // atc_hits) über die Turn-Auswertung — bewusst KEINE expliziten
+    // OnStreakStarted-Hooks mehr, die würden pro Turn doppelt spielen.
+    // Ein perfekter Visit erreicht Streak ≥ 3 und ist damit abgedeckt.
 
     private void HandleLegWon(Guid playerId)
     {
@@ -104,18 +103,13 @@ public class ATCGameEngine : GameEngine
         HandleBotCheck(game.GetCurrentPlayerId());
     }
 
-    private void HandlePenalty(Guid playerId, PenaltyType type, Turn turn)
-    {
-        if (audioManager != null)
-            audioManager.PlayPenalty(type);
-
-        RefreshPlayerList();
-    }
-
     private void HandleTurnCompleted(Guid playerId, int validThrows)
     {
         audioManager.PlayScore(validThrows);
-        audioManager.PlaySpecialClip(SpecialAudioType.Hits);
+        // Kein expliziter Hits-Sound mehr: Hits feuert als Custom-Event
+        // (atc_hits, Default ≥ 1) über die Turn-Auswertung und bleibt damit
+        // im Editor anpassbar. Miss-Turns (0 Hits) bleiben stumm — vorher
+        // spielte dort der Default-Sound; per Schwelle 0 rückholbar.
     }
 
     public void OnClickContinueFromPause()
@@ -144,10 +138,10 @@ public class ATCGameEngine : GameEngine
             yield return new WaitUntil(() => !isPaused);
             Guid playerId = bot.GetID();
             
-            // Ziel für diesen spezifischen Wurf holen
+            // Ziel für diesen spezifischen Wurf holen (Zahl + geforderter Multiplikator des Steps)
             Throw t = bot.GetNextATCThrow(
                 ((ATCGame) game).GetCurrentTarget(playerId),
-                ((ATCGame) game).GetSettingsAsATC().targetType,
+                ((ATCGame) game).GetCurrentTargetMultiplier(playerId),
                 ((ATCGame) game).HasPlayerStarted(playerId)
             );
 
@@ -186,7 +180,7 @@ public class ATCGameEngine : GameEngine
             return;
 
         ((ATCGame) game).Undo();
-        audioManager?.PlaySpecialClip(SpecialAudioType.Undo);
+        audioManager?.PlayCustomEvent(SeededAudioEvents.UndoId);
         RefreshPlayerList();
         HandleUndoBotState();
     }
@@ -220,10 +214,10 @@ public class ATCGameEngine : GameEngine
         game.OnLegWon -= HandleLegWon;
         game.OnSetWon -= HandleSetWon;
         game.OnMatchWon -= HandleMatchWon;
-        game.OnPenaltyTriggered -= HandlePenalty;
+        game.OnCustomPenaltyTriggered -= HandleCustomPenaltyAudio;
+        game.OnCustomAudioEvent -= HandleCustomAudioEvent;
         ((ATCGame) game).OnATCTurnCompleted -= HandleTurnCompleted;
         game.OnBotCheck -= HandleBotCheck;
-        ((ATCGame) game).OnStreakStarted -= HandleATCStreak;
     }
 
     private Throw CreateHitThrow()
@@ -233,22 +227,11 @@ public class ATCGameEngine : GameEngine
 
         Guid playerId = game.GetCurrentPlayerId();
         int target = ((ATCGame) game).GetCurrentTarget(playerId);
-        var settings = ((ATCGame) game).GetSettingsAsATC();
-        bool hasStarted = ((ATCGame) game).HasPlayerStarted(playerId);
+        DartMultiplier required = ((ATCGame) game).GetCurrentTargetMultiplier(playerId);
 
         if (target == -1)
             return new Throw(DartMultiplier.Single, 0, HitType.Board, false, -1);
 
-        switch (settings.targetType)
-        {
-            case ATCTargetType.Singles:
-                return new Throw(DartMultiplier.Single, target, HitType.Board, true, target);
-            case ATCTargetType.Doubles:
-                return new Throw(DartMultiplier.Double, target, HitType.Board, true, target);
-            case ATCTargetType.Triples:
-                return new Throw(DartMultiplier.Triple, target, HitType.Board, true, target);
-            default:
-                return new Throw(DartMultiplier.Single, target, HitType.Board, true, target);
-        }
+        return new Throw(required, target, HitType.Board, true, target);
     }
 }

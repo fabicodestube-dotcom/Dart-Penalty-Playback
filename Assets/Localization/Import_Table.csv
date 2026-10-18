@@ -125,4 +125,20 @@ Wall_expl,"Wall hit, which can be entered via button click instead of a 0-dart",
 Weak,Weak,Schwach,Faible,Débil,Слабый,Słaby,Debole,Zayıf
 Delete_game,Do you really want to delete the displayed game? This can't be undone!,Möchtest du das angezeigte Spiel wirklich löschen? Dies kann nicht rückgängig gemacht werden!,Voulez-vous vraiment supprimer le jeu affiché ? Cette action est irréversible !,¿Realmente quieres borrar el juego mostrado? ¡Esto nicht se puede deshacer!,Вы действительно хотите удалить отображаемую игру? Это действие нельзя отменить!,Czy na pewno chcesz usunąć wyświetloną grę? Tego kroku nie można cofnąć!,Vuoi davvero eliminare il gioco visualizzato? L'azione non può essere annullata!,Görüntülenen oyunu gerçekten silmek istiyor musunuz? Bu işlem geri alınamaz!
 Settings,Settings,Einstellungen,Paramètres,Ajustes,Настройки,Ustawienia,Impostazioni,Ayarlar
-Apply,Apply,Anwenden,Appliquer,Aplicar,Применить,Zastosuj,Applica,Uygula
+Apply,Apply,Anwenden,Appliquer,Aplicar,Применить,Zastosuj,Applica,UygulaCustomization,Customization,Anpassung,,,,,,
+Tab_Penalties,Penalties,Strafen,,,,,,
+Tab_AudioEvents,Audio Events,Audio-Events,,,,,,
+Tab_AudioClips,Audio Clips,Audio-Clips,,,,,,
+Penalty_New,New penalty,Neues Penalty,,,,,,
+Penalty_Edit,Edit penalty,Penalty bearbeiten,,,,,,
+Penalty_DeleteConfirm,Really delete penalty?,Penalty wirklich löschen?,,,,,,
+Penalty_DeleteWithClips,Delete penalty? {0} audio clips are still linked to it.,Penalty löschen? Es sind noch {0} Audio-Clips damit verbunden.,,,,,,
+Event_New,New event,Neues Event,,,,,,
+Event_DeleteConfirm,Really delete event?,Event wirklich löschen?,,,,,,
+Event_DeleteWithClips,Delete event? {0} audio clips are still linked to it.,Event löschen? Es sind noch {0} Audio-Clips damit verbunden.,,,,,,
+Button_Save,Save,Speichern,,,,,,
+Button_Cancel,Cancel,Abbrechen,,,,,,
+Button_Delete,Delete,Löschen,,,,,,
+Button_Edit,Edit,Bearbeiten,,,,,,
+Button_Yes,Yes,Ja,,,,,,
+Button_No,No,Nein,,,,,,

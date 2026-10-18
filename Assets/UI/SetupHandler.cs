@@ -178,7 +178,7 @@ public class SetupHandler : MonoBehaviour, IUIScreen
     private void ApplyATCSettings()
     {
         atcSettings = appHandler.GetATCSettings();
-        atcTargetLabel.text = atcSettings.targetType.ToString();
+        atcTargetLabel.text = atcSettings.targetType.ToDisplayName();
         atcOrderLabel.text = atcSettings.order.ToString();
     }
 
@@ -298,19 +298,36 @@ public class SetupHandler : MonoBehaviour, IUIScreen
 
     public void ATCTargetSingles()
     {
-        atcSettings.targetType = ATCTargetType.Singles;
-        atcTargetLabel.text = "Singles";
-        appHandler.SetATCSettings(atcSettings);
+        ATCTarget(ATCTargetType.Singles);
     }
     public void ATCTargetDoubles(){
-        atcSettings.targetType = ATCTargetType.Doubles;
-        atcTargetLabel.text = "Doubles";
-        appHandler.SetATCSettings(atcSettings);
+        ATCTarget(ATCTargetType.Doubles);
     }
     public void ATCTargetTriples()
     {
-        atcSettings.targetType = ATCTargetType.Triples;
-        atcTargetLabel.text = "Triples";
+        ATCTarget(ATCTargetType.Triples);
+    }
+    public void ATCTargetSinglesDoubles()
+    {
+        ATCTarget(ATCTargetType.SinglesDoubles);
+    }
+    public void ATCTargetSinglesTriples()
+    {
+        ATCTarget(ATCTargetType.SinglesTriples);
+    }
+    public void ATCTargetDoublesTriples()
+    {
+        ATCTarget(ATCTargetType.DoublesTriples);
+    }
+    public void ATCTargetEverything()
+    {
+        ATCTarget(ATCTargetType.Everything);
+    }
+
+    private void ATCTarget(ATCTargetType type)
+    {
+        atcSettings.targetType = type;
+        atcTargetLabel.text = type.ToDisplayName();
         appHandler.SetATCSettings(atcSettings);
     }
 

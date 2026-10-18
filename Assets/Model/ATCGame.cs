@@ -14,6 +14,13 @@ public class ATCGame : Game
     [JsonProperty] private Turn currentTurn;
 
     [JsonProperty] private List<int> targets = new List<int>();
+
+    /// <summary>
+    /// Geforderter Multiplikator pro Schritt (parallel zu targets).
+    /// Kombi-Modi wiederholen Zahlen (z.B. 1S,1D,2S,2D...).
+    /// Alte Saves ohne diese Liste werden aus targetType abgeleitet.
+    /// </summary>
+    [JsonProperty] private List<DartMultiplier> targetMultipliers = new List<DartMultiplier>();
     [JsonProperty] private Dictionary<Guid, int> playerCurrentIndex = new Dictionary<Guid, int>();
     [JsonProperty] private Dictionary<Guid, bool> playerStarted = new Dictionary<Guid, bool>();
     [JsonProperty] private Dictionary<Guid, bool> playerCarryOn = new Dictionary<Guid, bool>();
@@ -53,6 +60,9 @@ public class ATCGame : Game
             InitializeTargets();
         }
 
+        // Alte Saves kennen nur targets (ohne Wiederholungen/Multiplikatoren).
+        EnsureTargetMultipliers();
+
         foreach (var pid in playerIDs)
         {
             playerCurrentIndex[pid] = 0;
@@ -71,45 +81,178 @@ public class ATCGame : Game
 
         currentTurn = new Turn(GetCurrentPlayerId());
         leg.AddTurn(currentTurn);
+
+        CaptureCustomizationSnapshot();
     }
 
     private void InitializeTargets()
     {
+        var s = GetSettingsAsATC();
+        bool withBull = s.targetType.IncludesSingles() || s.targetType.IncludesDoubles();
+        ExpandSteps(BuildNumberOrder(s, withBull), s, targets, targetMultipliers);
+    }
+
+    /// <summary>
+    /// Füllt targetMultipliers aus targetType auf, falls die Liste fehlt oder
+    /// kürzer ist (alte Savegames ohne Wiederholungen/Kombi-Modi).
+    /// </summary>
+    private void EnsureTargetMultipliers()
+    {
+        if (targetMultipliers != null && targetMultipliers.Count == targets.Count)
+            return;
+
+        var fallback = DefaultMultiplierFor(GetSettingsAsATC().targetType);
+        targetMultipliers = Enumerable.Repeat(fallback, targets.Count).ToList();
+    }
+
+    /// <summary>
+    /// Stellt nach LoadGameById den Zielfortschritt wieder her.
+    /// Hintergrund: playerCurrentIndex/targets/targetMultipliers wurden nie
+    /// persistiert — nach Load lief jedes Spiel auf frischen Singles-Defaults
+    /// (falsche Targets nach Undo/Continue, z.B. Single20 statt T20).
+    /// Mit gespeicherten Listen (neue Saves) exakt, sonst deterministisch neu
+    /// aufgebaut + Fortschritt des aktuellen Legs aus den Turns replayt.
+    /// </summary>
+    public void RestoreProgressAfterLoad(
+        List<int> savedTargets,
+        List<DartMultiplier> savedMultipliers,
+        Dictionary<Guid, int> savedIndices)
+    {
+        bool listsOk = savedTargets != null && savedMultipliers != null
+            && savedTargets.Count > 0
+            && savedTargets.Count == savedMultipliers.Count;
+
+        if (listsOk)
+        {
+            targets = new List<int>(savedTargets);
+            targetMultipliers = new List<DartMultiplier>(savedMultipliers);
+        }
+        else
+        {
+            var s = GetSettingsAsATC();
+            bool withBull = s.targetType.IncludesSingles() || s.targetType.IncludesDoubles();
+            var nums = new List<int>();
+            var mults = new List<DartMultiplier>();
+            ExpandSteps(BuildNumberOrder(s, withBull, shuffleRandom: false), s, nums, mults);
+            targets = nums;
+            targetMultipliers = mults;
+        }
+
+        if (savedIndices != null)
+        {
+            foreach (var pid in playerIDs)
+            {
+                playerCurrentIndex[pid] = savedIndices.TryGetValue(pid, out int idx)
+                    ? Math.Max(0, Math.Min(idx, targets.Count))
+                    : 0;
+            }
+        }
+        else if (sets != null && sets.Count > 0)
+        {
+            RebuildATCProgressStateFromTurns(GetCurrentLeg());
+        }
+
+        // currentTurn zeigt nach relationalem Load ggf. auf einen verworfenen
+        // Turn (Sets wurden neu aufgebaut): nur dann neu anhängen, sonst alles lassen.
+        var legNow = sets != null && sets.Count > 0 ? GetCurrentLeg() : null;
+        if (legNow != null && (currentTurn == null || !legNow.GetTurns().Contains(currentTurn)))
+        {
+            Guid cur = GetCurrentPlayerId();
+            var lastTurn = legNow.GetLastTurn();
+            if (lastTurn != null && lastTurn.PlayerId == cur && lastTurn.HasSpace())
+            {
+                currentTurn = lastTurn;
+            }
+            else
+            {
+                currentTurn = new Turn(cur);
+                legNow.AddTurn(currentTurn);
+            }
+        }
+    }
+
+    private static DartMultiplier DefaultMultiplierFor(ATCTargetType targetType)
+    {
+        return targetType switch
+        {
+            ATCTargetType.Doubles => DartMultiplier.Double,
+            ATCTargetType.Triples => DartMultiplier.Triple,
+            _ => DartMultiplier.Single
+        };
+    }
+
+    /// <summary>Zahlenfolge je Order (Bull-Position wie bisher: Asc Ende, Desc Anfang, Right/Left Ende, Random gemischt).</summary>
+    private static List<int> BuildNumberOrder(ATCGameSettings s, bool withBull, bool shuffleRandom = true)
+    {
         var baseTargets = Enumerable.Range(1, 20).ToList();
 
-        // Bull nur wenn sinnvoll
-        if (GetSettingsAsATC().targetType != ATCTargetType.Triples)
+        if (withBull)
         {
             baseTargets.Add(25);
         }
 
-        switch (GetSettingsAsATC().order)
+        switch (s.order)
         {
             case ATCOrder.Ascending:
-                targets = baseTargets;
-                break;
+                return baseTargets;
 
             case ATCOrder.Descending:
-                targets = baseTargets.OrderByDescending(x => x).ToList();
-                break;
+                return baseTargets.OrderByDescending(x => x).ToList();
 
             case ATCOrder.Right:
-                targets = DartboardOrderRight.ToList();
-                if (GetSettingsAsATC().targetType != ATCTargetType.Triples)
-                    targets.Add(25);
-                break;
+                var right = DartboardOrderRight.ToList();
+                if (withBull)
+                    right.Add(25);
+                return right;
 
             case ATCOrder.Left:
-                targets = DartboardOrderLeft.ToList();
-                if (GetSettingsAsATC().targetType != ATCTargetType.Triples)
-                    targets.Add(25);
-                break;
+                var left = DartboardOrderLeft.ToList();
+                if (withBull)
+                    left.Add(25);
+                return left;
 
             case ATCOrder.Random:
-                targets = baseTargets
+                if (!shuffleRandom)
+                    return baseTargets;
+
+                return baseTargets
                     .OrderBy(x => UnityEngine.Random.value)
                     .ToList();
-                break;
+
+            default:
+                return baseTargets;
+        }
+    }
+
+    /// <summary>
+    /// Expandiert Zahlen zu Schritten in Block-Reihenfolge: erst alle Singles
+    /// (1..20 + 25S), dann alle Doubles (D1..D20 + D25), dann alle Triples
+    /// (T1..T20, nie T25) — jeweils nur die aktivierten Sets, Zahlenfolge je Order.
+    /// </summary>
+    private static void ExpandSteps(List<int> numbers, ATCGameSettings s, List<int> outNumbers, List<DartMultiplier> outMultipliers)
+    {
+        outNumbers.Clear();
+        outMultipliers.Clear();
+
+        if (s.targetType.IncludesSingles())
+            AddSteps(numbers, DartMultiplier.Single, outNumbers, outMultipliers);
+
+        if (s.targetType.IncludesDoubles())
+            AddSteps(numbers, DartMultiplier.Double, outNumbers, outMultipliers);
+
+        if (s.targetType.IncludesTriples())
+            AddSteps(numbers, DartMultiplier.Triple, outNumbers, outMultipliers);
+    }
+
+    private static void AddSteps(List<int> numbers, DartMultiplier mult, List<int> outNumbers, List<DartMultiplier> outMultipliers)
+    {
+        foreach (int n in numbers)
+        {
+            if (n == 25 && mult == DartMultiplier.Triple)
+                continue; // nie T25
+
+            outNumbers.Add(n);
+            outMultipliers.Add(mult);
         }
     }
 
@@ -132,6 +275,11 @@ public class ATCGame : Game
             playerCurrentIndex[pid] = 0;
             playerStarted[pid] = false;
         }
+
+        // Neuer Startspieler steht fest (ggf. ein Bot) → Bot-Check wie X01/Cricket.
+        // Ohne das bleibt ein Bot nach Leg-Gewinn untätig, weil der Engine-
+        // Handler zum LegWon-Event noch den alten Spieler sieht.
+        TriggerBotCheck();
     }
 
     public void NextPlayer()
@@ -155,6 +303,16 @@ public class ATCGame : Game
         return index < targets.Count ? targets[index] : -1;
     }
 
+    /// <summary>Geforderter Multiplikator des aktuellen Schritts (Kombi-Modi).</summary>
+    public DartMultiplier GetCurrentTargetMultiplier(Guid playerId)
+    {
+        int index = playerCurrentIndex[playerId];
+        if (targetMultipliers != null && index >= 0 && index < targetMultipliers.Count)
+            return targetMultipliers[index];
+
+        return DefaultMultiplierFor(GetSettingsAsATC().targetType);
+    }
+
     public bool IsPlayerFinished(Guid playerId)
     {
         return playerCurrentIndex[playerId] >= targets.Count;
@@ -169,6 +327,15 @@ public class ATCGame : Game
     {
         return targets.Count;
     }
+
+    /// <summary>Kopien für die Persistenz (game_meta): Schrittliste + Fortschritt.</summary>
+    public List<int> GetTargetNumbers() => new List<int>(targets);
+
+    /// <summary>Kopien für die Persistenz (game_meta): Schritt-Multiplikatoren.</summary>
+    public List<DartMultiplier> GetTargetMultipliers() => new List<DartMultiplier>(targetMultipliers);
+
+    /// <summary>Kopien für die Persistenz (game_meta): Zielfortschritt pro Spieler.</summary>
+    public Dictionary<Guid, int> GetTargetIndices() => new Dictionary<Guid, int>(playerCurrentIndex);
 
     public int GetWonLegsTotal(Guid playerId)
     {
@@ -467,10 +634,9 @@ public class ATCGame : Game
             validThrowsInTurn++;
         }
 
-        if (t.HitType == HitType.Wall)
-            AddPenalty(playerId, PenaltyType.Wall, currentTurn);
-        else if (t.HitType == HitType.Ceiling)
-            AddPenalty(playerId, PenaltyType.Ceiling, currentTurn);
+        // Custom-Penalties (Sofort-Typ) pro Wurf; Legacy-Pfade sind
+        // stillgelegt (alles über Customization-Snapshots).
+        CheckCustomInstantPenalties(playerId, t, currentTurn);
 
         if (IsPlayerFinished(playerId))
         {
@@ -571,6 +737,18 @@ public class ATCGame : Game
         }
     }
 
+    /// <summary>Treffer des Turns + wurfübergreifender Streak für Audio-Trigger.</summary>
+    protected override void CollectAudioTriggerValues(System.Guid playerId, Turn turn, AudioTriggerValues values)
+    {
+        base.CollectAudioTriggerValues(playerId, turn, values);
+
+        if (turn != null)
+            values.hits = turn.GetThrows().Count(t => t.IsTargetHit);
+
+        if (playerStats.TryGetValue(playerId, out var stats) && stats is GameStatsATC atc)
+            values.streak = atc.currentHitStreak;
+    }
+
     private void FinalizeVisit(Guid playerId, bool isPlayerSwitch)
     {
         CheckTurnPenalties(playerId, currentTurn);
@@ -586,32 +764,29 @@ public class ATCGame : Game
     private bool IsValidThrow(Throw thr, Guid playerId)
     {
         int currentTarget = GetCurrentTarget(playerId);
-        var targetType = GetSettingsAsATC().targetType;
+        if (currentTarget == -1)
+            return false;
 
-        // Grundvoraussetzung: Die Zahl muss stimmen
-        bool correctNumber = (thr.Value == currentTarget);
-        
-        // Hilfsvariable: Hat er überhaupt irgendwas auf der Scheibe getroffen?
-        // (In manchen Systemen ist ein Miss ein Multiplier von 0 oder ein spezieller HitType)
-        bool isAnyHit = thr.Multiplier == DartMultiplier.Single || 
-                        thr.Multiplier == DartMultiplier.Double || 
-                        thr.Multiplier == DartMultiplier.Triple;
+        return IsValidThrowForStep(thr, currentTarget, GetCurrentTargetMultiplier(playerId));
+    }
 
-        switch (targetType)
+    /// <summary>
+    /// Prüft einen Wurf gegen (Zahl + geforderter Multiplikator) eines Schritts.
+    /// Single-Schritte akzeptieren jeden Board-Treffer (alte Singles-Semantik).
+    /// </summary>
+    private static bool IsValidThrowForStep(Throw thr, int target, DartMultiplier required)
+    {
+        if (thr.Value != target)
+            return false;
+
+        if (required == DartMultiplier.Single)
         {
-            case ATCTargetType.Singles:
-                // Hit, wenn die Zahl stimmt, egal ob S, D oder T
-                return correctNumber && isAnyHit;
-
-            case ATCTargetType.Doubles:
-                return correctNumber && thr.Multiplier == DartMultiplier.Double;
-
-            case ATCTargetType.Triples:
-                return correctNumber && thr.Multiplier == DartMultiplier.Triple;
-
-            default:
-                return false;
+            return thr.Multiplier == DartMultiplier.Single
+                || thr.Multiplier == DartMultiplier.Double
+                || thr.Multiplier == DartMultiplier.Triple;
         }
+
+        return thr.Multiplier == required;
     }
 
     private Guid GetSetWinner(Set set)
@@ -651,30 +826,170 @@ public class ATCGame : Game
     }
 
 
+    public override void CalculatePlayerStatsOnSave()
+    {
+        // Base recomputet Legs/Sets/Games/Throws (idempotent).
+        base.CalculatePlayerStatsOnSave();
+
+        if (playerStats == null || playerIDs == null)
+            return;
+
+        var atcSettings = GetSettingsAsATC();
+        if (atcSettings == null)
+            return;
+
+        BuildStepListsForRebuild(atcSettings, out var targetList, out var targetMults);
+        if (targetList == null || targetList.Count == 0)
+            return;
+
+        // ATC-Felder resetten (Base setzt nur Legs/Sets/Throws zurück).
+        // Dart-Zähler (totalThrows/Double/Triple) und Penalties bleiben von der Base.
+        foreach (var pid in playerIDs)
+        {
+            if (playerStats.TryGetValue(pid, out var s) && s is GameStatsATC atc)
+                ResetATCStatsForRebuild(atc);
+        }
+
+        // Chronologische Simulation über alle Sets/Legs/Turns.
+        // Ziel-Index wird pro Leg zurückgesetzt (wie StartNewLeg im Live-Spiel).
+        // Ein "Visit" sind aufeinanderfolgende Turns desselben Spielers
+        // (Bonus-Slots behalten validThrowsInTurn – wie RebuildATCProgressStateFromTurns).
+        foreach (var set in sets)
+        {
+            foreach (var leg in set.GetLegs())
+            {
+                var simIndex = playerIDs.ToDictionary(pid => pid, _ => 0);
+
+                Guid? visitPlayerId = null;
+                int visitValidHits = 0;
+
+                foreach (var turn in leg.GetTurns())
+                {
+                    var throws = turn.GetThrows();
+                    if (throws.Count == 0)
+                        continue;
+
+                    Guid pid = turn.PlayerId;
+                    if (!playerStats.TryGetValue(pid, out var s) || s is not GameStatsATC stats)
+                        continue;
+
+                    if (visitPlayerId != pid)
+                    {
+                        visitPlayerId = pid;
+                        visitValidHits = 0;
+                    }
+
+                    for (int i = 0; i < throws.Count; i++)
+                    {
+                        var thr = throws[i];
+
+                        int idx = simIndex[pid];
+                        if (idx >= targetList.Count)
+                            continue; // Spieler hatte alle Targets – wie Live-Early-Return bei -1.
+
+                        int target = targetList[idx];
+                        bool valid = IsValidThrowForTarget(thr, target, targetMults[idx]);
+                        bool wasFirstDartOfVisit = (i == 0 && visitValidHits == 0);
+
+                        stats.AddThrow(thr, target, valid, wasFirstDartOfVisit);
+
+                        if (valid)
+                        {
+                            simIndex[pid]++;
+                            visitValidHits++;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Trailing Streaks flush-en: Eine durchgespielte End-Streak (kein
+        // Fehlwurf mehr bis Spielende) würde sonst nie registriert.
+        // Nutzt exakt die Miss-Branch-Logik (kein Live-Verhalten geändert).
+        foreach (var pid in playerIDs)
+        {
+            if (!playerStats.TryGetValue(pid, out var s) || s is not GameStatsATC stats)
+                continue;
+
+            stats.FlushCurrentStreak();
+        }
+    }
+
+    private void ResetATCStatsForRebuild(GameStatsATC stats)
+    {
+        if (stats == null)
+            return;
+
+        stats.targetsHit = 0;
+        stats.totalTargets = 0;
+        stats.hitPercentage = 0f;
+
+        stats.firstDartHits = 0;
+        stats.firstDartAttempts = 0;
+        stats.firstDartHitPercentage = 0f;
+
+        stats.hasStreak = false;
+        stats.currentHitStreak = 0;
+        stats.longestHitStreak = 0;
+        stats.completedStreaks.Clear();
+
+        if (stats.throwsPerTarget != null)
+            foreach (var k in stats.throwsPerTarget.Keys.ToList())
+                stats.throwsPerTarget[k] = 0;
+
+        // Sektor-Zähler werden per Simulation (AddThrow) neu aufgebaut
+        stats.throwSectorCounts?.Clear();
+
+        if (stats.hitsPerTarget != null)
+            foreach (var k in stats.hitsPerTarget.Keys.ToList())
+                stats.hitsPerTarget[k] = 0;
+
+        stats.streak3Plus = 0;
+        stats.streak6Plus = 0;
+        stats.streak9Plus = 0;
+        stats.streak12Plus = 0;
+    }
+
+    /// <summary>
+    /// Baut die Target-Reihenfolge aus den Settings (wie InitializeTargets).
+    /// Random ist nicht aus den Settings rekonstruierbar (wird nicht persistiert)
+    /// und fällt auf die gespeicherte Liste zurück.
+    /// </summary>
+    private void BuildStepListsForRebuild(ATCGameSettings s, out List<int> numbers, out List<DartMultiplier> multipliers)
+    {
+        // Random ist nicht aus den Settings rekonstruierbar (wird nicht
+        // persistiert) und fällt auf die gespeicherte Liste zurück.
+        if (s.order == ATCOrder.Random
+            && targets != null && targets.Count > 0
+            && targetMultipliers != null && targetMultipliers.Count == targets.Count)
+        {
+            numbers = new List<int>(targets);
+            multipliers = new List<DartMultiplier>(targetMultipliers);
+            return;
+        }
+
+        bool withBull = s.targetType.IncludesSingles() || s.targetType.IncludesDoubles();
+
+        numbers = new List<int>();
+        multipliers = new List<DartMultiplier>();
+        ExpandSteps(BuildNumberOrder(s, withBull, shuffleRandom: false), s, numbers, multipliers);
+    }
+
+    /// <summary>
+    /// Wie IsValidThrow, aber gegen das Target zur Wurfzeit (Rebuild-Simulation),
+    /// nicht gegen das live-aktuelle Target.
+    /// </summary>
+    private bool IsValidThrowForTarget(Throw thr, int target, DartMultiplier required)
+    {
+        return IsValidThrowForStep(thr, target, required);
+    }
+
     private bool IsValidThrowRebuild(Throw thr, Guid playerId)
     {
         int currentTarget = GetCurrentTarget(playerId);
-        var targetType = GetSettingsAsATC().targetType;
+        if (currentTarget == -1)
+            return false;
 
-        bool correctNumber = thr.Value == currentTarget;
-
-        bool isAnyHit =
-            thr.Multiplier == DartMultiplier.Single ||
-            thr.Multiplier == DartMultiplier.Double ||
-            thr.Multiplier == DartMultiplier.Triple;
-
-        switch (targetType)
-        {
-            case ATCTargetType.Singles:
-                return correctNumber && isAnyHit;
-
-            case ATCTargetType.Doubles:
-                return correctNumber && thr.Multiplier == DartMultiplier.Double;
-
-            case ATCTargetType.Triples:
-                return correctNumber && thr.Multiplier == DartMultiplier.Triple;
-        }
-
-        return false;
+        return IsValidThrowForStep(thr, currentTarget, GetCurrentTargetMultiplier(playerId));
     }
 }

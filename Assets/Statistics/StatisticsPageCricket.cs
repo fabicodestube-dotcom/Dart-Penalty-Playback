@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -27,16 +27,6 @@ public class StatisticsPageCricket : MonoBehaviour
     private readonly Dictionary<string, TableView> cachedTables = new Dictionary<string, TableView>();
 
 
-    private static readonly PenaltyType[] penaltyColumns =
-    {
-        PenaltyType.Wall,
-        PenaltyType.Ceiling,
-        PenaltyType.AllMiss,
-        PenaltyType.ThreeOnes,
-        PenaltyType.Schnapszahl,
-        PenaltyType.LostGame
-    };
-
     private static readonly string CricketPenaltiesKey = "Cricket_Penalties";
     private static readonly string CricketParticipationKey = "Cricket_Participation";
     private static readonly string CricketLegsKey = "Cricket_Legs";
@@ -46,9 +36,271 @@ public class StatisticsPageCricket : MonoBehaviour
     private static readonly string CricketHighscoresKey = "Cricket_Highscores";
     private static readonly string CricketPreferencesKey = "Cricket_Preferences";
 
+    [Header("Penalty-Spalten-Detail")]
+    [Tooltip("Detail-Popup für Header-Taps (optional, sonst Auto-Find).")]
+    public PenaltyDetailPopup columnDetailPopup;
+
+    private PenaltyDetailPopup ColumnPopup
+    {
+        get
+        {
+            if (columnDetailPopup == null)
+                columnDetailPopup = PenaltyDetailPopup.FindVisibleInstance();
+            return columnDetailPopup;
+        }
+    }
+
+    [Header("Penalty-Resolver (TEMP-DIAG)")]
+    [Tooltip("Löst Penalty-Stats zum Tap-Zeitpunkt frisch auf (statt Build-Zeit-Closure). Wird vom StatisticsHandler gesetzt.")]
+    public Func<string, GameStats> penaltyStatsResolver;
+
+    /// <summary>
+    /// Tap-Handler mit frischem Lookup (Stale-Closure-Fix): Stats werden erst
+    /// beim Antippen aus BasePlayer/currentRange geholt, Closure nur Fallback.
+    /// </summary>
+    private void ShowPenaltyDetails(PenaltyDetailPopup popup, string playerName, GameStats fallbackStats)
+    {
+        GameStats resolved = null;
+        try { resolved = penaltyStatsResolver?.Invoke(playerName); }
+        catch (Exception e) { Debug.LogWarning($"[PenaltyDiag] Resolver fehlgeschlagen ({playerName}): {e.Message}"); }
+
+        var used = resolved ?? fallbackStats;
+        Debug.Log($"[PenaltyDiag] Tap {playerName}: fallback(hash={(fallbackStats != null ? fallbackStats.GetHashCode().ToString() : "null")}," +
+            $"anzahlFallback={(fallbackStats != null ? PenaltyDisplay.TotalPenaltyCount(fallbackStats).ToString() : "-")}," +
+            $"kostenFallback={(fallbackStats != null ? fallbackStats.totalPenaltyCost.ToString("0.##") : "-")} " +
+            $"resolved(hash={(resolved != null ? resolved.GetHashCode().ToString() : "null")}," +
+            $"anzahl={(used != null ? PenaltyDisplay.TotalPenaltyCount(used).ToString() : "-")}," +
+            $"kosten={(used != null ? used.totalPenaltyCost.ToString("0.##") : "-")})");
+
+        if (popup != null)
+            popup.ShowPlayerAggregates(playerName, used);
+    }
+
+
     public IEnumerator ShowStatsAsync(List<GameStatsCricket> stats, List<string> playerNames)
     {
         yield return BuildCricketStatsCoroutine(stats, playerNames);
+    }
+
+    /// <summary>
+    /// Gezieltes Refresh EINER Spielerzeile (alle Tabellen dieser Page).
+    /// Kein Neuaufbau, kein Clear — nutzt die gecachten Tabellen.
+    /// </summary>
+    public void UpsertPlayerRow(GameStatsCricket stats, string playerName)
+    {
+        if (stats == null || string.IsNullOrEmpty(playerName) || parent == null)
+            return;
+
+        var participationTable = GetOrCreateCachedTable(
+            CricketParticipationKey,
+            parent,
+            "Games",
+            new TableCellData[] { "Played", "Won", "Win %" });
+
+        if (participationTable != null)
+        {
+            int participated = stats.gameCount;
+            int won = stats.gamesWon;
+            float pct = participated == 0 ? 0f : (won / (float)participated) * 100f;
+
+            participationTable.AddOrUpdateRow(playerName, playerName, new TableCellData[]
+            {
+                participated.ToString(),
+                won.ToString(),
+                $"{pct:0.00}%"
+            });
+            participationTable.SetRowActive(playerName, true);
+        }
+
+        var penaltyTable = GetOrCreateCachedTable(
+            CricketPenaltiesKey,
+            parent,
+            "Penalties",
+            new TableCellData[] { "Anzahl", "Kosten", "Details" });
+
+        if (penaltyTable != null)
+        {
+            penaltyTable.AddOrUpdateRow(playerName, playerName, new TableCellData[]
+            {
+                PenaltyDisplay.TotalPenaltyCount(stats).ToString(),
+                stats.totalPenaltyCost.ToString("0"),
+                "› Details"
+            });
+            penaltyTable.SetRowActive(playerName, true);
+
+            var popup = ColumnPopup;
+            if (popup != null && penaltyTable.TryGetRow(playerName, out var rowGo) && rowGo != null)
+            {
+                var row = rowGo.GetComponent<DynamicTableRow>();
+                row?.WireCellTaps(_ => ShowPenaltyDetails(popup, playerName, stats));
+            }
+        }
+
+        var legsTable = GetOrCreateCachedTable(
+            CricketLegsKey,
+            parent,
+            "Legs",
+            new TableCellData[] { "Played", "Won", "Win %" });
+
+        if (legsTable != null)
+        {
+            int played = stats.totalLegsCount;
+            int wonLegs = stats.totalLegsWon;
+            float legsPct = played == 0 ? 0f : (wonLegs / (float)played) * 100f;
+
+            legsTable.AddOrUpdateRow(playerName, playerName, new TableCellData[]
+            {
+                played.ToString(),
+                wonLegs.ToString(),
+                $"{legsPct:0.00}%"
+            });
+            legsTable.SetRowActive(playerName, true);
+        }
+
+        var throwsTable = GetOrCreateCachedTable(
+            CricketThrowsKey,
+            parent,
+            "Throws",
+            new TableCellData[] { "Ø Throws", "Double %", "Triple %" });
+
+        if (throwsTable != null)
+        {
+            throwsTable.AddOrUpdateRow(playerName, playerName, new TableCellData[]
+            {
+                stats.AverageThrowsPerGame.ToString("0.00"),
+                $"{stats.doublePercentage * 100f:0.00}%",
+                $"{stats.triplePercentage * 100f:0.00}%"
+            });
+            throwsTable.SetRowActive(playerName, true);
+        }
+
+        var mprTable = GetOrCreateCachedTable(
+            CricketMprKey,
+            parent,
+            "Marks",
+            new TableCellData[] { "Marks", "Max MPR", "MPR" });
+
+        if (mprTable != null)
+        {
+            mprTable.AddOrUpdateRow(playerName, playerName, new TableCellData[]
+            {
+                stats.marksPerRound.ToString("0.00"),
+                stats.markCount.ToString(),
+                stats.maxMPR.ToString("0.00")
+            });
+            mprTable.SetRowActive(playerName, true);
+        }
+
+        var scoresTable = GetOrCreateCachedTable(
+            CricketScoresKey,
+            parent,
+            "Points",
+            new TableCellData[] { "Ø Points", "Max Points", "Overkill Points" });
+
+        if (scoresTable != null)
+        {
+            scoresTable.AddOrUpdateRow(playerName, playerName, new TableCellData[]
+            {
+                stats.AverageScorePerTurn.ToString("0.00"),
+                stats.MaxScoreInTurn.ToString(),
+                stats.TotalOverkillPoints.ToString()
+            });
+            scoresTable.SetRowActive(playerName, true);
+        }
+
+        var highscoresTable = GetOrCreateCachedTable(
+            CricketHighscoresKey,
+            parent,
+            "Highscores",
+            new TableCellData[] { "9 Marks", "White Horse", "Same Triple" });
+
+        if (highscoresTable != null)
+        {
+            highscoresTable.AddOrUpdateRow(playerName, playerName, new TableCellData[]
+            {
+                stats.nineMarkTurns.ToString(),
+                stats.whiteHorseTurns.ToString(),
+                stats.sameTripleTurns.ToString()
+            });
+            highscoresTable.SetRowActive(playerName, true);
+        }
+
+        var preferencesTable = GetOrCreateCachedTable(
+            CricketPreferencesKey,
+            parent,
+            "Preferences",
+            new TableCellData[] { "First Closed", "Last Closed", "Most Points" });
+
+        if (preferencesTable != null)
+        {
+            preferencesTable.AddOrUpdateRow(playerName, playerName, new TableCellData[]
+            {
+                stats.firstClosedField == -1 ? "-" : stats.firstClosedField.ToString(),
+                stats.lastClosedField == -1 ? "-" : stats.lastClosedField.ToString(),
+                stats.maxPointsField == -1 ? "-" : stats.maxPointsField.ToString()
+            });
+            preferencesTable.SetRowActive(playerName, true);
+        }
+
+        StatisticsPageBuildHelper.ApplyTablesOnParent(parent, cachedTables.Values);
+    }
+
+    /// <summary>
+    /// Blendet alle Zeilen eines Spielers auf dieser Page um.
+    /// Legt nichts an — nur Bestehendes.
+    /// Gibt true zurück, wenn mindestens eine Zeile WIRKLICH umgeschaltet hat
+    /// (nur dann muss die Tabellenhöhe via RefreshLayout neu berechnet werden).
+    /// </summary>
+    public bool SetPlayerRowVisible(string playerName, bool visible)
+    {
+        if (string.IsNullOrEmpty(playerName))
+            return false;
+
+        bool changed = false;
+        foreach (var table in cachedTables.Values)
+        {
+            if (table != null && table.HasRow(playerName))
+                changed |= table.SetRowActive(playerName, visible);
+        }
+
+        return changed;
+    }
+
+    /// <summary>
+    /// Rechnet alle Tabellenhöhen dieser Page aus den SICHTBAREN Zeilen neu
+    /// (Divider + LayoutElement.preferredHeight). Nur aufrufen, wenn sich die
+    /// sichtbare Zeilenzahl wirklich geändert hat.
+    /// </summary>
+    public void RefreshLayout()
+    {
+        StatisticsPageBuildHelper.ApplyTablesOnParent(parent, cachedTables.Values);
+    }
+
+    /// <summary>
+    /// True, wenn irgendeine Tabelle weniger als `desired` Reserve-Rows hat.
+    /// </summary>
+    public bool SpareShortage(int desired)
+    {
+        foreach (var table in cachedTables.Values)
+        {
+            if (table != null && table.PooledSpareRows < desired)
+                return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Füllt Reserve-Rows aller Tabellen auf (gechunkt, eine Tabelle pro Frame).
+    /// </summary>
+    public IEnumerator PreallocateSpareRowsAsync(int desired)
+    {
+        foreach (var table in cachedTables.Values)
+        {
+            if (table != null)
+                table.EnsureSpareRows(desired);
+            yield return null;
+        }
     }
 
 
@@ -90,27 +342,6 @@ public class StatisticsPageCricket : MonoBehaviour
             if (!preserved.Contains(child))
                 Destroy(child);
         }
-    }
-
-    private TableCellData GetPenaltyHeaderData(PenaltyType type)
-    {
-        Sprite icon = null;
-        switch (type)
-        {
-            case PenaltyType.Wall:        icon = iconWall; break;
-            case PenaltyType.Ceiling:     icon = iconCeiling; break;
-            case PenaltyType.AllMiss:     icon = iconMiss; break;
-            case PenaltyType.ThreeOnes:   icon = iconOnes; break;
-            case PenaltyType.Schnapszahl: icon = iconSchnaps; break;
-            case PenaltyType.LostGame:    icon = iconLost; break;
-        }
-
-        return new TableCellData 
-        { 
-            text = type.ToString(), 
-            icon = icon, 
-            isIcon = icon != null // Wenn kein Icon da ist, nimm Text
-        };
     }
 
 
@@ -159,47 +390,51 @@ public class StatisticsPageCricket : MonoBehaviour
             if (!activeParticipationKeys.Contains(k))
                 participationTable.SetRowActive(k, false);
 
-        // =====================================================
-        // PENALTIES
-        // =====================================================
-        var penaltyHeader = penaltyColumns
-            .Select(type => GetPenaltyHeaderData(type))
-            .Concat(new TableCellData[] { "Sum" })
-            .ToArray();
+        // Frame abgeben (wie X01: kein N-Spieler-Burst pro Frame).
+        yield return null;
 
+        // =====================================================
+        // PENALTIES (einfach: Anzahl | Kosten | Details → Popup)
+        // =====================================================
         var penaltyTable = GetOrCreateCachedTable(
             CricketPenaltiesKey,
             parent,
             "Penalties",
-            penaltyHeader);
+            new TableCellData[] { "Anzahl", "Kosten", "Details" });
 
         penaltyTable.gameObject.SetActive(true);
 
         var activePenaltyKeys = new HashSet<string>();
+        var popup = ColumnPopup;
 
-        for (int i = 0; i < gameStatsX01s.Count; i++)
+        for (int i = 0; i < playerNames.Count; i++)
         {
             string key = playerNames[i];
-            var stats = gameStatsX01s[i];
+            string playerName = playerNames[i];
+            var stats = i < gameStatsX01s.Count ? gameStatsX01s[i] : null;
 
             penaltyTable.AddOrUpdateRow(key, key, new TableCellData[]
             {
-                (stats?.wallCount ?? 0).ToString(),
-                (stats?.ceilingCount ?? 0).ToString(),
-                (stats?.allMissCount ?? 0).ToString(),
-                (stats?.tripleOnesCount ?? 0).ToString(),
-                (stats?.tripleDigitCount ?? 0).ToString(),
-                (stats?.lostGame ?? 0).ToString(),
-                (stats?.totalPenaltyCost ?? 0f).ToString("0")
+                PenaltyDisplay.TotalPenaltyCount(stats).ToString(),
+                (stats?.totalPenaltyCost ?? 0f).ToString("0"),
+                "› Details"
             }, false);
 
             penaltyTable.SetRowActive(key, true);
             activePenaltyKeys.Add(key);
+
+            if (popup != null && penaltyTable.TryGetRow(key, out var rowGo) && rowGo != null)
+            {
+                var row = rowGo.GetComponent<DynamicTableRow>();
+                row?.WireCellTaps(_ => ShowPenaltyDetails(popup, playerName, stats));
+            }
         }
 
         foreach (var k in penaltyTable.GetRowKeys())
             if (!activePenaltyKeys.Contains(k))
                 penaltyTable.SetRowActive(k, false);
+
+        yield return null;
 
         // =====================================================
         // LEGS
@@ -238,6 +473,8 @@ public class StatisticsPageCricket : MonoBehaviour
             if (!activeLegKeys.Contains(k))
                 legsTable.SetRowActive(k, false);
 
+        yield return null;
+
         // =====================================================
         // THROWS
         // =====================================================
@@ -270,6 +507,8 @@ public class StatisticsPageCricket : MonoBehaviour
         foreach (var k in throwsTable.GetRowKeys())
             if (!activeThrowKeys.Contains(k))
                 throwsTable.SetRowActive(k, false);
+
+        yield return null;
 
         // =====================================================
         // MPR / MARKS
@@ -304,6 +543,8 @@ public class StatisticsPageCricket : MonoBehaviour
             if (!activeMprKeys.Contains(k))
                 mprTable.SetRowActive(k, false);
 
+        yield return null;
+
         // =====================================================
         // SCORES
         // =====================================================
@@ -337,6 +578,8 @@ public class StatisticsPageCricket : MonoBehaviour
             if (!activeScoreKeys.Contains(k))
                 scoresTable.SetRowActive(k, false);
 
+        yield return null;
+
         // =====================================================
         // HIGHSCORES
         // =====================================================
@@ -369,6 +612,8 @@ public class StatisticsPageCricket : MonoBehaviour
         foreach (var k in highscoresTable.GetRowKeys())
             if (!activeHighKeys.Contains(k))
                 highscoresTable.SetRowActive(k, false);
+
+        yield return null;
 
         // =====================================================
         // PREFERENCES

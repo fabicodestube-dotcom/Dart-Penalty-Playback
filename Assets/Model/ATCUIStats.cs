@@ -48,10 +48,16 @@ public class ATCUIStats
     [JsonProperty]
     public ATCTargetType targetType;
 
+    [JsonProperty]
+    public DartMultiplier currentTargetMultiplier;
+
     [JsonProperty] public int totalTargets;
     [JsonProperty] public int targetsHit;
 
     [JsonProperty] public int hitsInRound;
+
+    [JsonProperty] public bool hasStreak;
+    [JsonProperty] public int currentHitStreak;
 
 
     // ===========================
@@ -66,11 +72,27 @@ public class ATCUIStats
         isActive = game.GetCurrentPlayerId() == playerID;
 
         currentTarget = game.GetCurrentTarget(playerID);
+        currentTargetMultiplier = game.GetCurrentTargetMultiplier(playerID);
         isFinished = game.IsPlayerFinished(playerID);
         hasStarted = game.HasPlayerStarted(playerID);
         targetType = game.GetSettingsAsATC().targetType;
 
         hitsInRound = game.GetHitsInCurrentRound(playerID);
+
+        // Live-Streak aus den Modell-Stats (nicht aus hitsInRound ableiten:
+        // das enthält bei inaktiven Spielern die Treffer des letzten Besuchs).
+        // Wird bei Fehlwurf sofort zurückgesetzt und bei Undo wiederhergestellt.
+        if (game.GetPlayerStats().TryGetValue(playerID, out var baseStats)
+            && baseStats is GameStatsATC atcStats)
+        {
+            hasStreak = atcStats.hasStreak;
+            currentHitStreak = atcStats.currentHitStreak;
+        }
+        else
+        {
+            hasStreak = false;
+            currentHitStreak = 0;
+        }
 
         wonSets = game.GetWonSets(playerID);
         wonLegs = game.GetWonLegs(playerID);

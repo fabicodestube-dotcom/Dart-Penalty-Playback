@@ -66,6 +66,8 @@ public class X01Game : Game
 
         currentTurn = new Turn(GetCurrentPlayerId());
         leg.AddTurn(currentTurn);
+
+        CaptureCustomizationSnapshot();
     }
 
     public override void InitializeAfterLoad()
@@ -269,10 +271,9 @@ public class X01Game : Game
         if (newScore == 0 && x01Settings.checkoutType == CheckoutType.Triple && !t.IsTriple())
             bust = true;
 
-        if (t.HitType == HitType.Wall)
-            AddPenalty(playerId, PenaltyType.Wall, currentTurn);
-        else if (t.HitType == HitType.Ceiling)
-            AddPenalty(playerId, PenaltyType.Ceiling, currentTurn);
+        // Custom-Penalties (Sofort-Typ) pro Wurf; Legacy-Pfade sind
+        // stillgelegt (alles über Customization-Snapshots).
+        CheckCustomInstantPenalties(playerId, t, currentTurn);
 
         if (bust)
         {
@@ -424,11 +425,6 @@ public class X01Game : Game
             {
                 // Averages/Darts-Zähler im X01-Stat-Objekt korrigieren
                 ((GameStatsX01)stats).UnregisterTurn(lastTurn);
-                
-                if (IsSchnapszahl(lastTurn.ScoreBeforeTurn))
-                {
-                    RemovePenalty(undoPlayerId, PenaltyType.Schnapszahl);
-                }
             }
 
             // --- LOGIK FÜR CHECKOUT ATTEMPT UNDO ---
@@ -553,6 +549,8 @@ public class X01Game : Game
         stats.highestCheckout = 0;
         stats.checkoutAttemptCount = 0f;
 
+        // tripleDigitCount (Legacy) wird nicht mehr rebuildet, sondern aus der
+        // persistierten Zeile restauriert (alte Spiele behalten ihre Werte).
         stats.hitSectorCounts = new Dictionary<string, int>();
         stats.hitSectorCounts["0"] = 0;
         for (int i = 1; i <= 20; i++)
@@ -643,39 +641,13 @@ public class X01Game : Game
     // PENALTY SYSTEM (X01 EXTENSIONS)
     // =========================================================
 
-    private new void CheckTurnPenalties(Guid playerId, Turn turn)
+    /// <summary>Remaining-Auswertung: eigener Rest (ScoreBeforeTurn → aktuell).</summary>
+    protected override Dictionary<Guid, (int before, int after)> GetRemainingTotals(Guid playerId, Turn turn)
     {
-        base.CheckTurnPenalties(playerId, turn);
-        CheckSchnapszahl(playerId, turn);
-    }
+        if (turn == null || !playerScores.TryGetValue(playerId, out int after))
+            return null;
 
-    private void CheckSchnapszahl(Guid playerId, Turn turn)
-    {
-        int score = playerScores[playerId];
-
-        if (score < 100) return;
-
-        string s = score.ToString();
-
-        if (IsSchnapszahl(score))
-        {
-            if (playerStats.TryGetValue(playerId, out var stats))
-            {
-                stats.AddPenalty(PenaltyType.Schnapszahl);
-            }
-
-            OnPenaltyTriggered?.Invoke(playerId, PenaltyType.Schnapszahl, turn);
-        }
-    }
-
-    private bool IsSchnapszahl(int value)
-    {
-        // Schnapszahlen müssen laut deiner Logik mindestens 100 sein (111, 222, etc.)
-        if (value < 100) return false;
-
-        string s = value.ToString();
-        // Prüft, ob alle Zeichen im String identisch sind
-        return s.Distinct().Count() == 1;
+        return new Dictionary<Guid, (int, int)> { [playerId] = (turn.ScoreBeforeTurn, after) };
     }
 
 

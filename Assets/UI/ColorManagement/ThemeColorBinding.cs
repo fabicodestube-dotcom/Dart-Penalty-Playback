@@ -1,5 +1,5 @@
-using UnityEngine;
-using UnityEngine.UI;
+using UnityEngine; 
+using UnityEngine.UI; 
 
 [RequireComponent(typeof(Graphic))]
 public class ThemeColorBinding : MonoBehaviour

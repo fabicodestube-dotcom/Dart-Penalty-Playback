@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using TMPro;
 using UnityEngine;
 using Newtonsoft.Json;
@@ -63,7 +64,7 @@ public abstract class GameEngine : MonoBehaviour
 
         isPaused = false;
 
-        audioManager?.PlaySpecialClip(SpecialAudioType.StartGame);
+        audioManager?.PlayCustomEvent(SeededAudioEvents.GameStartId);
 
         SubscribeToGameEvents();
 
@@ -143,7 +144,7 @@ public abstract class GameEngine : MonoBehaviour
     {
         StopBotTurn();
 
-        audioManager.PlaySpecialClip(SpecialAudioType.MatchWon);
+        audioManager.PlayCustomEvent(SeededAudioEvents.GameOverId);
 
         game.CalculatePlayerStatsOnSave();
 
@@ -186,9 +187,24 @@ public abstract class GameEngine : MonoBehaviour
                 AllMissCount = ps?.allMissCount ?? 0,
                 ThreeOnesCount = ps?.tripleOnesCount ?? 0,
                 TripleDigitCount = ps?.tripleDigitCount ?? 0,
-                LostGameCount = ps?.lostGame ?? 0
+                LostGameCount = ps?.lostGame ?? 0,
+                CustomPenaltyCounts = ps?.customPenaltyCounts != null
+                    ? new Dictionary<string, int>(ps.customPenaltyCounts)
+                    : new Dictionary<string, int>()
             };
             summary.PlayerEntries.Add(entry);
+        }
+
+        // Snapshot für transiente Anzeige (Summary-Screen): Spielstart-Stand
+        // aus dem Game (nicht Live-Store), damit Namen + enabled-Stand zum
+        // Spielzeitpunkt stehen.
+        try
+        {
+            summary.CustomPenaltySnapshot = game.GetPenaltySnapshot();
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogWarning("[GameEngine] Custom-Penalty-Snapshot fehlgeschlagen: " + e.Message);
         }
 
         return summary;
@@ -257,6 +273,23 @@ public abstract class GameEngine : MonoBehaviour
 
             inputHandler.SetInputEnabled(true);
         }
+    }
+
+    /// <summary>
+    /// Custom-Penalty ausgelöst: nur Audio (Zähler/Kosten folgen separat).
+    /// Turn-Parameter für spätere Counter-Anbindung.
+    /// </summary>
+    protected void HandleCustomPenaltyAudio(string penaltyId, Guid playerId, Turn turn)
+    {
+        if (audioManager != null)
+            audioManager.PlayCustomPenaltyClip(penaltyId);
+    }
+
+    /// <summary>Custom-Audio-Event ausgelöst: nur Abspielen.</summary>
+    protected void HandleCustomAudioEvent(string eventId)
+    {
+        if (audioManager != null)
+            audioManager.PlayCustomEvent(eventId);
     }
 
     public void PauseBotTurn()

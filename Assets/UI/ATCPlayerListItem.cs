@@ -24,6 +24,25 @@ public class ATCPlayerListItem : MonoBehaviour
     public Image[] wallImages;
     public Image[] ceilingImages;
 
+    [Header("Glow Animation")]
+    public BorderGlowAnimator glowAnimator;
+
+    private void Awake()
+    {
+        if (glowAnimator == null)
+            glowAnimator = GetComponentInChildren<BorderGlowAnimator>(true);
+
+        // Reine Anzeige-Texte: aus dem Touch-Raycast nehmen.
+        foreach (var text in GetComponentsInChildren<TMP_Text>(true))
+            text.raycastTarget = false;
+    }
+
+    private void OnDisable()
+    {
+        if (glowAnimator != null)
+            glowAnimator.StopGlow();
+    }
+
     public void Bind(ATCUIStats stats)
     {
         if (nameText != null)
@@ -31,6 +50,20 @@ public class ATCPlayerListItem : MonoBehaviour
 
         if (activeIndicator != null)
             activeIndicator.SetActive(stats.isActive);
+
+        if (glowAnimator != null)
+        {
+            if (stats.isActive)
+            {
+                glowAnimator.gameObject.SetActive(true);
+                glowAnimator.StartGlow();
+            }
+            else
+            {
+                glowAnimator.StopGlow();
+                glowAnimator.gameObject.SetActive(false);
+            }
+        }
 
         SetTarget(stats);
         
@@ -40,7 +73,10 @@ public class ATCPlayerListItem : MonoBehaviour
         if (hitsInRoundText != null)
             hitsInRoundText.text = stats.hitsInRound.ToString();
 
-        if (stats.hitsInRound >= 3)
+        // Streak-Feuer nur beim aktiven Spieler mit live Streak >= 3.
+        // Bei Spielerwechsel ist stats.isActive false -> Animation stoppt sofort.
+        // Bei Undo stellt das Modell den Streak wieder her -> Refresh startet sie neu.
+        if (stats.isActive && stats.hasStreak && stats.currentHitStreak >= 3)
         {
             if (streakIndicator != null)
                 streakIndicator.StartStreak();
@@ -83,17 +119,12 @@ public class ATCPlayerListItem : MonoBehaviour
             return;
         }
 
-        string prefix = "";
-
-        switch (stats.targetType)
+        string prefix = stats.currentTargetMultiplier switch
         {
-            case ATCTargetType.Doubles:
-                prefix = "D";
-                break;
-            case ATCTargetType.Triples:
-                prefix = "T";
-                break;
-        }
+            DartMultiplier.Double => "D",
+            DartMultiplier.Triple => "T",
+            _ => ""
+        };
 
         currentTargetText.text = prefix + stats.currentTarget;
     }

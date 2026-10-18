@@ -43,11 +43,24 @@ public class SwipeMenu : MonoBehaviour
     private void Update()
     {
         if (isDragging) return;
+        if (pagePositions == null || currentPage < 0 || currentPage >= pagePositions.Length)
+            return;
 
         float target = pagePositions[currentPage];
+        float current = scrollRect.horizontalNormalizedPosition;
+
+        // Nahe genug: exakt einrasten und danach idle bleiben. Der alte Code
+        // hat jedes Frame geschrieben und das ScrollRect damit dauerhaft dirty
+        // gehalten (Canvas-Rebuilds im Idle, auch bei statischer Anzeige).
+        if (Mathf.Abs(current - target) < 0.0005f)
+        {
+            if (current != target)
+                scrollRect.horizontalNormalizedPosition = target;
+            return;
+        }
 
         scrollRect.horizontalNormalizedPosition = Mathf.Lerp(
-            scrollRect.horizontalNormalizedPosition,
+            current,
             target,
             Time.deltaTime * snapSpeed
         );
@@ -138,16 +151,28 @@ public class SwipeMenu : MonoBehaviour
 
     public void ResetView()
     {
-        // Horizontal zurück auf erste Seite
+        // Horizontal zurück auf erste Seite.
+        // Guards: Jeder Positions-Setter dirtied das Layout — nichts schreiben,
+        // was schon stimmt (sonst geballter Riesen-Rebuild beim Verlassen).
+        bool pageChanged = currentPage != 0;
         currentPage = 0;
 
         scrollRect.velocity = Vector2.zero;
-        scrollRect.horizontalNormalizedPosition = pagePositions[0];
 
-        topBar.SetActive(0);
-        indicator.SetActive(0);
+        float hTarget = (pagePositions != null && pagePositions.Length > 0)
+            ? pagePositions[0]
+            : 0f;
+        if (Mathf.Abs(scrollRect.horizontalNormalizedPosition - hTarget) > 0.0005f)
+            scrollRect.horizontalNormalizedPosition = hTarget;
 
-        // Alle vertikalen ScrollViews zurück nach oben
+        if (pageChanged)
+        {
+            topBar.SetActive(0);
+            indicator.SetActive(0);
+        }
+
+        // Alle vertikalen ScrollViews zurück nach oben.
+        // Guard: Bereits oben stehende ScrollRects nicht anfassen.
         ScrollRect[] allScrollRects = scrollRect.content.GetComponentsInChildren<ScrollRect>(true);
 
         foreach (var sr in allScrollRects)
@@ -157,7 +182,9 @@ public class SwipeMenu : MonoBehaviour
                 continue;
 
             sr.velocity = Vector2.zero;
-            sr.verticalNormalizedPosition = 1f;
+
+            if (Mathf.Abs(sr.verticalNormalizedPosition - 1f) > 0.001f)
+                sr.verticalNormalizedPosition = 1f;
         }
 
         OnPageChanged?.Invoke(0);

@@ -5,15 +5,13 @@ public enum SwitchBindingType
 {
     SoundEnabled,
     UseCustomSounds,
-    VibrationEnabled,
-    PenaltyEnabled
+    VibrationEnabled
 }
 
 public class UISwitchBinder : MonoBehaviour
 {
     public UISwitch uiSwitch;
     public SwitchBindingType bindingType;
-    public PenaltyType penaltyType;
     public List<CanvasGroup> groupsToEnableOnTrue; // Optionale Gruppen, die bei true aktiviert und bei false deaktiviert werden
 
     private OptionsHandler options;
@@ -45,14 +43,6 @@ public class UISwitchBinder : MonoBehaviour
             case SwitchBindingType.VibrationEnabled: // NEU
                 value = AppSettingsManager.Instance.Settings.Vibration.Enabled;
                 break;
-
-            case SwitchBindingType.PenaltyEnabled:
-                var p = AppSettingsManager.Instance.Settings
-                    .Penalties.Settings
-                    .Find(x => x.Type == penaltyType);
-
-                value = p != null && p.Enabled;
-                break;
         }
 
         uiSwitch.toggle.SetIsOnWithoutNotify(value);
@@ -74,10 +64,6 @@ public class UISwitchBinder : MonoBehaviour
 
             case SwitchBindingType.VibrationEnabled: // NEU
                 options.SetVibration(value);
-                break;
-
-            case SwitchBindingType.PenaltyEnabled:
-                AppSettingsManager.Instance.SetPenaltyEnabled(penaltyType, value);
                 break;
         }
 

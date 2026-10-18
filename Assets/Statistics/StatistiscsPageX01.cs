@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -25,19 +25,50 @@ public class StatisticsPageX01 : MonoBehaviour
     public Sprite iconLost;
 
 
+    [Header("Penalty-Spalten-Detail")]
+    [Tooltip("Detail-Popup für Header-Taps (optional, sonst Auto-Find).")]
+    public PenaltyDetailPopup columnDetailPopup;
+
+    private PenaltyDetailPopup ColumnPopup
+    {
+        get
+        {
+            if (columnDetailPopup == null)
+                columnDetailPopup = PenaltyDetailPopup.FindVisibleInstance();
+            return columnDetailPopup;
+        }
+    }
+
+    [Header("Penalty-Resolver (TEMP-DIAG)")]
+    [Tooltip("Löst Penalty-Stats zum Tap-Zeitpunkt frisch auf (statt Build-Zeit-Closure). Wird vom StatisticsHandler gesetzt.")]
+    public Func<string, GameStats> penaltyStatsResolver;
+
+    /// <summary>
+    /// Tap-Handler mit frischem Lookup (Stale-Closure-Fix): Stats werden erst
+    /// beim Antippen aus BasePlayer/currentRange geholt, Closure nur Fallback.
+    /// </summary>
+    private void ShowPenaltyDetails(PenaltyDetailPopup popup, string playerName, GameStats fallbackStats)
+    {
+        GameStats resolved = null;
+        try { resolved = penaltyStatsResolver?.Invoke(playerName); }
+        catch (Exception e) { Debug.LogWarning($"[PenaltyDiag] Resolver fehlgeschlagen ({playerName}): {e.Message}"); }
+
+        var used = resolved ?? fallbackStats;
+        Debug.Log($"[PenaltyDiag] Tap {playerName}: fallback(hash={(fallbackStats != null ? fallbackStats.GetHashCode().ToString() : "null")}," +
+            $"anzahlFallback={(fallbackStats != null ? PenaltyDisplay.TotalPenaltyCount(fallbackStats).ToString() : "-")}," +
+            $"kostenFallback={(fallbackStats != null ? fallbackStats.totalPenaltyCost.ToString("0.##") : "-")} " +
+            $"resolved(hash={(resolved != null ? resolved.GetHashCode().ToString() : "null")}," +
+            $"anzahl={(used != null ? PenaltyDisplay.TotalPenaltyCount(used).ToString() : "-")}," +
+            $"kosten={(used != null ? used.totalPenaltyCost.ToString("0.##") : "-")})");
+
+        if (popup != null)
+            popup.ShowPlayerAggregates(playerName, used);
+    }
+
+
     private readonly Dictionary<string, TableView> cachedTables = new Dictionary<string, TableView>();
     private readonly Dictionary<string, HitSectorChart> cachedCharts = new Dictionary<string, HitSectorChart>();
     private GameObject hitsHeadline;
-
-    private static readonly PenaltyType[] penaltyColumns =
-    {
-        PenaltyType.Wall,
-        PenaltyType.Ceiling,
-        PenaltyType.AllMiss,
-        PenaltyType.ThreeOnes,
-        PenaltyType.Schnapszahl,
-        PenaltyType.LostGame
-    };
 
 
     private static readonly string X01PenaltiesKey = "X01_Penalties";
@@ -49,10 +80,214 @@ public class StatisticsPageX01 : MonoBehaviour
     private static readonly string X01CheckoutsKey = "X01_Checkouts";
 
 
-
     public IEnumerator ShowStatsAsync(List<GameStatsX01> stats, List<string> playerNames)
     {
         yield return BuildX01StatsCoroutine(stats, playerNames);
+    }
+
+    /// <summary>
+    /// Gezieltes Refresh EINER Spielerzeile (alle Tabellen + Chart dieser Page).
+    /// Kein Neuaufbau, kein Clear — nutzt gecachte Tabellen/Charts.
+    /// </summary>
+    public void UpsertPlayerRow(GameStatsX01 stats, string playerName)
+    {
+        if (stats == null || string.IsNullOrEmpty(playerName) || parent == null)
+            return;
+
+        var playerTable = GetOrCreateCachedTable(X01PlayerSummaryKey, parent, "Games", new TableCellData[] { "Played", "Won", "Win %" });
+        if (playerTable != null)
+        {
+            int participated = stats.gameCount;
+            int won = stats.gamesWon;
+            float pct = participated == 0 ? 0f : (won / (float)participated) * 100f;
+
+            playerTable.AddOrUpdateRow(playerName, playerName, new TableCellData[]
+            {
+                participated.ToString(),
+                won.ToString(),
+                pct.ToString("0.00") + "%"
+            });
+            playerTable.SetRowActive(playerName, true);
+        }
+
+        var penaltyTable = GetOrCreateCachedTable(
+            X01PenaltiesKey,
+            parent,
+            "Penalties",
+            new TableCellData[] { "Anzahl", "Kosten", "Details" });
+
+        if (penaltyTable != null)
+        {
+            penaltyTable.AddOrUpdateRow(playerName, playerName, new TableCellData[]
+            {
+                PenaltyDisplay.TotalPenaltyCount(stats).ToString(),
+                stats.totalPenaltyCost.ToString("0"),
+                "› Details"
+            });
+            penaltyTable.SetRowActive(playerName, true);
+
+            var popup = ColumnPopup;
+            if (popup != null && penaltyTable.TryGetRow(playerName, out var rowGo) && rowGo != null)
+            {
+                var row = rowGo.GetComponent<DynamicTableRow>();
+                row?.WireCellTaps(_ => ShowPenaltyDetails(popup, playerName, stats));
+            }
+        }
+
+        var legsTable = GetOrCreateCachedTable(X01LegsKey, parent, "Legs", new TableCellData[] { "Played", "Won", "Win %" });
+        if (legsTable != null)
+        {
+            int played = stats.totalLegsCount;
+            int wonLegs = stats.totalLegsWon;
+            float legsPct = played == 0 ? 0f : (wonLegs / (float)played) * 100f;
+
+            legsTable.AddOrUpdateRow(playerName, playerName, new TableCellData[]
+            {
+                played.ToString(),
+                wonLegs.ToString(),
+                $"{legsPct:0.00}%"
+            });
+            legsTable.SetRowActive(playerName, true);
+        }
+
+        var throwsTable = GetOrCreateCachedTable(X01ThrowsKey, parent, "Throws", new TableCellData[] { "Ø Throws", "Double %", "Triple %" });
+        if (throwsTable != null)
+        {
+            throwsTable.AddOrUpdateRow(playerName, playerName, new TableCellData[]
+            {
+                stats.totalThrowsCount.ToString("0.00"),
+                $"{stats.doublePercentage * 100f:0.00}%",
+                $"{stats.triplePercentage * 100f:0.00}%"
+            });
+            throwsTable.SetRowActive(playerName, true);
+        }
+
+        var scoringTable = GetOrCreateCachedTable(X01ScoringKey, parent, "Scoring", new TableCellData[] { "Ø Points", "Ø First-9", "Max Score" });
+        if (scoringTable != null)
+        {
+            scoringTable.AddOrUpdateRow(playerName, playerName, new TableCellData[]
+            {
+                stats.averagePointsPerTurn.ToString("0.00"),
+                $"{stats.first9Average:0.00}",
+                stats.bestTurnPoints.ToString()
+            });
+            scoringTable.SetRowActive(playerName, true);
+        }
+
+        var highScoreTable = GetOrCreateCachedTable(X01HighScoresKey, parent, "Highscores", new TableCellData[] { "60+", "100+", "140+", "180" });
+        if (highScoreTable != null)
+        {
+            highScoreTable.AddOrUpdateRow(playerName, playerName, new TableCellData[]
+            {
+                stats.count60Plus.ToString(),
+                stats.count100Plus.ToString(),
+                stats.count140Plus.ToString(),
+                stats.count180.ToString()
+            });
+            highScoreTable.SetRowActive(playerName, true);
+        }
+
+        var checkoutTable = GetOrCreateCachedTable(X01CheckoutsKey, parent, "Checkouts", new TableCellData[] { "Max Checkout", "Attempts", "Favorite" });
+        if (checkoutTable != null)
+        {
+            checkoutTable.AddOrUpdateRow(playerName, playerName, new TableCellData[]
+            {
+                stats.highestCheckout.ToString(),
+                stats.checkoutAttemptCount.ToString("0.00"),
+                stats.GetMostFrequentClosingSector() ?? "n/a"
+            });
+            checkoutTable.SetRowActive(playerName, true);
+        }
+
+        if (prefabHitSectorChart != null)
+        {
+            if (hitsHeadline == null)
+                hitsHeadline = CreateHeadline(parent, "Hits In Sector");
+            else
+                hitsHeadline.SetActive(true);
+
+            var aggregated = new Dictionary<string, int>();
+            foreach (var kv in stats.hitSectorCounts)
+                aggregated[kv.Key] = kv.Value;
+
+            var chart = GetOrCreateChart(playerName);
+            if (chart != null)
+            {
+                chart.gameObject.SetActive(true);
+                chart.SetData(playerName, aggregated);
+            }
+        }
+
+        StatisticsPageBuildHelper.ApplyTablesOnParent(parent, cachedTables.Values);
+    }
+
+    /// <summary>
+    /// Blendet alle Zeilen + Chart eines Spielers auf dieser Page um.
+    /// Legt nichts an — nur Bestehendes.
+    /// Gibt true zurück, wenn mindestens eine Zeile / der Chart WIRKLICH
+    /// umgeschaltet hat (nur dann muss das Layout via RefreshLayout neu
+    /// berechnet werden).
+    /// </summary>
+    public bool SetPlayerRowVisible(string playerName, bool visible)
+    {
+        if (string.IsNullOrEmpty(playerName))
+            return false;
+
+        bool changed = false;
+        foreach (var table in cachedTables.Values)
+        {
+            if (table != null && table.HasRow(playerName))
+                changed |= table.SetRowActive(playerName, visible);
+        }
+
+        if (cachedCharts.TryGetValue(playerName, out var chart) && chart != null)
+        {
+            if (chart.gameObject.activeSelf != visible)
+            {
+                chart.gameObject.SetActive(visible);
+                changed = true;
+            }
+        }
+
+        return changed;
+    }
+
+    /// <summary>
+    /// Rechnet alle Tabellenhöhen dieser Page aus den SICHTBAREN Zeilen neu
+    /// (Divider + LayoutElement.preferredHeight). Nur aufrufen, wenn sich die
+    /// sichtbare Zeilenzahl wirklich geändert hat. Charts kollabieren von
+    /// selbst übers Layout (inaktiv = ignoriert).
+    /// </summary>
+    public void RefreshLayout()
+    {
+        StatisticsPageBuildHelper.ApplyTablesOnParent(parent, cachedTables.Values);
+    }
+
+    /// <summary>
+    /// True, wenn irgendeine Tabelle weniger als `desired` Reserve-Rows hat.
+    /// </summary>
+    public bool SpareShortage(int desired)
+    {
+        foreach (var table in cachedTables.Values)
+        {
+            if (table != null && table.PooledSpareRows < desired)
+                return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Füllt Reserve-Rows aller Tabellen auf (gechunkt, eine Tabelle pro Frame).
+    /// </summary>
+    public IEnumerator PreallocateSpareRowsAsync(int desired)
+    {
+        foreach (var table in cachedTables.Values)
+        {
+            if (table != null)
+                table.EnsureSpareRows(desired);
+            yield return null;
+        }
     }
 
     private GameObject CreateHeadline(Transform parentTransform, string text)
@@ -60,7 +295,13 @@ public class StatisticsPageX01 : MonoBehaviour
         if (prefabHeadline == null || parentTransform == null) return null;
         var go = Instantiate(prefabHeadline, parentTransform);
         var tmp = go.GetComponent<TMP_Text>();
-        if (tmp != null) tmp.text = text;
+        if (tmp != null)
+        {
+            tmp.text = text;
+            // Perf (M1): Headline ist nie interaktiv.
+            if (tmp.raycastTarget)
+                tmp.raycastTarget = false;
+        }
         return go;
     }
 
@@ -137,26 +378,6 @@ public class StatisticsPageX01 : MonoBehaviour
         return chart;
     }
 
-    private TableCellData GetPenaltyHeaderData(PenaltyType type)
-    {
-        Sprite icon = null;
-        switch (type)
-        {
-            case PenaltyType.Wall:        icon = iconWall; break;
-            case PenaltyType.Ceiling:     icon = iconCeiling; break;
-            case PenaltyType.AllMiss:     icon = iconMiss; break;
-            case PenaltyType.ThreeOnes:   icon = iconOnes; break;
-            case PenaltyType.Schnapszahl: icon = iconSchnaps; break;
-            case PenaltyType.LostGame:    icon = iconLost; break;
-        }
-
-        return new TableCellData 
-        { 
-            text = type.ToString(), 
-            icon = icon, 
-            isIcon = icon != null // Wenn kein Icon da ist, nimm Text
-        };
-    }
 
     private IEnumerator BuildX01StatsCoroutine(List<GameStatsX01> gameStatsX01s, List<string> playerNames)
     {
@@ -199,47 +420,51 @@ public class StatisticsPageX01 : MonoBehaviour
             if (!activePlayerKeys.Contains(existingKey))
                 playerTable.SetRowActive(existingKey, false);
 
-        // =====================================================
-        // PENALTIES
-        // =====================================================
-        var penaltyHeader = penaltyColumns
-            .Select(type => GetPenaltyHeaderData(type))
-            .Concat(new TableCellData[] { "Sum" })
-            .ToArray();
+        // Frame abgeben: N Spieler-Setups am Stück würden sonst einen
+        // sichtbaren Hitch erzeugen (gilt für alle Tabellen-Sektionen).
+        yield return null;
 
+        // =====================================================
+        // PENALTIES (einfach: Anzahl | Kosten | Details → Popup)
+        // =====================================================
         var penaltyTable = GetOrCreateCachedTable(
             X01PenaltiesKey,
             parent,
             "Penalties",
-            penaltyHeader);
+            new TableCellData[] { "Anzahl", "Kosten", "Details" });
 
+        penaltyTable.gameObject.SetActive(true);
         var activePenaltyKeys = new HashSet<string>();
+        var popup = ColumnPopup;
 
-        for (int i = 0; i < gameStatsX01s.Count; i++)
+        for (int i = 0; i < playerNames.Count; i++)
         {
-            var stats = gameStatsX01s[i];
+            var stats = i < gameStatsX01s.Count ? gameStatsX01s[i] : null;
             string key = playerNames[i];
+            string playerName = playerNames[i];
 
             penaltyTable.AddOrUpdateRow(key, key, new TableCellData[]
             {
-                stats?.wallCount.ToString() ?? "0",
-                stats?.ceilingCount.ToString() ?? "0",
-                stats?.allMissCount.ToString() ?? "0",
-                stats?.tripleOnesCount.ToString() ?? "0",
-                stats?.tripleDigitCount.ToString() ?? "0",
-                stats?.lostGame.ToString() ?? "0",
-                stats?.totalPenaltyCost.ToString("0") ?? "0"
+                PenaltyDisplay.TotalPenaltyCount(stats).ToString(),
+                (stats?.totalPenaltyCost ?? 0f).ToString("0"),
+                "› Details"
             }, false);
 
             penaltyTable.SetRowActive(key, true);
             activePenaltyKeys.Add(key);
+
+            if (popup != null && penaltyTable.TryGetRow(key, out var rowGo) && rowGo != null)
+            {
+                var row = rowGo.GetComponent<DynamicTableRow>();
+                row?.WireCellTaps(_ => ShowPenaltyDetails(popup, playerName, stats));
+            }
         }
 
         foreach (var existingKey in penaltyTable.GetRowKeys())
             if (!activePenaltyKeys.Contains(existingKey))
                 penaltyTable.SetRowActive(existingKey, false);
 
-        penaltyTable.gameObject.SetActive(true);
+        yield return null;
 
         // =====================================================
         // LEGS
@@ -273,6 +498,8 @@ public class StatisticsPageX01 : MonoBehaviour
             if (!activeLegKeys.Contains(k))
                 legsTable.SetRowActive(k, false);
 
+        yield return null;
+
         // =====================================================
         // THROWS
         // =====================================================
@@ -301,6 +528,8 @@ public class StatisticsPageX01 : MonoBehaviour
             if (!activeScoreKeys.Contains(k))
                 throwsTable.SetRowActive(k, false);
 
+        yield return null;
+
         // =====================================================
         // SCORING
         // =====================================================
@@ -326,6 +555,8 @@ public class StatisticsPageX01 : MonoBehaviour
         foreach (var k in scoringTable.GetRowKeys())
             if (!activeScoreKeys.Contains(k))
                 scoringTable.SetRowActive(k, false);
+
+        yield return null;
 
         // =====================================================
         // HIGH SCORES
@@ -356,6 +587,8 @@ public class StatisticsPageX01 : MonoBehaviour
             if (!activeHighKeys.Contains(k))
                 highScoreTable.SetRowActive(k, false);
 
+        yield return null;
+
         // =====================================================
         // CHECKOUTS
         // =====================================================
@@ -383,6 +616,8 @@ public class StatisticsPageX01 : MonoBehaviour
         foreach (var k in checkoutTable.GetRowKeys())
             if (!activeCheckoutKeys.Contains(k))
                 checkoutTable.SetRowActive(k, false);
+
+        yield return null;
 
         // =====================================================
         // HIT SECTOR CHARTS
@@ -415,6 +650,10 @@ public class StatisticsPageX01 : MonoBehaviour
                 chart.gameObject.SetActive(true);
                 chart.SetData(key, aggregated);
                 activeChartKeys.Add(key);
+
+                // Perf (M6): Chart-Instantiate + 63-Bar-Setup pro Spieler abgeben.
+                if ((i & 1) == 1)
+                    yield return null;
             }
 
             foreach (var chartKey in cachedCharts.Keys.ToList())

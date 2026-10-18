@@ -18,6 +18,15 @@ public class GameSummary
 
     public List<PlayerSummaryEntry> PlayerEntries { get; set; } = new List<PlayerSummaryEntry>();
 
+    /// <summary>
+    /// Kopie der beim Speichern aktiven Custom-Penalty-Defs (ID, Name, Kosten,
+    /// volle Trigger-Bedingung). Pro Spiel festgeschrieben, damit History und
+    /// Statistik Namen/Trigger/Kosten zeigen können, auch wenn die Def längst
+    /// gelöscht oder umbenannt wurde. Quelle ist ausschließlich dieser
+    /// Snapshot, niemals der Live-Store.
+    /// </summary>
+    public List<CustomPenaltyDef> CustomPenaltySnapshot { get; set; } = new List<CustomPenaltyDef>();
+
     public DateTime GetSortTimestamp()
     {
         return FinishedAt ?? LastActivityAt;
@@ -39,4 +48,11 @@ public class PlayerSummaryEntry
     public int ThreeOnesCount { get; set; }
     public int TripleDigitCount { get; set; }
     public int LostGameCount { get; set; }
+
+    /// <summary>
+    /// Pro Custom-Def gebuchte Anzahl dieses Spielers in diesem Spiel
+    /// (Def-ID → Count). Namen/Kosten/Trigger kommen aus
+    /// <see cref="GameSummary.CustomPenaltySnapshot"/>.
+    /// </summary>
+    public Dictionary<string, int> CustomPenaltyCounts { get; set; } = new Dictionary<string, int>();
 }

@@ -9,6 +9,9 @@ public static class SqliteDatabaseService
 {
     private const string DatabaseFileName = "darts.sqlite";
 
+    private static bool schemaEnsured = false;
+    private static readonly object schemaLock = new object();
+
     public static string GetDatabasePath()
     {
         return Path.Combine(Application.persistentDataPath, DatabaseFileName);
@@ -26,9 +29,21 @@ public static class SqliteDatabaseService
 
     public static void EnsureSchema()
     {
-        using (var connection = new SQLiteConnection(GetDatabasePath()))
+        // Einmal pro Prozess: Schema steht nach dem ersten Aufruf (inkl.
+        // Kompatibilitäts-Migrationen). Vorher liefen pro Write ~25
+        // CREATE/PRAGMA-Statements — für einen 1-Zeilen-Upsert der
+        // mit Abstand größte DB-Anteil.
+        lock (schemaLock)
         {
-            EnsureSchema(connection);
+            if (schemaEnsured)
+                return;
+
+            using (var connection = new SQLiteConnection(GetDatabasePath()))
+            {
+                EnsureSchema(connection);
+            }
+
+            schemaEnsured = true;
         }
     }
 
@@ -89,7 +104,7 @@ public static class SqliteDatabaseService
         connection.Execute("CREATE TABLE IF NOT EXISTS leg_meta (leg_id TEXT NOT NULL, key_name TEXT NOT NULL, value_text TEXT, PRIMARY KEY (leg_id, key_name), FOREIGN KEY(leg_id) REFERENCES legs(id));");
         connection.Execute("CREATE TABLE IF NOT EXISTS turns (id TEXT PRIMARY KEY, game_id TEXT NOT NULL, leg_id TEXT NOT NULL, order_index INTEGER NOT NULL, player_id TEXT NOT NULL, is_bust INTEGER NOT NULL DEFAULT 0, FOREIGN KEY(game_id) REFERENCES games(id), FOREIGN KEY(leg_id) REFERENCES legs(id));");
         connection.Execute("CREATE TABLE IF NOT EXISTS turn_meta (turn_id TEXT NOT NULL, key_name TEXT NOT NULL, value_text TEXT, PRIMARY KEY (turn_id, key_name), FOREIGN KEY(turn_id) REFERENCES turns(id));");
-        connection.Execute("CREATE TABLE IF NOT EXISTS throws (id TEXT PRIMARY KEY, game_id TEXT NOT NULL, turn_id TEXT NOT NULL, order_index INTEGER NOT NULL, hit_type TEXT NOT NULL, multiplier INTEGER NOT NULL, score INTEGER NOT NULL, value INTEGER NOT NULL DEFAULT 0, target_value INTEGER, is_target_hit INTEGER NOT NULL DEFAULT 0, segment INTEGER, FOREIGN KEY(game_id) REFERENCES games(id), FOREIGN KEY(turn_id) REFERENCES turns(id));");
+        connection.Execute("CREATE TABLE IF NOT EXISTS throws (id TEXT PRIMARY KEY, game_id TEXT NOT NULL, turn_id TEXT NOT NULL, order_index INTEGER NOT NULL, hit_type TEXT NOT NULL, multiplier INTEGER NOT NULL, score INTEGER NOT NULL, value INTEGER NOT NULL DEFAULT 0, target_value INTEGER, is_target_hit INTEGER NOT NULL DEFAULT 0, segment INTEGER, custom_hit_id TEXT, FOREIGN KEY(game_id) REFERENCES games(id), FOREIGN KEY(turn_id) REFERENCES turns(id));");
         connection.Execute("CREATE TABLE IF NOT EXISTS throw_meta (throw_id TEXT NOT NULL, key_name TEXT NOT NULL, value_text TEXT, PRIMARY KEY (throw_id, key_name), FOREIGN KEY(throw_id) REFERENCES throws(id));");
         connection.Execute("CREATE TABLE IF NOT EXISTS settings (key_name TEXT PRIMARY KEY, value_text TEXT NOT NULL);");
         connection.Execute("CREATE TABLE IF NOT EXISTS player_game_stats (game_id TEXT NOT NULL, player_id TEXT NOT NULL, stat_type TEXT NOT NULL, stat_data TEXT NOT NULL, PRIMARY KEY (game_id, player_id), FOREIGN KEY(game_id) REFERENCES games(id) ON DELETE CASCADE, FOREIGN KEY(player_id) REFERENCES players(id));");
@@ -97,8 +112,13 @@ public static class SqliteDatabaseService
         connection.Execute("CREATE TABLE IF NOT EXISTS player_stats_x01 (player_id TEXT PRIMARY KEY, stat_data TEXT NOT NULL, FOREIGN KEY(player_id) REFERENCES players(id));");
         connection.Execute("CREATE TABLE IF NOT EXISTS player_stats_cricket (player_id TEXT PRIMARY KEY, stat_data TEXT NOT NULL, FOREIGN KEY(player_id) REFERENCES players(id));");
         connection.Execute("CREATE TABLE IF NOT EXISTS player_stats_atc (player_id TEXT PRIMARY KEY, stat_data TEXT NOT NULL, FOREIGN KEY(player_id) REFERENCES players(id));");
-
+        connection.Execute("CREATE TABLE IF NOT EXISTS custom_penalties (id TEXT PRIMARY KEY, name TEXT NOT NULL, short_name TEXT NOT NULL DEFAULT '', enabled INTEGER NOT NULL DEFAULT 1, cost INTEGER NOT NULL DEFAULT 0, builtin INTEGER NOT NULL DEFAULT 0, condition_kind INTEGER NOT NULL DEFAULT 0, condition_json TEXT NOT NULL DEFAULT '{}');");
+        connection.Execute("CREATE TABLE IF NOT EXISTS custom_hit_sectors (id TEXT PRIMARY KEY, name TEXT NOT NULL, enabled INTEGER NOT NULL DEFAULT 1, builtin INTEGER NOT NULL DEFAULT 0);");
+        connection.Execute("CREATE TABLE IF NOT EXISTS audio_events (id TEXT PRIMARY KEY, name TEXT NOT NULL, builtin INTEGER NOT NULL DEFAULT 0, enabled INTEGER NOT NULL DEFAULT 1, category INTEGER NOT NULL DEFAULT 0, kind INTEGER NOT NULL DEFAULT 0, params_json TEXT NOT NULL DEFAULT '{}');");
+        connection.Execute("CREATE TABLE IF NOT EXISTS recorded_clips (id INTEGER PRIMARY KEY AUTOINCREMENT, category TEXT NOT NULL, score INTEGER NOT NULL DEFAULT 0, penalty_type TEXT, special_type TEXT, custom_key TEXT, file_name TEXT NOT NULL, slot_index INTEGER NOT NULL DEFAULT 0);");
         EnsureThrowCompatibility(connection);
+        EnsurePenaltyShortName(connection);
+        EnsureAudioEventEnabled(connection);
 
         connection.Execute("CREATE INDEX IF NOT EXISTS idx_games_last_activity ON games(last_activity_at);");
         connection.Execute("CREATE INDEX IF NOT EXISTS idx_games_finished_at ON games(finished_at);");
@@ -106,6 +126,7 @@ public static class SqliteDatabaseService
         connection.Execute("CREATE INDEX IF NOT EXISTS idx_legs_set_id ON legs(set_id);");
         connection.Execute("CREATE INDEX IF NOT EXISTS idx_turns_leg_id ON turns(leg_id);");
         connection.Execute("CREATE INDEX IF NOT EXISTS idx_throws_turn_id ON throws(turn_id);");
+        connection.Execute("CREATE INDEX IF NOT EXISTS idx_recorded_clips_lookup ON recorded_clips(category, custom_key, score);");
     }
 
     private static void EnsureThrowCompatibility(SQLiteConnection connection)
@@ -126,9 +147,34 @@ public static class SqliteDatabaseService
         if (!columns.Any(column => string.Equals(column.Name, "segment", StringComparison.OrdinalIgnoreCase)))
             connection.Execute("ALTER TABLE throws ADD COLUMN segment INTEGER;");
 
+        if (!columns.Any(column => string.Equals(column.Name, "custom_hit_id", StringComparison.OrdinalIgnoreCase)))
+            connection.Execute("ALTER TABLE throws ADD COLUMN custom_hit_id TEXT;");
+
         connection.Execute("UPDATE throws SET value = COALESCE(value, segment, score) WHERE value IS NULL OR value = 0;");
         connection.Execute("UPDATE throws SET target_value = CASE WHEN segment IS NOT NULL AND segment > 0 THEN segment ELSE target_value END WHERE target_value IS NULL;");
         connection.Execute("UPDATE throws SET is_target_hit = CASE WHEN COALESCE(target_value, 0) > 0 OR COALESCE(segment, 0) > 0 THEN 1 ELSE 0 END WHERE is_target_hit IS NULL OR is_target_hit = 0;");
+    }
+
+    /// <summary>short_name-Spalte für Bestands-DBs nachrüsten.</summary>
+    private static void EnsurePenaltyShortName(SQLiteConnection connection)
+    {
+        var columns = connection.Query<ColumnInfo>("PRAGMA table_info(custom_penalties);");
+        if (columns == null || columns.Count == 0)
+            return;
+
+        if (!columns.Any(column => string.Equals(column.Name, "short_name", StringComparison.OrdinalIgnoreCase)))
+            connection.Execute("ALTER TABLE custom_penalties ADD COLUMN short_name TEXT NOT NULL DEFAULT '';");
+    }
+
+    /// <summary>enabled-Spalte für Bestands-DBs nachrüsten (Default an).</summary>
+    private static void EnsureAudioEventEnabled(SQLiteConnection connection)
+    {
+        var columns = connection.Query<ColumnInfo>("PRAGMA table_info(audio_events);");
+        if (columns == null || columns.Count == 0)
+            return;
+
+        if (!columns.Any(column => string.Equals(column.Name, "enabled", StringComparison.OrdinalIgnoreCase)))
+            connection.Execute("ALTER TABLE audio_events ADD COLUMN enabled INTEGER NOT NULL DEFAULT 1;");
     }
 
     private class SettingsRow

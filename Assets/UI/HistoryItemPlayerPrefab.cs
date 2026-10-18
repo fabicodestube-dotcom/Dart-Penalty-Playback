@@ -15,13 +15,14 @@ public class HistoryItemPlayerPrefab : MonoBehaviour
     public TMP_Text textMetricLabel;
 
     [Header("Penalties")]
-    public TMP_Text textWall;
-    public TMP_Text textCeiling;
-    public TMP_Text textSchnapszahl;
-    public TMP_Text textThreeOnes;
-    public TMP_Text textAllMiss;
-    public TMP_Text textLostGame;
-    public TMP_Text textPenaltySum;
+    public TMP_Text textTotalPenaltyCostSum;
+
+    private void Awake()
+    {
+        var texts = GetComponentsInChildren<TMP_Text>(true);
+        foreach (var text in texts)
+            text.raycastTarget = false;
+    }
 
     public void ShowPlayer(
         int rank,
@@ -41,15 +42,8 @@ public class HistoryItemPlayerPrefab : MonoBehaviour
             legsText.text = "Legs: " + (legsWonOverride ?? stats.currentLegCount).ToString();
             textMetricLabel.text = metricLabel;
 
-            textWall.text = stats.wallCount.ToString();
-            textCeiling.text = stats.ceilingCount.ToString();
-            textAllMiss.text = stats.allMissCount.ToString();
-            textThreeOnes.text = stats.tripleOnesCount.ToString();
-            textLostGame.text = stats.lostGame.ToString();
-
-            textSchnapszahl.text = stats.tripleDigitCount.ToString();
-
-            textPenaltySum.text = stats.GetTotalPenaltyCosts().ToString("0");
+            if (textTotalPenaltyCostSum != null)
+                textTotalPenaltyCostSum.text = stats.GetTotalPenaltyCosts().ToString("0");
         }
         else
         {
@@ -57,15 +51,8 @@ public class HistoryItemPlayerPrefab : MonoBehaviour
             legsText.text = "Legs: " + (legsWonOverride ?? 0).ToString();
             textMetricLabel.text = metricLabel;
 
-            textWall.text = "0";
-            textCeiling.text = "0";
-            textAllMiss.text = "0";
-            textThreeOnes.text = "0";
-            textLostGame.text = "0";
-
-            textSchnapszahl.text = "0";
-
-            textPenaltySum.text = "0";
+            if (textTotalPenaltyCostSum != null)
+                textTotalPenaltyCostSum.text = "0";
         }
     }
 }

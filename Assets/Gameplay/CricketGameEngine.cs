@@ -33,7 +33,8 @@ public class CricketGameEngine : GameEngine
         ((CricketGame) game).OnTurnCompleted += HandleTurnCompleted;
         game.OnLegWon += HandleLegWon;
         game.OnSetWon += HandleSetWon;
-        game.OnPenaltyTriggered += HandlePenalty;
+        game.OnCustomPenaltyTriggered += HandleCustomPenaltyAudio;
+        game.OnCustomAudioEvent += HandleCustomAudioEvent;
         game.OnMatchWon += HandleMatchWon;
         game.OnBotCheck += HandleBotCheck;
     }
@@ -54,20 +55,9 @@ public class CricketGameEngine : GameEngine
         if (game == null)
             return;
         ((CricketGame) game).Undo();
-        audioManager.PlaySpecialClip(SpecialAudioType.Undo);
+        audioManager.PlayCustomEvent(SeededAudioEvents.UndoId);
         RefreshPlayerList();
         HandleUndoBotState();
-    }
-
-    private void HandlePenalty(Guid playerId, PenaltyType type, Turn turn)
-    {
-        if (playerList != null)
-            playerList.RefreshUI();
-
-        if (audioManager == null || game == null)
-            return;
-
-        audioManager.PlayPenalty(type);
     }
 
     // =========================
@@ -138,22 +128,20 @@ public class CricketGameEngine : GameEngine
 
     private void HandleTurnCompleted(CricketTurnResult result)
     {
-        // Penalties
-        foreach (var p in result.Penalties)
-        {
-            audioManager.PlayPenalty(p);
-        }
-
-        // Marks
+        // (Legacy-)Penalties sind stillgelegt; Customs feuern über
+        // OnCustomPenaltyTriggered (HandleCustomPenaltyAudio), Specials
+        // (z.B. White Horse) über OnCustomAudioEvent — beide vor diesem
+        // Hook. Reihenfolge hier: erst Turn-Score, dann Marks-Ansage.
         if (result.Hits.Count > 0)
         {
-            int totalMarks = result.Hits.Sum(h => h.EffectiveMarks);
-            audioManager.PlayScore(totalMarks);
-            audioManager.PlaySpecialClip(SpecialAudioType.Marks);
-
             // Score
             if (result.TurnScore > 0)
                 audioManager.PlayScore(result.TurnScore);
+
+            // Marks: Zahl ansagen, dann Marks-Event (Custom, Seed cricket_marks).
+            int totalMarks = result.Hits.Sum(h => h.EffectiveMarks);
+            audioManager.PlayScore(totalMarks);
+            audioManager.PlayCustomEvent(SeededAudioEvents.MarksId);
         }
 
         // Gar nix
@@ -248,7 +236,8 @@ public class CricketGameEngine : GameEngine
         game.OnLegWon -= HandleLegWon;
         game.OnSetWon -= HandleSetWon;
         game.OnMatchWon -= HandleMatchWon;
-        game.OnPenaltyTriggered -= HandlePenalty;
+        game.OnCustomPenaltyTriggered -= HandleCustomPenaltyAudio;
+        game.OnCustomAudioEvent -= HandleCustomAudioEvent;
         ((CricketGame) game).OnTurnCompleted -= HandleTurnCompleted;
         game.OnBotCheck -= HandleBotCheck;
     }

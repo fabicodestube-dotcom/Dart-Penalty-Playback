@@ -67,6 +67,8 @@ public class CricketGame : Game
 
         InitializeStats();
         //InitializeLegsPlayedAtStart();
+
+        CaptureCustomizationSnapshot();
     }
 
     public Dictionary<Guid, int> GetPlayerScores()
@@ -160,16 +162,23 @@ public class CricketGame : Game
         if (currentTurn.GetThrows().Count == 0)
             currentTurn.ScoreBeforeTurn = 0; 
 
+        // Turn-Start-Snapshot aller Totals (für Schnapszahl-Übergangsregel:
+        // nur veränderte Totals können neu erreicht worden sein).
+        // Bleibt bei Undo/Reopen erhalten, neue Turns bekommen frische Snapshots.
+        if (currentTurn.GetThrows().Count == 0 && currentTurn.TurnStartScores == null)
+        {
+            currentTurn.TurnStartScores = playerIDs.ToDictionary(
+                pid => pid,
+                pid => playerScores.TryGetValue(pid, out var sc) ? sc : 0);
+        }
+
         currentTurn.AddThrow(t);
         TouchActivity();
 
         // =====================================================
-        // PENALTIES & MISSES (Wall/Ceiling/Board Miss)
+        // CUSTOM PENALTIES (Sofort-Typ pro Wurf; Legacy stillgelegt)
         // =====================================================
-        if (t.HitType == HitType.Wall)
-            AddPenalty(playerId, PenaltyType.Wall, currentTurn);
-        else if (t.HitType == HitType.Ceiling)
-            AddPenalty(playerId, PenaltyType.Ceiling, currentTurn);
+        CheckCustomInstantPenalties(playerId, t, currentTurn);
 
         if (t.HitType != HitType.Board)
         {
@@ -477,10 +486,21 @@ public class CricketGame : Game
                 : true);
     }
 
+    /// <summary>Marks (EffectiveMarks-Summe) + Punkte des Turns für Audio-Trigger.</summary>
+    protected override void CollectAudioTriggerValues(System.Guid playerId, Turn turn, AudioTriggerValues values)
+    {
+        base.CollectAudioTriggerValues(playerId, turn, values);
+
+        if (currentTurnHitEvents != null)
+        {
+            values.marks = currentTurnHitEvents.Sum(h => h.EffectiveMarks);
+            values.points = currentTurnHitEvents.Sum(h => h.ScoreGained);
+        }
+    }
+
     private void FinalizeTurn(Guid playerId)
     {
         CheckTurnPenalties(playerId, currentTurn);
-        CheckSchnapszahl(playerId, currentTurn);
 
         var result = BuildTurnResult(playerId, currentTurn);
 
@@ -607,6 +627,24 @@ public class CricketGame : Game
         
         if (lastTurn != null)
         {
+            // Custom-Buchungen des Turns stornieren (Nachwurf + Re-Finalize
+            // buchen danach sauber neu -> kein Doppelzählen).
+            if (lastTurn.RecordedPenalties != null)
+            {
+                foreach (var rec in lastTurn.RecordedPenalties)
+                {
+                    if (!string.IsNullOrEmpty(rec.CustomPenaltyId))
+                        RemoveCustomPenalty(rec.PlayerId, rec.CustomPenaltyId, rec.CustomCost);
+                }
+                lastTurn.RecordedPenalties.Clear();
+            }
+
+            // Custom-Instant-Buchungen der verbleibenden Würfe still neu buchen
+            // (der letzte Wurf fliegt gleich; seine Buchung ist oben storniert).
+            var remainingThrows = lastTurn.GetThrows();
+            for (int i = 0; i < remainingThrows.Count - 1; i++)
+                CheckCustomInstantPenalties(lastTurn.PlayerId, remainingThrows[i], lastTurn, true);
+
             // Den letzten Wurf entfernen
             lastTurn.RemoveLastThrow();
 
@@ -648,7 +686,6 @@ public class CricketGame : Game
                 // 1. Initialisierung für diesen Wurf
                 int totalMarks = 0;
                 int pts = 0;
-                bool isValidCricketHit = false;
 
                 // 2. Nur wenn es ein Board-Treffer ist, berechnen wir Marks und Punkte
                 if (thr.HitType == HitType.Board)
@@ -660,7 +697,6 @@ public class CricketGame : Game
                     // Prüfen, ob es eine gültige Cricket-Zahl ist (15-20, Bull)
                     if (numbers.Contains(value) && !(value == 25 && thr.Multiplier == DartMultiplier.Triple))
                     {
-                        isValidCricketHit = true;
                         int hitsBefore = playerHits[pid][value];
                         int overflow = Math.Max(0, (hitsBefore + mult) - 3);
                         int newHitsClamped = Math.Min(3, hitsBefore + mult);
@@ -699,7 +735,7 @@ public class CricketGame : Game
                 }
 
                 // 3. WICHTIG: JEDEN Wurf in den Stats registrieren (egal ob Hit, Miss, Wall)
-                // Wenn isValidCricketHit false ist, werden einfach 0 Marks gebucht, aber der Dart gezählt.
+                // Bei ungültigem Treffer werden einfach 0 Marks gebucht, aber der Dart gezählt.
                 (playerStats[pid] as GameStatsCricket)?.RegisterThrow(thr, totalMarks);
             }
 
@@ -779,18 +815,36 @@ public class CricketGame : Game
     // PENALTIES
     // =========================================================
 
-    private void CheckSchnapszahl(Guid playerId, Turn turn)
+    /// <summary>
+    /// Remaining-Auswertung über Totals: normal das eigene Total,
+    /// Cutthroat die Gegner-Totals (Buchung an den Total-Inhaber —
+    /// wie die frühere Schnapszahl-Regel). Vorher-Stand aus dem
+    /// TurnStartScores-Snapshot des Turns (Übergangsregel).
+    /// </summary>
+    protected override Dictionary<Guid, (int before, int after)> GetRemainingTotals(Guid playerId, Turn turn)
     {
-        int score = playerScores[playerId];
+        if (turn == null)
+            return null;
 
-        if (score < 100) return;
+        var cricketSettings = GetSettingsAsCricket();
+        bool cutThroat = cricketSettings != null && cricketSettings.cutThroatEnabled;
 
-        string s = score.ToString();
+        var result = new Dictionary<Guid, (int, int)>();
+        var owners = cutThroat
+            ? playerIDs.Where(p => p != playerId).ToList()
+            : new List<Guid> { playerId };
 
-        if (s.Distinct().Count() == 1)
-            AddPenalty(playerId, PenaltyType.Schnapszahl, turn);
+        foreach (var owner in owners)
+        {
+            int after = playerScores.TryGetValue(owner, out var sc) ? sc : 0;
+            int before = after;
+            if (turn.TurnStartScores != null && turn.TurnStartScores.TryGetValue(owner, out var b))
+                before = b;
+            result[owner] = (before, after);
+        }
+
+        return result;
     }
-
 
     // =========================================================
     // HELPERS
@@ -979,6 +1033,182 @@ public class CricketGame : Game
         }
     }
 
+    public override void CalculatePlayerStatsOnSave()
+    {
+        // Base recomputet Legs/Sets/Games/Throws (idempotent).
+        base.CalculatePlayerStatsOnSave();
+
+        if (playerStats == null || playerIDs == null)
+            return;
+
+        var cricketSettings = GetSettingsAsCricket();
+        bool pointsEnabled = cricketSettings == null || cricketSettings.pointsEnabled;
+        bool cutThroat = cricketSettings != null && cricketSettings.cutThroatEnabled;
+
+        // Cricket-Felder resetten (Base setzt nur Legs/Sets/Throws zurück).
+        // Dart-Zähler (totalThrows/Double/Triple) und Penalties bleiben von der Base.
+        foreach (var pid in playerIDs)
+        {
+            if (playerStats.TryGetValue(pid, out var s) && s is GameStatsCricket cs)
+                ResetCricketStatsForRebuild(cs);
+        }
+
+        // Chronologische Simulation über alle Sets/Legs/Turns.
+        // playerHits werden pro Leg zurückgesetzt (wie ResetLegState im Live-Spiel),
+        // damit Marks/Overflow/Scores exakt wie in AddThrow berechnet werden.
+        foreach (var set in sets)
+        {
+            foreach (var leg in set.GetLegs())
+            {
+                var simHits = playerIDs.ToDictionary(pid => pid, _ => numbers.ToDictionary(n => n, _ => 0));
+
+                foreach (var turn in leg.GetTurns())
+                {
+                    if (turn.GetThrows().Count == 0)
+                        continue;
+
+                    Guid pid = turn.PlayerId;
+                    if (!playerStats.TryGetValue(pid, out var s) || s is not GameStatsCricket stats)
+                        continue;
+
+                    var result = new CricketTurnResult { PlayerId = pid };
+                    int turnScore = 0;
+
+                    foreach (var thr in turn.GetThrows())
+                    {
+                        var sim = SimulateCricketThrow(thr, pid, simHits, pointsEnabled, cutThroat);
+                        if (sim == null)
+                            continue;
+
+                        turnScore += sim.ScoreGained;
+
+                        result.Hits.Add(new CricketHitEvent
+                        {
+                            Number = sim.Number,
+                            Multiplier = sim.Multiplier,
+                            ScoreGained = sim.ScoreGained,
+                            WasClose = sim.WasClose,
+                            WasOverflow = sim.WasOverflow,
+                            EffectiveMarks = sim.EffectiveMarks
+                        });
+                    }
+
+                    // 🔥 FIX: TurnScore korrekt aggregieren
+                    result.TurnScore = turnScore;
+
+                    // Nutzt bewusst die Live-Methoden (UpdateTurnStats, Highscores,
+                    // FieldPreferences), damit Aggregate und Time-Ranges konsistent sind.
+                    // Marks werden hier direkt addiert: live passiert das pro Dart via
+                    // RegisterThrow (hier nicht aufrufbar, da die Base die Darts bereits
+                    // zählt) – vor RegisterTurn, damit die MPR stimmt.
+                    RegisterTurnStats(pid, stats, result);
+                    stats.markCount += result.Hits.Sum(h => h.EffectiveMarks);
+                    stats.RegisterTurn();
+                }
+            }
+        }
+    }
+
+    private void ResetCricketStatsForRebuild(GameStatsCricket stats)
+    {
+        if (stats == null)
+            return;
+
+        stats.turnCount = 0;
+        stats.markCount = 0;
+        stats.marksPerRound = 0f;
+        stats.maxMPR = 0f;
+
+        stats.turnScores.Clear();
+        stats.turnMarks.Clear();
+        stats.turnOverkills.Clear();
+
+        // tripleDigitCount (Legacy) wird nicht mehr rebuildet, sondern aus der
+        // persistierten Zeile restauriert (alte Spiele behalten ihre Werte).
+        stats.nineMarkTurns = 0;
+        stats.whiteHorseTurns = 0;
+        stats.sameTripleTurns = 0;
+
+        stats.firstClosedField = -1;
+        stats.lastClosedField = -1;
+        stats.maxPointsField = -1;
+        stats.maxPointsFieldValue = 0;
+    }
+
+    /// <summary>
+    /// Simuliert einen Wurf wie AddThrow (Marks/Overflow/Scoring), ohne State zu mutieren.
+    /// Gibt null zurück für ungültige Würfe (Miss/Wall/falsche Zahl) – wie im Live-Spiel
+    /// erzeugen diese kein Hit-Event (nur 0 Marks via RegisterThrow, was die Base abdeckt).
+    /// </summary>
+    private SimulatedCricketThrow SimulateCricketThrow(
+        Throw thr,
+        Guid playerId,
+        Dictionary<Guid, Dictionary<int, int>> simHits,
+        bool pointsEnabled,
+        bool cutThroat)
+    {
+        if (thr.HitType != HitType.Board)
+            return null;
+
+        int value = thr.Value;
+        int mult = ConvertMultiplier(thr.Multiplier);
+        if (value == 50) { value = 25; mult = 2; }
+
+        if ((value == 25 && thr.Multiplier == DartMultiplier.Triple) || !numbers.Contains(value))
+            return null;
+
+        int hitsBefore = simHits[playerId][value];
+        int newHits = hitsBefore + mult;
+        int overflow = Math.Max(0, newHits - 3);
+        int newHitsClamped = Math.Min(3, newHits);
+
+        bool othersOpen = playerIDs.Where(p => p != playerId).Any(p => simHits[p][value] < 3);
+        int totalMarks = (newHitsClamped - hitsBefore) + (othersOpen ? overflow : 0);
+
+        int pts = 0;
+        var dealtPoints = new Dictionary<Guid, int>();
+        if (pointsEnabled && overflow > 0)
+        {
+            if (cutThroat)
+            {
+                // Punkte landen bei den offenen Gegnern (live-identisch) + pro
+                // Gegner merken (für Schnapszahl-Übergangsregel im Rebuild).
+                foreach (var opp in playerIDs.Where(p => p != playerId && simHits[p][value] < 3))
+                {
+                    int given = overflow * value;
+                    pts += given;
+                    dealtPoints[opp] = dealtPoints.TryGetValue(opp, out var d) ? d + given : given;
+                }
+            }
+            else if (playerIDs.Where(p => p != playerId).Any(p => simHits[p][value] < 3))
+                pts = overflow * value;
+        }
+
+        simHits[playerId][value] = newHitsClamped;
+
+        return new SimulatedCricketThrow
+        {
+            Number = value,
+            Multiplier = mult,
+            ScoreGained = pts,
+            WasClose = hitsBefore < 3 && newHitsClamped == 3,
+            WasOverflow = overflow > 0,
+            EffectiveMarks = totalMarks,
+            DealtPoints = dealtPoints
+        };
+    }
+
+    private class SimulatedCricketThrow
+    {
+        public int Number;
+        public int Multiplier;
+        public int ScoreGained;
+        public bool WasClose;
+        public bool WasOverflow;
+        public int EffectiveMarks;
+        public Dictionary<Guid, int> DealtPoints;
+    }
+
     public GameStatsCricket GetPlayerStats(Guid playerId)
     {
         if (!playerStats.TryGetValue(playerId, out var stats))
@@ -1031,8 +1261,6 @@ public class CricketTurnResult
     public int TurnScore;
 
     public bool IsBust; // optional, falls du sowas hast
-
-    public List<PenaltyType> Penalties = new();
 
     public List<CricketHitEvent> Hits = new();
 }

@@ -769,4 +769,116 @@ public abstract class BasePlayer
     }
 
     internal int GetSetupStartPosition() => setupStartPosition;
+
+    // =========================================================
+    // STATISTICS READ API (In-Memory, kein SQLite)
+    // =========================================================
+
+    /// <summary>
+    /// Modus-Aggregat für eine Range direkt aus dem Speicher (O(1), kein
+    /// SQLite-Read, kein Deserialize). AllTime = persistierte Aggregate,
+    /// Time-Ranges = per Save/Delete fortgeführte Snapshots.
+    /// Gibt nie null zurück (Fallback: leeres Stats-Objekt).
+    /// </summary>
+    public GameStats GetModeStats(GameMode mode, StatisticsRange range)
+    {
+        if (range == StatisticsRange.AllTime)
+        {
+            return mode switch
+            {
+                GameMode.X01 => GetX01Stats(),
+                GameMode.Cricket => GetCricketStats(),
+                GameMode.ATC => GetATCStats(),
+                _ => GetX01Stats()
+            };
+        }
+
+        var timebased = GetTimebasedStats(range, mode);
+        if (timebased != null)
+            return timebased;
+
+        return mode switch
+        {
+            GameMode.X01 => new GameStatsX01(id),
+            GameMode.Cricket => new GameStatsCricket(id),
+            GameMode.ATC => new GameStatsATC(id),
+            _ => new GameStats(id)
+        };
+    }
+
+    /// <summary>
+    /// Modusübergreifendes Kombi-Aggregat für die "All Games"-Seite: Summe der
+    /// drei In-Memory-Modusaggregate (exakt für alle angezeigten Felder:
+    /// Games, Legs, Penalties). Ersetzt LoadPlayerStatsAll im Hot-Path.
+    /// </summary>
+    public GameStats GetCombinedStats(StatisticsRange range)
+    {
+        var x01 = GetModeStats(GameMode.X01, range);
+        var cricket = GetModeStats(GameMode.Cricket, range);
+        var atc = GetModeStats(GameMode.ATC, range);
+
+        var combined = new GameStats(id);
+
+        foreach (var s in new[] { x01, cricket, atc })
+        {
+            if (s == null)
+                continue;
+
+            combined.gameCount += s.gameCount;
+            combined.gamesWon += s.gamesWon;
+
+            combined.totalLegsCount += s.totalLegsCount;
+            combined.totalLegsWon += s.totalLegsWon;
+            combined.totalSetsCount += s.totalSetsCount;
+            combined.totalSetsWon += s.totalSetsWon;
+
+            combined.wallCount += s.wallCount;
+            combined.ceilingCount += s.ceilingCount;
+            combined.allMissCount += s.allMissCount;
+            combined.tripleOnesCount += s.tripleOnesCount;
+            combined.tripleDigitCount += s.tripleDigitCount;
+            combined.lostGame += s.lostGame;
+
+            combined.totalThrowsCount += s.totalThrowsCount;
+            combined.totalDoubleCount += s.totalDoubleCount;
+            combined.totalTripleCount += s.totalTripleCount;
+
+            combined.customPenaltyCost += s.customPenaltyCost;
+
+            if (s.customPenaltyCounts != null)
+            {
+                foreach (var kvp in s.customPenaltyCounts)
+                {
+                    if (string.IsNullOrEmpty(kvp.Key) || kvp.Value <= 0)
+                        continue;
+                    combined.customPenaltyCounts.TryGetValue(kvp.Key, out int current);
+                    combined.customPenaltyCounts[kvp.Key] = current + kvp.Value;
+                }
+            }
+
+            if (s.appliedGameIds != null)
+            {
+                foreach (var gid in s.appliedGameIds)
+                {
+                    if (!combined.appliedGameIds.Contains(gid))
+                        combined.appliedGameIds.Add(gid);
+                }
+            }
+
+            if (s.gamePenaltyCosts != null)
+            {
+                foreach (var kvp in s.gamePenaltyCosts)
+                {
+                    if (!combined.gamePenaltyCosts.ContainsKey(kvp.Key))
+                        combined.gamePenaltyCosts[kvp.Key] = kvp.Value;
+                }
+            }
+        }
+
+        combined.totalPenaltyCost = 0f;
+        foreach (var cost in combined.gamePenaltyCosts.Values)
+            combined.totalPenaltyCost += cost;
+
+        return combined;
+    }
 }

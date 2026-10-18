@@ -71,7 +71,14 @@ public class GameStats
 
         gamesWon += Math.Min(stats.gamesWon, 1);
 
-        gamePenaltyCosts[gameId] = penaltyCost;
+        // Penalty-Kosten zentral aus den Counterständen berechnen: Die Caller
+        // übergeben stats.totalPenaltyCost, das bei Einzelspiel-Stats immer 0 ist
+        // (wird nur in Aggregaten gesetzt). Fallback: übergebener Wert.
+        float resolvedCost = penaltyCost;
+        try { resolvedCost = stats.GetTotalPenaltyCosts(); }
+        catch { resolvedCost = penaltyCost; }
+
+        gamePenaltyCosts[gameId] = resolvedCost;
         totalPenaltyCost = gamePenaltyCosts.Values.Sum();
 
         totalLegsCount += stats.totalLegsCount;
@@ -90,9 +97,49 @@ public class GameStats
         totalDoubleCount += stats.totalDoubleCount;
         totalTripleCount += stats.totalTripleCount;
 
+        MergeCustomPenaltyCounts(stats);
+
         UpdateThrowPercentages();
         UpdateLegWinRate();
         UpdateSetWinRate();
+    }
+
+    /// <summary>Addiert fremde Per-Def-Counts (Aggregation über Spiele).</summary>
+    protected void MergeCustomPenaltyCounts(GameStats stats)
+    {
+        if (stats?.customPenaltyCounts == null)
+            return;
+
+        foreach (var kvp in stats.customPenaltyCounts)
+        {
+            if (string.IsNullOrEmpty(kvp.Key) || kvp.Value <= 0)
+                continue;
+
+            customPenaltyCounts.TryGetValue(kvp.Key, out int current);
+            customPenaltyCounts[kvp.Key] = current + kvp.Value;
+        }
+    }
+
+    /// <summary>Zieht fremde Per-Def-Counts ab (Delete-Pfad, symmetrisch).</summary>
+    protected void SubtractCustomPenaltyCounts(GameStats stats)
+    {
+        if (stats?.customPenaltyCounts == null)
+            return;
+
+        foreach (var kvp in stats.customPenaltyCounts)
+        {
+            if (string.IsNullOrEmpty(kvp.Key) || kvp.Value <= 0)
+                continue;
+
+            if (!customPenaltyCounts.TryGetValue(kvp.Key, out int current))
+                continue;
+
+            int rest = current - kvp.Value;
+            if (rest <= 0)
+                customPenaltyCounts.Remove(kvp.Key);
+            else
+                customPenaltyCounts[kvp.Key] = rest;
+        }
     }
 
     public virtual void RemoveGameStat(GameStats stats, Guid gameId)
@@ -139,6 +186,8 @@ public class GameStats
         RemoveThrowCountFromBaseplayer(currentGames, stats.totalThrowsCount);
         totalDoubleCount = Math.Max(0, totalDoubleCount - stats.totalDoubleCount);
         totalTripleCount = Math.Max(0, totalTripleCount - stats.totalTripleCount);
+
+        SubtractCustomPenaltyCounts(stats);
 
         UpdateThrowPercentages();
         UpdateLegWinRate();
@@ -241,6 +290,49 @@ public class GameStats
         }
     }
 
+    /// <summary>
+    /// Separates Strafkonto für Custom-Penalties (Tab 2): gebuchte
+    /// def.cost-Beträge, pro Spiel. Aggregiert über gamePenaltyCosts.
+    /// </summary>
+    [JsonProperty] public float customPenaltyCost = 0f;
+
+    /// <summary>
+    /// Pro Custom-Def gebuchte Anzahl (Def-ID → Count). Persistiert im
+    /// player_game_stats-JSON und in Aggregaten mitgeführt, damit History,
+    /// GameDetail und Statistik je Penalty-ID auflösen können — auch wenn
+    /// die Def längst gelöscht/umbenannt ist (Namen kommen aus dem
+    /// Spiel-Snapshot, nicht aus dem Live-Store).
+    /// </summary>
+    [JsonProperty] public Dictionary<string, int> customPenaltyCounts = new Dictionary<string, int>();
+
+    public virtual void AddCustomPenaltyCost(float cost)
+    {
+        if (cost <= 0f)
+            return;
+
+        customPenaltyCost += cost;
+    }
+
+    /// <summary>Bucht EINE Custom-Buchung (Kosten + Zähler, symmetrisch zu Remove).</summary>
+    public virtual void AddCustomPenaltyBooking(string penaltyId, float cost)
+    {
+        AddCustomPenaltyCost(cost);
+
+        if (string.IsNullOrEmpty(penaltyId))
+            return;
+
+        customPenaltyCounts.TryGetValue(penaltyId, out int current);
+        customPenaltyCounts[penaltyId] = current + 1;
+    }
+
+    public virtual void RemoveCustomPenaltyCost(float cost)
+    {
+        if (cost <= 0f)
+            return;
+
+        customPenaltyCost = Mathf.Max(0f, customPenaltyCost - cost);
+    }
+
     public void ResetForStatCalculation()
     {
         currentLegCount = 0;
@@ -250,7 +342,7 @@ public class GameStats
 
         totalSetsCount = 0;
         totalSetsWon = 0;
-        totalSetWinRate = 0;
+        totalSetWinRate = 0f;
 
         totalThrowsCount = 0;
         totalDoubleCount = 0;
@@ -258,6 +350,12 @@ public class GameStats
 
         doublePercentage = 0f;
         triplePercentage = 0f;
+
+        // Legacy-Penalty-Counter (wall/ceiling/allMiss/tripleOnes/
+        // tripleDigit/lostGame) werden NICHT genullt: Das Legacy-System ist
+        // stillgelegt (kein Rebuild mehr); alte Spiele behalten ihre Werte
+        // aus der persistierten Zeile (RestorePersistedLegacyPenalties),
+        // neue Spiele starten bei 0 (InitializeStats).
     }
 
 
@@ -369,6 +467,9 @@ public class GameStats
 
         // Achtung: existiert nicht in AddPenalty, aber in Stats vorhanden
         total += GetPenaltyCost(settings, PenaltyType.Schnapszahl, tripleDigitCount);
+
+        // Separates Custom-Konto (Tab 2, def.cost-Buchungen).
+        total += customPenaltyCost;
 
         return total;
     }

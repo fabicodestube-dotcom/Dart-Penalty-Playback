@@ -22,6 +22,15 @@ public class Turn
     // Snapshot des Scores vor dem Turn (z.B. für UI / Undo / Validation)
     [JsonProperty] public int ScoreBeforeTurn { get; set; }
 
+    // Snapshot ALLER Spieler-Scores bei Turn-Start (Cricket: Cutthroat prüft
+    // Gegner-Totals; nur veränderte Totals können neu erreicht worden sein).
+    // Null bei alten Saves -> Fallback auf Legacy-Verhalten.
+    [JsonProperty] public Dictionary<Guid, int> TurnStartScores { get; set; }
+
+    // Exakt die Turn-Penalties, die beim Finalize dieses Turns gebucht wurden.
+    // Undo nimmt nur diese zurück (kein Doppelzählen bei Nachwurf).
+    [JsonProperty] public List<TurnPenaltyRecord> RecordedPenalties { get; set; }
+
 
     // =========================================================
     // CONSTRUCTION
@@ -91,4 +100,23 @@ public class Turn
     public void MarkAsBust() => IsBust = true;
 
     public void ClearBust() => IsBust = false;
+}
+
+/// <summary>
+/// Ein beim Turn-Finalize gebuchtes Turn-Penalty (ThreeOnes/AllMiss/Schnapszahl).
+/// Wird beim Undo exakt zurückgenommen.
+/// </summary>
+[System.Serializable]
+public struct TurnPenaltyRecord
+{
+    [JsonProperty] public Guid PlayerId;
+    [JsonProperty] public PenaltyType Type;
+
+    /// <summary>
+    /// Custom-Penalty (Tab 2): Def-ID + gebuchte Kosten. Null/0 = Built-in.
+    /// Instant=true: beim Wurf gebucht (Legacy HitTypeMiss), sonst beim Finalize.
+    /// </summary>
+    [JsonProperty] public string CustomPenaltyId;
+    [JsonProperty] public float CustomCost;
+    [JsonProperty] public bool CustomInstant;
 }

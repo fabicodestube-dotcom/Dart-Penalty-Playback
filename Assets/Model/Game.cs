@@ -35,7 +35,12 @@ public abstract class Game
     [JsonIgnore] public Action<Guid> OnLegWon;
     [JsonIgnore] public Action<Guid?> OnSetWon;
     [JsonIgnore] public Action<Guid, Turn> OnTurnCompleted;
-    [JsonIgnore] public Action<Guid, PenaltyType, Turn> OnPenaltyTriggered;
+
+    /// <summary>Custom-Penalty ausgelöst (Audio + Anzeige; Zähler/Kosten folgen separat).</summary>
+    [JsonIgnore] public Action<string, Guid, Turn> OnCustomPenaltyTriggered;
+
+    /// <summary>Custom-Audio-Event ausgelöst (nur Abspielen).</summary>
+    [JsonIgnore] public Action<string> OnCustomAudioEvent;
 
 
     // =========================================================
@@ -204,43 +209,150 @@ public abstract class Game
 
 
     // =========================================================
-    // PENALTY SYSTEM
+    // CUSTOMIZATION SNAPSHOT (PER-GAME)
     // =========================================================
 
-    protected void AddPenalty(Guid playerId, PenaltyType type, Turn turn)
+    /// <summary>
+    /// Custom-Penalty-Defs zum Spielstart (alle nicht-built-in, inkl.
+    /// enabled-Stand als Deep-Copy). Die Auswertung nutzt ausschließlich
+    /// diesen Snapshot: Mid-Game-Toggles beeinflussen laufende Spiele
+    /// nicht, und die History kann rückverfolgen, was aktiv war.
+    /// Persistenz: game_meta (siehe Save/RestoreRuntimeGameMeta).
+    /// </summary>
+    protected List<CustomPenaltyDef> penaltySnapshot;
+
+    /// <summary>Audio-Event-Defs zum Spielstart (analog, inkl. enabled).</summary>
+    protected List<AudioEventDef> audioEventSnapshot;
+
+    /// <summary>
+    /// Friert die Customization zum Spielstart ein. Aus den Konstruktoren
+    /// aller Modi aufrufen (nach playerIDs/settings).
+    /// </summary>
+    protected void CaptureCustomizationSnapshot()
     {
-        if (settings == null)
-        {
-            Debug.LogWarning("Penalties: Settings is null!");
-            return;
-        }
-
-        if (!settings.Penalties.IsEnabled(type))
-        {
-            Debug.Log($"Penalty {type} is not enabled in settings.");
-            return;
-        }
-
-        OnPenaltyTriggered?.Invoke(playerId, type, turn);
-        playerStats[playerId].AddPenalty(type);
+        penaltySnapshot = ClonePenaltyDefs(CustomizationStore.GetPenalties());
+        audioEventSnapshot = CloneAudioEventDefs(CustomizationStore.GetAudioEvents());
     }
 
-    protected void RemovePenalty(Guid playerId, PenaltyType type)
+    private static List<CustomPenaltyDef> ClonePenaltyDefs(List<CustomPenaltyDef> source)
     {
-        if (settings == null)
+        var result = new List<CustomPenaltyDef>();
+        if (source == null)
+            return result;
+
+        foreach (var def in source)
         {
-            Debug.LogWarning("Penalties: Settings is null!");
-            return;
+            if (def == null)
+                continue;
+
+            try
+            {
+                var clone = JsonConvert.DeserializeObject<CustomPenaltyDef>(
+                    JsonConvert.SerializeObject(def, Formatting.None));
+                if (clone != null && !string.IsNullOrEmpty(clone.id))
+                    result.Add(clone);
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogWarning("[Game] Penalty-Snapshot fehlerhaft: " + e.Message);
+            }
         }
 
-        if (!settings.Penalties.IsEnabled(type))
-        {
-            Debug.Log($"Penalty {type} is not enabled in settings.");
-            return;
-        }
-        
-        playerStats[playerId].RemovePenalty(type);
+        return result;
     }
+
+    private static List<AudioEventDef> CloneAudioEventDefs(List<AudioEventDef> source)
+    {
+        var result = new List<AudioEventDef>();
+        if (source == null)
+            return result;
+
+        foreach (var def in source)
+        {
+            if (def == null)
+                continue;
+
+            try
+            {
+                var clone = JsonConvert.DeserializeObject<AudioEventDef>(
+                    JsonConvert.SerializeObject(def, Formatting.None));
+                if (clone != null && !string.IsNullOrEmpty(clone.id))
+                    result.Add(clone);
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogWarning("[Game] AudioEvent-Snapshot fehlerhaft: " + e.Message);
+            }
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Snapshot-Defs für die Auswertung (Lazy-Fallback für alte Saves ohne
+    /// Snapshot: einmalig aus dem Live-Store aufbauen).
+    /// </summary>
+    protected List<CustomPenaltyDef> GetSnapshotPenalties()
+    {
+        if (penaltySnapshot == null)
+            penaltySnapshot = ClonePenaltyDefs(CustomizationStore.GetPenalties());
+
+        return penaltySnapshot;
+    }
+
+    /// <summary>Analog für Audio-Events (Lazy-Fallback für alte Saves).</summary>
+    protected List<AudioEventDef> GetSnapshotAudioEvents()
+    {
+        if (audioEventSnapshot == null)
+            audioEventSnapshot = CloneAudioEventDefs(CustomizationStore.GetAudioEvents());
+
+        return audioEventSnapshot;
+    }
+
+    /// <summary>Öffentlicher Snapshot-Zugriff (Summary/History/Statistik).</summary>
+    public List<CustomPenaltyDef> GetPenaltySnapshot() => new List<CustomPenaltyDef>(GetSnapshotPenalties());
+
+    /// <summary>Öffentlicher AudioEvent-Snapshot (Persistenz/Summary).</summary>
+    public List<AudioEventDef> GetAudioEventSnapshot() => new List<AudioEventDef>(GetSnapshotAudioEvents());
+
+    /// <summary>Stellt den Penalty-Snapshot wieder her (Load-Pfad).</summary>
+    public void RestorePenaltySnapshot(List<CustomPenaltyDef> snapshot)
+    {
+        penaltySnapshot = snapshot != null
+            ? ClonePenaltyDefs(snapshot)
+            : null;
+    }
+
+    /// <summary>Stellt den AudioEvent-Snapshot wieder her (Load-Pfad).</summary>
+    public void RestoreAudioEventSnapshot(List<AudioEventDef> snapshot)
+    {
+        audioEventSnapshot = snapshot != null
+            ? CloneAudioEventDefs(snapshot)
+            : null;
+    }
+
+    /// <summary>
+    /// Zentraler Aktiv-Guard für Custom-Penalties: enabled + mit Bedingung
+    /// werden je ausgewertet/gebucht. builtIn heißt nur „nicht löschbar“.
+    /// </summary>
+    protected static bool IsPenaltyDefActive(CustomPenaltyDef def)
+    {
+        return def != null && def.enabled && def.condition != null;
+    }
+
+    /// <summary>
+    /// Zentraler Aktiv-Guard für Audio-Events (Auto-Trigger + Manuale).
+    /// builtIn heißt nur „nicht löschbar“.
+    /// </summary>
+    protected static bool IsAudioEventActive(AudioEventDef def)
+    {
+        return def != null && def.enabled && def.trigger != null;
+    }
+
+
+    // =========================================================
+    // PENALTY SYSTEM (nur Custom; Legacy-Buchung ist stillgelegt)
+    // =========================================================
 
     public float GetPenaltyCost(PenaltyType type)
     {
@@ -257,6 +369,7 @@ public abstract class Game
         sum += GetPenaltyCost(PenaltyType.ThreeOnes) * playerStats[playerId].tripleOnesCount;
         sum += GetPenaltyCost(PenaltyType.LostGame) * playerStats[playerId].lostGame;
         sum += GetPenaltyCost(PenaltyType.Schnapszahl) * playerStats[playerId].tripleDigitCount;
+        sum += playerStats[playerId].customPenaltyCost;
 
         return sum;
     }
@@ -268,42 +381,242 @@ public abstract class Game
 
     protected void CheckTurnPenalties(Guid playerId, Turn turn)
     {
-        CheckThreeOnes(playerId, turn);
-        CheckAllMiss(playerId, turn);
+        EvaluateCustomTurnPenalties(playerId, turn);
+        EvaluateCustomRemainingPenalties(playerId, turn);
+        EvaluateCustomAudioEvents(playerId, turn);
     }
 
     /// <summary>
-    /// All 3 darts scored exactly 1 (Board hit)
+    /// Wertet Custom-Penalties (Turn-Ende-Typen) gegen den Turn aus.
+    /// Bucht Kosten ins separate Custom-Konto + feuert Audio/Anzeige.
+    /// Game-Events (2.3) laufen nicht hier, sondern an Leg-/Set-/Game-Ende.
     /// </summary>
-    private void CheckThreeOnes(Guid playerId, Turn turn)
+    protected void EvaluateCustomTurnPenalties(Guid playerId, Turn turn, bool silent = false)
     {
-        var throws = turn.GetThrows();
-        if (throws.Count != 3) return;
+        var defs = GetSnapshotPenalties();
+        if (defs == null || turn == null)
+            return;
 
-        if (throws.All(t => t.Value == 1 && t.HitType == HitType.Board))
-            AddPenalty(playerId, PenaltyType.ThreeOnes, turn);
+        var throws = turn.GetThrows();
+        int turnScore = turn.GetTurnScore();
+
+        foreach (var def in defs)
+        {
+            if (!IsPenaltyDefActive(def))
+                continue;
+
+            if (CustomPenaltyDef.IsGameEventKind(def.condition.kind))
+                continue;
+
+            if (PenaltyEvaluator.MatchesTurn(def.condition, throws, turnScore))
+                AddCustomPenalty(playerId, def, turn, false, silent);
+        }
     }
 
     /// <summary>
-    /// All darts missed (Wall or Ceiling)
+    /// Wertet Rest-basierte Custom-Penalties (RemainingExactScore) aus:
+    /// X01-Rest bzw. Cricket-Totals (Cutthroat: Gegner-Totals, Buchung an
+    /// den Total-Inhaber — wie die frühere Schnapszahl-Regel). Modi ohne
+    /// Rest-Begriff (ATC) liefern keine Totals und feuern nie.
+    /// Läuft in CheckTurnPenalties NACH den Turn-Penalties und VOR den
+    /// Audio-Events (stabile Abspiel-Reihenfolge).
     /// </summary>
-    protected void CheckAllMiss(Guid playerId, Turn turn)
+    protected void EvaluateCustomRemainingPenalties(Guid playerId, Turn turn, bool silent = false)
     {
-        var throws = turn.GetThrows();
-        if (throws.Count != 3) return;
+        if (turn == null)
+            return;
 
-        if (throws.All(t => t.HitType == HitType.Wall || t.HitType == HitType.Ceiling))
-            AddPenalty(playerId, PenaltyType.AllMiss, turn);
+        var defs = GetSnapshotPenalties();
+        if (defs == null)
+            return;
+
+        var totals = GetRemainingTotals(playerId, turn);
+        if (totals == null)
+            return;
+
+        foreach (var def in defs)
+        {
+            if (!IsPenaltyDefActive(def))
+                continue;
+
+            if (def.condition.kind != PenaltyConditionKind.RemainingExactScore)
+                continue;
+
+            foreach (var kvp in totals)
+            {
+                if (PenaltyEvaluator.MatchesRemaining(def.condition, kvp.Value.before, kvp.Value.after))
+                    AddCustomPenalty(kvp.Key, def, turn, false, silent);
+            }
+        }
     }
 
+    /// <summary>
+    /// (Spieler → vorher/nachher)-Totals für die Remaining-Auswertung.
+    /// Base: keine (ATC). X01: eigener Rest; Cricket: selbst/Gegner.
+    /// </summary>
+    protected virtual Dictionary<Guid, (int before, int after)> GetRemainingTotals(Guid playerId, Turn turn)
+    {
+        return null;
+    }
+
+    /// <summary>Instant-Prüfung eines einzelnen Wurfs (HitTypeMiss-Typ).</summary>
+    protected void CheckCustomInstantPenalties(Guid playerId, Throw throwItem, Turn turn, bool silent = false)
+    {
+        var defs = GetSnapshotPenalties();
+        if (defs == null || throwItem == null)
+            return;
+
+        foreach (var def in defs)
+        {
+            if (!IsPenaltyDefActive(def))
+                continue;
+
+            if (def.condition.kind != PenaltyConditionKind.HitTypeMiss)
+                continue;
+
+            if (PenaltyEvaluator.MatchesInstant(def.condition, throwItem))
+                AddCustomPenalty(playerId, def, turn, true, silent);
+        }
+    }
+
+    /// <summary>
+    /// Löst ein Custom-Penalty aus: Kosten ins Custom-Konto buchen, für Undo
+    /// im Turn vermerken, Event für Audio/Anzeige. Silent = ohne Event
+    /// (Undo-Re-Finalize). Game-Events (turn=null) werden nicht vermerkt.
+    /// </summary>
+    protected void AddCustomPenalty(Guid playerId, CustomPenaltyDef def, Turn turn, bool instant = false, bool silent = false)
+    {
+        if (def == null || !def.enabled)
+            return;
+
+        if (playerStats.TryGetValue(playerId, out var stats) && stats != null)
+            stats.AddCustomPenaltyBooking(def.id, def.cost);
+
+        if (turn != null)
+        {
+            turn.RecordedPenalties ??= new List<TurnPenaltyRecord>();
+            turn.RecordedPenalties.Add(new TurnPenaltyRecord
+            {
+                PlayerId = playerId,
+                CustomPenaltyId = def.id,
+                CustomCost = def.cost,
+                CustomInstant = instant
+            });
+        }
+
+        if (!silent)
+            OnCustomPenaltyTriggered?.Invoke(def.id, playerId, turn);
+    }
+
+    /// <summary>Nimmt eine Custom-Buchung zurück (Undo).</summary>
+    protected void RemoveCustomPenalty(Guid playerId, string customPenaltyId, float cost)
+    {
+        if (string.IsNullOrEmpty(customPenaltyId) || cost <= 0f)
+            return;
+
+        if (playerStats.TryGetValue(playerId, out var stats) && stats != null)
+        {
+            stats.RemoveCustomPenaltyCost(cost);
+
+            if (stats.customPenaltyCounts.TryGetValue(customPenaltyId, out int current))
+            {
+                if (current <= 1)
+                    stats.customPenaltyCounts.Remove(customPenaltyId);
+                else
+                    stats.customPenaltyCounts[customPenaltyId] = current - 1;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Undo-Helfer: alle Custom-Buchungen des Turns stornieren, dann die
+    /// Instant-Buchungen der verbleibenden Würfe (alle außer dem letzten,
+    /// der gerade entfernt wird) still neu buchen. Turn-Penalties bleiben
+    /// storniert (Turn ist nach Undo unvollständig).
+    /// </summary>
+    protected void RefundAndRefireCustoms(Turn turn)
+    {
+        if (turn == null)
+            return;
+
+        if (turn.RecordedPenalties != null)
+        {
+            foreach (var rec in turn.RecordedPenalties)
+            {
+                if (!string.IsNullOrEmpty(rec.CustomPenaltyId))
+                    RemoveCustomPenalty(rec.PlayerId, rec.CustomPenaltyId, rec.CustomCost);
+            }
+
+            turn.RecordedPenalties.RemoveAll(rec => !string.IsNullOrEmpty(rec.CustomPenaltyId));
+        }
+
+        var throws = turn.GetThrows();
+        for (int i = 0; i < throws.Count - 1; i++)
+            CheckCustomInstantPenalties(turn.PlayerId, throws[i], turn, true);
+    }
+
+    /// <summary>
+    /// Wertet Custom-Audio-Events (Auto-Trigger, je Modus-Kategorie) aus.
+    /// Manuelle Events (Undo, ...) feuern weiter direkt im Code.
+    /// </summary>
+    protected void EvaluateCustomAudioEvents(Guid playerId, Turn turn)
+    {
+        var allEvents = GetSnapshotAudioEvents();
+        if (allEvents == null || turn == null)
+            return;
+
+        var values = new AudioTriggerValues();
+        CollectAudioTriggerValues(playerId, turn, values);
+
+        foreach (var def in allEvents)
+        {
+            if (!IsAudioEventActive(def))
+                continue;
+
+            if (!IsEventCategoryApplicable(def.category))
+                continue;
+
+            if (AudioEventEngine.Matches(def.trigger, values))
+                OnCustomAudioEvent?.Invoke(def.id);
+        }
+    }
+
+    /// <summary>
+    /// Nur Events der eigenen Modus-Kategorie auswerten (Global immer).
+    /// Verhindert z.B., dass ein X01-Score-Event bei Cricket-Punkten feuert.
+    /// </summary>
+    private bool IsEventCategoryApplicable(AudioEventCategory category)
+    {
+        if (category == AudioEventCategory.Global)
+            return true;
+
+        return GetGameMode() switch
+        {
+            GameMode.X01 => category == AudioEventCategory.X01,
+            GameMode.Cricket => category == AudioEventCategory.Cricket,
+            GameMode.ATC => category == AudioEventCategory.ATC,
+            _ => true
+        };
+    }
+
+    /// <summary>
+    /// Befüllt Trigger-Kennzahlen. Basis: TurnScore + Würfe; Modi ergänzen
+    /// Marks/Punkte (Cricket) bzw. Hits/Streak (ATC) per Override.
+    /// </summary>
+    protected virtual void CollectAudioTriggerValues(Guid playerId, Turn turn, AudioTriggerValues values)
+    {
+        values.turnScore = turn.GetTurnScore();
+        values.throws = turn.GetThrows();
+    }
 
     // =========================================================
     // MATCH FLOW (STATE TRANSITIONS)
     // =========================================================
-
     protected void HandleLegWon(Guid playerId)
     {
         GetCurrentLeg().SetWinner(playerId);
+
+        EvaluateCustomGameEventPenalties(PenaltyConditionKind.LegLost, playerId);
 
         OnLegWon?.Invoke(playerId);
     }
@@ -311,6 +624,9 @@ public abstract class Game
     protected void HandleSetWon(Guid playerId)
     {
         sets[^1].SetWinner(playerId);
+
+        EvaluateCustomGameEventPenalties(PenaltyConditionKind.SetLost, playerId);
+
         OnSetWon?.Invoke(playerId);
     }
 
@@ -323,14 +639,62 @@ public abstract class Game
 
         playerStats[winnerId].RegisterGameWon();
 
-        foreach (var pid in playerIDs)
-        {
-            if (pid == winnerId) continue;
-
-            AddPenalty(pid, PenaltyType.LostGame, null);
-        }
+        EvaluateCustomGameEventPenalties(PenaltyConditionKind.GameLost, winnerId);
 
         OnMatchWon?.Invoke(winnerId);
+    }
+
+    /// <summary>
+    /// Wertet Custom-Game-Events (2.3) aus: Kosten tragen alle Spieler außer
+    /// dem Gewinner. Keine Turn-Vermerkung (kein Throw-Undo-Bezug).
+    /// </summary>
+    protected void EvaluateCustomGameEventPenalties(PenaltyConditionKind kind, Guid winnerId)
+    {
+        var defs = GetSnapshotPenalties();
+        if (defs == null)
+            return;
+
+        foreach (var def in defs)
+        {
+            if (!IsPenaltyDefActive(def))
+                continue;
+
+            if (def.condition.kind != kind)
+                continue;
+
+            foreach (var pid in playerIDs)
+            {
+                if (pid == winnerId) continue;
+
+                AddCustomPenalty(pid, def, null);
+            }
+        }
+    }
+
+    /// <summary>Storniert Game-Event-Buchungen einer Art für alle Nicht-Gewinner.
+    /// Bewusst OHNE enabled-Filter: Storno muss auch nach Deaktivieren
+    /// funktionieren, sonst bleiben Geisterbuchungen zurück.</summary>
+    protected void RefundCustomGameEventPenalties(PenaltyConditionKind kind, Guid winnerId)
+    {
+        var defs = GetSnapshotPenalties();
+        if (defs == null)
+            return;
+
+        foreach (var def in defs)
+        {
+            if (def == null || def.condition == null)
+                continue;
+
+            if (def.condition.kind != kind)
+                continue;
+
+            foreach (var pid in playerIDs)
+            {
+                if (pid == winnerId) continue;
+
+                RemoveCustomPenalty(pid, def.id, def.cost);
+            }
+        }
     }
     protected bool IsMatchFinished(Guid? playerId)
     {
@@ -448,6 +812,11 @@ public abstract class Game
                 playerStats[setWinnerID.Value].currentLegCount = 0;
             }
         }
+
+        // Legacy-Penalty-Counter werden NICHT rebuildet: Sie stammen für alte
+        // Spiele aus der persistierten Zeile (RestorePersistedLegacyPenalties),
+        // für neue Spiele bleiben sie 0. Customs dito (Turn-Records + Zeile).
+        // Keine Events hier (still, sonst Audio-/UI-Spam bei Load/Save).
     }
 
     protected bool IsEmpty()
@@ -546,15 +915,18 @@ public abstract class Game
         {
             result.LegWinnerUndone = true;
 
+            Guid? exWinner = matchWinnerId;
+
             if (matchWinnerId.HasValue)
             {
                 matchWinnerId = null;
             }
 
-            foreach (var p in playerIDs)
-            {
-                playerStats[p].RemovePenalty(PenaltyType.LostGame);
-            }
+            // Custom GameLost-Buchungen des beendeten Matches stornieren.
+            // (Legacy-LostGame ist stillgelegt; alte Spiele behalten ihre
+            // Counts aus der persistierten Zeile.)
+            if (exWinner.HasValue)
+                RefundCustomGameEventPenalties(PenaltyConditionKind.GameLost, exWinner.Value);
 
             finishedAt = null;
             currentSet.ClearWinner();
@@ -591,6 +963,11 @@ public abstract class Game
                 currentLeg.ClearWinner();
                 // Start-Rotation neu berechnen (sicherer als manuelles Dekrement)
                 IdentifyNextLegStarter();
+
+                // Custom LegLost-Buchungen des rückgängig gemachten Legs stornieren.
+                // (Set/Game-Storni sind nicht abgedeckt: Set-Win-Undo ist final.)
+                if (result.PreviousWinnerId != Guid.Empty)
+                    RefundCustomGameEventPenalties(PenaltyConditionKind.LegLost, result.PreviousWinnerId);
             }
         }
 
@@ -611,36 +988,10 @@ public abstract class Game
 
     private void RemoveBasePenalties(Turn t)
     {
-        var throws = t.GetThrows();
-        var lastThrow = throws?.LastOrDefault();
-        Guid id = t.PlayerId;
-
-        if (lastThrow.HitType == HitType.Wall)
-        {
-            RemovePenalty(id, PenaltyType.Wall);
-        }
-        else if (lastThrow.HitType == HitType.Ceiling)
-        {
-            RemovePenalty(id, PenaltyType.Ceiling);
-        }
-
-        // 2. Kollektive Strafen (nur prüfen, wenn der 3. Dart gerade rückgängig gemacht wird)
-        if (throws.Count == 3)
-        {
-            // Check: Alle 3 Darts sind Misses (Wall ODER Ceiling)
-            bool allMisses = throws.All(d => d.HitType == HitType.Wall || d.HitType == HitType.Ceiling);
-            if (allMisses)
-            {
-                RemovePenalty(id, PenaltyType.AllMiss);
-            }
-
-            // Check: Alle 3 Darts stecken in der 1
-            bool allOnes = throws.All(d => d.Value == 1);
-            if (allOnes)
-            {
-                RemovePenalty(id, PenaltyType.ThreeOnes); 
-            }
-        }
+        // Nur Custom-Penalties: Buchungen stornieren, Instant-Buchungen
+        // der verbleibenden Würfe still neu buchen (der letzte Wurf fliegt
+        // gleich). Legacy-Pfade sind stillgelegt.
+        RefundAndRefireCustoms(t);
     }
 }
 

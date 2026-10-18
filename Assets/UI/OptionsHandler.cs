@@ -26,14 +26,8 @@ public class OptionsHandler : MonoBehaviour
     [Header("Vibration Settings")]
     [SerializeField] private SingleSelectionGroup vibrationStrengthSelection;
 
-    // Penalties
-    [Header("Penalty Settings")]
-    public TMP_InputField penaltyWall;
-    public TMP_InputField penaltyCeiling;
-    public TMP_InputField penaltyAllMiss;
-    public TMP_InputField penaltyTripleOnes;
-    public TMP_InputField penaltySchnapszahl;
-    public TMP_InputField penaltyLostGame;
+    // Penalty-Kosten werden seit Customization (Seite 1) dort editiert.
+    // Enable-Toggles (UiSwitchBinder) bleiben hier unangetastet.
 
 
 
@@ -121,115 +115,6 @@ private void UpdateLanguageText(string locale)
         {
             vibrationStrengthSelection.Init((int)settings.Vibration.Strength);
         }
-
-        if (penaltyWall != null)
-        {
-            SetupInputField(penaltyWall, penaltyWall.GetComponent<Outline>(), PenaltyType.Wall);
-            penaltyWall.text = settings.Penalties.GetCost(PenaltyType.Wall).ToString();
-        }
-            
-
-        if (penaltyCeiling != null)
-        {
-            SetupInputField(penaltyCeiling, penaltyCeiling.GetComponent<Outline>(), PenaltyType.Ceiling);
-            penaltyCeiling.text = settings.Penalties.GetCost(PenaltyType.Ceiling).ToString();
-        }
-
-        if (penaltyAllMiss != null)
-        {
-            SetupInputField(penaltyAllMiss, penaltyAllMiss.GetComponent<Outline>(), PenaltyType.AllMiss);
-            penaltyAllMiss.text = settings.Penalties.GetCost(PenaltyType.AllMiss).ToString();
-        }
-
-        if (penaltyTripleOnes != null)
-        {
-            SetupInputField(penaltyTripleOnes, penaltyTripleOnes.GetComponent<Outline>(), PenaltyType.ThreeOnes);
-            penaltyTripleOnes.text = settings.Penalties.GetCost(PenaltyType.ThreeOnes).ToString();
-        }
-
-        if (penaltySchnapszahl != null)
-        {
-            SetupInputField(penaltySchnapszahl, penaltySchnapszahl.GetComponent<Outline>(), PenaltyType.Schnapszahl);
-            penaltySchnapszahl.text = settings.Penalties.GetCost(PenaltyType.Schnapszahl).ToString();
-        }
-
-        if (penaltyLostGame != null)
-        {
-            SetupInputField(penaltyLostGame, penaltyLostGame.GetComponent<Outline>(), PenaltyType.LostGame);
-            penaltyLostGame.text = settings.Penalties.GetCost(PenaltyType.LostGame).ToString();
-        }
-    }
-
-    private void SetupInputField(
-        TMP_InputField input,
-        Outline outline,
-        PenaltyType penaltyType)
-    {
-        input.onSelect.AddListener(_ =>
-        {
-            bool isValid = TryValidate(input.text, out decimal _);
-
-            outline.effectColor = isValid
-                ? ThemeManager.Instance.GetColor(ThemeColorRole.Accent1)
-                : ThemeManager.Instance.GetColor(ThemeColorRole.Error);
-        });
-
-        input.onDeselect.AddListener(_ =>
-        {
-            bool isValid = TryValidate(input.text, out decimal _);
-
-            outline.effectColor = isValid
-                ? ThemeManager.Instance.GetColor(ThemeColorRole.SingleSelectionButtonInactive)
-                : ThemeManager.Instance.GetColor(ThemeColorRole.Error);
-        });
-
-        input.onValueChanged.AddListener(val =>
-        {
-            bool isValid = TryValidate(val, out decimal parsedValue);
-
-            if (isValid)
-            {
-                AppSettingsManager.Instance.SetPenaltyCost(
-                    penaltyType,
-                    (int)parsedValue);
-            }
-
-            // Farbe abhängig von Fokus + Validität
-            if (isValid)
-            {
-                outline.effectColor = input.isFocused
-                    ? ThemeManager.Instance.GetColor(ThemeColorRole.Accent1)
-                    : ThemeManager.Instance.GetColor(ThemeColorRole.SingleSelectionButtonInactive);
-            }
-            else
-            {
-                outline.effectColor =
-                    ThemeManager.Instance.GetColor(ThemeColorRole.Error);
-            }
-        });
-    }
-
-    private bool TryValidate(string input, out decimal value)
-    {
-
-        if (string.IsNullOrWhiteSpace(input))
-        {
-            value = 0;
-            return false;
-        }
-
-        bool success = decimal.TryParse(
-            input,
-            System.Globalization.NumberStyles.Number,
-            System.Globalization.CultureInfo.InvariantCulture,
-            out value);
-
-        if (!success)
-        {
-            return false;
-        }
-
-        return true;
     }
 
 
@@ -353,20 +238,6 @@ private void UpdateLanguageText(string locale)
     public void SetVibrationStrong()
     {
         SetVibrationStrength(VibrationStrength.Strong);
-    }
-
-
-    // =========================
-    // Penalty SETTINGS
-    // =========================
-    public void SetPenaltyEnabled(PenaltyType type, bool enabled)
-    {
-        AppSettingsManager.Instance.SetPenaltyEnabled(type, enabled);
-    }
-
-    public void SetPenaltyCost(PenaltyType type, int cost)
-    {
-        AppSettingsManager.Instance.SetPenaltyCost(type, cost);
     }
 
 

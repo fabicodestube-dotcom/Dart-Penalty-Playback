@@ -23,6 +23,7 @@ public class ClipVisualization : MonoBehaviour, IPointerClickHandler
 
     private RectTransform playheadLine;
     private Image playheadLineImage;
+    private Vector2 lastPlayheadPos = new Vector2(float.NaN, float.NaN);
 
     private void Awake()
     {
@@ -41,13 +42,20 @@ public class ClipVisualization : MonoBehaviour, IPointerClickHandler
     {
         if (!showPlayhead || !waveformImage.gameObject.activeSelf)
         {
-            if (playheadLine != null)
+            if (playheadLine != null && playheadLine.gameObject.activeSelf)
                 playheadLine.gameObject.SetActive(false);
             return;
         }
 
         EnsurePlayheadLine();
-        playheadLine.gameObject.SetActive(true);
+        if (!playheadLine.gameObject.activeSelf)
+        {
+            playheadLine.gameObject.SetActive(true);
+            // Einmalig nach vorne holen statt pro Frame (SetAsLastSibling
+            // markiert die Hierarchie jedes Frame als dirty → Canvas-Rebuild).
+            playheadLine.SetAsLastSibling();
+            lastPlayheadPos = new Vector2(float.NaN, float.NaN);
+        }
 
         float normalized = 0f;
 
@@ -62,9 +70,17 @@ public class ClipVisualization : MonoBehaviour, IPointerClickHandler
 
         float x = normalized * rectTransform.rect.width;
 
-        playheadLine.anchoredPosition = new Vector2(x, 0f);
-        playheadLine.sizeDelta = new Vector2(playheadWidth, rectTransform.rect.height);
-        playheadLine.SetAsLastSibling();
+        // Nur bei tatsächlicher Bewegung schreiben (pausiert/statisch = idle).
+        var pos = new Vector2(x, 0f);
+        if (pos != lastPlayheadPos)
+        {
+            lastPlayheadPos = pos;
+            playheadLine.anchoredPosition = pos;
+        }
+
+        var size = new Vector2(playheadWidth, rectTransform.rect.height);
+        if (playheadLine.sizeDelta != size)
+            playheadLine.sizeDelta = size;
     }
 
     public void OnPointerClick(PointerEventData eventData)

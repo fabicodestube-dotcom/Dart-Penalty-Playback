@@ -1,0 +1,427 @@
+using System.Collections.Generic;
+using TMPro;
+using UnityEngine;
+
+/// <summary>
+/// Editor-Popup für Penalties (Tab 2): 2.1 Turn-Pattern, 2.2 exakter Score,
+/// 2.3 Leg-/Set-/Game-Event. Ein Typ-Dropdown schaltet zwischen drei Bodies
+/// (patternBody/scoreBody/gameEventBody) um, die übrigen werden deaktiviert.
+/// Die Umschaltung braucht KEINE Inspector-Verdrahtung: Awake registriert
+/// genau einen Listener (OnValueChanged -> UpdateConditionGroups).
+/// Ist ein UIScreen mit id Popup und wird über den WindowHandler
+/// (ShowPopup/HidePopup) angezeigt, analog zu den übrigen Popups.
+/// Legacy HitTypeMiss/RepdigitScore werden gemappt geladen (Upgrade bei Save).
+/// Buttons: Save → OnClickSave(), Cancel → OnClickCancel(),
+/// Toggle → ToggleEnabled(), Reihenfolge → ToggleMatchOrder().
+/// </summary>
+public class PenaltyEditorPopup : UIScreen, IUIScreen
+{
+    [Header("Control")]
+    public WindowHandler windowHandler;
+    public CustomizationPenaltiesPage penaltiesPage;
+
+    [Header("Basis")]
+    public TMP_InputField nameInput;
+    public TMP_InputField costInput;
+    public CustomToggle enabledToggle;
+
+    [Header("Kurzname (optional, Spalten)")]
+    [Tooltip("In der Szene verdrahten (sonst bleibt shortName leer und die Anzeige kürzt den Namen).")]
+    public TMP_InputField shortNameInput;
+
+    [Header("Typ-Umschalter")]
+    public TMP_Dropdown conditionTypeDropdown;
+
+    [Header("Bodies (Umschalter Sichtbarkeit)")]
+    public GameObject patternBody;
+    public GameObject scoreBody;
+    public GameObject gameEventBody;
+
+    [Header("Body-Inhalte")]
+    public TurnPatternEditor patternEditor;
+    public TMP_InputField scoreInput;
+    public TMP_Dropdown eventKindDropdown;
+
+    [Header("Sofort-Typ (HitTypeMiss, pro Wurf)")]
+    [Tooltip("Dropdown mit Wall/Ceiling (Code füllt Optionen). Szene: neues Dropdown + Gruppen-Objekt anlegen und hier verdrahten.")]
+    public TMP_Dropdown instantHitTypeDropdown;
+    public GameObject instantHitTypeGroup;
+
+    private string editingId;
+    private bool editingBuiltIn;
+
+    /// <summary>
+    /// True, wenn die geladene Def Rest-Semantik hat (RemainingExactScore):
+    /// Score-Body bleibt, Save schreibt dieselbe Art zurück (kein stiller
+    /// Wechsel zu ExactScore beim Editieren migrierter Seeds).
+    /// </summary>
+    private bool editingRemainingScore;
+
+    // Index-Reihenfolge = Dropdown-Reihenfolge (Code füllt die Optionen).
+    private static readonly List<string> ConditionOptions = new List<string>
+    {
+        "Turn pattern", "Exact score", "Game event", "Single miss (instant)"
+    };
+
+    private static readonly List<string> InstantHitTypeOptions = new List<string>
+    {
+        "Wall", "Ceiling"
+    };
+
+    private static readonly List<string> GameEventOptions = new List<string>
+    {
+        "Leg verloren", "Set verloren", "Game verloren"
+    };
+
+    private void OnValidate()
+    {
+        id = ScreenId.Popup;
+
+        if (rect == null)
+            rect = GetComponent<RectTransform>();
+        if (canvasGroup == null)
+            canvasGroup = GetComponent<CanvasGroup>();
+    }
+
+    protected override void Awake()
+    {
+        base.Awake();
+
+        id = ScreenId.Popup;
+
+        if (windowHandler == null)
+            windowHandler = FindAnyObjectByType<WindowHandler>();
+
+        if (penaltiesPage == null)
+            penaltiesPage = FindAnyObjectByType<CustomizationPenaltiesPage>();
+
+        if (conditionTypeDropdown != null)
+        {
+            conditionTypeDropdown.ClearOptions();
+            conditionTypeDropdown.AddOptions(ConditionOptions);
+            // EINZIGER Umschalt-Listener (kein Inspector-Event nötig).
+            conditionTypeDropdown.onValueChanged.AddListener(_ => UpdateConditionGroups());
+        }
+
+        if (eventKindDropdown != null)
+        {
+            eventKindDropdown.ClearOptions();
+            eventKindDropdown.AddOptions(GameEventOptions);
+        }
+
+        if (instantHitTypeDropdown != null)
+        {
+            instantHitTypeDropdown.ClearOptions();
+            instantHitTypeDropdown.AddOptions(InstantHitTypeOptions);
+        }
+    }
+
+    public void OnShow()
+    {
+    }
+
+    public void OnHide()
+    {
+    }
+
+    public void ShowNew(CustomizationPenaltiesPage page)
+    {
+        ShowNew(page, PenaltyConditionKind.TurnPattern);
+    }
+
+    public void ShowNew(CustomizationPenaltiesPage page, PenaltyConditionKind kind)
+    {
+        penaltiesPage = page != null ? page : penaltiesPage;
+        editingId = System.Guid.NewGuid().ToString("N");
+        editingBuiltIn = false;
+        editingRemainingScore = kind == PenaltyConditionKind.RemainingExactScore;
+
+        LoadDef("Neues Penalty", DefaultCost(kind), true, FreshCondition(kind));
+        ShowViaWindowHandler();
+    }
+
+    public void ShowEdit(CustomizationPenaltiesPage page, string id)
+    {
+        penaltiesPage = page != null ? page : penaltiesPage;
+
+        var def = CustomizationStore.GetPenalties().Find(x => x != null && x.id == id);
+        if (def == null || def.condition == null)
+            return;
+
+        editingId = def.id;
+        editingBuiltIn = def.builtIn;
+        editingRemainingScore = def.condition.kind == PenaltyConditionKind.RemainingExactScore;
+
+        // Legacy-Kinds auf neue Bodies mappen (Upgrade erst bei Save).
+        // HitTypeMiss bleibt bewusst erhalten (Sofort-Typ, 4. Option) —
+        // früher wurde er hier zu TurnPattern umgebogen (Semantikwechsel).
+        PenaltyCondition condition = def.condition;
+        if (condition.kind == PenaltyConditionKind.RepdigitScore)
+            condition = new PenaltyCondition
+            {
+                kind = PenaltyConditionKind.ExactScore,
+                score = condition.minScore
+            };
+
+        LoadDef(def.name, def.cost, def.enabled, condition, def.shortName);
+        ShowViaWindowHandler();
+    }
+
+    private static int DefaultCost(PenaltyConditionKind kind)
+    {
+        return CustomPenaltyDef.IsGameEventKind(kind) || kind == PenaltyConditionKind.ExactScore
+            ? 50 : 100;
+    }
+
+    private static PenaltyCondition FreshCondition(PenaltyConditionKind kind)
+    {
+        if (kind == PenaltyConditionKind.ExactScore)
+            return new PenaltyCondition { kind = kind, score = 100 };
+
+        if (CustomPenaltyDef.IsGameEventKind(kind))
+            return new PenaltyCondition { kind = kind };
+
+        return new PenaltyCondition
+        {
+            kind = PenaltyConditionKind.TurnPattern,
+            matchOrder = false,
+            pattern = new List<TurnPatternEntry>
+            {
+                new TurnPatternEntry { anyValue = false, value = 1, anyMultiplier = true },
+                new TurnPatternEntry { anyValue = false, value = 1, anyMultiplier = true },
+                new TurnPatternEntry { anyValue = false, value = 1, anyMultiplier = true }
+            }
+        };
+    }
+
+    private void ShowViaWindowHandler()
+    {
+        if (windowHandler != null)
+            windowHandler.ShowPopup(this);
+        else
+            gameObject.SetActive(true);
+    }
+
+    private void LoadDef(string name, int cost, bool enabled, PenaltyCondition condition, string shortName = "")
+    {
+        if (nameInput != null)
+            nameInput.text = name;
+
+        if (shortNameInput != null)
+            shortNameInput.text = shortName ?? "";
+
+        if (costInput != null)
+            costInput.text = cost.ToString();
+
+        enabledToggle?.Initialize(enabled);
+
+        int typeIndex = TypeToIndex(condition?.kind ?? PenaltyConditionKind.TurnPattern);
+        if (conditionTypeDropdown != null)
+            conditionTypeDropdown.SetValueWithoutNotify(typeIndex);
+
+        if (scoreInput != null)
+            scoreInput.text = (condition?.score ?? 0).ToString();
+
+        if (eventKindDropdown != null)
+            eventKindDropdown.SetValueWithoutNotify(GameEventToIndex(condition?.kind ?? PenaltyConditionKind.LegLost));
+
+        if (instantHitTypeDropdown != null)
+            instantHitTypeDropdown.SetValueWithoutNotify(InstantHitTypeToIndex(condition?.hitType ?? HitType.Wall));
+
+        if (condition?.kind == PenaltyConditionKind.TurnPattern || typeIndex == 0)
+        {
+            int slots = Mathf.Clamp(condition?.pattern?.Count ?? 3, 1, 3);
+            patternEditor?.SetSlotCount(slots);
+            patternEditor?.LoadEntries(condition?.pattern, condition?.matchOrder ?? false);
+        }
+
+        UpdateConditionGroups();
+    }
+
+    public void ToggleEnabled()
+    {
+        enabledToggle?.Toggle();
+    }
+
+    public void ToggleMatchOrder()
+    {
+        patternEditor?.ToggleMatchOrder();
+    }
+
+    public void OnSlotCountChanged()
+    {
+        patternEditor?.OnSlotCountChanged();
+    }
+
+    private void UpdateConditionGroups()
+    {
+        int index = conditionTypeDropdown != null ? conditionTypeDropdown.value : 0;
+
+        if (patternBody != null)
+            patternBody.SetActive(index == 0);
+        if (scoreBody != null)
+            scoreBody.SetActive(index == 1);
+        if (gameEventBody != null)
+            gameEventBody.SetActive(index == 2);
+
+        // Vierter Body (Sofort-Typ) braucht ein eigenes Gruppen-Objekt in der
+        // Szene (instantHitTypeGroup + instantHitTypeDropdown verdrahten).
+        var instantBody = instantHitTypeGroup != null
+            ? instantHitTypeGroup
+            : patternBody;
+        if (instantBody != null && instantBody != patternBody)
+            instantBody.SetActive(index == 3);
+    }
+
+    public void OnClickSave()
+    {
+        string name = nameInput != null ? nameInput.text.Trim() : "";
+        if (string.IsNullOrEmpty(name))
+            return;
+
+        if (!int.TryParse(costInput != null ? costInput.text : "0", out int cost) || cost < 0)
+            return;
+
+        bool enabled = enabledToggle == null || enabledToggle.IsActive();
+
+        string shortName = shortNameInput != null ? shortNameInput.text.Trim() : "";
+        if (shortName.Length > 16)
+            shortName = shortName.Substring(0, 16);
+
+        // Namen sind pro Penalty eindeutig (eigene ID ausgenommen).
+        if (CustomizationStore.IsPenaltyNameTaken(name, editingId))
+            return;
+
+        var condition = ReadCondition();
+        if (condition == null)
+            return;
+
+        // Built-ins (Altdaten-Seeds): Bedingung ist fix, nur Name/Kosten/
+        // Enabled sind editierbar (Anzeige + Clip-Verlinkung + Engine-Sync).
+        if (editingBuiltIn)
+        {
+            var existing = CustomizationStore.GetPenalties().Find(x => x != null && x.id == editingId);
+            if (existing != null && existing.builtIn && existing.condition != null)
+                condition = existing.condition;
+        }
+
+        CustomizationStore.SavePenalty(new CustomPenaltyDef
+        {
+            id = editingId,
+            name = name,
+            shortName = shortName,
+            enabled = enabled,
+            cost = cost,
+            builtIn = editingBuiltIn,
+            condition = condition
+        });
+
+        // Direkt-Refresh der eigenen Liste (sofort sichtbar, auch wenn die
+        // Changed-Event-Kette z.B. bei inaktivem Handler nicht geliefert hat).
+        // Dank Abgleich ist ein doppelter Refresh praktisch gratis.
+        penaltiesPage?.Refresh();
+
+        CloseAndRefresh();
+    }
+
+    private PenaltyCondition ReadCondition()
+    {
+        int index = conditionTypeDropdown != null ? conditionTypeDropdown.value : 0;
+
+        switch (index)
+        {
+            case 1:
+                if (!int.TryParse(scoreInput != null ? scoreInput.text : "", out int score) || score < 0)
+                    return null;
+                return new PenaltyCondition
+                {
+                    kind = editingRemainingScore
+                        ? PenaltyConditionKind.RemainingExactScore
+                        : PenaltyConditionKind.ExactScore,
+                    score = score
+                };
+
+            case 2:
+                return new PenaltyCondition
+                {
+                    kind = IndexToGameEvent(eventKindDropdown != null ? eventKindDropdown.value : 0)
+                };
+
+            case 3:
+                return new PenaltyCondition
+                {
+                    kind = PenaltyConditionKind.HitTypeMiss,
+                    hitType = IndexToInstantHitType(instantHitTypeDropdown != null ? instantHitTypeDropdown.value : 0)
+                };
+
+            default:
+                return new PenaltyCondition
+                {
+                    kind = PenaltyConditionKind.TurnPattern,
+                    pattern = patternEditor != null
+                        ? patternEditor.SaveEntries()
+                        : new List<TurnPatternEntry>(),
+                    matchOrder = patternEditor != null && patternEditor.LoadMatchOrder()
+                };
+        }
+    }
+
+    public void OnClickCancel()
+    {
+        CloseAndRefresh();
+    }
+
+    private void CloseAndRefresh()
+    {
+        editingId = null;
+
+        if (windowHandler != null)
+            windowHandler.HidePopup();
+
+        // Kein explizites Refresh: Save feuert CustomizationStore.Changed,
+        // das die Penalty-Liste bereits aktualisiert (Cancel ändert nichts).
+    }
+
+    private static int TypeToIndex(PenaltyConditionKind kind)
+    {
+        if (kind == PenaltyConditionKind.ExactScore
+            || kind == PenaltyConditionKind.RemainingExactScore)
+            return 1;
+        if (CustomPenaltyDef.IsGameEventKind(kind))
+            return 2;
+        if (kind == PenaltyConditionKind.HitTypeMiss)
+            return 3;
+        return 0;
+    }
+
+    /// <summary>Sofort-Typ ↔ Dropdown-Index (Wall=0, Ceiling=1, Rest=Wall).</summary>
+    private static HitType IndexToInstantHitType(int index)
+    {
+        return index == 1 ? HitType.Ceiling : HitType.Wall;
+    }
+
+    private static int InstantHitTypeToIndex(HitType hitType)
+    {
+        return hitType == HitType.Ceiling ? 1 : 0;
+    }
+
+    private static PenaltyConditionKind IndexToGameEvent(int index)
+    {
+        return index switch
+        {
+            1 => PenaltyConditionKind.SetLost,
+            2 => PenaltyConditionKind.GameLost,
+            _ => PenaltyConditionKind.LegLost
+        };
+    }
+
+    private static int GameEventToIndex(PenaltyConditionKind kind)
+    {
+        return kind switch
+        {
+            PenaltyConditionKind.SetLost => 1,
+            PenaltyConditionKind.GameLost => 2,
+            _ => 0
+        };
+    }
+}

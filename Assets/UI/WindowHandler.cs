@@ -312,6 +312,7 @@ public class WindowHandler : MonoBehaviour
         AddBidirectional(ScreenId.Zoggen, ScreenId.Players, TransitionType.Fade);
         AddBidirectional(ScreenId.Zoggen, ScreenId.History, TransitionType.Fade);
         AddBidirectional(ScreenId.Zoggen, ScreenId.Statistic, TransitionType.Fade);
+        AddBidirectional(ScreenId.Zoggen, ScreenId.Customization, TransitionType.Fade);
 
         // Slide Navigation zu Games
         Add(ScreenId.Zoggen, ScreenId.X01Game, TransitionType.Slide, SlideDirection.Left);
@@ -334,6 +335,7 @@ public class WindowHandler : MonoBehaviour
 
         AddBidirectional(ScreenId.History, ScreenId.Players, TransitionType.Fade);
         AddBidirectional(ScreenId.History, ScreenId.Statistic, TransitionType.Fade);
+        AddBidirectional(ScreenId.History, ScreenId.Customization, TransitionType.Fade);
 
         Add(ScreenId.History, ScreenId.GameDetail, TransitionType.Fade, SlideDirection.Left);
         Add(ScreenId.GameDetail, ScreenId.History, TransitionType.Fade, SlideDirection.Right);
@@ -344,6 +346,8 @@ public class WindowHandler : MonoBehaviour
         // =========================
 
         AddBidirectional(ScreenId.Statistic, ScreenId.Players, TransitionType.Fade);
+        AddBidirectional(ScreenId.Statistic, ScreenId.Customization, TransitionType.Fade);
+        AddBidirectional(ScreenId.Players, ScreenId.Customization, TransitionType.Fade);
 
 
         // =========================
@@ -411,7 +415,7 @@ public class WindowHandler : MonoBehaviour
         AddBidirectional(ScreenId.GameDetail, ScreenId.About, TransitionType.Slide);
 
 
-        // ---------- CustomClipHandler ----------
+        // ---------- CustomClipHandler (legacy, removal together with old screens) ----------
 
         AddBidirectional(ScreenId.Zoggen, ScreenId.CustomClipHandler, TransitionType.Slide);
         AddBidirectional(ScreenId.History, ScreenId.CustomClipHandler, TransitionType.Slide);
@@ -460,6 +464,12 @@ public class WindowHandler : MonoBehaviour
     {
         isTransitioning = true;
 
+        // BottomBar-Highlight sofort beim Tap umschalten, nicht erst nach
+        // der Animation (Fade 0.25s / Slide 0.3s). Nur BottomBar-Screens
+        // werden gemappt, alle anderen behalten die aktuelle Auswahl.
+        if (menuSwitcher != null)
+            menuSwitcher.SetActiveByScreen(targetId);
+
         Prepare(to, type);
 
         // Lifecycle Hooks (falls Screen Logik hat)
@@ -480,9 +490,6 @@ public class WindowHandler : MonoBehaviour
         current = to;
         currentId = targetId;
 
-        if (menuSwitcher != null)
-            menuSwitcher.SetActiveByScreen(currentId);
-
         yield return null;
 
         isTransitioning = false;
@@ -495,15 +502,30 @@ public class WindowHandler : MonoBehaviour
 
     private IEnumerator Fade(UIScreen from, UIScreen to)
     {
-        float duration = 0.25f;
+        float duration = 0.22f;
         float t = 0;
+        bool fromFinished = false;
 
         while (t < duration)
         {
-            float p = t / duration;
+            // SmoothStep statt linear: weicher Ein-/Ausstieg, fühlt sich
+            // schneller an (Konsistent mit QuickMenu-Animationen).
+            float p = Mathf.SmoothStep(0f, 1f, t / duration);
 
-            from.canvasGroup.alpha = 1 - p;
+            // Nach Early-Finish 'from' nicht mehr anfassen (würde den
+            // finalisierten Screen sonst wieder sichtbar machen).
+            if (!fromFinished)
+                from.canvasGroup.alpha = 1 - p;
             to.canvasGroup.alpha = p;
+
+            // from-Screen trägt ab ~90% nichts mehr bei: früh finalisieren
+            // (Overdraw der zweiten Vollbild-Ebene sparen). Finish() ist
+            // idempotent, Transition() ruft es danach erneut auf.
+            if (!fromFinished && p >= 0.9f)
+            {
+                fromFinished = true;
+                Finish(from);
+            }
 
             t += Time.deltaTime;
             yield return null;
@@ -515,8 +537,9 @@ public class WindowHandler : MonoBehaviour
 
     private IEnumerator Slide(UIScreen from, UIScreen to, SlideDirection dir)
     {
-        float duration = 0.3f;
+        float duration = 0.28f;
         float t = 0;
+        bool fromFinished = false;
 
         float width = ((RectTransform)transform).rect.width;
 
@@ -541,10 +564,19 @@ public class WindowHandler : MonoBehaviour
 
         while (t < duration)
         {
-            float p = t / duration;
+            float p = Mathf.SmoothStep(0f, 1f, t / duration);
 
-            from.rect.anchoredPosition = Vector2.Lerp(fromStart, fromEnd, p);
+            // Nach Early-Finish 'from' nicht mehr anfassen.
+            if (!fromFinished)
+                from.rect.anchoredPosition = Vector2.Lerp(fromStart, fromEnd, p);
             to.rect.anchoredPosition = Vector2.Lerp(toStart, toEnd, p);
+
+            // Fast draußen: from-Ebene abschalten statt weiter zu zeichnen.
+            if (!fromFinished && p >= 0.95f)
+            {
+                fromFinished = true;
+                Finish(from);
+            }
 
             t += Time.deltaTime;
             yield return null;
@@ -620,6 +652,9 @@ public class WindowHandler : MonoBehaviour
 
         popup.gameObject.SetActive(true);
 
+        if (popup.TryGetComponent<IUIScreen>(out var popupScreen))
+            popupScreen.OnShow();
+
         popup.canvasGroup.alpha = 0;
         popup.canvasGroup.interactable = true;
         popup.canvasGroup.blocksRaycasts = true;
@@ -644,6 +679,9 @@ public class WindowHandler : MonoBehaviour
     public void HidePopup(float duration = 0.1f)
     {
         if (!isPopupActive || activePopup == null) return;
+
+        if (activePopup.TryGetComponent<IUIScreen>(out var popupScreen))
+            popupScreen.OnHide();
 
         StartCoroutine(FadeOutPopup(activePopup, duration));
     }
@@ -715,7 +753,8 @@ public enum ScreenId
     Popup,
     About,
     CustomClipHandler,
-    CustomClipBrowser
+    CustomClipBrowser,
+    Customization
 }
 
 public enum TransitionType

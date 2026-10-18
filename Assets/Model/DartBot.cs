@@ -437,25 +437,9 @@ public class DartBot : BasePlayer
     // ATC
     // =========================================================
 
-    public Throw GetNextATCThrow(int currentTarget, ATCTargetType targetType, bool hasStarted)
+    public Throw GetNextATCThrow(int currentTarget, DartMultiplier requiredMultiplier, bool hasStarted)
     {
-        (int val, DartMultiplier mult) targetParams;
-
-        switch (targetType)
-        {
-            case ATCTargetType.Singles:
-                targetParams = (currentTarget, DartMultiplier.Single);
-                break;
-            case ATCTargetType.Doubles:
-                targetParams = (currentTarget, DartMultiplier.Double);
-                break;
-            case ATCTargetType.Triples:
-                targetParams = (currentTarget, DartMultiplier.Triple);
-                break;
-            default:
-                targetParams = (20, DartMultiplier.Single);
-                break;
-        }
+        (int val, DartMultiplier mult) targetParams = (currentTarget, requiredMultiplier);
 
         Throw result = SimulatePhysicalThrow(targetParams);
 

@@ -13,6 +13,7 @@ public class MenuSwitcher : MonoBehaviour
 
     [SerializeField] private MenuItem game;
     [SerializeField] private MenuItem players;
+    [SerializeField] private MenuItem customization;
     [SerializeField] private MenuItem history;
     [SerializeField] private MenuItem statistics;
 
@@ -41,7 +42,8 @@ public class MenuSwitcher : MonoBehaviour
 
     public void OnClickGameButton() => SetActive(game);
     public void OnClickPlayersButton() => SetActive(players);
-    public void OnClickOptionsButton() => SetActive(history);
+    public void OnClickCustomizationButton() => SetActive(customization);
+    public void OnClickHistoryButton() => SetActive(history);
     public void OnClickStatisticsButton() => SetActive(statistics);
 
     public void SetActiveByScreen(ScreenId screenId)
@@ -53,6 +55,9 @@ public class MenuSwitcher : MonoBehaviour
                 break;
             case ScreenId.Players:
                 SetActive(players);
+                break;
+            case ScreenId.Customization:
+                SetActive(customization);
                 break;
             case ScreenId.History:
                 SetActive(history);
@@ -83,6 +88,7 @@ public class MenuSwitcher : MonoBehaviour
     {
         ApplyItem(game);
         ApplyItem(players);
+        ApplyItem(customization);
         ApplyItem(history);
         ApplyItem(statistics);
         

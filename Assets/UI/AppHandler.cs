@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -10,13 +11,31 @@ using UnityEngine;
 
 public class AppHandler : MonoBehaviour
 {
+    /// <summary>
+    /// Nach letzter Spieler-/Setup-Änderung so lange warten, bevor die DB
+    /// geschrieben wird. Bündelt Klickserien (Setup-Stepper etc.) zu einem Write.
+    /// </summary>
+    private const float DatabaseIdleSaveDelaySeconds = 2f;
+
     public ThemeManager themeManager;
 
     public Action<Game> OnAddGame;
-    public Action<GameMode, Guid> OnDeleteGame;
-    public Action<GameMode> OnDeleteGamesOfMode;
+    /// <summary>
+    /// Parameter: Modus, GameId, betroffene Spieler-Ids (aus der Summary VOR dem
+    /// Delete gelesen). Die In-Memory-Aggregate (BasePlayer) + SQLite-Aggregate
+    /// sind beim Feuern bereits aktualisiert — Listener lesen sie direkt und
+    /// sparen sich jedes Nachladen.
+    /// </summary>
+    public Action<GameMode, Guid, List<Guid>> OnDeleteGame;
+    /// <summary>
+    /// Parameter: Modus, betroffene Spieler-Ids (distinct aus den gelöschten
+    /// Summaries). Aggregate sind beim Feuern bereits aktualisiert.
+    /// </summary>
+    public Action<GameMode, List<Guid>> OnDeleteGamesOfMode;
     public Action OnAllGamesDeleted;
     public Action<Guid> OnPlayerAdded;
+    public Action<Guid, string> OnPlayerDeleted;
+    public Action<Guid, string, string> OnPlayerRenamed;
 
     private Database database;
     private Game selectedGame;
@@ -24,6 +43,22 @@ public class AppHandler : MonoBehaviour
     private Guid lastClickedGameId;
 
     private bool isShuttingDown = false;
+
+    /// <summary>
+    /// True, wenn Spieler-/Setup-Änderungen noch nicht in SQLite stehen.
+    /// Alle kleinen Setter markieren nur dirty; geschrieben wird gebündelt
+    /// (Idle-Debounce, Spielstart, Lifecycle-Save).
+    /// </summary>
+    private bool databaseDirty = false;
+    private Coroutine dirtySaveRoutine = null;
+
+    /// <summary>
+    /// Kollabiert Pause/Fokus/Quit-Doppelevents zu einem Save. Auf Mobile
+    /// feuern OnApplicationPause(true) + OnApplicationFocus(false) beim
+    /// Weglegen fast immer direkt hintereinander (ggf. + Quit danach).
+    /// </summary>
+    private const float LifecycleSaveCooldownSeconds = 2f;
+    private float lastLifecycleSaveTime = -1000f;
 
     private void Awake()
     {
@@ -170,44 +205,51 @@ public class AppHandler : MonoBehaviour
     public void SetPlayers(List<Guid> active, List<Guid> reserve)
     {
         database.SetPlayers(active, reserve);
-        SaveSystem.SaveDatabase(database);
+        MarkDatabaseDirty();
     }
 
     public void ApplyPlayerSetupStartOrderFromFlags()
     {
         database.ApplySetupPlayerOrderFromFlags();
-        SaveSystem.SaveDatabase(database);
+        MarkDatabaseDirty();
     }
 
     public void AddPlayer(string playerName)
     {
         Guid newId = database.AddPlayer(playerName);
-        SaveSystem.SaveDatabase(database);
+        MarkDatabaseDirty();
         OnPlayerAdded?.Invoke(newId);
     }
 
     public void AddDartBot(DartBotDifficulty difficulty)
     {
         Guid newId = database.AddDartBot(difficulty);
-        SaveSystem.SaveDatabase(database);
+        MarkDatabaseDirty();
         OnPlayerAdded?.Invoke(newId);
     }
 
     public void RenamePlayer(Guid playerID, string newName)
     {
+        string oldName = GetPlayerByID(playerID)?.GetName();
         database.RenamePlayer(playerID, newName);
-        SaveSystem.SaveDatabase(database);
+        MarkDatabaseDirty();
+        OnPlayerRenamed?.Invoke(playerID, oldName, newName);
     }
 
     public void DeletePlayer(Guid playerID)
     {
+        string oldName = GetPlayerByID(playerID)?.GetName();
         database.DeletePlayer(playerID);
-        SaveSystem.SaveDatabase(database);
+        MarkDatabaseDirty();
+        OnPlayerDeleted?.Invoke(playerID, oldName);
     }
 
     public void SetPlayerVisibleInStatistics(Guid id, bool isVisible)
     {
         database.SetPlayerVisibleInStatistics(id, isVisible);
+        // Wurde vorher nie persistiert (Auswahl nach Neustart weg) —
+        // läuft jetzt über den gebündelten Dirty-Save mit.
+        MarkDatabaseDirty();
     }
 
     public Game LoadGameById(Guid id)
@@ -222,6 +264,15 @@ public class AppHandler : MonoBehaviour
 
         SetSelectedGame(g);
 
+        // Ausstehende Spieler-/Setup-Änderungen mit sichern (Crash-Sicherheit),
+        // No-Op wenn seit letztem Write nichts geändert wurde.
+        FlushDatabase();
+
+        // Per-Game-Stats immer aus der Struktur recomputen (idempotent dank Resets),
+        // damit auch Reload+Save (z.B. Summary-Screen) korrekte Legs/Sets/Games schreibt.
+        // Cricket/ATC haben eigene Overrides für modus-spezifische Felder.
+        g.CalculatePlayerStatsOnSave();
+
         if (g.IsFinished())
         {
             ApplyGameStatsToPlayers(g);
@@ -230,7 +281,6 @@ public class AppHandler : MonoBehaviour
         }
         else
         {
-            g.CalculatePlayerStatsOnSave();
             SaveSystem.SaveGame(g);
         }
 
@@ -253,23 +303,61 @@ public class AppHandler : MonoBehaviour
             return;
         }
 
-        SaveSystem.DeleteGame(id);
-        SaveSystem.RebuildAggregatedPlayerStats();
+        // Stats VOR dem SQLite-Delete laden (danach sind die Zeilen weg).
+        // Ein gezielter Single-Game-Read statt Full-Table-Read.
+        var playerStats = SqliteDatabaseRepository.LoadPlayerGameStatsForGame(id);
 
-        if (summary != null)
+        SaveSystem.DeleteGame(id);
+
+        // Aggregate inkrementell abziehen statt alle Tabellen aus allen
+        // Spielen neu aufzubauen (O(1) statt O(Historie)).
+        SubtractAggregatedPlayerStats(summary, playerStats);
+
+        if (summary != null && playerStats != null)
         {
-            var allStats = SqliteDatabaseRepository.LoadAllPlayerGameStats();
-            if (allStats.TryGetValue(id, out var playerStats))
+            foreach (var playerStat in playerStats)
             {
-                foreach (var playerStat in playerStats)
-                {
-                    var player = GetPlayerByID(playerStat.Key);
-                    player?.RemoveGameStatsFromSummary(summary, playerStat.Value);
-                }
+                var player = GetPlayerByID(playerStat.Key);
+                player?.RemoveGameStatsFromSummary(summary, playerStat.Value);
             }
         }
 
-        OnDeleteGame?.Invoke(mode.Value, id);
+        var affectedPlayerIds = playerStats != null
+            ? new List<Guid>(playerStats.Keys)
+            : (summary?.PlayerIds != null
+                ? new List<Guid>(summary.PlayerIds)
+                : new List<Guid>());
+        OnDeleteGame?.Invoke(mode.Value, id, affectedPlayerIds);
+    }
+
+    /// <summary>
+    /// Zieht EIN gelöschtes Spiel aus den persistierten Aggregaten ab.
+    /// Spiegel von SaveAggregatedPlayerStats; ungefährlich für unfertige
+    /// Spiele (nie aggregiert) und fehlende Zeilen (RemoveGameStat guardet).
+    /// </summary>
+    private void SubtractAggregatedPlayerStats(GameSummary summary, Dictionary<Guid, GameStats> playerStats)
+    {
+        if (summary == null || !summary.IsFinished)
+            return;
+        if (playerStats == null || playerStats.Count == 0)
+            return;
+
+        foreach (var kvp in playerStats)
+        {
+            var allStats = SqliteDatabaseRepository.LoadPlayerStatsAll(kvp.Key);
+            if (allStats != null)
+            {
+                allStats.RemoveGameStat(kvp.Value, summary.Id);
+                SqliteDatabaseRepository.SavePlayerStatsAll(kvp.Key, allStats);
+            }
+
+            var modeStats = SqliteDatabaseRepository.LoadPlayerStatsForMode(kvp.Key, summary.GameMode);
+            if (modeStats != null)
+            {
+                modeStats.RemoveGameStat(kvp.Value, summary.Id);
+                SqliteDatabaseRepository.SavePlayerStatsForMode(kvp.Key, modeStats, summary.GameMode);
+            }
+        }
     }
 
     public void DeleteGamesOfMode(GameMode mode)
@@ -278,20 +366,23 @@ public class AppHandler : MonoBehaviour
             .Where(s => s.GameMode == mode)
             .ToList();
 
+        // Stats EINMAL vor dem Delete laden (ein Full-Read statt N).
+        var allStats = SqliteDatabaseRepository.LoadAllPlayerGameStats();
+
         database.DeleteGames(mode);
         SaveSystem.DeleteGamesByMode(mode);
-        SaveSystem.RebuildAggregatedPlayerStats();
 
         foreach (var summary in summaries)
         {
-            var allStats = SqliteDatabaseRepository.LoadAllPlayerGameStats();
-            if (allStats.TryGetValue(summary.Id, out var playerStats))
+            allStats.TryGetValue(summary.Id, out var playerStats);
+            SubtractAggregatedPlayerStats(summary, playerStats);
+
+            if (playerStats == null)
+                continue;
+            foreach (var playerStat in playerStats)
             {
-                foreach (var playerStat in playerStats)
-                {
-                    var player = GetPlayerByID(playerStat.Key);
-                    player?.RemoveGameStatsFromSummary(summary, playerStat.Value);
-                }
+                var player = GetPlayerByID(playerStat.Key);
+                player?.RemoveGameStatsFromSummary(summary, playerStat.Value);
             }
         }
 
@@ -301,29 +392,27 @@ public class AppHandler : MonoBehaviour
                 player.ResetStatsOfMode(mode);
         }
 
-        OnDeleteGamesOfMode?.Invoke(mode);
+        var affectedPlayerIds = new List<Guid>();
+        foreach (var summary in summaries)
+        {
+            if (summary?.PlayerIds == null)
+                continue;
+            foreach (var pid in summary.PlayerIds)
+            {
+                if (!affectedPlayerIds.Contains(pid))
+                    affectedPlayerIds.Add(pid);
+            }
+        }
+        OnDeleteGamesOfMode?.Invoke(mode, affectedPlayerIds);
     }
 
     public void DeleteAllGames()
     {
-        var summaries = database.GetGameSummaries().ToList();
-
         database.DeleteGames(null);
         SaveSystem.DeleteAllGames();
+        // Aggregate sind damit leer: Full-Rebuild findet keine Spiele mehr
+        // und räumt nur die Aggregat-Tabellen ab (billig, keine toten Loops).
         SaveSystem.RebuildAggregatedPlayerStats();
-
-        foreach (var summary in summaries)
-        {
-            var allStats = SqliteDatabaseRepository.LoadAllPlayerGameStats();
-            if (allStats.TryGetValue(summary.Id, out var playerStats))
-            {
-                foreach (var playerStat in playerStats)
-                {
-                    var player = GetPlayerByID(playerStat.Key);
-                    player?.RemoveGameStatsFromSummary(summary, playerStat.Value);
-                }
-            }
-        }
 
         foreach (var player in database.GetPlayers())
         {
@@ -382,7 +471,7 @@ public class AppHandler : MonoBehaviour
     public void SetActivePlayerOrder(List<Guid> newOrder)
     {
         database.SetActivePlayerOrder(newOrder);
-        SaveSystem.SaveDatabase(database);
+        MarkDatabaseDirty();
     }
 
     public void SaveSettings()
@@ -393,31 +482,79 @@ public class AppHandler : MonoBehaviour
     public void SetLastGameMode(GameMode mode)
     {
         database.SetLastGameMode(mode);
-        SaveSystem.SaveDatabase(database);
+        MarkDatabaseDirty();
     }
 
     public void SetX01Settings(X01GameSettings settings)
     {
         database.SetX01Settings(settings);
-        SaveSystem.SaveDatabase(database);
+        MarkDatabaseDirty();
     }
 
     public void SetCricketSettings(CricketGameSettings settings)
     {
         database.SetCricketSettings(settings);
-        SaveSystem.SaveDatabase(database);
+        MarkDatabaseDirty();
     }
 
     public void SetATCSettings(ATCGameSettings settings)
     {
         database.SetATCSettings(settings);
-        SaveSystem.SaveDatabase(database);
+        MarkDatabaseDirty();
     }
 
     public void SetSetupState(GameMode mode, SetsAndLegs setsAndLegs, int setCount, int legCount)
     {
         database.SetSetupState(mode, setsAndLegs, setCount, legCount);
+        MarkDatabaseDirty();
+    }
+
+    /// <summary>
+    /// Markiert Spieler-/Setup-Änderungen als ungespeichert. Der eigentliche
+    /// Write läuft gebündelt nach Idle-Timeout (bündelt Klickserien zu
+    /// einem Write statt einem pro Klick).
+    /// </summary>
+    private void MarkDatabaseDirty()
+    {
+        databaseDirty = true;
+
+        if (dirtySaveRoutine != null)
+            StopCoroutine(dirtySaveRoutine);
+        dirtySaveRoutine = StartCoroutine(FlushDatabaseAfterIdle());
+    }
+
+    private IEnumerator FlushDatabaseAfterIdle()
+    {
+        // Realtime: feuert auch bei pausiertem TimeScale zuverlässig.
+        yield return new WaitForSecondsRealtime(DatabaseIdleSaveDelaySeconds);
+        dirtySaveRoutine = null;
+        FlushDatabase();
+    }
+
+    /// <summary>
+    /// Schreibt ausstehende Spieler-/Setup-Änderungen. No-Op wenn clean.
+    /// Einzige Stellen mit sofortigem Write: Spielstart, Lifecycle, explizit.
+    /// </summary>
+    private void FlushDatabase()
+    {
+        if (!databaseDirty || database == null)
+            return;
+
+        if (isShuttingDown)
+        {
+            Debug.Log("<color=orange>Save blockiert: Domain wird entladen.</color>");
+            return;
+        }
+
+        #if UNITY_EDITOR
+        if (UnityEditor.EditorApplication.isCompiling || UnityEditor.EditorApplication.isUpdating)
+        {
+            return;
+        }
+        #endif
+
         SaveSystem.SaveDatabase(database);
+        databaseDirty = false;
     }
 
     private void HandleDomainUnload(object sender, EventArgs e)
@@ -440,7 +577,21 @@ public class AppHandler : MonoBehaviour
         }
         #endif
 
-        if (database == null || database.GetGameSummaries() == null)
+        if (database == null)
+        {
+            Debug.LogWarning("Save blockiert: Datenbank-Referenz ist bereits null.");
+            return;
+        }
+
+        // Pause/Fokus/Quit kommen gebündelt: nur der erste speichert, der Rest
+        // wäre ein identischer Voll-Save (Spiele-Rewrite + DB). Dazwischen kann
+        // sich nichts ändern, da die App im Hintergrund liegt. Steht bewusst
+        // vor dem Summaries-Check, damit Doppelevents gar keine Arbeit machen.
+        if (Time.realtimeSinceStartup - lastLifecycleSaveTime < LifecycleSaveCooldownSeconds)
+            return;
+        lastLifecycleSaveTime = Time.realtimeSinceStartup;
+
+        if (database.GetGameSummaries() == null)
         {
             Debug.LogWarning("Save blockiert: Datenbank-Referenz ist bereits null.");
             return;
@@ -448,14 +599,7 @@ public class AppHandler : MonoBehaviour
 
         PersistOpenRuntimeGames();
 
-        foreach (var summary in database.GetGameSummaries())
-        {
-            if (summary != null)
-            {
-            }
-        }
-
-        SaveSystem.SaveDatabase(database);
+        FlushDatabase();
     }
 
     private void PersistOpenRuntimeGames()
@@ -486,7 +630,23 @@ public class AppHandler : MonoBehaviour
     private void LoadDatabase()
     {
         database = SaveSystem.LoadDatabase();
-        database.RebuildPlayerStatistics();
+        // Hinweis: KEIN RebuildPlayerStatistics() mehr hier. SaveSystem hat
+        // bereits RebuildAllPlayerStatistics() laufen lassen (All-Time UND
+        // Time-Ranges aus einem einzigen Full-Table-Read). Ein zweiter
+        // Durchlauf wäre ein komplettes Re-Deserialize aller Spiele.
+        // Time-Range-Refresh bei Datumswechsel läuft über
+        // RebuildTimeBasedStatistics().
+    }
+
+    /// <summary>
+    /// Baut nur die Time-Range-Snapshots (Today/Week/Month/Year) aller Spieler
+    /// aus den gespeicherten Per-Game-Stats neu. Nötig nach Datumswechsel, da
+    /// die Snapshots vom Save-Zeitpunkt sonst stale sind. All-Time-Aggregate
+    /// bleiben unangetastet. Einmal pro Tag, nicht pro Event.
+    /// </summary>
+    public void RebuildTimeBasedStatistics()
+    {
+        database?.RebuildPlayerStatistics();
     }
 
     private void ApplyGameStatsToPlayers(Game game)
@@ -534,9 +694,23 @@ public class AppHandler : MonoBehaviour
                 AllMissCount = ps?.allMissCount ?? 0,
                 ThreeOnesCount = ps?.tripleOnesCount ?? 0,
                 TripleDigitCount = ps?.tripleDigitCount ?? 0,
-                LostGameCount = ps?.lostGame ?? 0
+                LostGameCount = ps?.lostGame ?? 0,
+                CustomPenaltyCounts = ps?.customPenaltyCounts != null
+                    ? new Dictionary<string, int>(ps.customPenaltyCounts)
+                    : new Dictionary<string, int>()
             };
             summary.PlayerEntries.Add(entry);
+        }
+
+        // Snapshot aus dem Game (Spielstart-Stand, inkl. enabled) — gleiche
+        // Quelle wie der persistente Pfad, damit Namen statt IDs stehen.
+        try
+        {
+            summary.CustomPenaltySnapshot = game.GetPenaltySnapshot();
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogWarning("[AppHandler] Custom-Penalty-Snapshot fehlgeschlagen: " + e.Message);
         }
 
         return summary;
@@ -560,22 +734,18 @@ public class AppHandler : MonoBehaviour
     #endif
     }
 
+    /// <summary>
+    /// Deckelte Bildrate statt Maximal-FPS: VSync an + 60 FPS geben der GPU
+    /// Schlafphasen (kein Thermal Throttling) und stabile 16,6ms-Frames.
+    /// Der alte Maximum-Modus (vSync aus + bis zu 120 FPS Dauerlast auf
+    /// statischer UI) war die Hauptursache für sporadische Ruckler am Phone.
+    /// </summary>
     private void MaximizeFPS()
     {
-        QualitySettings.vSyncCount = 0;
+        QualitySettings.vSyncCount = 1;
+        Application.targetFrameRate = 60;
 
-        double screenRefreshRate = Screen.currentResolution.refreshRateRatio.value;
-
-        int targetFPS = Mathf.CeilToInt((float)screenRefreshRate);
-
-        if (targetFPS <= 0)
-        {
-            targetFPS = 60;
-        }
-
-        Application.targetFrameRate = targetFPS;
-
-        Debug.Log($"[FPS Manager] Target Frame Rate automatisch auf Maximum gesetzt: {targetFPS} FPS");
+        Debug.Log("[FPS Manager] VSync an, Target Frame Rate auf stabile 60 FPS gesetzt.");
     }
 
     internal List<Player> GetLastSetOfPlayers()

@@ -36,6 +36,25 @@ public class CricketPlayerListItem : MonoBehaviour
     public Image[] wallImages = new Image[3];
     public Image[] ceilingImages = new Image[3];
 
+    [Header("Glow Animation")]
+    public BorderGlowAnimator glowAnimator;
+
+    private void Awake()
+    {
+        if (glowAnimator == null)
+            glowAnimator = GetComponentInChildren<BorderGlowAnimator>(true);
+
+        // Reine Anzeige-Texte: aus dem Touch-Raycast nehmen.
+        foreach (var text in GetComponentsInChildren<TMP_Text>(true))
+            text.raycastTarget = false;
+    }
+
+    private void OnDisable()
+    {
+        if (glowAnimator != null)
+            glowAnimator.StopGlow();
+    }
+
     private const float LockedAlpha = 0.4f;
     private const float UnlockedAlpha = 1f;
 
@@ -59,6 +78,20 @@ public class CricketPlayerListItem : MonoBehaviour
 
         if (activeIndicator != null)
             activeIndicator.SetActive(stats.isActive);
+
+        if (glowAnimator != null)
+        {
+            if (stats.isActive)
+            {
+                glowAnimator.gameObject.SetActive(true);
+                glowAnimator.StartGlow();
+            }
+            else
+            {
+                glowAnimator.StopGlow();
+                glowAnimator.gameObject.SetActive(false);
+            }
+        }
     }
 
     private void SetBottom(CricketUIStats stats)

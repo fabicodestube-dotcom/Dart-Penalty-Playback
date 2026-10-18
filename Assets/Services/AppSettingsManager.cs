@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 using Newtonsoft.Json;
@@ -95,6 +96,10 @@ public class AppSettingsManager : MonoBehaviour
 
     public void SetLanguage(string localeCode)
     {
+        // Reentrancy-Guard: kein zweiter Wechsel während einer läuft
+        if (isChangingLanguage)
+            return;
+
         StartCoroutine(ChangeLocaleCoroutine(localeCode));
     }
 
@@ -151,6 +156,12 @@ public class AppSettingsManager : MonoBehaviour
         Save();
     }
 
+    public void SetScoreAnnouncementsEnabled(bool enabled)
+    {
+        Settings.Sound.ScoreAnnouncementsEnabled = enabled;
+        Save();
+    }
+
     public void SetVolume(float volume)
     {
         Settings.Sound.Volume = volume;
@@ -172,23 +183,6 @@ public class AppSettingsManager : MonoBehaviour
         Settings.Vibration.Strength = strength;
         Save();
     }
-
-    // =========================
-    // PENALTY SETTINGS
-    // =========================
-
-    public void SetPenaltyEnabled(PenaltyType type, bool value)
-    {
-        Settings.Penalties.SetPenaltyEnabled(type, value);
-        Save();
-    }
-
-    public void SetPenaltyCost(PenaltyType type, int value)
-    {
-        Settings.Penalties.SetPenaltyCost(type, value);
-        Save();
-    }
-
 
     // =========================================================
     // DEFAULTS

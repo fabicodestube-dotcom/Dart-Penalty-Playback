@@ -26,6 +26,12 @@ public class SoundSettings
     [JsonProperty] public bool Enabled = true;
     [JsonProperty] public bool UseCustomSounds = true;
 
+    /// <summary>
+    /// Turn-Score-Ansagen (0–180 + Marks-Zahlen via PlayScore). Toggle in der
+    /// Score-Sammel-Row (Tab 3). Default true (Altsaves ohne Feld ebenfalls).
+    /// </summary>
+    [JsonProperty] public bool ScoreAnnouncementsEnabled = true;
+
     [Range(0f, 1f)]
     [JsonProperty] public float Volume = 1f; // 🔥 DAS ist neu
 }
@@ -47,6 +53,9 @@ public enum VibrationStrength
 [System.Serializable]
 public class PenaltySettings
 {
+    // HINWEIS: Legacy-System stillgelegt. IsEnabled/GetCost dienen nur noch
+    // der Kosten-Anzeige alter Spiele (History/Statistik). Neue Buchungen
+    // laufen ausschließlich über CustomPenaltyDefs (Customization-Screen).
     [JsonProperty] public List<PenaltySetting> Settings = new List<PenaltySetting>();
 
     public PenaltySettings Clone()

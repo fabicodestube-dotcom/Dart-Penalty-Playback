@@ -12,12 +12,8 @@ public class HistoryItemHeadline : MonoBehaviour
     public TMP_Text textSettings;
 
     [Header("Penalites UI Elements")]
-    public TMP_Text textPenaltyWall;
-    public TMP_Text textPenaltyCeiling;
-    public TMP_Text textPenaltyAllMiss;
-    public TMP_Text textPenaltyTripleOnes;
-    public TMP_Text textPenaltySchnapszahl;
-    public TMP_Text textPenaltyLose;
+    public TMP_Text textTotelPenaltiesCount;
+    public TMP_Text textTotalPenaltyCostSum;
 
     public void Initialize(GameSummary summary)
     {
@@ -70,7 +66,91 @@ public class HistoryItemHeadline : MonoBehaviour
             return;
         }
 
-        SetupPenaltyCosts(settings);
+        if (textTotelPenaltiesCount != null)
+            textTotelPenaltiesCount.text = CountActivePenalties(summary, settings).ToString();
+
+        if (textTotalPenaltyCostSum != null)
+            textTotalPenaltyCostSum.text = SumImposedPenaltyCosts(summary, settings).ToString("0.##");
+    }
+
+    private static readonly PenaltyType[] CountedPenaltyTypes =
+    {
+        PenaltyType.Wall,
+        PenaltyType.Ceiling,
+        PenaltyType.AllMiss,
+        PenaltyType.ThreeOnes,
+        PenaltyType.Schnapszahl,
+        PenaltyType.LostGame
+    };
+
+    /// <summary>
+    /// Wie viele Strafregeln im Spiel gegriffen haben: Legacy-Typen mit
+    /// Buchungen (alte Spiele) + aktivierte Snapshot-Customs.
+    /// Legacy-Settings zählen nicht mehr (System stillgelegt); neue Spiele
+    /// buchen dort 0 und zeigen nur Customs.
+    /// </summary>
+    private static int CountActivePenalties(GameSummary summary, GameSettings settings)
+    {
+        int count = 0;
+
+        if (summary?.PlayerEntries != null)
+        {
+            foreach (var type in CountedPenaltyTypes)
+            {
+                int total = 0;
+                foreach (var entry in summary.PlayerEntries)
+                {
+                    if (entry == null)
+                        continue;
+                    total += type switch
+                    {
+                        PenaltyType.Wall => entry.WallCount,
+                        PenaltyType.Ceiling => entry.CeilingCount,
+                        PenaltyType.AllMiss => entry.AllMissCount,
+                        PenaltyType.ThreeOnes => entry.ThreeOnesCount,
+                        PenaltyType.Schnapszahl => entry.TripleDigitCount,
+                        PenaltyType.LostGame => entry.LostGameCount,
+                        _ => 0
+                    };
+                    if (total > 0)
+                        break;
+                }
+
+                if (total > 0)
+                    count++;
+            }
+        }
+
+        var snapshot = summary?.CustomPenaltySnapshot;
+        if (snapshot != null)
+        {
+            foreach (var def in snapshot)
+            {
+                if (def != null && def.enabled)
+                    count++;
+            }
+        }
+
+        return count;
+    }
+
+    /// <summary>
+    /// Summe der verhängten Strafen über alle Spieler (eine Wahrheit mit
+    /// dem Detail-Popup: PenaltyDisplay.PlayerImposedTotal pro Spieler).
+    /// Z.B. Wall 3× à 10 + Ceiling 1× à 20 = 50.
+    /// </summary>
+    private static float SumImposedPenaltyCosts(GameSummary summary, GameSettings settings)
+    {
+        float total = 0f;
+
+        var entries = summary?.PlayerEntries;
+        if (entries == null)
+            return total;
+
+        foreach (var entry in entries)
+            total += PenaltyDisplay.PlayerImposedTotal(summary, entry, settings);
+
+        return total;
     }
 
     private GameSettings GetSettings(GameSummary summary)
@@ -131,60 +211,4 @@ public class HistoryItemHeadline : MonoBehaviour
         };
     }
 
-    private void SetupPenaltyCosts(GameSettings settings)
-    {
-        if (settings.Penalties.IsEnabled(PenaltyType.Wall))
-        {
-            textPenaltyWall.text = settings.Penalties.GetCost(PenaltyType.Wall).ToString("0.##");
-        }
-        else
-        {
-            textPenaltyWall.text = "Off";
-        }
-
-        if (settings.Penalties.IsEnabled(PenaltyType.Ceiling))
-        {
-            textPenaltyCeiling.text = settings.Penalties.GetCost(PenaltyType.Ceiling).ToString("0.##");
-        }
-        else
-        {
-            textPenaltyCeiling.text = "Off";
-        }
-
-        if (settings.Penalties.IsEnabled(PenaltyType.AllMiss))
-        {
-            textPenaltyAllMiss.text = settings.Penalties.GetCost(PenaltyType.AllMiss).ToString("0.##");
-        }
-        else
-        {
-            textPenaltyAllMiss.text = "Off";
-        }
-
-        if (settings.Penalties.IsEnabled(PenaltyType.ThreeOnes))
-        {
-            textPenaltyTripleOnes.text = settings.Penalties.GetCost(PenaltyType.ThreeOnes).ToString("0.##");
-        }
-        else
-        {
-            textPenaltyTripleOnes.text = "Off";
-        }
-
-        if (settings.Penalties.IsEnabled(PenaltyType.Schnapszahl))
-        {
-            textPenaltySchnapszahl.text = settings.Penalties.GetCost(PenaltyType.Schnapszahl).ToString("0.##");
-        }
-        else
-        {
-            textPenaltySchnapszahl.text = "Off";
-        }
-
-        if (settings.Penalties.IsEnabled(PenaltyType.LostGame))
-        {
-                textPenaltyLose.text = settings.Penalties.GetCost(PenaltyType.LostGame).ToString("0.##");
-        }
-        else
-        {
-                textPenaltyLose.text = "Off";
-        }
-    }
 }

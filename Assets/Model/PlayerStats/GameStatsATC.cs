@@ -43,6 +43,11 @@ public class GameStatsATC : GameStats
     [JsonProperty] public Dictionary<int, int> throwsPerTarget;
     [JsonProperty] public Dictionary<int, int> hitsPerTarget;
 
+    // Würfe pro Sektor im X01-Format ("1".."20","25","D1".."D20","D25","T1".."T20",
+    // Triple-Bull fällt auf "25"). Jeder Wurf zählt aufs aktive Zielfeld
+    // (Hit oder Miss), analog zu throwsPerTarget, nur mit S/D/T-Split.
+    [JsonProperty] public Dictionary<string, int> throwSectorCounts = new Dictionary<string, int>();
+
     // =========================================================
     // TABLE HIGHSCORES
     // =========================================================
@@ -75,6 +80,23 @@ public class GameStatsATC : GameStats
         EnsureInternalStructures();
     }
 
+    /// <summary>
+    /// Sektor-Key fürs Hit-Sektor-Diagramm (X01-analog): Multiplier-Präfix +
+    /// aktives Zielfeld. Triple-Bull gibt es nicht -> fällt auf "25".
+    /// Wand-/Deckenwürfe und Würfe daneben ("0") zählen wie bei X01 als Miss,
+    /// nicht aufs Zielfeld.
+    /// </summary>
+    public static string GetAttemptSectorKey(Throw t, int target)
+    {
+        if (t == null || t.HitType != HitType.Board || t.GetScore() == 0)
+            return "0";
+        if (t.Multiplier == DartMultiplier.Double)
+            return "D" + target;
+        if (t.Multiplier == DartMultiplier.Triple)
+            return target == 25 ? "25" : "T" + target;
+        return target.ToString();
+    }
+
     private void EnsureTargetDictionaries()
     {
         throwsPerTarget ??=
@@ -92,6 +114,25 @@ public class GameStatsATC : GameStats
         gameHitPercentage ??= new Dictionary<Guid, float>();
         gameFirstDartPercentage ??= new Dictionary<Guid, float>();
         gameLongestHitStreak ??= new Dictionary<Guid, int>();
+    }
+
+    /// <summary>
+    /// Schließt einen offenen Streak ab (Fehlwurf-Logik): registriert ihn in
+    /// completedStreaks + 3/6/9/12-Zählern und setzt ihn zurück.
+    /// Wird von AddThrow (Miss) UND vom Save-Rebuild (trailing End-Streak) genutzt.
+    /// </summary>
+    public void FlushCurrentStreak()
+    {
+        if (currentHitStreak > 0)
+        {
+            completedStreaks.Add(currentHitStreak);
+            RegisterCompletedStreak(currentHitStreak);
+        }
+
+        hasStreak = false;
+        currentHitStreak = 0;
+
+        RecalculateLongestStreak();
     }
 
     private void RegisterCompletedStreak(int streakLength)
@@ -137,8 +178,30 @@ public class GameStatsATC : GameStats
 
         firstDartHits += atc.firstDartHits;
         firstDartAttempts += atc.firstDartAttempts;
+
+        // Versuche pro Feld mitsummieren (Hit-Sektor-Chart über alle Spiele)
+        if (atc.throwsPerTarget != null)
+        {
+            throwsPerTarget ??= new Dictionary<int, int>();
+            foreach (var kv in atc.throwsPerTarget)
+                throwsPerTarget[kv.Key] = throwsPerTarget.TryGetValue(kv.Key, out var v) ? v + kv.Value : kv.Value;
+        }
+
+        // Sektor-Zähler (S/D/T-Split) mitsummieren
+        if (atc.throwSectorCounts != null)
+        {
+            throwSectorCounts ??= new Dictionary<string, int>();
+            foreach (var kv in atc.throwSectorCounts)
+                throwSectorCounts[kv.Key] = throwSectorCounts.TryGetValue(kv.Key, out var v) ? v + kv.Value : kv.Value;
+        }
         currentHitStreak = Math.Max(currentHitStreak, atc.currentHitStreak);
         longestHitStreak = Math.Max(longestHitStreak, atc.longestHitStreak);
+
+        // Streak-Längen-Zähler (Highscores-Tabellen) mitsummieren
+        streak3Plus += atc.streak3Plus;
+        streak6Plus += atc.streak6Plus;
+        streak9Plus += atc.streak9Plus;
+        streak12Plus += atc.streak12Plus;
 
         gameHitPercentage[gameId] = atc.hitPercentage;
         gameFirstDartPercentage[gameId] = atc.firstDartHitPercentage;
@@ -177,6 +240,30 @@ public class GameStatsATC : GameStats
 
         firstDartHits = Math.Max(0, firstDartHits - atc.firstDartHits);
         firstDartAttempts = Math.Max(0, firstDartAttempts - atc.firstDartAttempts);
+
+        streak3Plus = Math.Max(0, streak3Plus - atc.streak3Plus);
+        streak6Plus = Math.Max(0, streak6Plus - atc.streak6Plus);
+        streak9Plus = Math.Max(0, streak9Plus - atc.streak9Plus);
+        streak12Plus = Math.Max(0, streak12Plus - atc.streak12Plus);
+
+        // Versuche pro Feld symmetrisch abbauen
+        if (atc.throwsPerTarget != null && throwsPerTarget != null)
+        {
+            foreach (var kv in atc.throwsPerTarget)
+            {
+                if (throwsPerTarget.TryGetValue(kv.Key, out var v))
+                    throwsPerTarget[kv.Key] = Math.Max(0, v - kv.Value);
+            }
+        }
+
+        if (atc.throwSectorCounts != null && throwSectorCounts != null)
+        {
+            foreach (var kv in atc.throwSectorCounts)
+            {
+                if (throwSectorCounts.TryGetValue(kv.Key, out var v))
+                    throwSectorCounts[kv.Key] = Math.Max(0, v - kv.Value);
+            }
+        }
 
         gameHitPercentage.Remove(gameId);
         gameFirstDartPercentage.Remove(gameId);
@@ -228,6 +315,10 @@ public class GameStatsATC : GameStats
         totalTargets++;
         throwsPerTarget[target]++;
 
+        throwSectorCounts ??= new Dictionary<string, int>();
+        string sectorKey = GetAttemptSectorKey(t, target);
+        throwSectorCounts[sectorKey] = throwSectorCounts.TryGetValue(sectorKey, out var sectorVal) ? sectorVal + 1 : 1;
+
         if (wasFirstDart)
             firstDartAttempts++;
 
@@ -268,6 +359,13 @@ public class GameStatsATC : GameStats
 
         totalTargets = Math.Max(0, totalTargets - 1);
         throwsPerTarget[target] = Math.Max(0, throwsPerTarget[target] - 1);
+
+        if (throwSectorCounts != null)
+        {
+            string sectorKey = GetAttemptSectorKey(t, target);
+            if (throwSectorCounts.TryGetValue(sectorKey, out var sectorVal))
+                throwSectorCounts[sectorKey] = Math.Max(0, sectorVal - 1);
+        }
 
         if (wasFirstDart)
         {

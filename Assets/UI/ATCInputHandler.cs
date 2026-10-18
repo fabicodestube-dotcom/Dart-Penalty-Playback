@@ -80,23 +80,12 @@ public class ATCInputHandler : InputHandler
 
         Guid playerId = game.GetCurrentPlayerId();
         int target = game.GetCurrentTarget(playerId);
-        var settings = game.GetSettingsAsATC();
-        bool hasStarted = game.HasPlayerStarted(playerId);
+        DartMultiplier required = game.GetCurrentTargetMultiplier(playerId);
 
         if (target == -1)
             return new Throw(DartMultiplier.Single, 0, HitType.Board, false, -1);
 
-        switch (settings.targetType)
-        {
-            case ATCTargetType.Singles:
-                return new Throw(DartMultiplier.Single, target, HitType.Board, true, target);
-            case ATCTargetType.Doubles:
-                return new Throw(DartMultiplier.Double, target, HitType.Board, true, target);
-            case ATCTargetType.Triples:
-                return new Throw(DartMultiplier.Triple, target, HitType.Board, true, target);
-            default:
-                return new Throw(DartMultiplier.Single, target, HitType.Board, true, target);
-        }
+        return new Throw(required, target, HitType.Board, true, target);
     }
 
     public void UpdateHitButtonLabel()
@@ -108,33 +97,20 @@ public class ATCInputHandler : InputHandler
 
         Guid playerId = game.GetCurrentPlayerId();
         int target = game.GetCurrentTarget(playerId);
-        var settings = game.GetSettingsAsATC();
+        DartMultiplier required = game.GetCurrentTargetMultiplier(playerId);
 
-        string label = GetTargetLabel(target, settings.targetType);
-        hitButtonLabel.text = label;
+        hitButtonLabel.text = GetTargetLabel(target, required);
     }
 
-    private string GetTargetLabel(int target, ATCTargetType targetType)
+    private string GetTargetLabel(int target, DartMultiplier required)
     {
         if (target == -1) return "Finished";
 
-        bool hasStarted = false;
-        if (gameEngine != null && atcGameEngine.GetGame() != null)
+        return required switch
         {
-            Guid playerId = atcGameEngine.GetGame().GetCurrentPlayerId();
-            hasStarted = atcGameEngine.GetGame().HasPlayerStarted(playerId);
-        }
-
-        switch (targetType)
-        {
-            case ATCTargetType.Singles:
-                return target.ToString();
-            case ATCTargetType.Doubles:
-                return $"D{target}";
-            case ATCTargetType.Triples:
-                return $"T{target}";
-            default:
-                return target.ToString();
-        }
+            DartMultiplier.Double => $"D{target}",
+            DartMultiplier.Triple => $"T{target}",
+            _ => target.ToString()
+        };
     }
 }
