@@ -20,6 +20,11 @@ public class PenaltyEditorPopup : UIScreen, IUIScreen
     public WindowHandler windowHandler;
     public CustomizationPenaltiesPage penaltiesPage;
 
+    [Header("Bestätigung")]
+    public GameObject mainPanel;
+    public GameObject confirmPanel;
+    public TMP_Text confirmText;
+
     [Header("Basis")]
     public TMP_InputField nameInput;
     public TMP_InputField costInput;
@@ -49,6 +54,8 @@ public class PenaltyEditorPopup : UIScreen, IUIScreen
 
     private string editingId;
     private bool editingBuiltIn;
+    private string pendingDeleteId;
+    private string editingName;
 
     /// <summary>
     /// True, wenn die geladene Def Rest-Semantik hat (RemainingExactScore):
@@ -70,7 +77,7 @@ public class PenaltyEditorPopup : UIScreen, IUIScreen
 
     private static readonly List<string> GameEventOptions = new List<string>
     {
-        "Leg verloren", "Set verloren", "Game verloren"
+        "Leg lost", "Set lost", "Game lost"
     };
 
     private void OnValidate()
@@ -118,6 +125,9 @@ public class PenaltyEditorPopup : UIScreen, IUIScreen
 
     public void OnShow()
     {
+        SetConfirmView(false);
+        pendingDeleteId = null;
+        editingName = null;
     }
 
     public void OnHide()
@@ -136,7 +146,7 @@ public class PenaltyEditorPopup : UIScreen, IUIScreen
         editingBuiltIn = false;
         editingRemainingScore = kind == PenaltyConditionKind.RemainingExactScore;
 
-        LoadDef("Neues Penalty", DefaultCost(kind), true, FreshCondition(kind));
+        LoadDef("New penalty", DefaultCost(kind), true, FreshCondition(kind));
         ShowViaWindowHandler();
     }
 
@@ -204,6 +214,8 @@ public class PenaltyEditorPopup : UIScreen, IUIScreen
 
     private void LoadDef(string name, int cost, bool enabled, PenaltyCondition condition, string shortName = "")
     {
+        editingName = name;
+
         if (nameInput != null)
             nameInput.text = name;
 
@@ -364,6 +376,55 @@ public class PenaltyEditorPopup : UIScreen, IUIScreen
                     matchOrder = patternEditor != null && patternEditor.LoadMatchOrder()
                 };
         }
+    }
+
+    public void OnClickDelete()
+    {
+        if (editingBuiltIn)
+            return;
+        if (string.IsNullOrEmpty(editingId))
+            return;
+
+        pendingDeleteId = editingId;
+
+        if (confirmText != null)
+            confirmText.text = $"Penalty „{editingName}“ löschen?";
+
+        SetConfirmView(true);
+    }
+
+    public void ConfirmDelete()
+    {
+        if (string.IsNullOrEmpty(pendingDeleteId))
+        {
+            SetConfirmView(false);
+            return;
+        }
+
+        CustomizationStore.DeletePenalty(pendingDeleteId);
+
+        penaltiesPage?.Refresh();
+
+        SetConfirmView(false);
+        pendingDeleteId = null;
+        editingName = null;
+
+        CloseAndRefresh();
+    }
+
+    public void CancelDelete()
+    {
+        SetConfirmView(false);
+        pendingDeleteId = null;
+        editingName = null;
+    }
+
+    private void SetConfirmView(bool confirm)
+    {
+        if (mainPanel != null)
+            mainPanel.SetActive(!confirm);
+        if (confirmPanel != null)
+            confirmPanel.SetActive(confirm);
     }
 
     public void OnClickCancel()

@@ -81,7 +81,7 @@ public class CustomizationSectorsPage : MonoBehaviour, ICustomizationRowOwner
             }
             else
             {
-                row.Setup(this, def.id, def.name, !def.builtIn, def.enabled, true);
+                row.Setup(this, def.id, def.name, def.enabled);
             }
 
             row.transform.SetSiblingIndex(sibling++);
@@ -113,7 +113,7 @@ public class CustomizationSectorsPage : MonoBehaviour, ICustomizationRowOwner
             return null;
         }
 
-        row.Setup(this, id, name, !builtIn, enabled, true);
+        row.Setup(this, id, name, enabled);
         return row;
     }
 
@@ -146,6 +146,18 @@ public class CustomizationSectorsPage : MonoBehaviour, ICustomizationRowOwner
     public void OnRowOpenClips(string id) => OnClickOpenClips(id);
 
     public int GetRowClipCount(string id) => GetClipCount(id);
+
+    public string GetRowInfo(string id)
+    {
+        if (string.IsNullOrEmpty(id))
+            return "";
+
+        var def = CustomizationStore.GetHitSectors().Find(x => x != null && x.id == id);
+        if (def == null)
+            return "";
+
+        return string.IsNullOrEmpty(def.info) ? CustomizationInfo.BuildSector(def) : def.info;
+    }
 
     /// <summary>Toggle direkt in der Zeile: enabled speichern (Changed → Refresh).</summary>
     public void OnRowToggle(string id, bool enabled)
@@ -197,23 +209,12 @@ public class CustomizationSectorsPage : MonoBehaviour, ICustomizationRowOwner
     }
 
     /// <summary>
-    /// Wall/Ceiling → ID des Sofort-Penalties (HitTypeMiss), sonst Sektor-ID.
+    /// Sektoren haben keinen eigenen Clip-Bezug mehr: immer die Sektor-ID.
+    /// Wall/Ceiling-Clips werden ausschließlich über die Penalties geseedet;
+    /// die Sektor-Row zeigt daher 0 Clips (Button bleibt sichtbar).
     /// </summary>
     public string ResolveSectorClipKey(string sectorId)
     {
-        if (CustomHitDef.IsBuiltInSector(sectorId))
-        {
-            HitType wanted = CustomHitDef.HitTypeForSector(sectorId);
-            foreach (var def in CustomizationStore.GetPenalties())
-            {
-                if (def == null || def.condition == null)
-                    continue;
-                if (def.condition.kind == PenaltyConditionKind.HitTypeMiss
-                    && def.condition.hitType == wanted)
-                    return def.id;
-            }
-        }
-
         return sectorId;
     }
 

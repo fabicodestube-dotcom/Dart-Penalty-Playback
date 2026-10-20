@@ -44,7 +44,7 @@ public static class SeededAudioEvents
 
         public AudioEventDef ToDef()
         {
-            return new AudioEventDef
+            var def = new AudioEventDef
             {
                 id = Id,
                 name = Name,
@@ -53,6 +53,8 @@ public static class SeededAudioEvents
                 category = Category,
                 trigger = Trigger
             };
+            def.info = CustomizationInfo.BuildAudioEvent(def);
+            return def;
         }
     }
 

@@ -20,6 +20,11 @@ public class AudioEventEditorPopup : UIScreen, IUIScreen
     public WindowHandler windowHandler;
     public CustomizationAudioEventsPage eventsPage;
 
+    [Header("Bestätigung")]
+    public GameObject mainPanel;
+    public GameObject confirmPanel;
+    public TMP_Text confirmText;
+
     [Header("Basis")]
     public TMP_InputField nameInput;
     public TMP_Dropdown categoryDropdown;
@@ -42,6 +47,8 @@ public class AudioEventEditorPopup : UIScreen, IUIScreen
     private AudioEventCategory editingCategory;
     private bool editingBuiltIn;
     private bool editingManual;
+    private string pendingDeleteId;
+    private string editingName;
 
     // Dropdown-Reihenfolge = Enum-Reihenfolge (Global=0, X01=1, Cricket=2, ATC=3).
     private static readonly List<string> CategoryOptions = new List<string>
@@ -84,6 +91,9 @@ public class AudioEventEditorPopup : UIScreen, IUIScreen
 
     public void OnShow()
     {
+        SetConfirmView(false);
+        pendingDeleteId = null;
+        editingName = null;
     }
 
     public void OnHide()
@@ -104,7 +114,7 @@ public class AudioEventEditorPopup : UIScreen, IUIScreen
         editingBuiltIn = false;
         editingManual = false;
 
-        LoadDef("Neues Event", true, TriggerForCategory(category, 0), new AudioEventTrigger());
+        LoadDef("New event", true, TriggerForCategory(category, 0), new AudioEventTrigger());
         ShowViaWindowHandler();
     }
 
@@ -202,6 +212,8 @@ public class AudioEventEditorPopup : UIScreen, IUIScreen
 
     private void LoadDef(string name, bool enabled, AudioEventTriggerKind kind, AudioEventTrigger trigger)
     {
+        editingName = name;
+
         if (nameInput != null)
             nameInput.text = name;
 
@@ -357,6 +369,55 @@ public class AudioEventEditorPopup : UIScreen, IUIScreen
         eventsPage?.Refresh();
 
         CloseAndRefresh();
+    }
+
+    public void OnClickDelete()
+    {
+        if (editingBuiltIn)
+            return;
+        if (string.IsNullOrEmpty(editingId))
+            return;
+
+        pendingDeleteId = editingId;
+
+        if (confirmText != null)
+            confirmText.text = $"Audio-Event „{editingName}“ löschen?";
+
+        SetConfirmView(true);
+    }
+
+    public void ConfirmDelete()
+    {
+        if (string.IsNullOrEmpty(pendingDeleteId))
+        {
+            SetConfirmView(false);
+            return;
+        }
+
+        CustomizationStore.DeleteAudioEvent(pendingDeleteId);
+
+        eventsPage?.Refresh();
+
+        SetConfirmView(false);
+        pendingDeleteId = null;
+        editingName = null;
+
+        CloseAndRefresh();
+    }
+
+    public void CancelDelete()
+    {
+        SetConfirmView(false);
+        pendingDeleteId = null;
+        editingName = null;
+    }
+
+    private void SetConfirmView(bool confirm)
+    {
+        if (mainPanel != null)
+            mainPanel.SetActive(!confirm);
+        if (confirmPanel != null)
+            confirmPanel.SetActive(confirm);
     }
 
     public void OnClickCancel()

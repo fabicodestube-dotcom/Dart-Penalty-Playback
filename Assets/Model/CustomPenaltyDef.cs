@@ -92,13 +92,19 @@ public class PenaltyCondition
 public class CustomPenaltyDef
 {
     [JsonProperty] public string id;
-    [JsonProperty] public string name = "Neues Penalty";
+    [JsonProperty] public string name = "New penalty";
 
     /// <summary>
     /// Optionale Kurzbezeichnung für schmale Tabellenspalten (z.B. "Floor"
     /// statt "ExtraLangerPenaltyName..."). Leer = Anzeigename (ggf. gekürzt).
     /// </summary>
     [JsonProperty] public string shortName;
+
+    /// <summary>
+    /// Generated English description of the condition (e.g. "Reach exact
+    /// score: 420"). Set on seed/save and persisted for the row info text.
+    /// </summary>
+    [JsonProperty] public string info;
 
     [JsonProperty] public bool enabled = true;
 
@@ -143,7 +149,7 @@ public class CustomPenaltyDef
         return new CustomPenaltyDef
         {
             id = System.Guid.NewGuid().ToString("N"),
-            name = "Neues Penalty",
+            name = "New penalty",
             enabled = true,
             cost = 10,
             condition = new PenaltyCondition

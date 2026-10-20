@@ -176,6 +176,7 @@ public static class CustomizationStore
         if (IsPenaltyNameTaken(def.name, def.id))
             return false;
 
+        def.info = CustomizationInfo.BuildPenalty(def);
         SqliteDatabaseRepository.SaveCustomPenalty(def);
 
         EnsureLoaded();
@@ -214,6 +215,7 @@ public static class CustomizationStore
         if (IsHitSectorNameTaken(def.name, def.id))
             return false;
 
+        def.info = CustomizationInfo.BuildSector(def);
         SqliteDatabaseRepository.SaveCustomHitSector(def);
 
         EnsureLoaded();
@@ -248,6 +250,7 @@ public static class CustomizationStore
         if (def == null || string.IsNullOrEmpty(def.id))
             return;
 
+        def.info = CustomizationInfo.BuildAudioEvent(def);
         SqliteDatabaseRepository.SaveAudioEvent(def);
 
         EnsureLoaded();
@@ -305,6 +308,38 @@ public static class CustomizationStore
 
         SeedMissingAudioEvents();
         MigrateScoreSeedsToRemaining();
+        BackfillMissingInfo();
+    }
+
+    /// <summary>
+    /// Fills empty info texts for entries loaded from older databases.
+    /// Seeds/new saves already set info; this only heals legacy rows.
+    /// </summary>
+    private static void BackfillMissingInfo()
+    {
+        foreach (var def in penalties)
+        {
+            if (def == null || !string.IsNullOrEmpty(def.info))
+                continue;
+            def.info = CustomizationInfo.BuildPenalty(def);
+            SqliteDatabaseRepository.SaveCustomPenalty(def);
+        }
+
+        foreach (var def in hitSectors)
+        {
+            if (def == null || !string.IsNullOrEmpty(def.info))
+                continue;
+            def.info = CustomizationInfo.BuildSector(def);
+            SqliteDatabaseRepository.SaveCustomHitSector(def);
+        }
+
+        foreach (var def in audioEvents)
+        {
+            if (def == null || !string.IsNullOrEmpty(def.info))
+                continue;
+            def.info = CustomizationInfo.BuildAudioEvent(def);
+            SqliteDatabaseRepository.SaveAudioEvent(def);
+        }
     }
 
     /// <summary>
@@ -327,9 +362,19 @@ public static class CustomizationStore
                 string.Equals(x.id, seed.Id, System.StringComparison.OrdinalIgnoreCase));
             if (existing != null)
             {
+                bool changed = false;
                 if (!existing.builtIn)
                 {
                     existing.builtIn = true;
+                    changed = true;
+                }
+                if (string.IsNullOrEmpty(existing.info))
+                {
+                    existing.info = CustomizationInfo.BuildAudioEvent(existing);
+                    changed = true;
+                }
+                if (changed)
+                {
                     SqliteDatabaseRepository.SaveAudioEvent(existing);
                     added = true;
                 }
@@ -337,6 +382,7 @@ public static class CustomizationStore
             }
 
             var def = seed.ToDef();
+            def.info = CustomizationInfo.BuildAudioEvent(def);
             SqliteDatabaseRepository.SaveAudioEvent(def);
             audioEvents.Add(def);
             added = true;
@@ -392,7 +438,7 @@ public static class CustomizationStore
                 c => c.score = 888),
             SeedPenalty("builtin:score999", "999", 50, PenaltyConditionKind.RemainingExactScore,
                 c => c.score = 999),
-            SeedPenalty("builtin:leglost", "Leg verloren", 50, PenaltyConditionKind.LegLost,
+            SeedPenalty("builtin:leglost", "Leg lost", 50, PenaltyConditionKind.LegLost,
                 c => { }),
             SeedPenalty("custom_wall", "Wall", 10, PenaltyConditionKind.HitTypeMiss,
                 c => c.hitType = HitType.Wall),
@@ -473,7 +519,7 @@ public static class CustomizationStore
         var condition = new PenaltyCondition { kind = kind };
         fill?.Invoke(condition);
 
-        return new CustomPenaltyDef
+        var def = new CustomPenaltyDef
         {
             id = id,
             name = name,
@@ -482,6 +528,8 @@ public static class CustomizationStore
             builtIn = false,
             condition = condition
         };
+        def.info = CustomizationInfo.BuildPenalty(def);
+        return def;
     }
 
     /// <summary>Seed-Bereiche Wand/Decke (löschbar, Enabled editierbar).</summary>
@@ -495,6 +543,7 @@ public static class CustomizationStore
 
         foreach (var seed in seeds)
         {
+            seed.info = CustomizationInfo.BuildSector(seed);
             SqliteDatabaseRepository.SaveCustomHitSector(seed);
             hitSectors.Add(seed);
         }

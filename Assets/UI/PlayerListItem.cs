@@ -1,13 +1,15 @@
+
 using TMPro;
 using UnityEngine;
-using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using System;
 
 public class PlayerListItem : MonoBehaviour
 {
+    [Header("UI")]
     public TMP_Text playerName;
-    public Image difficultyImage;
+    public GameObject playerImage;
+    public GameObject botImage;
 
     private PlayerList list;
     private Guid id;
@@ -21,48 +23,61 @@ public class PlayerListItem : MonoBehaviour
 
     public void SetData(BasePlayer player)
     {
-        if (player == null) return;
+        if (player == null)
+            return;
 
-        this.id = player.GetID();
+        id = player.GetID();
 
-        if (player is DartBot bot)
+        if (playerName != null)
         {
-            playerName.text = bot.GetNameWithDifficulty();
-            ApplyDifficultyColor(bot.GetDifficulty());
+            if (player is DartBot bot)
+                playerName.text = bot.GetNameWithDifficulty();
+            else
+                playerName.text = player.GetName();
         }
-        else
-        {
-            playerName.text = player.GetName();
-            ApplyDefaultColor();
-        }
-    }
 
-    private void ApplyDefaultColor()
-    {
-        if (difficultyImage == null) return;
-        difficultyImage.color = Color.clear;
+        bool isBot = player is DartBot;
+
+        if (playerImage != null)
+            playerImage.SetActive(!isBot);
+
+        if (botImage != null)
+            botImage.SetActive(isBot);
+
+        if (isBot)
+            ApplyDifficultyColor(((DartBot)player).GetDifficulty());
     }
 
     private void ApplyDifficultyColor(DartBotDifficulty diff)
     {
-        if (difficultyImage == null) return;
+        if (botImage == null)
+            return;
+
+        Image image = botImage.GetComponent<Image>();
+
+        if (image == null)
+            return;
 
         switch (diff)
         {
             case DartBotDifficulty.Easy:
-                difficultyImage.color = new Color(0.4f, 0.85f, 0.4f); // light green
+                image.color = new Color(0.4f, 0.85f, 0.4f);
                 break;
+
             case DartBotDifficulty.Medium:
-                difficultyImage.color = Color.yellow;
+                image.color = Color.yellow;
                 break;
+
             case DartBotDifficulty.Hard:
-                difficultyImage.color = new Color(1f, 0.6f, 0f); // orange
+                image.color = new Color(1f, 0.6f, 0f);
                 break;
+
             case DartBotDifficulty.Pro:
-                difficultyImage.color = Color.red;
+                image.color = Color.red;
                 break;
+
             default:
-                difficultyImage.color = Color.clear;
+                image.color = Color.clear;
                 break;
         }
     }
@@ -70,7 +85,6 @@ public class PlayerListItem : MonoBehaviour
     public void Rename()
     {
         list.RenameClicked(id);
-        Debug.Log("Rename Player with ID: " + id);
     }
 
     public void Delete()

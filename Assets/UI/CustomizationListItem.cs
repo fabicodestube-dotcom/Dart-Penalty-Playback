@@ -1,12 +1,13 @@
+
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
 /// Anbindung einer Customization-Liste (Sektoren, Penalties, Audio-Events
-/// inkl. Score-Sammel-Row) an das einheitliche Listen-Item. Die Page liefert
-/// Navigation (Edit/Delete/Clips), Toggle-Speicherung und Clip-Anzahl;
-/// das Item ist dumm (Anzeige + Klicks) und damit prefab-einheitlich.
+/// inkl. Score-Sammel-Row) an das einheitliche Listen-Item.
+/// Die Page liefert Navigation, Toggle-Speicherung und Clip-Anzahl.
+/// Das Item übernimmt Anzeige und Klicks.
 /// </summary>
 public interface ICustomizationRowOwner
 {
@@ -15,88 +16,84 @@ public interface ICustomizationRowOwner
     void OnRowOpenClips(string id);
     void OnRowToggle(string id, bool enabled);
     int GetRowClipCount(string id);
+
+    /// <summary>Short English description of the entry's current settings.</summary>
+    string GetRowInfo(string id);
 }
 
 /// <summary>
-/// Einheitliche Zeile für alle Customization-Listen (Prefab
-/// CustomizationListItem, ein Prefab für alle 3 Tabs inkl. Score-Row).
-/// Verdrahtung im Prefab: Buttons OnClick → OnClickRecorder/OnClickEdit/
-/// OnClickDelete, Toggle-Flächen-Button → OnClickToggle.
-/// - nameText: Anzeigename
-/// - countText: Clip-Anzahl („Clips: N“)
-/// - clipsImage: Icon, gefärbt per Theme (Accent1 bei ≥1 Clip,
-///   Background3 bei 0) — Farblogik analog zum alten Clip-Grid
-/// - deleteButton: nur sichtbar wenn deletable (Seeds: Events nie,
-///   Penalties/Sektoren immer)
-/// - toggleRoot/toggle: CustomToggle für aktiv/deaktiviert direkt in der
-///   Zeile (Score-Row: Score-Ansagen an/aus); ausblendbar pro Row
-/// Felder ohne Verdrahtung in der Szene sind optional (null-safe).
+/// Einheitliche Zeile für alle Customization-Listen.
+/// Aktualisiert Anzeige, Clip-Anzahl, Icons und Theme-Farben zentral.
 /// </summary>
 public class CustomizationListItem : MonoBehaviour
 {
     [Header("UI")]
     public TMP_Text nameText;
+    public TMP_Text infoText;
+    public GameObject statusActiveText;
+    public GameObject statusInactiveText;
     public TMP_Text countText;
-    public Image clipsImage;
-    public GameObject deleteButton;
-
-    [Header("Toggle (aktiv/deaktiviert in der Zeile)")]
-    public GameObject toggleRoot;
-    public CustomToggle toggle;
+    public GameObject imageGotClips;
+    public GameObject imageNoClips;
 
     private ICustomizationRowOwner owner;
     private string entryId;
-    private bool deletable;
-    private bool _subscribed;
+    private bool _active = true;
 
-    public void Setup(ICustomizationRowOwner rowOwner, string id, string name,
-        bool canDelete, bool enabled, bool toggleVisible)
+    private bool _subscribed;
+    private bool _themeSubscribed;
+
+    public void Setup(
+        ICustomizationRowOwner rowOwner,
+        string id,
+        string name,
+        bool enabled)
     {
         owner = rowOwner;
         entryId = id;
-        deletable = canDelete;
+        _active = enabled;
 
         if (nameText != null)
             nameText.text = name;
 
-        if (deleteButton != null)
-            deleteButton.SetActive(canDelete);
-
-        if (toggleRoot != null)
-            toggleRoot.SetActive(toggleVisible);
-
-        toggle?.Initialize(enabled);
+        UpdateStatusObjects();
 
         EnsureSubscribed();
-        RefreshClipState();
+        EnsureThemeSubscribed();
+
+        UpdateUI();
     }
 
     private void OnEnable()
     {
         EnsureSubscribed();
-        RefreshClipState();
+        EnsureThemeSubscribed();
+
+        UpdateUI();
     }
 
     private void Start()
     {
-        // Spätes Retry: AudioLibrary.Instance ist zu diesem Zeitpunkt (nach
-        // allen Awake()) garantiert gesetzt. Holt Rows nach, deren Setup /
-        // OnEnable vor dem Library-Singleton lief.
+        // Erneuter Versuch, falls die AudioLibrary beim OnEnable
+        // noch nicht initialisiert war.
         EnsureSubscribed();
-        RefreshClipState();
+        EnsureThemeSubscribed();
+
+        UpdateUI();
     }
 
     private void OnDisable()
     {
         _subscribed = false;
+        _themeSubscribed = false;
+
         if (AudioLibrary.Instance != null)
             AudioLibrary.Instance.OnLibraryChanged -= HandleLibraryChanged;
+
+        if (ThemeManager.Instance != null)
+            ThemeManager.Instance.OnThemeChanged -= HandleThemeChanged;
     }
 
-    /// <summary>
-    /// Idempotent subscriben (abmelden zuerst): Deckt Rows ab, deren
-    /// OnEnable lief, als die AudioLibrary noch nicht existierte.
-    /// </summary>
     private void EnsureSubscribed()
     {
         if (AudioLibrary.Instance == null)
@@ -110,60 +107,144 @@ public class CustomizationListItem : MonoBehaviour
 
         AudioLibrary.Instance.OnLibraryChanged -= HandleLibraryChanged;
         AudioLibrary.Instance.OnLibraryChanged += HandleLibraryChanged;
+
         _subscribed = true;
+    }
+
+    private void EnsureThemeSubscribed()
+    {
+        if (ThemeManager.Instance == null)
+        {
+            _themeSubscribed = false;
+            return;
+        }
+
+        if (_themeSubscribed)
+            return;
+
+        ThemeManager.Instance.OnThemeChanged -= HandleThemeChanged;
+        ThemeManager.Instance.OnThemeChanged += HandleThemeChanged;
+
+        _themeSubscribed = true;
     }
 
     public void OnClickRecorder()
     {
-        if (owner != null)
-            owner.OnRowOpenClips(entryId);
+        owner?.OnRowOpenClips(entryId);
     }
 
     public void OnClickEdit()
     {
-        if (owner != null)
-            owner.OnRowEdit(entryId);
+        owner?.OnRowEdit(entryId);
     }
 
     public void OnClickDelete()
     {
-        if (owner != null && deletable)
-            owner.OnRowDelete(entryId);
+        owner?.OnRowDelete(entryId);
     }
 
-    public void OnClickToggle()
+    public void OnClickToggle(bool enabled)
     {
-        if (owner == null || toggle == null)
-            return;
-
-        toggle.Toggle();
-        owner.OnRowToggle(entryId, toggle.IsActive());
+        owner?.OnRowToggle(entryId, enabled);
     }
 
+    /// <summary>
+    /// Aktualisiert die gesamte UI anhand des aktuellen Clip-Zustands.
+    /// </summary>
     public void RefreshClipState()
     {
         EnsureSubscribed();
+        UpdateUI();
+    }
 
+    private void UpdateUI()
+    {
         if (!gameObject.activeInHierarchy)
             return;
 
         int count = 0;
+
         if (owner != null && !string.IsNullOrEmpty(entryId))
             count = owner.GetRowClipCount(entryId);
 
         if (countText != null)
-            countText.text = $"Clips: {count}";
+            countText.text = $"{count} Clips";
 
-        if (clipsImage != null && ThemeManager.Instance != null)
-        {
-            clipsImage.color = ThemeManager.Instance.GetColor(count > 0
-                ? ThemeColorRole.Accent1
-                : ThemeColorRole.Background3);
-        }
+        if (infoText != null)
+            infoText.text = owner?.GetRowInfo(entryId) ?? "";
+
+        UpdateClipImages(count);
+        ApplyClipColors(count);
+    }
+
+    /// <summary>
+    /// Shows the active/inactive status object based on the entry state.
+    /// Colors/localization are handled by the binders on those objects.
+    /// </summary>
+    private void UpdateStatusObjects()
+    {
+        if (statusActiveText != null)
+            statusActiveText.SetActive(_active);
+
+        if (statusInactiveText != null)
+            statusInactiveText.SetActive(!_active);
+    }
+
+    private void UpdateClipImages(int count)
+    {
+        bool hasClips = count > 0;
+
+        if (imageGotClips != null)
+            imageGotClips.SetActive(hasClips);
+
+        if (imageNoClips != null)
+            imageNoClips.SetActive(!hasClips);
     }
 
     private void HandleLibraryChanged(AudioCategory category)
     {
-        RefreshClipState();
+        UpdateUI();
+    }
+
+    private void HandleThemeChanged()
+    {
+        UpdateUI();
+    }
+
+    /// <summary>
+    /// Färbt ausschließlich countText und das jeweils aktive Clip-Icon.
+    /// nameText behält seine konfigurierte Farbe.
+    /// </summary>
+    private void ApplyClipColors(int count)
+    {
+        if (ThemeManager.Instance == null)
+            return;
+
+        bool hasClips = count > 0;
+
+        if (countText != null)
+        {
+            countText.color = ThemeManager.Instance.GetColor(
+                hasClips
+                    ? ThemeColorRole.TextOnAccent1
+                    : ThemeColorRole.Text2);
+        }
+
+        // GameObject activeImage = hasClips
+        //     ? imageGotClips
+        //     : imageNoClips;
+
+        // if (activeImage == null)
+        //     return;
+
+        // Image image = activeImage.GetComponent<Image>();
+
+        // if (image == null)
+        //     return;
+
+        // image.color = ThemeManager.Instance.GetColor(
+        //     hasClips
+        //         ? ThemeColorRole.Accent1
+        //         : ThemeColorRole.Background3);
     }
 }

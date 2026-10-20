@@ -11,8 +11,15 @@ using Newtonsoft.Json;
 public class CustomHitDef
 {
     [JsonProperty] public string id;
-    [JsonProperty] public string name = "Neuer Bereich";
+    [JsonProperty] public string name = "New area";
     [JsonProperty] public bool enabled = true;
+
+    /// <summary>
+    /// Generated English description of the setting (function for built-in
+    /// seeds, settings summary for custom entries). Set on seed/save and
+    /// persisted so the row can show it without recomputation.
+    /// </summary>
+    [JsonProperty] public string info;
 
     /// <summary>
     /// True = Seed (nicht löschbar, aber normal editierbar). Die
@@ -25,7 +32,7 @@ public class CustomHitDef
         return new CustomHitDef
         {
             id = System.Guid.NewGuid().ToString("N"),
-            name = "Neuer Bereich",
+            name = "New area",
             enabled = true,
             builtIn = false
         };

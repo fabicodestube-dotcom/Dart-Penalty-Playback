@@ -50,7 +50,15 @@ public class AudioEventTrigger
 public class AudioEventDef
 {
     [JsonProperty] public string id;
-    [JsonProperty] public string name = "Neues Event";
+    [JsonProperty] public string name = "New event";
+
+    /// <summary>
+    /// Generated English description of the trigger (fixed function text for
+    /// manual built-ins, settings summary otherwise). Set on seed/save and
+    /// persisted for the row info text.
+    /// </summary>
+    [JsonProperty] public string info;
+
     [JsonProperty] public bool builtIn;
     [JsonProperty] public bool enabled = true;
     [JsonProperty] public AudioEventCategory category = AudioEventCategory.Global;
@@ -61,7 +69,7 @@ public class AudioEventDef
         return new AudioEventDef
         {
             id = System.Guid.NewGuid().ToString("N"),
-            name = "Neues Event",
+            name = "New event",
             builtIn = false,
             enabled = true,
             category = category,
@@ -117,7 +125,7 @@ public static class AudioEventCatalog
 
     private static AudioEventDef BuiltIn(string id, string name, AudioEventCategory category, AudioEventTriggerKind kind, int score = 0)
     {
-        return new AudioEventDef
+        var def = new AudioEventDef
         {
             id = id,
             name = name,
@@ -125,5 +133,7 @@ public static class AudioEventCatalog
             category = category,
             trigger = new AudioEventTrigger { kind = kind, score = score }
         };
+        def.info = CustomizationInfo.BuildAudioEvent(def);
+        return def;
     }
 }

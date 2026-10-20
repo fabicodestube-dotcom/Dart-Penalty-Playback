@@ -1,75 +1,108 @@
-using UnityEngine.UI;
+
+using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
-using System;
+using UnityEngine.UI;
 
 [RequireComponent(typeof(PlayerDragHandler))]
 public class SetupPlayerItem : MonoBehaviour, IPointerClickHandler
 {
+    [Header("UI")]
     public TMP_Text playerName;
     public Image backgroundImage;
-    public Image dartIcon;
+    public GameObject playerImage;
+    public GameObject botImage;
 
     private Guid id;
     private SetupHandler menuSetupPanel;
+    private PlayerDragHandler dragHandler;
 
-    public void Initialize(BasePlayer p)
+    public void Initialize(BasePlayer player)
     {
-        this.id = p.GetID();
+        if (player == null)
+            return;
 
-        GetComponent<PlayerDragHandler>().playerID = id;
+        id = player.GetID();
 
-        // Finde MenuSetupPanel in der Hierarchie
+        dragHandler = GetComponent<PlayerDragHandler>();
+        dragHandler.playerID = id;
+
         menuSetupPanel = GetComponentInParent<SetupHandler>();
 
-        if (p is DartBot bot)
-        {
-            playerName.text = bot.GetNameWithDifficulty();
+        bool isBot = player is DartBot;
 
-            // Prefer coloring the dartIcon if present, otherwise fall back to backgroundImage
-            if (dartIcon != null)
-            {
-                switch (bot.GetDifficulty())
-                {
-                    case DartBotDifficulty.Easy:
-                        dartIcon.color = new Color(0.4f, 0.85f, 0.4f); // light green
-                        break;
-                    case DartBotDifficulty.Medium:
-                        dartIcon.color = Color.yellow;
-                        break;
-                    case DartBotDifficulty.Hard:
-                        dartIcon.color = new Color(1f, 0.6f, 0f); // orange
-                        break;
-                    case DartBotDifficulty.Pro:
-                        dartIcon.color = Color.red;
-                        break;
-                    default:
-                        if (backgroundImage != null) backgroundImage.color = ThemeManager.Instance.GetColor(ThemeColorRole.Background2);
-                        break;
-                }
-            }
-            else
-            {
-                if (backgroundImage != null) backgroundImage.color = ThemeManager.Instance.GetColor(ThemeColorRole.Background2);
-            }
-        }
-        else
+        if (playerName != null)
         {
-            backgroundImage.color = ThemeManager.Instance.GetColor(ThemeColorRole.Accent1);
-            playerName.text = p.GetName();
+            playerName.text = isBot
+                ? ((DartBot)player).GetNameWithDifficulty()
+                : player.GetName();
+        }
+
+        if (playerImage != null)
+            playerImage.SetActive(!isBot);
+
+        if (botImage != null)
+            botImage.SetActive(isBot);
+
+        ApplyBackgroundColor(isBot);
+
+        if (isBot)
+            ApplyDifficultyColor(((DartBot)player).GetDifficulty());
+    }
+
+    private void ApplyBackgroundColor(bool isBot)
+    {
+        if (backgroundImage == null || ThemeManager.Instance == null)
+            return;
+
+        backgroundImage.color = ThemeManager.Instance.GetColor(
+            isBot
+                ? ThemeColorRole.Background2
+                : ThemeColorRole.Accent1);
+    }
+
+    private void ApplyDifficultyColor(DartBotDifficulty difficulty)
+    {
+        if (botImage == null)
+            return;
+
+        Image image = botImage.GetComponent<Image>();
+
+        if (image == null)
+            return;
+
+        switch (difficulty)
+        {
+            case DartBotDifficulty.Easy:
+                image.color = new Color(0.4f, 0.85f, 0.4f);
+                break;
+
+            case DartBotDifficulty.Medium:
+                image.color = Color.yellow;
+                break;
+
+            case DartBotDifficulty.Hard:
+                image.color = new Color(1f, 0.6f, 0f);
+                break;
+
+            case DartBotDifficulty.Pro:
+                image.color = Color.red;
+                break;
+
+            default:
+                image.color = Color.clear;
+                break;
         }
     }
 
     public void OnPointerClick(PointerEventData eventData)
     {
-        // Nur bei kurzem Click reagieren, nicht beim Drag
-        if (GetComponent<PlayerDragHandler>().IsDraggingThisItem)
+        // Ignore clicks that are part of a drag operation.
+        if (dragHandler != null && dragHandler.IsDraggingThisItem)
             return;
 
         if (menuSetupPanel != null)
-        {
             menuSetupPanel.TogglePlayerBetweenLists(id);
-        }
     }
 }

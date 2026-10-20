@@ -144,7 +144,7 @@ public class CustomizationAudioEventsPage : MonoBehaviour, ICustomizationRowOwne
             row.transform.SetParent(globalParent, false);
         }
 
-        row.Setup(this, ScoreRowId, "Score-Ansagen", false, AreScoreAnnouncementsEnabled(), true);
+        row.Setup(this, ScoreRowId, "Score-Ansagen", AreScoreAnnouncementsEnabled());
     }
 
     private static bool AreScoreAnnouncementsEnabled()
@@ -182,7 +182,7 @@ public class CustomizationAudioEventsPage : MonoBehaviour, ICustomizationRowOwne
                 return false;
             }
 
-            row.Setup(this, def.id, def.name, deletable, def.enabled, true);
+            row.Setup(this, def.id, def.name, def.enabled);
             rowsById[def.id] = row;
         }
         else
@@ -192,7 +192,7 @@ public class CustomizationAudioEventsPage : MonoBehaviour, ICustomizationRowOwne
             if (parent != null && row.transform.parent != parent)
                 row.transform.SetParent(parent, false);
 
-            row.Setup(this, def.id, def.name, deletable, def.enabled, true);
+            row.Setup(this, def.id, def.name, def.enabled);
         }
 
         return true;
@@ -249,6 +249,23 @@ public class CustomizationAudioEventsPage : MonoBehaviour, ICustomizationRowOwne
     public void OnRowOpenClips(string id) => OnClickOpenClips(id);
 
     public int GetRowClipCount(string id) => GetClipCount(id);
+
+    public string GetRowInfo(string id)
+    {
+        if (string.IsNullOrEmpty(id))
+            return "";
+
+        if (id == ScoreRowId)
+            return "Sound for score announcements 0-180";
+
+        var def = CustomizationStore.GetAudioEvents().Find(x => x != null && x.id == id);
+        if (def == null)
+            def = AudioEventCatalog.BuildBuiltIns().Find(x => x != null && x.id == id);
+        if (def == null)
+            return "";
+
+        return string.IsNullOrEmpty(def.info) ? CustomizationInfo.BuildAudioEvent(def) : def.info;
+    }
 
     /// <summary>
     /// Toggle direkt in der Zeile: Score-Row → Sound-Setting, sonst

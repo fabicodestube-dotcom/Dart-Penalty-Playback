@@ -100,7 +100,8 @@ private void UpdateLanguageText(string locale)
 
         foreach (var binder in binders)
         {
-            binder.Initialize(this);
+            if (binder != null)
+                binder.Initialize(this);
         }
 
         var settings = AppSettingsManager.Instance.Settings;

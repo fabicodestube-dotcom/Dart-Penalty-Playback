@@ -1987,12 +1987,14 @@ public static class SqliteDatabaseRepository
         public int Builtin { get; set; }
         public int ConditionKind { get; set; }
         public string ConditionJson { get; set; }
+        public string Info { get; set; }
     }
 
     private class AudioEventRow
     {
         public string Id { get; set; }
         public string Name { get; set; }
+        public string Info { get; set; }
         public int Builtin { get; set; }
         public int Enabled { get; set; }
         public int Category { get; set; }
@@ -2013,7 +2015,7 @@ public static class SqliteDatabaseRepository
         using (var connection = SqliteDatabaseService.Open())
         {
             var rows = connection.Query<CustomPenaltyRow>(
-                "SELECT id AS Id, name AS Name, short_name AS ShortName, enabled AS Enabled, cost AS Cost, builtin AS Builtin, condition_kind AS ConditionKind, condition_json AS ConditionJson FROM custom_penalties;");
+                "SELECT id AS Id, name AS Name, short_name AS ShortName, info AS Info, enabled AS Enabled, cost AS Cost, builtin AS Builtin, condition_kind AS ConditionKind, condition_json AS ConditionJson FROM custom_penalties;");
 
             foreach (var row in rows)
             {
@@ -2036,6 +2038,7 @@ public static class SqliteDatabaseRepository
                     id = row.Id,
                     name = row.Name ?? row.Id,
                     shortName = row.ShortName,
+                    info = row.Info,
                     enabled = row.Enabled != 0,
                     cost = row.Cost,
                     builtIn = row.Builtin != 0,
@@ -2058,10 +2061,11 @@ public static class SqliteDatabaseRepository
         {
             string conditionJson = JsonConvert.SerializeObject(def.condition ?? new PenaltyCondition(), Formatting.None);
             connection.Execute(
-                "INSERT OR REPLACE INTO custom_penalties (id, name, short_name, enabled, cost, builtin, condition_kind, condition_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?);",
+                "INSERT OR REPLACE INTO custom_penalties (id, name, short_name, info, enabled, cost, builtin, condition_kind, condition_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);",
                 def.id,
                 def.name ?? def.id,
                 def.shortName ?? "",
+                def.info ?? "",
                 def.enabled ? 1 : 0,
                 def.cost,
                 def.builtIn ? 1 : 0,
@@ -2092,6 +2096,7 @@ public static class SqliteDatabaseRepository
     {
         public string Id { get; set; }
         public string Name { get; set; }
+        public string Info { get; set; }
         public int Enabled { get; set; }
         public int Builtin { get; set; }
     }
@@ -2105,7 +2110,7 @@ public static class SqliteDatabaseRepository
         using (var connection = SqliteDatabaseService.Open())
         {
             var rows = connection.Query<CustomHitSectorRow>(
-                "SELECT id AS Id, name AS Name, enabled AS Enabled, builtin AS Builtin FROM custom_hit_sectors;");
+                "SELECT id AS Id, name AS Name, info AS Info, enabled AS Enabled, builtin AS Builtin FROM custom_hit_sectors;");
 
             foreach (var row in rows)
             {
@@ -2113,6 +2118,7 @@ public static class SqliteDatabaseRepository
                 {
                     id = row.Id,
                     name = row.Name ?? row.Id,
+                    info = row.Info,
                     enabled = row.Enabled != 0,
                     builtIn = row.Builtin != 0
                 });
@@ -2132,9 +2138,10 @@ public static class SqliteDatabaseRepository
         using (var connection = SqliteDatabaseService.Open())
         {
             connection.Execute(
-                "INSERT OR REPLACE INTO custom_hit_sectors (id, name, enabled, builtin) VALUES (?, ?, ?, ?);",
+                "INSERT OR REPLACE INTO custom_hit_sectors (id, name, info, enabled, builtin) VALUES (?, ?, ?, ?, ?);",
                 def.id,
                 def.name ?? def.id,
+                def.info ?? "",
                 def.enabled ? 1 : 0,
                 def.builtIn ? 1 : 0);
         }
@@ -2163,7 +2170,7 @@ public static class SqliteDatabaseRepository
         using (var connection = SqliteDatabaseService.Open())
         {
             var rows = connection.Query<AudioEventRow>(
-                "SELECT id AS Id, name AS Name, builtin AS Builtin, enabled AS Enabled, category AS Category, kind AS Kind, params_json AS ParamsJson FROM audio_events;");
+                "SELECT id AS Id, name AS Name, info AS Info, builtin AS Builtin, enabled AS Enabled, category AS Category, kind AS Kind, params_json AS ParamsJson FROM audio_events;");
 
             foreach (var row in rows)
             {
@@ -2185,6 +2192,7 @@ public static class SqliteDatabaseRepository
                 {
                     id = row.Id,
                     name = row.Name ?? row.Id,
+                    info = row.Info,
                     builtIn = row.Builtin != 0,
                     enabled = row.Enabled != 0,
                     category = (AudioEventCategory)row.Category,
@@ -2207,9 +2215,10 @@ public static class SqliteDatabaseRepository
         {
             string paramsJson = JsonConvert.SerializeObject(def.trigger ?? new AudioEventTrigger(), Formatting.None);
             connection.Execute(
-                "INSERT OR REPLACE INTO audio_events (id, name, builtin, enabled, category, kind, params_json) VALUES (?, ?, ?, ?, ?, ?, ?);",
+                "INSERT OR REPLACE INTO audio_events (id, name, info, builtin, enabled, category, kind, params_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?);",
                 def.id,
                 def.name ?? def.id,
+                def.info ?? "",
                 def.builtIn ? 1 : 0,
                 def.enabled ? 1 : 0,
                 (int)def.category,

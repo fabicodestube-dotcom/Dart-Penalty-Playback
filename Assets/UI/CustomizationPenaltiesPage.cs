@@ -83,7 +83,7 @@ public class CustomizationPenaltiesPage : MonoBehaviour, ICustomizationRowOwner
             else
             {
                 // Bestehende Row nur aktualisieren (kein Instantiate).
-                row.Setup(this, def.id, def.name, !def.builtIn, def.enabled, true);
+                row.Setup(this, def.id, def.name, def.enabled);
             }
 
             row.transform.SetSiblingIndex(sibling++);
@@ -116,7 +116,7 @@ public class CustomizationPenaltiesPage : MonoBehaviour, ICustomizationRowOwner
             return null;
         }
 
-        row.Setup(this, id, name, !builtIn, enabled, true);
+        row.Setup(this, id, name, enabled);
         return row;
     }
 
@@ -175,6 +175,18 @@ public class CustomizationPenaltiesPage : MonoBehaviour, ICustomizationRowOwner
     public void OnRowOpenClips(string id) => OnClickOpenClips(id);
 
     public int GetRowClipCount(string id) => GetClipCount(id);
+
+    public string GetRowInfo(string id)
+    {
+        if (string.IsNullOrEmpty(id))
+            return "";
+
+        var def = CustomizationStore.GetPenalties().Find(x => x != null && x.id == id);
+        if (def == null)
+            return "";
+
+        return string.IsNullOrEmpty(def.info) ? CustomizationInfo.BuildPenalty(def) : def.info;
+    }
 
     /// <summary>Toggle direkt in der Zeile: enabled speichern (Changed → Refresh).</summary>
     public void OnRowToggle(string id, bool enabled)

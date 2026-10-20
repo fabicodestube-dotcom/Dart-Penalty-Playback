@@ -965,8 +965,7 @@ public class AudioLibrary : MonoBehaviour
     /// Lade-Schleife in LoadLibrary() danach — damit gibt es kein Doppel-Laden.
     ///
     /// Ordnerstruktur (app-orientiert):
-    ///   Sectors/         → Tab 1 Bereiche (wall, ceiling) → AudioCategory.Custom
-    ///   Penalties/       → Tab 2 Penalties                 → AudioCategory.Custom
+    ///   Penalties/       → Tab 2 Penalties (wall, ceiling, ...) → AudioCategory.Custom
     ///   AudioEvents/     → Tab 3 Audio-Events
     ///     Global/        → undo, start_game, match_won     → AudioCategory.Custom
     ///     X01/           → bust, sudden_death, 420         → AudioCategory.Custom
@@ -979,13 +978,6 @@ public class AudioLibrary : MonoBehaviour
     private IEnumerator SeedBuiltInClips(string sourceFolder)
     {
         int seeded = 0;
-
-        // ---------- Sectors (Tab 1: Bereiche) ----------
-        string sectorsFolder = Path.Combine(sourceFolder, "Sectors");
-        if (Directory.Exists(sectorsFolder))
-        {
-            seeded += SeedCustomFolder(sectorsFolder, ResolveSectorCustomKey, "Sectors");
-        }
 
         // ---------- Penalties (Tab 2) ----------
         string penaltiesFolder = Path.Combine(sourceFolder, "Penalties");
@@ -1122,16 +1114,6 @@ public class AudioLibrary : MonoBehaviour
                 break;
         }
         return i == 0 ? name : name.Substring(0, i);
-    }
-
-    private static string ResolveSectorCustomKey(string key)
-    {
-        switch (key)
-        {
-            case "wall": return "custom_wall";
-            case "ceiling": return "custom_ceiling";
-            default: return null;
-        }
     }
 
     private static string ResolvePenaltyCustomKey(string key)

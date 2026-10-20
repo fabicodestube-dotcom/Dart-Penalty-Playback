@@ -15,12 +15,20 @@ public class SectorEditorPopup : UIScreen, IUIScreen
     public WindowHandler windowHandler;
     public CustomizationSectorsPage sectorsPage;
 
+    [Header("Bestätigung")]
+    public GameObject mainPanel;
+    public GameObject confirmPanel;
+    public TMP_Text confirmText;
+
     [Header("Basis")]
     public TMP_InputField nameInput;
     public CustomToggle enabledToggle;
 
     private string editingId;
     private bool editingBuiltIn;
+
+    private string pendingDeleteId;
+    private string editingName;
 
     private void OnValidate()
     {
@@ -47,6 +55,9 @@ public class SectorEditorPopup : UIScreen, IUIScreen
 
     public void OnShow()
     {
+        SetConfirmView(false);
+        pendingDeleteId = null;
+        editingName = null;
     }
 
     public void OnHide()
@@ -90,6 +101,8 @@ public class SectorEditorPopup : UIScreen, IUIScreen
 
     private void LoadDef(string name, bool enabled)
     {
+        editingName = name;
+
         if (nameInput != null)
             nameInput.text = name;
 
@@ -125,6 +138,61 @@ public class SectorEditorPopup : UIScreen, IUIScreen
         sectorsPage?.Refresh();
 
         CloseAndRefresh();
+    }
+
+    public void OnClickDelete()
+    {
+        if (editingBuiltIn)
+            return;
+        if (string.IsNullOrEmpty(editingId))
+            return;
+
+        pendingDeleteId = editingId;
+
+        var usage = CustomizationStore.GetPenaltyUsageCount(editingId);
+        if (confirmText != null)
+        {
+            confirmText.text = usage > 0
+                ? $"Sektor „{editingName}“ löschen?\n({usage} Penalty{ (usage > 1 ? "en" : "") } werden mitgelöscht.)"
+                : $"Sektor „{editingName}“ löschen?";
+        }
+
+        SetConfirmView(true);
+    }
+
+    public void ConfirmDelete()
+    {
+        if (string.IsNullOrEmpty(pendingDeleteId))
+        {
+            SetConfirmView(false);
+            return;
+        }
+
+        CustomizationStore.DeletePenaltiesUsingSector(pendingDeleteId);
+        CustomizationStore.DeleteHitSector(pendingDeleteId);
+
+        sectorsPage?.Refresh();
+
+        SetConfirmView(false);
+        pendingDeleteId = null;
+        editingName = null;
+
+        CloseAndRefresh();
+    }
+
+    public void CancelDelete()
+    {
+        SetConfirmView(false);
+        pendingDeleteId = null;
+        editingName = null;
+    }
+
+    private void SetConfirmView(bool confirm)
+    {
+        if (mainPanel != null)
+            mainPanel.SetActive(!confirm);
+        if (confirmPanel != null)
+            confirmPanel.SetActive(confirm);
     }
 
     public void OnClickCancel()
