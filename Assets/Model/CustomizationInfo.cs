@@ -83,7 +83,7 @@ public static class CustomizationInfo
 
             case AudioEventTriggerKind.TurnPattern:
                 return $"Turn: {DescribePattern(t.pattern)}"
-                    + (t.matchExact ? " (in order)" : " (any order)");
+                    + (t.matchOrder ? " (in order)" : " (any order)");
 
             case AudioEventTriggerKind.MarksThreshold:
                 return $"Marks \u2265 {t.threshold}";

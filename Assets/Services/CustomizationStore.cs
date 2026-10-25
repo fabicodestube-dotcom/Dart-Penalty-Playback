@@ -62,22 +62,40 @@ public static class CustomizationStore
         int count = 0;
         foreach (var def in penalties)
         {
-            if (def?.condition?.pattern == null)
-                continue;
-
-            foreach (var slot in def.condition.pattern)
-            {
-                if (slot != null && !slot.anyHitType
-                    && slot.hitType == HitType.Custom
-                    && string.Equals(slot.customHitId, sectorId, StringComparison.OrdinalIgnoreCase))
-                {
-                    count++;
-                    break;
-                }
-            }
+            if (PenaltyReferencesSector(def, sectorId))
+                count++;
         }
 
         return count;
+    }
+
+    private static bool PenaltyReferencesSector(CustomPenaltyDef def, string sectorId)
+    {
+        if (def?.condition == null || string.IsNullOrEmpty(sectorId))
+            return false;
+
+        // Instant-Penalty (HitTypeMiss) auf genau diesen Custom-Sektor.
+        if (def.condition.kind == PenaltyConditionKind.HitTypeMiss
+            && def.condition.hitType == HitType.Custom
+            && string.Equals(def.condition.customHitId, sectorId, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        if (def.condition.pattern == null)
+            return false;
+
+        foreach (var slot in def.condition.pattern)
+        {
+            if (slot != null && !slot.anyHitType
+                && slot.hitType == HitType.Custom
+                && string.Equals(slot.customHitId, sectorId, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /// <summary>Löscht alle Penalties, die den Sektor referenzieren. Gibt die Anzahl zurück.</summary>
@@ -103,19 +121,8 @@ public static class CustomizationStore
 
         foreach (var def in penalties)
         {
-            if (def?.condition?.pattern == null)
-                continue;
-
-            foreach (var slot in def.condition.pattern)
-            {
-                if (slot != null && !slot.anyHitType
-                    && slot.hitType == HitType.Custom
-                    && string.Equals(slot.customHitId, sectorId, StringComparison.OrdinalIgnoreCase))
-                {
-                    ids.Add(def.id);
-                    break;
-                }
-            }
+            if (def != null && PenaltyReferencesSector(def, sectorId))
+                ids.Add(def.id);
         }
 
         return ids;
@@ -307,6 +314,7 @@ public static class CustomizationStore
             SeedBuiltInHitSectors();
 
         SeedMissingAudioEvents();
+        Migrate420ToGlobal();
         MigrateScoreSeedsToRemaining();
         BackfillMissingInfo();
     }
@@ -389,6 +397,35 @@ public static class CustomizationStore
         }
 
         if (added)
+            Changed?.Invoke(CustomizationChangeKind.AudioEvents);
+    }
+
+    private static void Migrate420ToGlobal()
+    {
+        bool changed = false;
+
+        foreach (var def in audioEvents)
+        {
+            if (def == null || !def.builtIn)
+                continue;
+
+            if (!string.Equals(def.id, SeededAudioEvents.Score420Id, StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            if (def.category != AudioEventCategory.X01)
+                continue;
+
+            if (def.trigger == null
+                || def.trigger.kind != AudioEventTriggerKind.ScoreReached
+                || def.trigger.score != 420)
+                continue;
+
+            def.category = AudioEventCategory.Global;
+            SqliteDatabaseRepository.SaveAudioEvent(def);
+            changed = true;
+        }
+
+        if (changed)
             Changed?.Invoke(CustomizationChangeKind.AudioEvents);
     }
 
@@ -508,6 +545,39 @@ public static class CustomizationStore
                 continue;
             if (def.condition.hitType == hitType)
                 return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// True, wenn ein AKTIVES Custom-Penalty (Sofort-Typ) diesen Sektor
+    /// abdeckt. Für Wall/Ceiling zählen deren HitTypes; freie Sektoren
+    /// matchen über customHitId (leer = jeder Custom-Sektor).
+    /// </summary>
+    public static bool HasActiveInstantPenalty(string sectorId)
+    {
+        if (string.IsNullOrEmpty(sectorId))
+            return false;
+
+        EnsureLoaded();
+        HitType hitType = CustomHitDef.HitTypeForSector(sectorId);
+
+        foreach (var def in penalties)
+        {
+            if (def == null || !def.enabled || def.condition == null)
+                continue;
+            if (def.condition.kind != PenaltyConditionKind.HitTypeMiss)
+                continue;
+            if (def.condition.hitType != hitType)
+                continue;
+
+            if (hitType != HitType.Custom
+                || string.IsNullOrEmpty(def.condition.customHitId)
+                || string.Equals(def.condition.customHitId, sectorId, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
         }
 
         return false;

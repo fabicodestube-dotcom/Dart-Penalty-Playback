@@ -180,7 +180,7 @@ public class ATCGameEngine : GameEngine
             return;
 
         ((ATCGame) game).Undo();
-        audioManager?.PlayCustomEvent(SeededAudioEvents.UndoId);
+        PlayManualAudioEvent(SeededAudioEvents.UndoId);
         RefreshPlayerList();
         HandleUndoBotState();
     }

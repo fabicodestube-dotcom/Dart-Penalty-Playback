@@ -2,13 +2,32 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using UnityEngine;
 using UnityEngine.Networking;
-using UnityEngine.UIElements;
 
+/// <summary>
+/// Zentrale Audio-Clip-Bibliothek: hält die vom User aufgenommenen Clips
+/// (Runtime-Dicts + SQLite-Index) und liefert den eingebauten Fallback aus
+/// dem Inspector.
+///
+/// Die eingebauten Clips (Default-Set oder Custom-Set) sind KEINE
+/// User-Aufnahmen: sie liegen ausschließlich in den Inspector-Feldern und
+/// tauchen daher in keiner Clip-Count-Anzeige des Customization-Screens auf.
+/// Sie dienen nur als Rückfall, wenn der User für eine ID noch nichts
+/// aufgenommen hat.
+///
+/// Set-Wahl: WillBePublished == true → Default-Set, false → Custom-Set.
+///
+/// Der eingebaute Rückfall ist abschaltbar (Option "Default-Clips als
+/// Fallback", Sound.UseDefaultClipsAsFallback). Ist er aus, laufen nur die
+/// vom User aufgenommenen Clips — ohne eigene Aufnahme bleibt es stumm.
+/// </summary>
 public class AudioLibrary : MonoBehaviour
 {
+    /// <summary>
+    /// true → das Default-Set (numberClips, *Clip) ist der eingebaute Fallback.
+    /// false → das Custom-Set (customNumberClips, custom*Clip) ist der Fallback.
+    /// </summary>
     public bool WillBePublished;
 
     public static AudioLibrary Instance;
@@ -103,9 +122,6 @@ public class AudioLibrary : MonoBehaviour
 
     private string SpecialFolder =>
         Path.Combine(RecordingsRoot, "Special");
-
-    private string SaveFilePath =>
-        Path.Combine(Application.persistentDataPath, "audio_library.json");
 
     private bool _loadedOnce;
 
@@ -323,20 +339,26 @@ public class AudioLibrary : MonoBehaviour
         return path;
     }
 
-    /// <summary>Aufgerufen vom AudioManager für Custom-Penalty/Event-Sounds.</summary>
+    /// <summary>
+    /// Clip für eine Custom-ID (Penalty- oder Audio-Event-ID).
+    /// Kette: vom User aufgenommener Clip → eingebauter Fallback aus dem
+    /// aktiven Set (Default bei WillBePublished, sonst Custom) → anderes Set
+    /// als Sicherheitsnetz → null.
+    /// </summary>
     public AudioClip GetCustomClip(string customKey)
     {
         if (!IsSoundEnabled() || string.IsNullOrEmpty(customKey))
             return null;
 
-        if (UseCustomSounds()
-            && runtimeCustomClips.TryGetValue(customKey, out var runtimeClips))
+        // 1) VOM USER AUFGENOMMEN
+        AudioClip userClip = null;
+        if (runtimeCustomClips.TryGetValue(customKey, out var runtimeClips))
         {
-            var clip = GetRandomClip(runtimeClips, $"custom_{customKey}");
-            if (clip != null) return clip;
+            userClip = GetRandomClip(runtimeClips, $"custom_{customKey}");
         }
 
-        return null;
+        // 2) EINGEBAUT (Default- oder Custom-Set) — nur wenn als Fallback erlaubt
+        return ResolveClip(userClip, () => GetBuiltInClipForKey(customKey), UseBuiltInFallbackEnabled);
     }
 
     /// <summary>Aufgerufen vom Recorder/Browser-UI (z.B. für Delete-Warnung).</summary>
@@ -536,41 +558,39 @@ public class AudioLibrary : MonoBehaviour
     // RESOLUTION
     // =========================================================
 
+    /// <summary>
+    /// Kern der Clip-Auflösung (rein, ohne Zustand):
+    /// eigene Aufnahme → eingebauter Fallback → null.
+    ///
+    /// useBuiltInFallback == false → ohne eigene Aufnahme bleibt es stumm
+    /// (Option "Default-Clips als Fallback" im Options-Screen).
+    /// </summary>
+    public static AudioClip ResolveClip(AudioClip userClip, System.Func<AudioClip> builtInFallback, bool useBuiltInFallback)
+    {
+        if (userClip != null)
+            return userClip;
+
+        if (!useBuiltInFallback)
+            return null;
+
+        return builtInFallback != null ? builtInFallback() : null;
+    }
+
     // Aufgerufen vom AudioHandler
     public AudioClip GetScoreClip(int score)
     {
         if (!IsSoundEnabled())
             return null;
 
-        // 1) CUSTOM
-        if (UseCustomSounds())
+        // 1) VOM USER AUFGENOMMEN
+        AudioClip userClip = null;
+        if (runtimeScoreClips.TryGetValue(score, out var runtimeClips))
         {
-            // 1.1) RUNTIME
-            if (runtimeScoreClips.TryGetValue(score, out var runtimeClips))
-            {
-                var clip = GetRandomClip(runtimeClips, $"score_{score}");
-                if (clip != null) return clip;
-            }
-
-            if (!WillBePublished)
-            {
-                // 1.2) INSPECTOR
-                if (customNumberClips != null &&
-                    score >= 0 &&
-                    score < customNumberClips.Length &&
-                    customNumberClips[score] != null)
-                        return customNumberClips[score];
-            }
-
+            userClip = GetRandomClip(runtimeClips, $"score_{score}");
         }
 
-        // 2) DEFAULT
-        if (numberClips == null ||
-            score < 0 ||
-            score >= numberClips.Length)
-            return null;
-
-        return numberClips[score];
+        // 2) EINGEBAUT (Default- oder Custom-Set) — nur wenn als Fallback erlaubt
+        return ResolveClip(userClip, () => GetBuiltInScoreClip(score), UseBuiltInFallbackEnabled);
     }
 
 
@@ -580,26 +600,15 @@ public class AudioLibrary : MonoBehaviour
         if (!IsSoundEnabled())
             return null;
 
-        // 1) CUSTOM
-        if (UseCustomSounds())
+        // 1) VOM USER AUFGENOMMEN
+        AudioClip userClip = null;
+        if (runtimePenaltyClips.TryGetValue(type, out var runtimeClips))
         {
-             // 1.1) RUNTIME
-            if (runtimePenaltyClips.TryGetValue(type, out var runtimeClips))
-            {
-                var clip = GetRandomClip(runtimeClips, $"penalty_{type}");
-                if (clip != null) return clip;
-            }
-
-            if (!WillBePublished)
-            {
-                // 1.2) INSPECTOR
-                var custom = GetCustomPenalty(type);
-                if (custom != null) return custom;
-            }
+            userClip = GetRandomClip(runtimeClips, $"penalty_{type}");
         }
 
-        // 2) DEFAULT
-        return GetDefaultPenaltyClip(type);
+        // 2) EINGEBAUT (Default- oder Custom-Set) — nur wenn als Fallback erlaubt
+        return ResolveClip(userClip, () => GetBuiltInPenaltyClip(type), UseBuiltInFallbackEnabled);
     }
 
     public AudioClip GetSpecialClip(SpecialAudioType type)
@@ -607,26 +616,163 @@ public class AudioLibrary : MonoBehaviour
         if (!IsSoundEnabled())
             return null;
 
-        // 1) CUSTOM 
-        if (UseCustomSounds())
+        // 1) VOM USER AUFGENOMMEN
+        AudioClip userClip = null;
+        if (runtimeSpecialClips.TryGetValue(type, out var runtimeClips))
         {
-            // 1.1) RUNTIME
-            if (runtimeSpecialClips.TryGetValue(type, out var runtimeClips))
-            {
-                var clip = GetRandomClip(runtimeClips, $"special_{type}");
-                if (clip != null) return clip;
-            }
-
-            if (!WillBePublished)
-            {
-                //1.2) INSPECTOR
-                var custom = GetCustomSpecial(type);
-                if (custom != null) return custom; 
-            }
+            userClip = GetRandomClip(runtimeClips, $"special_{type}");
         }
 
-        // 2) DEFAULT
-        return GetDefaultSpecialClip(type);
+        // 2) EINGEBAUT (Default- oder Custom-Set) — nur wenn als Fallback erlaubt
+        return ResolveClip(userClip, () => GetBuiltInSpecialClip(type), UseBuiltInFallbackEnabled);
+    }
+
+    // =========================================================
+    // EINGEBAUTE CLIPS (FALLBACK — NICHT IM CUSTOMIZATION-SCREEN SICHTBAR)
+    // =========================================================
+
+    /// <summary>
+    /// Aktives Set: Default bei WillBePublished == true, sonst Custom.
+    /// Das jeweils andere Set dient nur als Sicherheitsnetz, falls im
+    /// aktiven Set für eine ID kein Clip hinterlegt ist.
+    /// </summary>
+    private bool UsesDefaultSet => WillBePublished;
+
+    /// <summary>
+    /// true → die eingebauten Clips (Default-/Custom-Set) dienen als Fallback,
+    /// wenn der User für eine ID noch nichts aufgenommen hat.
+    /// false → es laufen nur eigene Aufnahmen; ohne eigene Aufnahme stumm.
+    ///
+    /// Quelle: Sound.UseDefaultClipsAsFallback (Default true).
+    /// Ohne Settings (z. B. Editor) gilt der Default: Fallback erlaubt.
+    /// </summary>
+    public bool UseBuiltInFallbackEnabled
+    {
+        get
+        {
+            var settings = AppSettingsManager.Instance?.Settings?.Sound;
+            return settings == null || settings.UseDefaultClipsAsFallback;
+        }
+    }
+
+    /// <summary>Eingebauter Fallback für eine Score-Ansage (0–180).</summary>
+    public AudioClip GetBuiltInScoreClip(int score)
+    {
+        AudioClip[] active = UsesDefaultSet ? numberClips : customNumberClips;
+        AudioClip[] other = UsesDefaultSet ? customNumberClips : numberClips;
+
+        return PickScoreClip(active, score) ?? PickScoreClip(other, score);
+    }
+
+    private static AudioClip PickScoreClip(AudioClip[] clips, int score)
+    {
+        if (clips == null || score < 0 || score >= clips.Length)
+            return null;
+
+        return clips[score];
+    }
+
+    /// <summary>Eingebauter Fallback für eine Strafe.</summary>
+    public AudioClip GetBuiltInPenaltyClip(PenaltyType type)
+    {
+        if (UsesDefaultSet)
+            return GetDefaultPenaltyClip(type) ?? GetCustomPenalty(type);
+
+        return GetCustomPenalty(type) ?? GetDefaultPenaltyClip(type);
+    }
+
+    /// <summary>Eingebauter Fallback für ein Special-Event.</summary>
+    public AudioClip GetBuiltInSpecialClip(SpecialAudioType type)
+    {
+        if (UsesDefaultSet)
+            return GetDefaultSpecialClip(type) ?? GetCustomSpecial(type);
+
+        return GetCustomSpecial(type) ?? GetDefaultSpecialClip(type);
+    }
+
+    /// <summary>
+    /// Eingebauter Fallback für eine Custom-ID (Penalty- oder Audio-Event-ID).
+    /// Penalty-IDs kommen aus dem Mapping unten, Event-IDs aus den Seeds
+    /// (SeededAudioEvents: FallbackScore vor FallbackSpecial).
+    /// Unbekannte IDs (z. B. Sektor-IDs, eigene Events) haben keinen
+    /// eingebauten Clip → null (bleiben stumm, bis der User aufnimmt).
+    /// </summary>
+    public AudioClip GetBuiltInClipForKey(string customKey)
+    {
+        if (string.IsNullOrEmpty(customKey))
+            return null;
+
+        if (TryGetPenaltyTypeForKey(customKey, out var penaltyType))
+            return GetBuiltInPenaltyClip(penaltyType);
+
+        var seed = SeededAudioEvents.Find(customKey);
+        if (seed != null)
+        {
+            // Score zuerst (z. B. 420), dann Special (Bust, Undo, Marks, ...).
+            if (seed.FallbackScore.HasValue)
+            {
+                var scoreClip = GetBuiltInScoreClip(seed.FallbackScore.Value);
+                if (scoreClip != null)
+                    return scoreClip;
+            }
+
+            if (seed.FallbackSpecial.HasValue)
+                return GetBuiltInSpecialClip(seed.FallbackSpecial.Value);
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Ordnet die Penalty-IDs (Seeds aus dem CustomizationStore) einem
+    /// PenaltyType zu. Rein/testbar (keine Unity-Abhängigkeit).
+    /// </summary>
+    public static bool TryGetPenaltyTypeForKey(string penaltyId, out PenaltyType type)
+    {
+        type = default;
+
+        if (string.IsNullOrEmpty(penaltyId))
+            return false;
+
+        if (string.Equals(penaltyId, "custom_wall", StringComparison.OrdinalIgnoreCase))
+        {
+            type = PenaltyType.Wall;
+            return true;
+        }
+
+        if (string.Equals(penaltyId, "custom_ceiling", StringComparison.OrdinalIgnoreCase))
+        {
+            type = PenaltyType.Ceiling;
+            return true;
+        }
+
+        if (penaltyId.StartsWith("builtin:score", StringComparison.OrdinalIgnoreCase))
+        {
+            type = PenaltyType.Schnapszahl;
+            return true;
+        }
+
+        if (string.Equals(penaltyId, "builtin:threeones", StringComparison.OrdinalIgnoreCase))
+        {
+            type = PenaltyType.ThreeOnes;
+            return true;
+        }
+
+        if (string.Equals(penaltyId, "builtin:allmiss", StringComparison.OrdinalIgnoreCase))
+        {
+            type = PenaltyType.AllMiss;
+            return true;
+        }
+
+        if (string.Equals(penaltyId, "builtin:leglost", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(penaltyId, "builtin:setlost", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(penaltyId, "builtin:gamelost", StringComparison.OrdinalIgnoreCase))
+        {
+            type = PenaltyType.LostGame;
+            return true;
+        }
+
+        return false;
     }
 
     // Aufgerufen vom RecorderHandler
@@ -699,18 +845,18 @@ public class AudioLibrary : MonoBehaviour
     }
 
     // =========================================================
-    // CUSTOM RESOLVERS
+    // CUSTOM RESOLVERS (eingebautes Custom-Set)
     // =========================================================
 
     private AudioClip GetCustomPenalty(PenaltyType type)
     {
         return type switch
         {
-            PenaltyType.Schnapszahl => GetRandomFromList(customSchnapszahlClip),
-            PenaltyType.ThreeOnes => GetRandomFromList(customThreeOnesClip),
-            PenaltyType.Wall => GetRandomFromList(customWallClip),
-            PenaltyType.Ceiling => GetRandomFromList(customCeilingClip),
-            PenaltyType.AllMiss => GetRandomFromList(customAllMissClip),
+            PenaltyType.Schnapszahl => GetRandomFromList(customSchnapszahlClip, $"builtin_penalty_{type}"),
+            PenaltyType.ThreeOnes => GetRandomFromList(customThreeOnesClip, $"builtin_penalty_{type}"),
+            PenaltyType.Wall => GetRandomFromList(customWallClip, $"builtin_penalty_{type}"),
+            PenaltyType.Ceiling => GetRandomFromList(customCeilingClip, $"builtin_penalty_{type}"),
+            PenaltyType.AllMiss => GetRandomFromList(customAllMissClip, $"builtin_penalty_{type}"),
             _ => null
         };
     }
@@ -719,32 +865,35 @@ public class AudioLibrary : MonoBehaviour
     {
         return type switch
         {
-            SpecialAudioType.StartGame => GetRandomFromList(customStartGameClip),
-            SpecialAudioType.Bust => GetRandomFromList(customBustClip),
-            SpecialAudioType.FourTwenty => GetRandomFromList(customFourTwentyClip),
-            SpecialAudioType.Undo => GetRandomFromList(customUndoClip),
-            SpecialAudioType.MatchWon => GetRandomFromList(customMatchWonClip),
-            SpecialAudioType.SuddenDeath => GetRandomFromList(customSuddenDeathClip),
-            SpecialAudioType.Marks => GetRandomFromList(customCricketMarksClip),
-            SpecialAudioType.Hits => GetRandomFromList(customAtcHitsClip),
-            SpecialAudioType.ATCStreak => GetRandomFromList(customAtcStreakClip),
+            SpecialAudioType.StartGame => GetRandomFromList(customStartGameClip, $"builtin_special_{type}"),
+            SpecialAudioType.Bust => GetRandomFromList(customBustClip, $"builtin_special_{type}"),
+            SpecialAudioType.FourTwenty => GetRandomFromList(customFourTwentyClip, $"builtin_special_{type}"),
+            SpecialAudioType.Undo => GetRandomFromList(customUndoClip, $"builtin_special_{type}"),
+            SpecialAudioType.MatchWon => GetRandomFromList(customMatchWonClip, $"builtin_special_{type}"),
+            SpecialAudioType.SuddenDeath => GetRandomFromList(customSuddenDeathClip, $"builtin_special_{type}"),
+            SpecialAudioType.Marks => GetRandomFromList(customCricketMarksClip, $"builtin_special_{type}"),
+            SpecialAudioType.Hits => GetRandomFromList(customAtcHitsClip, $"builtin_special_{type}"),
+            SpecialAudioType.ATCStreak => GetRandomFromList(customAtcStreakClip, $"builtin_special_{type}"),
             _ => null
         };
     }
 
-    private AudioClip GetRandomFromList(List<AudioClip> list)
+    /// <summary>
+    /// Zufälliger Clip aus einer Liste des eingebauten Custom-Sets.
+    /// Mit Wiederholungs-Vermeidung (kein direkter Repeat des zuletzt
+    /// gespielten Clips), damit Varianten (z. B. 9 Undo-Sounds) abwechslungs-
+    /// reich klingen.
+    /// </summary>
+    private AudioClip GetRandomFromList(List<AudioClip> list, string key)
     {
         if (list == null || list.Count == 0)
             return null;
 
-        if (list.Count == 1)
-            return list[0];
-
-        return list[UnityEngine.Random.Range(0, list.Count)];
+        return GetRandomClip(list, key);
     }
 
     // =========================================================
-    // PERSISTENCE (SQLite-Index, ersetzt audio_library.json)
+    // PERSISTENCE (SQLite-Index)
     // =========================================================
 
     /// <summary>
@@ -793,55 +942,10 @@ public class AudioLibrary : MonoBehaviour
     }
 
     /// <summary>
-    /// Einmalige Migration: alte audio_library.json → SQLite-Tabelle.
-    /// Danach wird die JSON zu .migrated umbenannt (Rollback möglich).
+    /// Lädt die vom User aufgenommenen Clips aus der SQLite-DB in die
+    /// Runtime-Dicts. Die eingebauten Clips (Default-/Custom-Set) liegen im
+    /// Inspector und müssen hier nicht geladen werden.
     /// </summary>
-    private void MigrateJsonIndexIfNeeded()
-    {
-        if (SqliteDatabaseRepository.CountRecordedClips() > 0)
-            return;
-
-        if (!File.Exists(SaveFilePath))
-            return;
-
-        AudioLibraryDatabase legacy = null;
-        try
-        {
-            legacy = JsonUtility.FromJson<AudioLibraryDatabase>(File.ReadAllText(SaveFilePath));
-        }
-        catch (Exception e)
-        {
-            Debug.LogWarning("[AUDIO] JSON-Migration übersprungen (unlesbar): " + e.Message);
-            return;
-        }
-
-        if (legacy?.entries == null)
-            return;
-
-        foreach (var entry in legacy.entries)
-        {
-            if (entry == null || string.IsNullOrEmpty(entry.filePath))
-                continue;
-
-            string fileName = Path.GetFileName(entry.filePath);
-            if (string.IsNullOrEmpty(fileName))
-                continue;
-
-            InsertClipIndex(entry.category, entry.score, entry.penaltyType,
-                entry.specialType, entry.customKey, fileName, ParseFileIndex(entry.filePath));
-        }
-
-        try
-        {
-            File.Move(SaveFilePath, SaveFilePath + ".migrated");
-            Debug.Log("[AUDIO] Audio-Index nach SQLite migriert.");
-        }
-        catch (Exception e)
-        {
-            Debug.LogWarning("[AUDIO] JSON konnte nach Migration nicht umbenannt werden: " + e.Message);
-        }
-    }
-
     private IEnumerator LoadLibrary()
     {
         if (_loadedOnce)
@@ -861,38 +965,8 @@ public class AudioLibrary : MonoBehaviour
 
         try
         {
-            MigrateJsonIndexIfNeeded();
-
             var rows = SqliteDatabaseRepository.LoadAllRecordedClips();
             rows ??= new List<SqliteDatabaseRepository.RecordedClipRow>();
-
-            // Einmaliges Seeding aus StreamingAssets beim allerersten Start.
-            // Prüfung über Persistenz-Flag (nicht über DB-Leerheit), damit
-            // manuell gelöschte Clips nicht erneut geseedet werden.
-            string seeded = SqliteDatabaseRepository.GetSetting("audio_clips_seeded");
-            if (seeded != "1")
-            {
-                string sourceRoot = Path.Combine(Application.streamingAssetsPath, "AudioFiles");
-                string subFolder = WillBePublished ? "Default" : "Custom";
-                string sourceFolder = Path.Combine(sourceRoot, subFolder);
-
-                if (Directory.Exists(sourceFolder))
-                {
-                    Debug.Log($"[AUDIO] Starte Clip-Seeding aus {sourceFolder}");
-                    yield return SeedBuiltInClips(sourceFolder);
-                    SqliteDatabaseRepository.SetSetting("audio_clips_seeded", "1");
-                }
-                else
-                {
-                    Debug.LogWarning($"[AUDIO] Seed-Quelle nicht gefunden: {sourceFolder}");
-                    SqliteDatabaseRepository.SetSetting("audio_clips_seeded", "1");
-                }
-
-                // Nach dem Seeding die DB-Zeilen neu abfragen, damit die
-                // nachfolgende Lade-Schleife die frisch eingefügten Clips lädt.
-                rows = SqliteDatabaseRepository.LoadAllRecordedClips();
-                rows ??= new List<SqliteDatabaseRepository.RecordedClipRow>();
-            }
 
             Debug.Log($"[AUDIO] TEMP LoadLibrary Start: {rows?.Count ?? 0} DB-Zeilen");
 
@@ -948,206 +1022,6 @@ public class AudioLibrary : MonoBehaviour
             NotifyLibraryChanged(AudioCategory.Penalty);
             NotifyLibraryChanged(AudioCategory.Special);
             NotifyLibraryChanged(AudioCategory.Custom);
-        }
-    }
-
-    // =========================================================
-    // SEEDING (initiale Clips aus StreamingAssets beim ersten Start)
-    // =========================================================
-
-    /// <summary>
-    /// Seeds initiale Audio-Clips aus StreamingAssets in die SQLite-Datenbank.
-    /// Wird nur einmalig beim allerersten Start aufgerufen (gesteuert über das
-    /// Persistenz-Flag "audio_clips_seeded").
-    ///
-    /// Die Clips werden hier nur als Datei kopiert und in die DB eingetragen.
-    /// Das eigentliche Laden in die Runtime-Dicts übernimmt die normale
-    /// Lade-Schleife in LoadLibrary() danach — damit gibt es kein Doppel-Laden.
-    ///
-    /// Ordnerstruktur (app-orientiert):
-    ///   Penalties/       → Tab 2 Penalties (wall, ceiling, ...) → AudioCategory.Custom
-    ///   AudioEvents/     → Tab 3 Audio-Events
-    ///     Global/        → undo, start_game, match_won     → AudioCategory.Custom
-    ///     X01/           → bust, sudden_death, 420         → AudioCategory.Custom
-    ///     Cricket/       → marks                           → AudioCategory.Custom
-    ///     ATC/           → hits, atc_streak                → AudioCategory.Custom
-    ///     Score/         → 0-180                           → AudioCategory.Score
-    ///
-    /// Alle Custom-Kategorien landen in SpecialFolder, Score in ScoresFolder.
-    /// </summary>
-    private IEnumerator SeedBuiltInClips(string sourceFolder)
-    {
-        int seeded = 0;
-
-        // ---------- Penalties (Tab 2) ----------
-        string penaltiesFolder = Path.Combine(sourceFolder, "Penalties");
-        if (Directory.Exists(penaltiesFolder))
-        {
-            seeded += SeedCustomFolder(penaltiesFolder, ResolvePenaltyCustomKey, "Penalties");
-        }
-
-        // ---------- Schnapszahlen (111-999) als Penalty-Clips ----------
-        if (Directory.Exists(penaltiesFolder))
-        {
-            var digitFiles = Directory.GetFiles(penaltiesFolder, "tripledigit*.wav")
-                .Concat(Directory.GetFiles(penaltiesFolder, "triple_digit*.wav"))
-                .ToArray();
-            if (digitFiles.Length > 0)
-            {
-                var slotIndexByScore = new Dictionary<int, int>();
-
-                foreach (var score in new[] { 111, 222, 333, 444, 555, 666, 777, 888, 999 })
-                {
-                    string customKey = $"builtin:score{score}";
-                    if (!slotIndexByScore.TryGetValue(score, out int slotIndex))
-                        slotIndex = 0;
-
-                    foreach (var digitFile in digitFiles)
-                    {
-                        string fileName = Path.GetFileName(digitFile);
-                        string targetPath = GetFullPath(SpecialFolder, fileName);
-                        if (!File.Exists(targetPath))
-                            File.Copy(digitFile, targetPath, true);
-
-                        slotIndex++;
-                        slotIndexByScore[score] = slotIndex;
-
-                        SqliteDatabaseRepository.InsertRecordedClip(
-                            AudioCategory.Custom.ToString(), 0, null, null, customKey,
-                            fileName, slotIndex);
-                        seeded++;
-                    }
-                }
-            }
-        }
-
-        // ---------- AudioEvents (Tab 3) ----------
-        string audioEventsFolder = Path.Combine(sourceFolder, "AudioEvents");
-        if (Directory.Exists(audioEventsFolder))
-        {
-            foreach (var subDir in Directory.GetDirectories(audioEventsFolder))
-            {
-                string subDirName = Path.GetFileName(subDir);
-
-                if (string.Equals(subDirName, "Score", StringComparison.OrdinalIgnoreCase))
-                {
-                    // Score-Clips (0-180) als AudioCategory.Score
-                    foreach (var filePath in Directory.GetFiles(subDir, "*.wav"))
-                    {
-                        string fileName = Path.GetFileName(filePath);
-                        string baseName = Path.GetFileNameWithoutExtension(fileName);
-                        if (!int.TryParse(baseName, out int score))
-                            continue;
-
-                        string targetPath = GetFullPath(ScoresFolder, fileName);
-                        if (!File.Exists(targetPath))
-                            File.Copy(filePath, targetPath, true);
-
-                        SqliteDatabaseRepository.InsertRecordedClip(
-                            AudioCategory.Score.ToString(), score, null, null, null,
-                            fileName, 1);
-                        seeded++;
-                    }
-                }
-                else
-                {
-                    // Alle anderen Event-Subfolder als AudioCategory.Custom
-                    seeded += SeedCustomFolder(subDir, ResolveEventCustomKey, "AudioEvents/" + subDirName);
-                }
-            }
-        }
-
-        Debug.Log($"[AUDIO] Seeding abgeschlossen: {seeded} Clips in DB eingetragen.");
-        yield break;
-    }
-
-    /// <summary>
-    /// Seeds alle WAV-Dateien eines Ordners als AudioCategory.Custom mit dem
-    /// übergebenen Key-Resolver. Zielordner ist immer SpecialFolder (damit
-    /// FolderForCategory(Custom) sie beim Laden findet).
-    /// </summary>
-    private int SeedCustomFolder(string folderPath, Func<string, string> resolveKey, string logTag)
-    {
-        int seeded = 0;
-        var slotIndexByKey = new Dictionary<string, int>();
-
-        foreach (var filePath in Directory.GetFiles(folderPath, "*.wav"))
-        {
-            string fileName = Path.GetFileName(filePath);
-            string baseName = Path.GetFileNameWithoutExtension(fileName);
-            string key = StripTrailingDigitsAndUnderscores(baseName).ToLowerInvariant();
-
-            string customKey = resolveKey(key);
-            if (string.IsNullOrEmpty(customKey))
-                continue;
-
-            if (!slotIndexByKey.TryGetValue(customKey, out int slotIndex))
-                slotIndex = 0;
-            slotIndex++;
-
-            string targetPath = GetFullPath(SpecialFolder, fileName);
-            if (!File.Exists(targetPath))
-                File.Copy(filePath, targetPath, true);
-
-            SqliteDatabaseRepository.InsertRecordedClip(
-                AudioCategory.Custom.ToString(), 0, null, null, customKey,
-                fileName, slotIndex);
-            slotIndexByKey[customKey] = slotIndex;
-            seeded++;
-        }
-
-        Debug.Log($"[AUDIO] {logTag}: {seeded} Clips eingeseedet.");
-        return seeded;
-    }
-
-    /// <summary>Entfernt alle nachfolgenden Ziffern und Unterstriche (z.B. "wall1" → "wall", "triple1_1" → "triple").
-    /// Wenn der Name nur aus Ziffern/Unterstrichen besteht, wird der ursprüngliche Name zurückgegeben.</summary>
-    private static string StripTrailingDigitsAndUnderscores(string name)
-    {
-        int i = name.Length;
-        while (i > 0)
-        {
-            char c = name[i - 1];
-            if (char.IsDigit(c) || c == '_')
-                i--;
-            else
-                break;
-        }
-        return i == 0 ? name : name.Substring(0, i);
-    }
-
-    private static string ResolvePenaltyCustomKey(string key)
-    {
-        switch (key)
-        {
-            case "wall": return "custom_wall";
-            case "ceiling": return "custom_ceiling";
-            case "triple_wall": return "builtin:allmiss";
-            case "triple_ones": return "builtin:threeones";
-            case "triple": return "builtin:threeones";
-            case "triple_miss": return "builtin:allmiss";
-            case "triple_digit": return null; // wird als Score-Clip bei Schnapszahlen behandelt
-            case "tripledigit": return null;  // wird als Score-Clip bei Schnapszahlen behandelt
-            default: return null;
-        }
-    }
-
-    private static string ResolveEventCustomKey(string key)
-    {
-        switch (key)
-        {
-            case "undo": return "menu_undo";
-            case "start_game": return "menu_startgame";
-            case "match_won": return "menu_matchwon";
-            case "bust": return "x01_bust";
-            case "sudden_death": return "x01_suddendeath";
-            case "suddendeath": return "x01_suddendeath";
-            case "420": return "x01_420";
-            case "four_twenty": return "x01_420";
-            case "marks": return "cricket_marks";
-            case "hits": return "atc_hits";
-            case "atc_streak": return "atc_streak";
-            default: return null;
         }
     }
 
@@ -1304,26 +1178,10 @@ public class AudioLibrary : MonoBehaviour
         result.Ok = true;
     }
 
-    private static int ParseFileIndex(string filePath)
-    {
-        string name = Path.GetFileNameWithoutExtension(filePath);
-        int sep = name.LastIndexOf('_');
-        if (sep < 0)
-            return 0;
-
-        return int.TryParse(name.Substring(sep + 1), out int index) ? index : 0;
-    }
-
     private bool IsSoundEnabled()
     {
         var settings = AppSettingsManager.Instance?.Settings?.Sound;
         return settings != null && settings.Enabled;
-    }
-
-    private bool UseCustomSounds()
-    {
-        var settings = AppSettingsManager.Instance?.Settings?.Sound;
-        return settings != null && settings.UseCustomSounds;
     }
 
     private void SaveWav(string path, AudioClip clip)
@@ -1351,12 +1209,6 @@ public class RecordedAudioClipDto
     public SpecialAudioType specialType;
     public string customKey;
     public string filePath;
-}
-
-[Serializable]
-public class AudioLibraryDatabase
-{
-    public List<RecordedAudioClipDto> entries = new();
 }
 
 public enum AudioCategory

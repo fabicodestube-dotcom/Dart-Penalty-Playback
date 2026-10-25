@@ -182,7 +182,7 @@ public class CustomizationSectorsPage : MonoBehaviour, ICustomizationRowOwner
     /// custom_wall/custom_ceiling); freie Sektoren nutzen ihre eigene
     /// Sektor-ID als Clip-Key.
     /// </summary>
-    public void OnClickOpenClips(string id)
+    public void OnClickOpenClips(string id, string labelOverride = null)
     {
         if (string.IsNullOrEmpty(id))
             return;
@@ -193,8 +193,10 @@ public class CustomizationSectorsPage : MonoBehaviour, ICustomizationRowOwner
             return;
 
         string key = ResolveSectorClipKey(id);
-        string label = CustomizationStore.GetHitSectors()
-            .Find(x => x != null && x.id == id)?.name ?? id;
+        string label = !string.IsNullOrEmpty(labelOverride)
+            ? labelOverride
+            : CustomizationStore.GetHitSectors()
+                .Find(x => x != null && x.id == id)?.name ?? id;
 
         clipNav.OpenCustomClips(key, label);
     }
@@ -209,9 +211,9 @@ public class CustomizationSectorsPage : MonoBehaviour, ICustomizationRowOwner
     }
 
     /// <summary>
-    /// Sektoren haben keinen eigenen Clip-Bezug mehr: immer die Sektor-ID.
-    /// Wall/Ceiling-Clips werden ausschließlich über die Penalties geseedet;
-    /// die Sektor-Row zeigt daher 0 Clips (Button bleibt sichtbar).
+    /// Sektor-Sound läuft immer über die Sektor-ID (Wall = builtin:wall,
+    /// Ceiling = builtin:ceiling, freie Sektoren = eigene ID). Penalty-Clips
+    /// bleiben separat unter der Penalty-ID und werden zusätzlich gespielt.
     /// </summary>
     public string ResolveSectorClipKey(string sectorId)
     {

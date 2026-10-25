@@ -206,7 +206,7 @@ public class CustomizationPenaltiesPage : MonoBehaviour, ICustomizationRowOwner
     }
 
     /// <summary>Clip-Button einer Penalty-Row: öffnet den ClipBrowser für diese ID.</summary>
-    public void OnClickOpenClips(string id)
+    public void OnClickOpenClips(string id, string labelOverride = null)
     {
         if (string.IsNullOrEmpty(id))
             return;
@@ -216,8 +216,10 @@ public class CustomizationPenaltiesPage : MonoBehaviour, ICustomizationRowOwner
         if (clipNav == null)
             return;
 
-        string label = CustomizationStore.GetPenalties()
-            .Find(x => x != null && x.id == id)?.name ?? id;
+        string label = !string.IsNullOrEmpty(labelOverride)
+            ? labelOverride
+            : CustomizationStore.GetPenalties()
+                .Find(x => x != null && x.id == id)?.name ?? id;
 
         clipNav.OpenCustomClips(id, label);
     }

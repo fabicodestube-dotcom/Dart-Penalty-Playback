@@ -14,8 +14,20 @@ public static class PenaltyEvaluator
         if (condition == null || throwItem == null)
             return false;
 
-        return condition.kind == PenaltyConditionKind.HitTypeMiss
-            && throwItem.HitType == condition.hitType;
+        if (condition.kind != PenaltyConditionKind.HitTypeMiss
+            || throwItem.HitType != condition.hitType)
+            return false;
+
+        // Custom-Sektor: leere customHitId = jeder Custom-Sektor (analog
+        // zu den TurnPattern-Slots).
+        if (condition.hitType == HitType.Custom
+            && !string.IsNullOrEmpty(condition.customHitId))
+        {
+            return string.Equals(condition.customHitId, throwItem.CustomHitId,
+                System.StringComparison.OrdinalIgnoreCase);
+        }
+
+        return true;
     }
 
     /// <summary>Turn-Ende-Prüfung (ExactScore, RepdigitScore, TurnPattern).</summary>
@@ -33,7 +45,7 @@ public static class PenaltyEvaluator
                 return turnScore >= condition.minScore && IsRepdigit(turnScore);
 
             case PenaltyConditionKind.TurnPattern:
-                return MatchesPattern(condition.pattern, throws, true, condition.matchOrder);
+                return MatchesPattern(condition.pattern, throws, condition.matchOrder);
 
             case PenaltyConditionKind.HitTypeMiss:
             default:
@@ -42,21 +54,27 @@ public static class PenaltyEvaluator
     }
 
     /// <summary>
-    /// Pattern-Match über Würfe. matchOrder=false: reihenfolgenfrei, exakte
-    /// Anzahl (bisheriges matchExact=true-Verhalten). matchOrder=true: geordnet
-    /// + exakt (Slot i entspricht Wurf i). matchExact=false (nur Audio-Events):
-    /// Pattern als Teilmenge, reihenfolgenfrei.
+    /// Pattern-Match über die Würfe eines Turns.
+    ///
+    /// matchOrder = true  → geordnet + exakt: Slot i entspricht Wurf i und die
+    ///                      Anzahl der Würfe muss der Slot-Anzahl entsprechen.
+    /// matchOrder = false → ungeordnet + exakt: der Turn besteht genau aus den
+    ///                      Pattern-Slots (Multimenge, Reihenfolge egal).
+    ///
+    /// Einheitlich für Custom-Penalties und Custom-Audio-Events.
     /// </summary>
-    public static bool MatchesPattern(List<TurnPatternEntry> pattern, List<Throw> throws, bool matchExact, bool matchOrder = false)
+    public static bool MatchesPattern(List<TurnPatternEntry> pattern, List<Throw> throws, bool matchOrder)
     {
         if (pattern == null || pattern.Count == 0 || throws == null)
             return false;
 
+        // Immer exakt: der Turn besteht aus genau so vielen Würfen wie das
+        // Pattern Slots hat.
+        if (throws.Count != pattern.Count)
+            return false;
+
         if (matchOrder)
         {
-            if (throws.Count != pattern.Count)
-                return false;
-
             for (int i = 0; i < pattern.Count; i++)
             {
                 if (!SlotMatchesThrow(pattern[i], throws[i]))
@@ -65,12 +83,6 @@ public static class PenaltyEvaluator
 
             return true;
         }
-
-        if (matchExact && throws.Count != pattern.Count)
-            return false;
-
-        if (!matchExact && throws.Count < pattern.Count)
-            return false;
 
         var remaining = new List<Throw>(throws);
 

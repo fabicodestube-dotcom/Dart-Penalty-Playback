@@ -173,6 +173,10 @@ public class CricketGame : Game
         }
 
         currentTurn.AddThrow(t);
+
+        // Sektor-Sound direkt bei der Eingabe (vor Instant-Penalties).
+        NotifySectorHit(playerId, t);
+
         TouchActivity();
 
         // =====================================================
@@ -495,6 +499,16 @@ public class CricketGame : Game
         {
             values.marks = currentTurnHitEvents.Sum(h => h.EffectiveMarks);
             values.points = currentTurnHitEvents.Sum(h => h.ScoreGained);
+        }
+
+        if (turn?.TurnStartScores == null)
+            return;
+
+        foreach (var pid in playerIDs)
+        {
+            int after = playerScores.TryGetValue(pid, out int score) ? score : 0;
+            int before = turn.TurnStartScores.TryGetValue(pid, out int startScore) ? startScore : after;
+            values.AddReachedScore(before, after);
         }
     }
 

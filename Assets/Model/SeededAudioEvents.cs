@@ -75,7 +75,7 @@ public static class SeededAudioEvents
         new Seed(SuddenDeathId, "Sudden Death", AudioEventCategory.X01,
             new AudioEventTrigger { kind = AudioEventTriggerKind.Manual },
             fallbackSpecial: SpecialAudioType.SuddenDeath),
-        new Seed(Score420Id, "420", AudioEventCategory.X01,
+        new Seed(Score420Id, "420", AudioEventCategory.Global,
             new AudioEventTrigger { kind = AudioEventTriggerKind.ScoreReached, score = 420 },
             fallbackSpecial: SpecialAudioType.FourTwenty,
             fallbackScore: 420),
@@ -88,7 +88,7 @@ public static class SeededAudioEvents
             new AudioEventTrigger
             {
                 kind = AudioEventTriggerKind.TurnPattern,
-                matchExact = false,
+                matchOrder = false,
                 pattern = new List<TurnPatternEntry>
                 {
                     TripleSlot(), TripleSlot(), TripleSlot()

@@ -624,6 +624,9 @@ public class ATCGame : Game
 
         currentTurn.AddThrow(t);
 
+        // Sektor-Sound direkt bei der Eingabe (vor Instant-Penalties).
+        NotifySectorHit(playerId, t);
+
         if (isValidThrow)
         {
             playerStarted[playerId] = true;   // 🔥 MISSING LINE

@@ -147,7 +147,7 @@ public static class PenaltyDisplay
             AudioEventTriggerKind.Manual => "Manuell",
             AudioEventTriggerKind.ScoreReached => $"Score = {t.score}",
             AudioEventTriggerKind.TurnPattern =>
-                $"Turn [{DescribePattern(t.pattern)}]" + (t.matchExact ? " (exakt)" : " (enthält)"),
+                $"Turn [{DescribePattern(t.pattern)}]" + (t.matchOrder ? " (Reihenfolge)" : " (egal)"),
             AudioEventTriggerKind.MarksThreshold => $"Marken ≥ {t.threshold}",
             AudioEventTriggerKind.PointsReached => $"Punkte ≥ {t.threshold}",
             AudioEventTriggerKind.HitsInTurnThreshold => $"Treffer/Turn ≥ {t.threshold}",

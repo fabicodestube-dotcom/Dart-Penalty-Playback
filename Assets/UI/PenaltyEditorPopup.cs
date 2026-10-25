@@ -70,10 +70,8 @@ public class PenaltyEditorPopup : UIScreen, IUIScreen
         "Turn pattern", "Exact score", "Game event", "Single miss (instant)"
     };
 
-    private static readonly List<string> InstantHitTypeOptions = new List<string>
-    {
-        "Wall", "Ceiling"
-    };
+    /// <summary>Sektor-IDs in Dropdown-Reihenfolge (Wall/Ceiling zuerst).</summary>
+    private readonly List<string> instantSectorIds = new List<string>();
 
     private static readonly List<string> GameEventOptions = new List<string>
     {
@@ -116,11 +114,7 @@ public class PenaltyEditorPopup : UIScreen, IUIScreen
             eventKindDropdown.AddOptions(GameEventOptions);
         }
 
-        if (instantHitTypeDropdown != null)
-        {
-            instantHitTypeDropdown.ClearOptions();
-            instantHitTypeDropdown.AddOptions(InstantHitTypeOptions);
-        }
+        RefreshInstantSectorOptions();
     }
 
     public void OnShow()
@@ -237,8 +231,16 @@ public class PenaltyEditorPopup : UIScreen, IUIScreen
         if (eventKindDropdown != null)
             eventKindDropdown.SetValueWithoutNotify(GameEventToIndex(condition?.kind ?? PenaltyConditionKind.LegLost));
 
+        string extraSectorId = condition != null
+            && condition.kind == PenaltyConditionKind.HitTypeMiss
+            && condition.hitType == HitType.Custom
+                ? condition.customHitId
+                : null;
+
+        RefreshInstantSectorOptions(extraSectorId);
+
         if (instantHitTypeDropdown != null)
-            instantHitTypeDropdown.SetValueWithoutNotify(InstantHitTypeToIndex(condition?.hitType ?? HitType.Wall));
+            instantHitTypeDropdown.SetValueWithoutNotify(InstantSectorToIndex(condition));
 
         if (condition?.kind == PenaltyConditionKind.TurnPattern || typeIndex == 0)
         {
@@ -287,12 +289,22 @@ public class PenaltyEditorPopup : UIScreen, IUIScreen
 
     public void OnClickSave()
     {
+        if (TrySave())
+            CloseAndRefresh();
+    }
+
+    /// <summary>
+    /// Speichert den aktuellen Stand, ohne das Popup zu schließen. Wird auch
+    /// vom Recorder genutzt, damit neue Einträge vor dem ClipBrowser existieren.
+    /// </summary>
+    private bool TrySave()
+    {
         string name = nameInput != null ? nameInput.text.Trim() : "";
         if (string.IsNullOrEmpty(name))
-            return;
+            return false;
 
         if (!int.TryParse(costInput != null ? costInput.text : "0", out int cost) || cost < 0)
-            return;
+            return false;
 
         bool enabled = enabledToggle == null || enabledToggle.IsActive();
 
@@ -302,11 +314,11 @@ public class PenaltyEditorPopup : UIScreen, IUIScreen
 
         // Namen sind pro Penalty eindeutig (eigene ID ausgenommen).
         if (CustomizationStore.IsPenaltyNameTaken(name, editingId))
-            return;
+            return false;
 
         var condition = ReadCondition();
         if (condition == null)
-            return;
+            return false;
 
         // Built-ins (Altdaten-Seeds): Bedingung ist fix, nur Name/Kosten/
         // Enabled sind editierbar (Anzeige + Clip-Verlinkung + Engine-Sync).
@@ -328,12 +340,30 @@ public class PenaltyEditorPopup : UIScreen, IUIScreen
             condition = condition
         });
 
+        editingName = name;
+
         // Direkt-Refresh der eigenen Liste (sofort sichtbar, auch wenn die
         // Changed-Event-Kette z.B. bei inaktivem Handler nicht geliefert hat).
         // Dank Abgleich ist ein doppelter Refresh praktisch gratis.
         penaltiesPage?.Refresh();
+        return true;
+    }
 
-        CloseAndRefresh();
+    /// <summary>
+    /// Recorder-Button: speichert zunächst den aktuellen Stand (neue Einträge
+    /// inklusive), schließt das Popup und öffnet den ClipBrowser für diese ID.
+    /// </summary>
+    public void OnClickOpenClips()
+    {
+        if (string.IsNullOrEmpty(editingId) || !TrySave())
+            return;
+
+        string label = nameInput != null && !string.IsNullOrEmpty(nameInput.text)
+            ? nameInput.text.Trim()
+            : editingName;
+
+        windowHandler?.HidePopup(0f);
+        penaltiesPage?.OnClickOpenClips(editingId, label);
     }
 
     private PenaltyCondition ReadCondition()
@@ -360,10 +390,13 @@ public class PenaltyEditorPopup : UIScreen, IUIScreen
                 };
 
             case 3:
+                string sectorId = SelectedInstantSectorId();
+                HitType hitType = CustomHitDef.HitTypeForSector(sectorId);
                 return new PenaltyCondition
                 {
                     kind = PenaltyConditionKind.HitTypeMiss,
-                    hitType = IndexToInstantHitType(instantHitTypeDropdown != null ? instantHitTypeDropdown.value : 0)
+                    hitType = hitType,
+                    customHitId = hitType == HitType.Custom ? sectorId : null
                 };
 
             default:
@@ -455,15 +488,100 @@ public class PenaltyEditorPopup : UIScreen, IUIScreen
         return 0;
     }
 
-    /// <summary>Sofort-Typ ↔ Dropdown-Index (Wall=0, Ceiling=1, Rest=Wall).</summary>
-    private static HitType IndexToInstantHitType(int index)
+    /// <summary>
+    /// Baut die Instant-Sektor-Auswahl neu auf: Wall/Ceiling zuerst, danach
+    /// alle Custom-Sektoren aus dem Store. extraSectorId hält eine geladene
+    /// Bedingung wählbar, deren Sektor inzwischen umbenannt/gelöscht wurde.
+    /// </summary>
+    private void RefreshInstantSectorOptions(string extraSectorId = null)
     {
-        return index == 1 ? HitType.Ceiling : HitType.Wall;
+        if (instantHitTypeDropdown == null)
+            return;
+
+        instantSectorIds.Clear();
+        AddInstantSectorOption(CustomHitDef.WallId);
+        AddInstantSectorOption(CustomHitDef.CeilingId);
+
+        foreach (var def in CustomizationStore.GetHitSectors())
+        {
+            if (def != null && !string.IsNullOrEmpty(def.id))
+                AddInstantSectorOption(def.id);
+        }
+
+        AddInstantSectorOption(extraSectorId);
+
+        var labels = new List<string>(instantSectorIds.Count);
+        foreach (var id in instantSectorIds)
+            labels.Add(InstantSectorLabel(id));
+
+        instantHitTypeDropdown.ClearOptions();
+        instantHitTypeDropdown.AddOptions(labels);
     }
 
-    private static int InstantHitTypeToIndex(HitType hitType)
+    private void AddInstantSectorOption(string sectorId)
     {
-        return hitType == HitType.Ceiling ? 1 : 0;
+        if (string.IsNullOrEmpty(sectorId))
+            return;
+
+        foreach (var existing in instantSectorIds)
+        {
+            if (string.Equals(existing, sectorId, System.StringComparison.OrdinalIgnoreCase))
+                return;
+        }
+
+        instantSectorIds.Add(sectorId);
+    }
+
+    private static string InstantSectorLabel(string sectorId)
+    {
+        var def = CustomizationStore.GetHitSectors()
+            .Find(x => x != null && string.Equals(x.id, sectorId,
+                System.StringComparison.OrdinalIgnoreCase));
+
+        if (def != null && !string.IsNullOrEmpty(def.name))
+            return def.name;
+
+        if (CustomHitDef.IsBuiltInSector(sectorId))
+            return CustomHitDef.HitTypeForSector(sectorId).ToString();
+
+        return sectorId;
+    }
+
+    private int InstantSectorToIndex(PenaltyCondition condition)
+    {
+        if (condition == null || instantSectorIds.Count == 0)
+            return 0;
+
+        string sectorId = null;
+
+        if (condition.kind == PenaltyConditionKind.HitTypeMiss)
+        {
+            sectorId = condition.hitType switch
+            {
+                HitType.Wall => CustomHitDef.WallId,
+                HitType.Ceiling => CustomHitDef.CeilingId,
+                HitType.Custom => condition.customHitId,
+                _ => null
+            };
+        }
+
+        if (string.IsNullOrEmpty(sectorId))
+            return 0;
+
+        int index = instantSectorIds.FindIndex(id =>
+            string.Equals(id, sectorId, System.StringComparison.OrdinalIgnoreCase));
+
+        return index >= 0 ? index : 0;
+    }
+
+    private string SelectedInstantSectorId()
+    {
+        if (instantSectorIds.Count == 0)
+            return CustomHitDef.WallId;
+
+        int index = instantHitTypeDropdown != null ? instantHitTypeDropdown.value : 0;
+        index = Mathf.Clamp(index, 0, instantSectorIds.Count - 1);
+        return instantSectorIds[index];
     }
 
     private static PenaltyConditionKind IndexToGameEvent(int index)

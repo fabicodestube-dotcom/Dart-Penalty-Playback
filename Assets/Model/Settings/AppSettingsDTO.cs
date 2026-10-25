@@ -12,6 +12,7 @@ public class AppSettings
     [JsonProperty] public SoundSettings Sound = new SoundSettings();
     [JsonProperty] public VibrationSettings Vibration = new VibrationSettings();
     [JsonProperty] public PenaltySettings Penalties = new PenaltySettings();
+    [JsonProperty] public string LastSelectedSectorId;
 }
 
 [System.Serializable]
@@ -25,6 +26,14 @@ public class SoundSettings
 {
     [JsonProperty] public bool Enabled = true;
     [JsonProperty] public bool UseCustomSounds = true;
+
+    /// <summary>
+    /// Eingebaute Clips (Default-/Custom-Set) als Fallback verwenden, wenn der
+    /// User für eine ID noch nichts aufgenommen hat.
+    /// false → es laufen nur eigene Aufnahmen, sonst bleibt es stumm.
+    /// Default true (Altsaves ohne Feld ebenfalls).
+    /// </summary>
+    [JsonProperty] public bool UseDefaultClipsAsFallback = true;
 
     /// <summary>
     /// Turn-Score-Ansagen (0–180 + Marks-Zahlen via PlayScore). Toggle in der

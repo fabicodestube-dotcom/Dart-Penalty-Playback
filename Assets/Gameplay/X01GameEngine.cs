@@ -77,7 +77,7 @@ public class X01GameEngine : GameEngine
 
         ((X01Game) game).Undo();
         StopBotTurn();
-        audioManager.PlayCustomEvent(SeededAudioEvents.UndoId);
+        PlayManualAudioEvent(SeededAudioEvents.UndoId);
         playerList.RefreshUI(GetUIStats());
         HandleUndoBotState();
     }
@@ -118,7 +118,7 @@ public class X01GameEngine : GameEngine
 
         if (turn.IsBust)
         {
-            audioManager.PlayCustomEvent(SeededAudioEvents.BustId);
+            PlayManualAudioEvent(SeededAudioEvents.BustId);
         }
         else
         {
@@ -186,9 +186,9 @@ public class X01GameEngine : GameEngine
         checkoutHandler.Show(option);
     }
 
-    // Hinweis: 420 feuert als Custom-Event (ScoreReached x01_420) über die
-    // Turn-Auswertung (EvaluateCustomAudioEvents) — bewusst KEIN expliziter
-    // OnFourTwenty-Hook mehr, der würde pro 420-Turn doppelt spielen.
+    // Hinweis: Restscore 420 feuert als globales Custom-Event
+    // (ScoreReached x01_420) über die Turn-Auswertung — bewusst KEIN
+    // expliziter OnFourTwenty-Hook mehr, der würde doppelt spielen.
 
 
     // =========================================================
@@ -262,6 +262,6 @@ public class X01GameEngine : GameEngine
         // Expliziter Moment (Einmaligkeit + Undo-Konsistenz steuert das
         // suddenDeathTriggered-Flag im X01Game): spielt das Custom-Event,
         // Fallback ist der bisherige Sudden-Death-Sound.
-        audioManager.PlayCustomEvent(SeededAudioEvents.SuddenDeathId);
+        PlayManualAudioEvent(SeededAudioEvents.SuddenDeathId);
     }
 }

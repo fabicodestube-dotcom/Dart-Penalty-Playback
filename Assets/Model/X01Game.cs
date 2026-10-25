@@ -201,6 +201,7 @@ public class X01Game : Game
             }
 
             currentTurn.AddThrow(t);
+            NotifySectorHit(playerId, t);
 
             if (IsValidCheckin(t))
             {
@@ -249,6 +250,9 @@ public class X01Game : Game
 
         // 4. Füge den Wurf dem Turn hinzu (wichtig für Penalties und spätere Berechnungen)
         currentTurn.AddThrow(t);
+
+        // Sektor-Sound direkt bei der Eingabe (vor Instant-Penalties).
+        NotifySectorHit(playerId, t);
 
         // 5. Berechne den neuen Punktestand NACH dem Wurf
         int newScore = currentTurn.ScoreBeforeTurn - currentTurn.GetTurnScore(includeBustDarts: true);
@@ -648,6 +652,14 @@ public class X01Game : Game
             return null;
 
         return new Dictionary<Guid, (int, int)> { [playerId] = (turn.ScoreBeforeTurn, after) };
+    }
+
+    protected override void CollectAudioTriggerValues(Guid playerId, Turn turn, AudioTriggerValues values)
+    {
+        base.CollectAudioTriggerValues(playerId, turn, values);
+
+        if (turn != null && playerScores.TryGetValue(playerId, out int after))
+            values.AddReachedScore(turn.ScoreBeforeTurn, after);
     }
 
 

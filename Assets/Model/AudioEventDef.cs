@@ -28,7 +28,7 @@ public enum AudioEventTriggerKind
 }
 
 /// <summary>
-/// Auslöser-Parameter. Je nach Kind werden score / pattern+matchExact /
+/// Auslöser-Parameter. Je nach Kind werden score / pattern+matchOrder /
 /// threshold ausgewertet. Schwellen sind >= (exakt: ScoreReached).
 /// </summary>
 [System.Serializable]
@@ -37,7 +37,15 @@ public class AudioEventTrigger
     [JsonProperty] public AudioEventTriggerKind kind = AudioEventTriggerKind.ScoreReached;
     [JsonProperty] public int score;
     [JsonProperty] public List<TurnPatternEntry> pattern = new List<TurnPatternEntry>();
-    [JsonProperty] public bool matchExact = true;
+
+    /// <summary>
+    /// Turn-Pattern: true = Reihenfolge muss stimmen (Slot i entspricht
+    /// Wurf i), false = Reihenfolge egal. In beiden Fällen muss die Anzahl
+    /// der Würfe der Slot-Anzahl entsprechen — identisch zur Semantik der
+    /// Custom-Penalties (PenaltyCondition.matchOrder).
+    /// </summary>
+    [JsonProperty] public bool matchOrder = false;
+
     [JsonProperty] public int threshold;
 }
 
@@ -81,10 +89,9 @@ public class AudioEventDef
 /// <summary>
 /// Fest eingebaute Events (Anzeige-Fallback, falls der Store leer ist).
 /// Maßgeblich sind die Seeds in SeededAudioEvents (IDs identisch).
-/// Hinweis: ScoreReached meint immer den Turn-Score (Summe der 3 Darts einer
-/// Aufnahme), nicht die Gesamtpunktzahl. Der geseedete Score-Trigger ist die
-/// 420 (X01, liegt außerhalb des 0-180-Score-Grids); generische Scores 0-180
-/// gibt es hier bewusst nicht — Score-Ansagen laufen über die Score-Sammel-Row
+/// Hinweis: ScoreReached meint den nach dem Turn erreichten Score — in X01 den
+/// Restscore, in Cricket das Gesamt-Total. Der geseedete 420-Trigger ist global
+/// und feuert in beiden Modi. Score-Ansagen laufen über die Score-Sammel-Row
 /// und AudioLibrary.GetScoreClip.
 /// </summary>
 public static class AudioEventCatalog
@@ -113,7 +120,7 @@ public static class AudioEventCatalog
         list.Add(BuiltIn("menu_startgame", "Game Start", AudioEventCategory.Global, AudioEventTriggerKind.Manual));
         list.Add(BuiltIn("x01_bust", "Bust", AudioEventCategory.X01, AudioEventTriggerKind.Manual));
         list.Add(BuiltIn("x01_suddendeath", "Sudden Death", AudioEventCategory.X01, AudioEventTriggerKind.Manual));
-        list.Add(BuiltIn("x01_420", "420", AudioEventCategory.X01, AudioEventTriggerKind.ScoreReached, score: 420));
+        list.Add(BuiltIn("x01_420", "420", AudioEventCategory.Global, AudioEventTriggerKind.ScoreReached, score: 420));
         list.Add(BuiltIn("cricket_marks", "Marks", AudioEventCategory.Cricket, AudioEventTriggerKind.Manual));
         list.Add(BuiltIn("cricket_whitehorse", "White Horse", AudioEventCategory.Cricket, AudioEventTriggerKind.TurnPattern));
         list.Add(BuiltIn("cricket_ninemarks", "9 Marks", AudioEventCategory.Cricket, AudioEventTriggerKind.Manual));

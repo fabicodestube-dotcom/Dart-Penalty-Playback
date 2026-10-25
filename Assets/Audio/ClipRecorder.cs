@@ -39,7 +39,7 @@ public class ClipRecorder : MonoBehaviour
     public float minNormalizationGain = 0.25f;
 
     [Tooltip("Maximaler Gain (begrenzt, wie stark leise Aufnahmen verstärkt werden). 10-15 für Handy-Mics.")]
-    public float maxNormalizationGain = 15f;
+    public float maxNormalizationGain = 20f;
 
     [Header("Silence Trimming")]
     [SerializeField] private float minThreshold = 0.01f;
@@ -441,23 +441,57 @@ public class ClipRecorder : MonoBehaviour
 
         float gain;
 
+        // Referenz-RMS bestimmen: manueller Clip (Inspector) hat Vorrang,
+        // sonst Durchschnitt über alle nicht-null Clips des Default-Sets
+        // (AudioLibrary), damit die Ziel-Lautheit repräsentativ ist.
+        float refRms = 0f;
+        float refPeak = 0f;
+
         if (referenceClip != null)
         {
-            ComputeClipStats(referenceClip, out float refPeak, out float refRms);
+            ComputeClipStats(referenceClip, out refPeak, out refRms);
+        }
+        else if (AudioLibrary.Instance != null)
+        {
+            AudioClip[] clips = AudioLibrary.Instance.WillBePublished
+                ? AudioLibrary.Instance.numberClips
+                : AudioLibrary.Instance.customNumberClips;
 
-            if (refRms > 1e-6f)
+            if (clips != null)
             {
-                // Echte Lautheits-Angleichung: gleiche RMS wie Referenz
-                gain = refRms / recRms;
+                float sumRms = 0f;
+                float sumPeak = 0f;
+                int count = 0;
+                foreach (var c in clips)
+                {
+                    if (c == null)
+                        continue;
+
+                    ComputeClipStats(c, out float p, out float r);
+                    if (r > 1e-6f)
+                    {
+                        sumRms += r;
+                        sumPeak += p;
+                        count++;
+                    }
+                }
+
+                if (count > 0)
+                {
+                    refRms = sumRms / count;
+                    refPeak = sumPeak / count;
+                }
             }
-            else if (refPeak > 1e-6f)
-            {
-                gain = refPeak / recPeak;
-            }
-            else
-            {
-                gain = ceiling / recPeak;
-            }
+        }
+
+        if (refRms > 1e-6f)
+        {
+            // Echte Lautheits-Angleichung: gleiche RMS wie Referenz/Durchschnitt
+            gain = refRms / recRms;
+        }
+        else if (refPeak > 1e-6f)
+        {
+            gain = refPeak / recPeak;
         }
         else
         {

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Newtonsoft.Json;
 using UnityEditor;
 using UnityEngine;
 
@@ -10,6 +11,8 @@ using UnityEngine;
 /// - Kein Legacy mehr: keine Buchungen, keine Events, Counts bleiben 0.
 /// - Abspiel-Reihenfolge: Custom-Penalty vor TurnCompleted.
 /// - ATC-Undo storniert Customs.
+/// - Custom-Sektor-Instant-Penalty, Sektor-Event (auch X01-Check-in),
+///   Manual-Audio-Guard und Snapshot-Roundtrip von customHitId.
 /// Menü: Darts/Tests/Custom Penalties Enabled. Batchmode: -executeMethod CustomPenaltyEnabledTest.Run
 /// </summary>
 public static class CustomPenaltyEnabledTest
@@ -37,6 +40,10 @@ public static class CustomPenaltyEnabledTest
             TestMidGameToggleIgnored(Check);
             TestInstantSuppression(Check);
             TestAudioEventEnabled(Check);
+            TestAudioScoreReachedRemaining69(Check);
+            TestAudioScoreReachedCricket(Check);
+            TestAudioScoreReachedCricketCutthroat(Check);
+            TestAudio420SeedGlobal(Check);
             TestExactScoreCricketDisabled(Check);
             TestAtcUndoRefundsCustom(Check);
             TestRemainingX01(Check);
@@ -47,6 +54,10 @@ public static class CustomPenaltyEnabledTest
             TestMatchesRemainingUnit(Check);
             TestLegacySilence(Check);
             TestLegacyFallbackMapping(Check);
+            TestCustomSectorInstantPenalty(Check);
+            TestSectorHitEvent(Check);
+            TestManualAudioEventGuard(Check);
+            TestCustomSectorSnapshotRoundtrip(Check);
         }
         catch (Exception ex)
         {
@@ -61,12 +72,12 @@ public static class CustomPenaltyEnabledTest
     // HELPERS
     // =========================================================
 
-    private static X01GameSettings X01Settings201()
+    private static X01GameSettings X01Settings201(CheckinType checkin = CheckinType.StraightIn)
     {
         return new X01GameSettings
         {
             pointTarget = 201,
-            checkinType = CheckinType.StraightIn,
+            checkinType = checkin,
             checkoutType = CheckoutType.Single,
             setsAndLegsMode = SetsAndLegs.FirstTo,
             setCount = 1,
@@ -77,6 +88,13 @@ public static class CustomPenaltyEnabledTest
                 Settings = new List<PenaltySetting>()
             }
         };
+    }
+
+    private static X01GameSettings X01Settings101()
+    {
+        var settings = X01Settings201();
+        settings.pointTarget = 101;
+        return settings;
     }
 
     private static CricketGameSettings CricketSettings(bool cutThroat)
@@ -129,6 +147,20 @@ public static class CustomPenaltyEnabledTest
             cost = 5,
             builtIn = false,
             condition = new PenaltyCondition { kind = PenaltyConditionKind.HitTypeMiss, hitType = HitType.Wall }
+        };
+    }
+
+    private static AudioEventDef AudioScoreDef(string id, bool enabled, int score,
+        AudioEventCategory category = AudioEventCategory.X01)
+    {
+        return new AudioEventDef
+        {
+            id = id,
+            name = id,
+            builtIn = false,
+            enabled = enabled,
+            category = category,
+            trigger = new AudioEventTrigger { kind = AudioEventTriggerKind.ScoreReached, score = score }
         };
     }
 
@@ -269,12 +301,12 @@ public static class CustomPenaltyEnabledTest
         {
             return new AudioEventDef
             {
-                id = "testscore111",
-                name = "111",
+                id = "testrest90",
+                name = "90",
                 builtIn = false,
                 enabled = enabled,
                 category = AudioEventCategory.X01,
-                trigger = new AudioEventTrigger { kind = AudioEventTriggerKind.ScoreReached, score = 111 }
+                trigger = new AudioEventTrigger { kind = AudioEventTriggerKind.ScoreReached, score = 90 }
             };
         }
 
@@ -307,8 +339,105 @@ public static class CustomPenaltyEnabledTest
 
             Throw111Turn(game);
 
-            Check(audioEvents.Count == 1 && audioEvents[0] == "testscore111", "audio-enabled-fires", $"events=[{string.Join(",", audioEvents)}]");
+            Check(audioEvents.Count == 1 && audioEvents[0] == "testrest90", "audio-enabled-fires", $"events=[{string.Join(",", audioEvents)}]");
         }
+    }
+
+    private static void TestAudioScoreReachedRemaining69(Action<bool, string, string> Check)
+    {
+        var p1 = new Player(Guid.NewGuid(), "T_P1");
+        var p2 = new Player(Guid.NewGuid(), "T_P2");
+        var game = new X01Game(Guid.NewGuid(), X01Settings101(), new List<Guid> { p1.GetID(), p2.GetID() });
+        game.RestorePenaltySnapshot(new List<CustomPenaltyDef>());
+        game.RestoreAudioEventSnapshot(new List<AudioEventDef>
+        {
+            AudioScoreDef("testrest69", true, 69),
+            AudioScoreDef("testturn32", true, 32)
+        });
+
+        var audioEvents = new List<string>();
+        game.OnCustomAudioEvent += id => audioEvents.Add(id);
+
+        game.AddThrow(new Throw(DartMultiplier.Triple, 10, HitType.Board));
+        game.AddThrow(new Throw(DartMultiplier.Single, 2, HitType.Board));
+        game.AddThrow(new Throw(DartMultiplier.Single, 0, HitType.Wall));
+
+        Check(audioEvents.Count == 1 && audioEvents[0] == "testrest69",
+            "audio-score-remaining-69", $"events=[{string.Join(",", audioEvents)}]");
+
+        game.AddThrow(new Throw(DartMultiplier.Single, 0, HitType.Wall));
+        game.AddThrow(new Throw(DartMultiplier.Single, 0, HitType.Wall));
+        game.AddThrow(new Throw(DartMultiplier.Single, 0, HitType.Wall));
+
+        game.AddThrow(new Throw(DartMultiplier.Single, 0, HitType.Wall));
+        game.AddThrow(new Throw(DartMultiplier.Single, 0, HitType.Wall));
+        game.AddThrow(new Throw(DartMultiplier.Single, 0, HitType.Wall));
+
+        Check(audioEvents.Count == 1, "audio-score-remaining-no-repeat",
+            $"events=[{string.Join(",", audioEvents)}]");
+    }
+
+    private static void TestAudioScoreReachedCricket(Action<bool, string, string> Check)
+    {
+        var p1 = new Player(Guid.NewGuid(), "T_P1");
+        var p2 = new Player(Guid.NewGuid(), "T_P2");
+        var game = new CricketGame(Guid.NewGuid(), CricketSettings(false), new List<Guid> { p1.GetID(), p2.GetID() });
+        game.RestorePenaltySnapshot(new List<CustomPenaltyDef>());
+        game.RestoreAudioEventSnapshot(new List<AudioEventDef>
+        {
+            AudioScoreDef("testglobal57", true, 57, AudioEventCategory.Global)
+        });
+
+        var audioEvents = new List<string>();
+        game.OnCustomAudioEvent += id => audioEvents.Add(id);
+
+        game.AddThrow(new Throw(DartMultiplier.Triple, 19, HitType.Board));
+        game.AddThrow(new Throw(DartMultiplier.Triple, 19, HitType.Board));
+        game.AddThrow(new Throw(DartMultiplier.Triple, 18, HitType.Board));
+
+        Check(audioEvents.Count == 1 && audioEvents[0] == "testglobal57",
+            "audio-score-cricket-57", $"events=[{string.Join(",", audioEvents)}]");
+
+        game.AddThrow(new Throw(DartMultiplier.Single, 1, HitType.Board));
+        game.AddThrow(new Throw(DartMultiplier.Single, 1, HitType.Board));
+        game.AddThrow(new Throw(DartMultiplier.Single, 1, HitType.Board));
+
+        Check(audioEvents.Count == 1, "audio-score-cricket-no-repeat",
+            $"events=[{string.Join(",", audioEvents)}]");
+    }
+
+    private static void TestAudioScoreReachedCricketCutthroat(Action<bool, string, string> Check)
+    {
+        var p1 = new Player(Guid.NewGuid(), "T_P1");
+        var p2 = new Player(Guid.NewGuid(), "T_P2");
+        var game = new CricketGame(Guid.NewGuid(), CricketSettings(true), new List<Guid> { p1.GetID(), p2.GetID() });
+        game.RestorePenaltySnapshot(new List<CustomPenaltyDef>());
+        game.RestoreAudioEventSnapshot(new List<AudioEventDef>
+        {
+            AudioScoreDef("testcutthroat57", true, 57, AudioEventCategory.Cricket)
+        });
+
+        var audioEvents = new List<string>();
+        game.OnCustomAudioEvent += id => audioEvents.Add(id);
+
+        game.AddThrow(new Throw(DartMultiplier.Triple, 19, HitType.Board));
+        game.AddThrow(new Throw(DartMultiplier.Triple, 19, HitType.Board));
+        game.AddThrow(new Throw(DartMultiplier.Triple, 18, HitType.Board));
+
+        Check(audioEvents.Count == 1 && audioEvents[0] == "testcutthroat57",
+            "audio-score-cutthroat-57", $"events=[{string.Join(",", audioEvents)}]");
+    }
+
+    private static void TestAudio420SeedGlobal(Action<bool, string, string> Check)
+    {
+        var seed = SeededAudioEvents.All.Find(s => s != null && s.Id == SeededAudioEvents.Score420Id);
+        Check(seed != null && seed.Category == AudioEventCategory.Global,
+            "audio-420-seed-global", "");
+
+        var builtIn = AudioEventCatalog.BuildBuiltIns()
+            .Find(x => x != null && x.id == SeededAudioEvents.Score420Id);
+        Check(builtIn != null && builtIn.category == AudioEventCategory.Global,
+            "audio-420-builtin-global", "");
     }
 
     private static void TestExactScoreCricketDisabled(Action<bool, string, string> Check)
@@ -499,7 +628,7 @@ public static class CustomPenaltyEnabledTest
     {
         bool maps(string id, PenaltyType expected)
         {
-            return AudioManager.TryGetLegacyFallbackType(id, out PenaltyType t) && t == expected;
+            return AudioLibrary.TryGetPenaltyTypeForKey(id, out PenaltyType t) && t == expected;
         }
 
         Check(maps("builtin:score111", PenaltyType.Schnapszahl), "fallback-score111", "");
@@ -511,9 +640,149 @@ public static class CustomPenaltyEnabledTest
         Check(maps("builtin:gamelost", PenaltyType.LostGame), "fallback-gamelost", "");
         Check(maps("custom_wall", PenaltyType.Wall), "fallback-wall", "");
         Check(maps("custom_ceiling", PenaltyType.Ceiling), "fallback-ceiling", "");
-        Check(!AudioManager.TryGetLegacyFallbackType("irgendwas", out _), "fallback-unknown", "");
-        Check(!AudioManager.TryGetLegacyFallbackType(null, out _), "fallback-null", "");
-        Check(!AudioManager.TryGetLegacyFallbackType("", out _), "fallback-empty", "");
+        Check(!AudioLibrary.TryGetPenaltyTypeForKey("irgendwas", out _), "fallback-unknown", "");
+        Check(!AudioLibrary.TryGetPenaltyTypeForKey(null, out _), "fallback-null", "");
+        Check(!AudioLibrary.TryGetPenaltyTypeForKey("", out _), "fallback-empty", "");
+    }
+
+    private static CustomPenaltyDef CustomSectorInstantDef(bool enabled, string sectorId,
+        string id = "testfloor")
+    {
+        return new CustomPenaltyDef
+        {
+            id = id,
+            name = "Custom sector",
+            enabled = enabled,
+            cost = 7,
+            builtIn = false,
+            condition = new PenaltyCondition
+            {
+                kind = PenaltyConditionKind.HitTypeMiss,
+                hitType = HitType.Custom,
+                customHitId = sectorId
+            }
+        };
+    }
+
+    private static void TestCustomSectorInstantPenalty(Action<bool, string, string> Check)
+    {
+        var p1 = new Player(Guid.NewGuid(), "T_P1");
+        var p2 = new Player(Guid.NewGuid(), "T_P2");
+        var game = new X01Game(Guid.NewGuid(), X01Settings201(),
+            new List<Guid> { p1.GetID(), p2.GetID() });
+        game.RestorePenaltySnapshot(new List<CustomPenaltyDef>
+        {
+            CustomSectorInstantDef(true, "sec1")
+        });
+
+        var order = new List<string>();
+        game.OnSectorHit += (pid, sid) => order.Add("sector:" + sid);
+        game.OnCustomPenaltyTriggered += (id, pid, turn) => order.Add("penalty:" + id);
+
+        game.AddThrow(new Throw(DartMultiplier.Single, 0, HitType.Custom, false, -1, "sec1"));
+
+        Check(order.Count == 2 && order[0] == "sector:sec1" && order[1] == "penalty:testfloor",
+            "custom-sector-order", $"order=[{string.Join(",", order)}]");
+        Check(CustomCount(game, p1.GetID(), "testfloor") == 1,
+            "custom-sector-booked", "");
+
+        // Anderer Sektor: eigener Sektor-Sound, aber keine Strafe.
+        game.AddThrow(new Throw(DartMultiplier.Single, 0, HitType.Custom, false, -1, "sec2"));
+        Check(order.Count == 3 && order[2] == "sector:sec2",
+            "custom-sector-other-no-penalty", $"order=[{string.Join(",", order)}]");
+    }
+
+    private static void TestSectorHitEvent(Action<bool, string, string> Check)
+    {
+        var p1 = new Player(Guid.NewGuid(), "T_P1");
+        var p2 = new Player(Guid.NewGuid(), "T_P2");
+        var game = new X01Game(Guid.NewGuid(), X01Settings201(CheckinType.DoubleIn),
+            new List<Guid> { p1.GetID(), p2.GetID() });
+        game.RestorePenaltySnapshot(new List<CustomPenaltyDef>
+        {
+            CustomSectorInstantDef(true, "sec1")
+        });
+
+        var sectors = new List<string>();
+        var penalties = new List<string>();
+        game.OnSectorHit += (pid, sid) => sectors.Add(sid);
+        game.OnCustomPenaltyTriggered += (id, pid, turn) => penalties.Add(id);
+
+        // Check-in-Aufnahme: Sektor-Sound ja, Instant-Penalty bleibt wie bisher aus.
+        game.AddThrow(new Throw(DartMultiplier.Single, 0, HitType.Custom, false, -1, "sec1"));
+
+        Check(sectors.Count == 1 && sectors[0] == "sec1", "sector-hit-custom",
+            $"sectors=[{string.Join(",", sectors)}]");
+        Check(penalties.Count == 0, "sector-hit-checkin-instant-unchanged", "");
+    }
+
+    private static void TestManualAudioEventGuard(Action<bool, string, string> Check)
+    {
+        AudioEventDef ManualEvent(bool enabled, AudioEventCategory category,
+            AudioEventTriggerKind kind = AudioEventTriggerKind.Manual)
+        {
+            return new AudioEventDef
+            {
+                id = "testmanual",
+                name = "Manual",
+                enabled = enabled,
+                category = category,
+                trigger = new AudioEventTrigger { kind = kind }
+            };
+        }
+
+        (X01Game game, List<string> fired) CreateGame(AudioEventDef def)
+        {
+            var p1 = new Player(Guid.NewGuid(), "T_P1");
+            var p2 = new Player(Guid.NewGuid(), "T_P2");
+            var game = new X01Game(Guid.NewGuid(), X01Settings201(),
+                new List<Guid> { p1.GetID(), p2.GetID() });
+            game.RestorePenaltySnapshot(new List<CustomPenaltyDef>());
+            game.RestoreAudioEventSnapshot(new List<AudioEventDef> { def });
+            var fired = new List<string>();
+            game.OnCustomAudioEvent += id => fired.Add(id);
+            return (game, fired);
+        }
+
+        var (disabled, disabledFired) = CreateGame(ManualEvent(false, AudioEventCategory.X01));
+        Check(!disabled.TryTriggerManualAudioEvent("testmanual") && disabledFired.Count == 0,
+            "manual-disabled-silent", "");
+
+        var (wrongCategory, catFired) = CreateGame(ManualEvent(true, AudioEventCategory.Cricket));
+        Check(!wrongCategory.TryTriggerManualAudioEvent("testmanual") && catFired.Count == 0,
+            "manual-wrong-category-silent", "");
+
+        var (autoKind, autoFired) = CreateGame(ManualEvent(true, AudioEventCategory.X01,
+            AudioEventTriggerKind.ScoreReached));
+        Check(!autoKind.TryTriggerManualAudioEvent("testmanual") && autoFired.Count == 0,
+            "manual-auto-kind-silent", "");
+
+        var (enabled, enabledFired) = CreateGame(ManualEvent(true, AudioEventCategory.X01));
+        Check(enabled.TryTriggerManualAudioEvent("testmanual")
+            && enabledFired.Count == 1 && enabledFired[0] == "testmanual",
+            "manual-enabled-fires", "");
+    }
+
+    private static void TestCustomSectorSnapshotRoundtrip(Action<bool, string, string> Check)
+    {
+        var defs = new List<CustomPenaltyDef> { CustomSectorInstantDef(true, "sec1", "snapsec") };
+        string json = JsonConvert.SerializeObject(defs, Formatting.None);
+        var restored = JsonConvert.DeserializeObject<List<CustomPenaltyDef>>(json);
+
+        Check(restored != null && restored.Count == 1
+            && restored[0].condition != null
+            && restored[0].condition.customHitId == "sec1",
+            "custom-sector-snapshot-json", json);
+
+        var p1 = new Player(Guid.NewGuid(), "T_P1");
+        var p2 = new Player(Guid.NewGuid(), "T_P2");
+        var game = new X01Game(Guid.NewGuid(), X01Settings201(),
+            new List<Guid> { p1.GetID(), p2.GetID() });
+        game.RestorePenaltySnapshot(restored);
+
+        var snapshot = game.GetPenaltySnapshot();
+        Check(snapshot.Count == 1 && snapshot[0].condition.customHitId == "sec1",
+            "custom-sector-snapshot-restored", "");
     }
 
     private static void TestLegacySilence(Action<bool, string, string> Check)

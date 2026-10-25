@@ -55,7 +55,7 @@ public class CricketGameEngine : GameEngine
         if (game == null)
             return;
         ((CricketGame) game).Undo();
-        audioManager.PlayCustomEvent(SeededAudioEvents.UndoId);
+        PlayManualAudioEvent(SeededAudioEvents.UndoId);
         RefreshPlayerList();
         HandleUndoBotState();
     }
@@ -141,7 +141,7 @@ public class CricketGameEngine : GameEngine
             // Marks: Zahl ansagen, dann Marks-Event (Custom, Seed cricket_marks).
             int totalMarks = result.Hits.Sum(h => h.EffectiveMarks);
             audioManager.PlayScore(totalMarks);
-            audioManager.PlayCustomEvent(SeededAudioEvents.MarksId);
+            PlayManualAudioEvent(SeededAudioEvents.MarksId);
         }
 
         // Gar nix

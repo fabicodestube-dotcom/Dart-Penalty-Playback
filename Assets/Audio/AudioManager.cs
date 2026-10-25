@@ -38,7 +38,7 @@ private void Start()
 
         if (clip == null)
         {
-            Debug.LogWarning($"[AUDIO] Kein Clip für Score {score}");
+            LogMissingClip($"Kein Clip für Score {score}");
             return;
         }
         Enqueue(clip);
@@ -53,14 +53,14 @@ public void PlayPenalty(PenaltyType type)
 
         if (clip == null)
         {
-            Debug.LogWarning($"[AUDIO] Kein Clip für Penalty {type}");
+            LogMissingClip($"Kein Clip für Penalty {type}");
             return;
         }
 
         Enqueue(clip);
     }
 
-public void PlaySpecialClip(SpecialAudioType type)
+    public void PlaySpecialClip(SpecialAudioType type)
     {
         if (!IsSoundAllowed())
             return;
@@ -69,7 +69,7 @@ public void PlaySpecialClip(SpecialAudioType type)
 
         if (clip == null)
         {
-            Debug.LogWarning($"[AUDIO] Kein Clip für Special {type}");
+            LogMissingClip($"Kein Clip für Special {type}");
             return;
         }
 
@@ -77,9 +77,9 @@ public void PlaySpecialClip(SpecialAudioType type)
     }
 
     /// <summary>
-    /// Custom-Penalty-Sound (stabile String-ID). Kette: aufgenommener Clip →
-    /// Seed-Fallback (Wall/Ceiling-Defaults, inkl. deren Custom-Listen) →
-    /// Warnung. Geseedete Miss-Penalties klingen damit ab Tag 1 wie bisher.
+    /// Custom-Penalty-Sound (stabile String-ID). Die Kette steckt komplett
+    /// in der AudioLibrary: aufgenommener Clip → eingebauter Fallback aus dem
+    /// aktiven Set (Default bei WillBePublished, sonst Custom) → Warnung.
     /// </summary>
     public void PlayCustomPenaltyClip(string penaltyId)
     {
@@ -89,88 +89,18 @@ public void PlaySpecialClip(SpecialAudioType type)
         var clip = library.GetCustomClip(penaltyId);
 
         if (clip == null)
-            clip = ResolveSeedPenaltyFallback(penaltyId);
-
-        if (clip == null)
         {
-            Debug.LogWarning($"[AUDIO] Kein Clip für Custom-Penalty {penaltyId}");
+            LogMissingClip($"Kein Clip für Custom-Penalty {penaltyId}");
             return;
         }
 
         Enqueue(clip);
     }
 
-    private AudioClip ResolveSeedPenaltyFallback(string penaltyId)
-    {
-        if (library == null)
-            return null;
-
-        // Legacy-Clip-Kette (Runtime → Inspector → Default) als Fallback für
-        // migrierte Seeds: vorbereitete Legacy-Clips spielen weiter, bis ggf.
-        // ein direkt unter der Custom-ID aufgenommener Clip übernimmt
-        // (GetCustomClip wird zuerst gefragt und gewinnt immer).
-        if (TryGetLegacyFallbackType(penaltyId, out PenaltyType type))
-            return library.GetPenaltyClip(type);
-
-        return null;
-    }
-
     /// <summary>
-    /// Ordnet Seed-/Custom-IDs einem Legacy-PenaltyType für die Clip-Fallback-
-    /// Kette zu. Rein/testbar (keine Unity-Abhängigkeit).
-    /// </summary>
-    public static bool TryGetLegacyFallbackType(string penaltyId, out PenaltyType type)
-    {
-        type = default;
-
-        if (string.IsNullOrEmpty(penaltyId))
-            return false;
-
-        if (string.Equals(penaltyId, "custom_wall", System.StringComparison.OrdinalIgnoreCase))
-        {
-            type = PenaltyType.Wall;
-            return true;
-        }
-
-        if (string.Equals(penaltyId, "custom_ceiling", System.StringComparison.OrdinalIgnoreCase))
-        {
-            type = PenaltyType.Ceiling;
-            return true;
-        }
-
-        if (penaltyId.StartsWith("builtin:score", System.StringComparison.OrdinalIgnoreCase))
-        {
-            type = PenaltyType.Schnapszahl;
-            return true;
-        }
-
-        if (string.Equals(penaltyId, "builtin:threeones", System.StringComparison.OrdinalIgnoreCase))
-        {
-            type = PenaltyType.ThreeOnes;
-            return true;
-        }
-
-        if (string.Equals(penaltyId, "builtin:allmiss", System.StringComparison.OrdinalIgnoreCase))
-        {
-            type = PenaltyType.AllMiss;
-            return true;
-        }
-
-        if (string.Equals(penaltyId, "builtin:leglost", System.StringComparison.OrdinalIgnoreCase)
-            || string.Equals(penaltyId, "builtin:setlost", System.StringComparison.OrdinalIgnoreCase)
-            || string.Equals(penaltyId, "builtin:gamelost", System.StringComparison.OrdinalIgnoreCase))
-        {
-            type = PenaltyType.LostGame;
-            return true;
-        }
-
-        return false;
-    }
-
-    /// <summary>
-    /// Custom-Audio-Event-Sound (stabile String-ID). Kette: aufgenommener
-    /// Custom-Clip → Seed-Fallback (hinterlegter Special-/Score-Sound) →
-    /// Warnung. Geseedete Events klingen damit ab Tag 1 wie bisher.
+    /// Custom-Audio-Event-Sound (stabile String-ID). Die Kette steckt komplett
+    /// in der AudioLibrary: aufgenommener Clip → eingebauter Fallback aus dem
+    /// aktiven Set (Default bei WillBePublished, sonst Custom) → Warnung.
     /// </summary>
     public void PlayCustomEvent(string eventId)
     {
@@ -180,39 +110,32 @@ public void PlaySpecialClip(SpecialAudioType type)
         var clip = library.GetCustomClip(eventId);
 
         if (clip == null)
-            clip = ResolveSeedFallback(eventId);
-
-        if (clip == null)
         {
-            Debug.LogWarning($"[AUDIO] Kein Clip für Custom-Event {eventId}");
+            LogMissingClip($"Kein Clip für Custom-Event {eventId}");
             return;
         }
 
         Enqueue(clip);
     }
 
-    private AudioClip ResolveSeedFallback(string eventId)
+    /// <summary>
+    /// Sektor-Sound (Wall/Ceiling/Custom), Key = Sektor-ID. Ohne eigenen
+    /// aufgenommenen Clip bleibt der Sektor stumm; eine verknüpfte Strafe
+    /// klingt weiterhin über PlayCustomPenaltyClip.
+    /// </summary>
+    public void PlaySectorClip(string sectorId)
     {
+        if (!IsSoundAllowed() || string.IsNullOrEmpty(sectorId))
+            return;
+
         if (library == null)
-            return null;
+            library = FindAnyObjectByType<AudioLibrary>();
 
-        var seed = SeededAudioEvents.Find(eventId);
-        if (seed == null)
-            return null;
+        var clip = library != null ? library.GetCustomClip(sectorId) : null;
+        if (clip == null)
+            return;
 
-        // Score zuerst (z.B. eigene 420-Aufnahme), dann Special-Kette
-        // (die selbst Custom-Runtime → Inspector → Default auflöst).
-        if (seed.FallbackScore.HasValue)
-        {
-            var scoreClip = library.GetScoreClip(seed.FallbackScore.Value);
-            if (scoreClip != null)
-                return scoreClip;
-        }
-
-        if (seed.FallbackSpecial.HasValue)
-            return library.GetSpecialClip(seed.FallbackSpecial.Value);
-
-        return null;
+        Enqueue(clip);
     }
 
 // ================= PRIVATE HELPERS =================
@@ -242,10 +165,17 @@ public void PlaySpecialClip(SpecialAudioType type)
         return settings.Sound.ScoreAnnouncementsEnabled;
     }
 
-private bool UseCustomSounds()
+    /// <summary>
+    /// Fehlender Clip: Ist der eingebaute Fallback aktiv, ist das ein
+    /// Fehlerfall → Warnung. Ist der Fallback abgeschaltet, ist "kein Clip"
+    /// der Normalfall → nur Log, sonst spammt die Konsole bei jedem Zug.
+    /// </summary>
+    private void LogMissingClip(string message)
     {
-        var settings = AppSettingsManager.Instance.Settings;
-        return settings != null && settings.Sound != null && settings.Sound.UseCustomSounds;
+        if (library != null && !library.UseBuiltInFallbackEnabled)
+            Debug.Log($"[AUDIO] {message} (eingebauter Fallback deaktiviert)");
+        else
+            Debug.LogWarning($"[AUDIO] {message}");
     }
 
     private void Enqueue(AudioClip clip)

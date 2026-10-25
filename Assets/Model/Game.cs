@@ -42,6 +42,9 @@ public abstract class Game
     /// <summary>Custom-Audio-Event ausgelöst (nur Abspielen).</summary>
     [JsonIgnore] public Action<string> OnCustomAudioEvent;
 
+    /// <summary>Sektor-Eingabe (Wall/Ceiling/Custom) für den Sektor-Sound.</summary>
+    [JsonIgnore] public Action<Guid, string> OnSectorHit;
+
 
     // =========================================================
     // ABSTRACT CONTRACT
@@ -347,6 +350,55 @@ public abstract class Game
     protected static bool IsAudioEventActive(AudioEventDef def)
     {
         return def != null && def.enabled && def.trigger != null;
+    }
+
+    /// <summary>
+    /// Spielt ein manuelles Audio-Event nur, wenn es im Spiel-Snapshot aktiv
+    /// und für den aktuellen Modus freigegeben ist. So wirken enabled-/
+    /// Kategorie-Einstellungen auch auf die bisher hart verdrahteten Sounds.
+    /// </summary>
+    public bool TryTriggerManualAudioEvent(string eventId)
+    {
+        if (string.IsNullOrEmpty(eventId))
+            return false;
+
+        var defs = GetSnapshotAudioEvents();
+        if (defs == null)
+            return false;
+
+        AudioEventDef def = null;
+        foreach (var candidate in defs)
+        {
+            if (candidate != null
+                && string.Equals(candidate.id, eventId, StringComparison.OrdinalIgnoreCase))
+            {
+                def = candidate;
+                break;
+            }
+        }
+
+        if (!IsAudioEventActive(def)
+            || def.trigger.kind != AudioEventTriggerKind.Manual
+            || !IsEventCategoryApplicable(def.category))
+        {
+            return false;
+        }
+
+        OnCustomAudioEvent?.Invoke(def.id);
+        return true;
+    }
+
+    /// <summary>
+    /// Meldet einen Sektor-Wurf (Wall/Ceiling/Custom) für den Sektor-Sound.
+    /// Board-Würfe und Würfe ohne Sektor-ID bleiben stumm.
+    /// </summary>
+    protected void NotifySectorHit(Guid playerId, Throw throwItem)
+    {
+        string sectorId = CustomHitDef.GetSectorId(throwItem);
+        if (string.IsNullOrEmpty(sectorId))
+            return;
+
+        OnSectorHit?.Invoke(playerId, sectorId);
     }
 
 

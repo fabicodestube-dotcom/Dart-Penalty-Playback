@@ -181,7 +181,7 @@ public class AudioEventEditorPopup : UIScreen, IUIScreen
         return category switch
         {
             AudioEventCategory.X01 => new List<string> { "Score reached (=)", "Turn pattern" },
-            AudioEventCategory.Cricket => new List<string> { "Marks ≥", "Points ≥", "Turn pattern" },
+            AudioEventCategory.Cricket => new List<string> { "Marks ≥", "Points ≥", "Score reached (=)", "Turn pattern" },
             AudioEventCategory.ATC => new List<string> { "Hits/Turn ≥", "Streak ≥", "Turn pattern" },
             _ => new List<string> { "Score reached (=)", "Turn pattern" }
         };
@@ -194,7 +194,8 @@ public class AudioEventEditorPopup : UIScreen, IUIScreen
             AudioEventCategory.Cricket => index switch
             {
                 1 => AudioEventTriggerKind.PointsReached,
-                2 => AudioEventTriggerKind.TurnPattern,
+                2 => AudioEventTriggerKind.ScoreReached,
+                3 => AudioEventTriggerKind.TurnPattern,
                 _ => AudioEventTriggerKind.MarksThreshold
             },
             AudioEventCategory.ATC => index switch
@@ -203,8 +204,7 @@ public class AudioEventEditorPopup : UIScreen, IUIScreen
                 2 => AudioEventTriggerKind.TurnPattern,
                 _ => AudioEventTriggerKind.HitsInTurnThreshold
             },
-            // Global wie X01: exakter Turn-Score oder Turn-Pattern (Engine wertet
-            // rein nach Trigger-Art aus, Kategorie ist nur Gruppierung).
+            // Global/X01: ScoreReached=0, TurnPattern=1.
             _ => index == 1
                 ? AudioEventTriggerKind.TurnPattern : AudioEventTriggerKind.ScoreReached
         };
@@ -238,7 +238,7 @@ public class AudioEventEditorPopup : UIScreen, IUIScreen
         if (thresholdInput != null)
             thresholdInput.text = trigger.threshold.ToString();
 
-        patternEditor?.LoadEntries(trigger.pattern, trigger.matchExact);
+        patternEditor?.LoadEntries(trigger.pattern, trigger.matchOrder);
 
         UpdateTriggerGroups();
     }
@@ -250,7 +250,8 @@ public class AudioEventEditorPopup : UIScreen, IUIScreen
             AudioEventCategory.Cricket => kind switch
             {
                 AudioEventTriggerKind.PointsReached => 1,
-                AudioEventTriggerKind.TurnPattern => 2,
+                AudioEventTriggerKind.ScoreReached => 2,
+                AudioEventTriggerKind.TurnPattern => 3,
                 _ => 0
             },
             AudioEventCategory.ATC => kind switch
@@ -292,9 +293,19 @@ public class AudioEventEditorPopup : UIScreen, IUIScreen
 
     public void OnClickSave()
     {
+        if (TrySave())
+            CloseAndRefresh();
+    }
+
+    /// <summary>
+    /// Speichert den aktuellen Stand, ohne das Popup zu schließen. Wird auch
+    /// vom Recorder genutzt, damit neue Einträge vor dem ClipBrowser existieren.
+    /// </summary>
+    private bool TrySave()
+    {
         string name = nameInput != null ? nameInput.text.Trim() : "";
         if (string.IsNullOrEmpty(name))
-            return;
+            return false;
 
         var category = CurrentCategory();
         editingCategory = category;
@@ -318,7 +329,7 @@ public class AudioEventEditorPopup : UIScreen, IUIScreen
         {
             case AudioEventTriggerKind.ScoreReached:
                 if (!int.TryParse(scoreInput != null ? scoreInput.text : "", out int score) || score < 0)
-                    return;
+                    return false;
                 trigger.score = score;
                 break;
 
@@ -327,7 +338,7 @@ public class AudioEventEditorPopup : UIScreen, IUIScreen
             case AudioEventTriggerKind.HitsInTurnThreshold:
             case AudioEventTriggerKind.StreakReached:
                 if (!int.TryParse(thresholdInput != null ? thresholdInput.text : "", out int threshold) || threshold < 0)
-                    return;
+                    return false;
                 trigger.threshold = threshold;
                 break;
 
@@ -335,7 +346,7 @@ public class AudioEventEditorPopup : UIScreen, IUIScreen
                 trigger.pattern = patternEditor != null
                     ? patternEditor.SaveEntries()
                     : new List<TurnPatternEntry>();
-                trigger.matchExact = patternEditor != null && patternEditor.LoadMatchExact();
+                trigger.matchOrder = patternEditor != null && patternEditor.LoadMatchOrder();
                 break;
 
             case AudioEventTriggerKind.Manual:
@@ -343,7 +354,7 @@ public class AudioEventEditorPopup : UIScreen, IUIScreen
                 break;
 
             default:
-                return;
+                return false;
         }
 
         // Toggle nicht verdrahtet (Szene): bestehenden enabled-Stand behalten,
@@ -365,10 +376,28 @@ public class AudioEventEditorPopup : UIScreen, IUIScreen
             trigger = trigger
         });
 
+        editingName = name;
+
         // Direkt-Refresh der eigenen Liste (sofort sichtbar, siehe PenaltyEditorPopup).
         eventsPage?.Refresh();
+        return true;
+    }
 
-        CloseAndRefresh();
+    /// <summary>
+    /// Recorder-Button: speichert zunächst den aktuellen Stand (neue Einträge
+    /// inklusive), schließt das Popup und öffnet den ClipBrowser für diese ID.
+    /// </summary>
+    public void OnClickOpenClips()
+    {
+        if (string.IsNullOrEmpty(editingId) || !TrySave())
+            return;
+
+        string label = nameInput != null && !string.IsNullOrEmpty(nameInput.text)
+            ? nameInput.text.Trim()
+            : editingName;
+
+        windowHandler?.HidePopup(0f);
+        eventsPage?.OnClickOpenClips(editingId, label);
     }
 
     public void OnClickDelete()

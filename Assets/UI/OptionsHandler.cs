@@ -213,6 +213,16 @@ private void UpdateLanguageText(string locale)
         AppSettingsManager.Instance.SetCustomSoundsEnabled(customSoundEnabled);
     }
 
+    /// <summary>
+    /// Eingebaute Clips (Default-/Custom-Set) als Fallback verwenden, wenn der
+    /// User für eine ID noch nichts aufgenommen hat. false → nur eigene
+    /// Aufnahmen, sonst stumm.
+    /// </summary>
+    public void SetDefaultClipsFallback(bool fallbackEnabled)
+    {
+        AppSettingsManager.Instance.SetUseDefaultClipsAsFallback(fallbackEnabled);
+    }
+
 
     // =========================
     // VIBRATION SETTINGS

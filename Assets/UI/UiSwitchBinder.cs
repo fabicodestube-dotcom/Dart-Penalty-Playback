@@ -5,7 +5,14 @@ public enum SwitchBindingType
 {
     SoundEnabled,
     UseCustomSounds,
-    VibrationEnabled
+    VibrationEnabled,
+
+    /// <summary>
+    /// Eingebaute Clips als Fallback verwenden. NEU — immer am Ende anhängen:
+    /// Unity serialisiert Enums als int, ein Einfügen in der Mitte würde die
+    /// bestehenden bindingType-Werte in der Szene verschieben.
+    /// </summary>
+    UseDefaultClipsAsFallback
 }
 
 public class UISwitchBinder : MonoBehaviour
@@ -43,6 +50,10 @@ public class UISwitchBinder : MonoBehaviour
             case SwitchBindingType.VibrationEnabled: // NEU
                 value = AppSettingsManager.Instance.Settings.Vibration.Enabled;
                 break;
+
+            case SwitchBindingType.UseDefaultClipsAsFallback:
+                value = AppSettingsManager.Instance.Settings.Sound.UseDefaultClipsAsFallback;
+                break;
         }
 
         uiSwitch.toggle.SetIsOnWithoutNotify(value);
@@ -64,6 +75,10 @@ public class UISwitchBinder : MonoBehaviour
 
             case SwitchBindingType.VibrationEnabled: // NEU
                 options.SetVibration(value);
+                break;
+
+            case SwitchBindingType.UseDefaultClipsAsFallback:
+                options.SetDefaultClipsFallback(value);
                 break;
         }
 

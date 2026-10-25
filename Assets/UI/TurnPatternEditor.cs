@@ -12,8 +12,10 @@ using UnityEngine;
 ///   Multiplier bedeutungslos (dimmen via Interactable + CanvasGroup).
 /// - Triple 25 gibt es nicht: Value 25 blendet Triple aus der Mult-Liste aus
 ///   und umgekehrt (Options-Rebuild, Auswahl bleibt logisch erhalten).
-/// - Audio-Events nutzen weiter LoadEntries(pattern, matchExact-Bool),
-///   LoadMatchExact() und SaveEntries() (Verhalten unverändert).
+/// - Der Reihenfolge-Toggle steuert matchOrder: true = Slot i muss Wurf i
+///   entsprechen, false = Reihenfolge egal. Anzahl der Würfe muss immer der
+///   Slot-Anzahl entsprechen. Penalty- und AudioEvent-Popup teilen sich
+///   Toggle und Semantik.
 /// Index-Mapping Value: [Any,0..25], Mult: [Any,Single,Double,Triple],
 /// Hit: [Any,Board,Wall,Ceiling,Miss,Custom...].
 /// </summary>
@@ -34,6 +36,7 @@ public class TurnPatternEditor : MonoBehaviour
 
     private readonly List<string> customSectorIds = new List<string>();
     private bool updating;
+    private bool initialized;
 
     private static readonly List<string> ValueOptionsFull = BuildValueOptions(false);
     private static readonly List<string> ValueOptionsNoBull = BuildValueOptions(true);
@@ -54,6 +57,16 @@ public class TurnPatternEditor : MonoBehaviour
 
     private void Awake()
     {
+        EnsureInitialized();
+    }
+
+    private void EnsureInitialized()
+    {
+        if (initialized)
+            return;
+
+        initialized = true;
+
         FillValueDropdowns();
         FillMultDropdowns();
         FillHitDropdowns();
@@ -87,6 +100,8 @@ public class TurnPatternEditor : MonoBehaviour
 
     public void SetSlotCount(int count)
     {
+        EnsureInitialized();
+
         slotCount = Mathf.Clamp(count, 1, 3);
 
         if (slotCountDropdown != null)
@@ -119,6 +134,8 @@ public class TurnPatternEditor : MonoBehaviour
 
     public void LoadEntries(List<TurnPatternEntry> entries, bool matchOrder)
     {
+        EnsureInitialized();
+
         // Hit-Optionen neu aufbauen (Custom-Sektoren können sich geändert haben).
         FillHitDropdowns();
 
@@ -189,11 +206,6 @@ public class TurnPatternEditor : MonoBehaviour
         }
 
         return list;
-    }
-
-    public bool LoadMatchExact()
-    {
-        return matchOrderToggle == null || matchOrderToggle.IsActive();
     }
 
     public bool LoadMatchOrder()

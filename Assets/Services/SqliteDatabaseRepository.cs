@@ -2177,10 +2177,7 @@ public static class SqliteDatabaseRepository
                 AudioEventTrigger trigger = null;
                 try
                 {
-                    trigger = string.IsNullOrWhiteSpace(row.ParamsJson)
-                        ? new AudioEventTrigger()
-                        : JsonConvert.DeserializeObject<AudioEventTrigger>(row.ParamsJson)
-                          ?? new AudioEventTrigger();
+                    trigger = DeserializeAudioEventTrigger(row.ParamsJson);
                 }
                 catch (System.Exception e)
                 {
@@ -2202,6 +2199,41 @@ public static class SqliteDatabaseRepository
         }
 
         return result;
+    }
+
+    /// <summary>
+    /// Liest den Trigger eines Audio-Events aus params_json.
+    ///
+    /// Legacy: Das Feld hieß früher "matchExact" und steuerte faktisch nur die
+    /// Anzahl der Würfe — der UI-Toggle war aber als "Match order"
+    /// beschriftet, die Absicht war also die Reihenfolge. Deshalb wird der
+    /// alte Wert als "matchOrder" übernommen. Sobald das Event gespeichert
+    /// wird, verschwindet "matchExact" aus dem JSON und die Zuordnung greift
+    /// nicht mehr (die neue Wahl des Users bleibt dann erhalten).
+    /// </summary>
+    private static AudioEventTrigger DeserializeAudioEventTrigger(string paramsJson)
+    {
+        if (string.IsNullOrWhiteSpace(paramsJson))
+            return new AudioEventTrigger();
+
+        var trigger = JsonConvert.DeserializeObject<AudioEventTrigger>(paramsJson)
+                      ?? new AudioEventTrigger();
+
+        if (paramsJson.Contains("\"matchExact\""))
+        {
+            try
+            {
+                var legacy = Newtonsoft.Json.Linq.JObject.Parse(paramsJson)["matchExact"];
+                if (legacy != null && legacy.Type == Newtonsoft.Json.Linq.JTokenType.Boolean)
+                    trigger.matchOrder = (bool)legacy;
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogWarning("[Customization] Legacy-Trigger (matchExact) unlesbar: " + e.Message);
+            }
+        }
+
+        return trigger;
     }
 
     public static void SaveAudioEvent(AudioEventDef def)

@@ -156,6 +156,17 @@ public class AppSettingsManager : MonoBehaviour
         Save();
     }
 
+    /// <summary>
+    /// Eingebaute Clips (Default-/Custom-Set) als Fallback verwenden, wenn der
+    /// User für eine ID noch nichts aufgenommen hat. false → nur eigene
+    /// Aufnahmen, sonst stumm.
+    /// </summary>
+    public void SetUseDefaultClipsAsFallback(bool enabled)
+    {
+        Settings.Sound.UseDefaultClipsAsFallback = enabled;
+        Save();
+    }
+
     public void SetScoreAnnouncementsEnabled(bool enabled)
     {
         Settings.Sound.ScoreAnnouncementsEnabled = enabled;
@@ -184,6 +195,27 @@ public class AppSettingsManager : MonoBehaviour
         Save();
     }
 
+    // =========================
+    // LAST SELECTED SECTOR
+    // =========================
+
+    public string GetLastSelectedSectorId()
+    {
+        return Settings != null ? Settings.LastSelectedSectorId : null;
+    }
+
+    public void SetLastSelectedSectorId(string sectorId)
+    {
+        if (Settings == null)
+            return;
+
+        if (string.Equals(Settings.LastSelectedSectorId, sectorId, System.StringComparison.Ordinal))
+            return;
+
+        Settings.LastSelectedSectorId = sectorId;
+        Save();
+    }
+
     // =========================================================
     // DEFAULTS
     // =========================================================
@@ -203,6 +235,7 @@ public class AppSettingsManager : MonoBehaviour
         {
             Enabled = true,
             UseCustomSounds = true,
+            UseDefaultClipsAsFallback = true,
             Volume = 1f
         };
 

@@ -2,7 +2,7 @@ using System.Collections.Generic;
 
 /// <summary>
 /// Vom Aufrufer (Engine/Game je Modus) gefüllte Kennzahlen für die Auswertung.
-/// Nicht zutreffende Felder bleiben 0.
+/// Nicht zutreffende Felder bleiben 0; reachedScores ist dann leer.
 /// </summary>
 public class AudioTriggerValues
 {
@@ -12,6 +12,13 @@ public class AudioTriggerValues
     public int points;
     public int hits;
     public int streak;
+    public List<int> reachedScores = new List<int>();
+
+    public void AddReachedScore(int before, int after)
+    {
+        if (after != before)
+            reachedScores.Add(after);
+    }
 }
 
 /// <summary>
@@ -48,10 +55,10 @@ public static class AudioEventEngine
         switch (trigger.kind)
         {
             case AudioEventTriggerKind.ScoreReached:
-                return v.turnScore == trigger.score;
+                return v.reachedScores != null && v.reachedScores.Contains(trigger.score);
 
             case AudioEventTriggerKind.TurnPattern:
-                return PenaltyEvaluator.MatchesPattern(trigger.pattern, v.throws, trigger.matchExact);
+                return PenaltyEvaluator.MatchesPattern(trigger.pattern, v.throws, trigger.matchOrder);
 
             case AudioEventTriggerKind.MarksThreshold:
                 return v.marks >= trigger.threshold;

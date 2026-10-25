@@ -66,6 +66,12 @@ public class PenaltyCondition
     // HitTypeMiss
     [JsonProperty] public HitType hitType = HitType.Wall;
 
+    /// <summary>
+    /// Sektor-ID bei hitType == Custom (Tab 1 „Bereiche“). Leer = jeder
+    /// Custom-Sektor. Wall/Ceiling nutzen ihre festen HitTypes.
+    /// </summary>
+    [JsonProperty] public string customHitId;
+
     // ExactScore
     [JsonProperty] public int score;
 

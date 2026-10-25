@@ -301,7 +301,7 @@ public class CustomizationAudioEventsPage : MonoBehaviour, ICustomizationRowOwne
     }
 
     /// <summary>Clip-Button einer Event-Row: Score-Row → Grid, sonst Browser für die ID.</summary>
-    public void OnClickOpenClips(string id)
+    public void OnClickOpenClips(string id, string labelOverride = null)
     {
         if (string.IsNullOrEmpty(id))
             return;
@@ -317,8 +317,10 @@ public class CustomizationAudioEventsPage : MonoBehaviour, ICustomizationRowOwne
         if (clipNav == null)
             return;
 
-        string label = CustomizationStore.GetAudioEvents()
-            .Find(x => x != null && x.id == id)?.name ?? id;
+        string label = !string.IsNullOrEmpty(labelOverride)
+            ? labelOverride
+            : CustomizationStore.GetAudioEvents()
+                .Find(x => x != null && x.id == id)?.name ?? id;
 
         clipNav.OpenCustomClips(id, label);
     }

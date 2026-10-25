@@ -64,9 +64,12 @@ public abstract class GameEngine : MonoBehaviour
 
         isPaused = false;
 
-        audioManager?.PlayCustomEvent(SeededAudioEvents.GameStartId);
-
+        // Erst abonnieren, damit Game Start (manuelles Event) über den
+        // Spiel-Snapshot gefiltert und abgespielt werden kann.
         SubscribeToGameEvents();
+        game.OnSectorHit += HandleSectorHit;
+
+        PlayManualAudioEvent(SeededAudioEvents.GameStartId);
 
         SetHeadline();
 
@@ -112,6 +115,10 @@ public abstract class GameEngine : MonoBehaviour
     protected virtual void CleanupGame()
     {
         StopBotTurn();
+
+        if (game != null)
+            game.OnSectorHit -= HandleSectorHit;
+
         UnsubscribeFromGameEvents();
 
         game = null;
@@ -144,7 +151,7 @@ public abstract class GameEngine : MonoBehaviour
     {
         StopBotTurn();
 
-        audioManager.PlayCustomEvent(SeededAudioEvents.GameOverId);
+        PlayManualAudioEvent(SeededAudioEvents.GameOverId);
 
         game.CalculatePlayerStatsOnSave();
 
@@ -240,6 +247,9 @@ public abstract class GameEngine : MonoBehaviour
 
     protected virtual void OnDestroy()
     {
+        if (game != null)
+            game.OnSectorHit -= HandleSectorHit;
+
         UnsubscribeFromGameEvents();
     }
 
@@ -290,6 +300,26 @@ public abstract class GameEngine : MonoBehaviour
     {
         if (audioManager != null)
             audioManager.PlayCustomEvent(eventId);
+    }
+
+    /// <summary>
+    /// Sektor-Eingabe (Wall/Ceiling/Custom): spielt den Sektor-eigenen Clip
+    /// (Key = Sektor-ID). Der Penalty-Sound folgt separat über
+    /// OnCustomPenaltyTriggered, die Queue hält die Reihenfolge ein.
+    /// </summary>
+    protected virtual void HandleSectorHit(Guid playerId, string sectorId)
+    {
+        if (audioManager != null)
+            audioManager.PlaySectorClip(sectorId);
+    }
+
+    /// <summary>
+    /// Manuelles Audio-Event nur abspielen, wenn es im Spiel-Snapshot aktiv
+    /// und für den Modus freigegeben ist (disabled = stumm).
+    /// </summary>
+    protected void PlayManualAudioEvent(string eventId)
+    {
+        game?.TryTriggerManualAudioEvent(eventId);
     }
 
     public void PauseBotTurn()

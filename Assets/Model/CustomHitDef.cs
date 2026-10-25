@@ -10,6 +10,9 @@ using Newtonsoft.Json;
 [System.Serializable]
 public class CustomHitDef
 {
+    public const string WallId = "builtin:wall";
+    public const string CeilingId = "builtin:ceiling";
+
     [JsonProperty] public string id;
     [JsonProperty] public string name = "New area";
     [JsonProperty] public bool enabled = true;
@@ -41,17 +44,36 @@ public class CustomHitDef
     /// <summary>True für die beiden Seed-Bereiche Wand/Decke.</summary>
     public static bool IsBuiltInSector(string id)
     {
-        return string.Equals(id, "builtin:wall", System.StringComparison.OrdinalIgnoreCase)
-            || string.Equals(id, "builtin:ceiling", System.StringComparison.OrdinalIgnoreCase);
+        return string.Equals(id, WallId, System.StringComparison.OrdinalIgnoreCase)
+            || string.Equals(id, CeilingId, System.StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>Liefert den festen HitType eines Seeds (Wall/Ceiling), sonst Custom.</summary>
     public static HitType HitTypeForSector(string id)
     {
-        if (string.Equals(id, "builtin:wall", System.StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(id, WallId, System.StringComparison.OrdinalIgnoreCase))
             return HitType.Wall;
-        if (string.Equals(id, "builtin:ceiling", System.StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(id, CeilingId, System.StringComparison.OrdinalIgnoreCase))
             return HitType.Ceiling;
         return HitType.Custom;
+    }
+
+    /// <summary>
+    /// Stabile Audio-/Sektor-ID eines Wurfs. Board-Würfe liefern null.
+    /// Wall/Ceiling werden auf ihre Seed-IDs abgebildet, freie Sektoren
+    /// behalten ihre eigene ID.
+    /// </summary>
+    public static string GetSectorId(Throw throwItem)
+    {
+        if (throwItem == null || throwItem.HitType == HitType.Board)
+            return null;
+
+        return throwItem.HitType switch
+        {
+            HitType.Wall => WallId,
+            HitType.Ceiling => CeilingId,
+            HitType.Custom => throwItem.CustomHitId,
+            _ => null
+        };
     }
 }

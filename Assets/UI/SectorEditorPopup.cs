@@ -116,15 +116,25 @@ public class SectorEditorPopup : UIScreen, IUIScreen
 
     public void OnClickSave()
     {
+        if (TrySave())
+            CloseAndRefresh();
+    }
+
+    /// <summary>
+    /// Speichert den aktuellen Stand, ohne das Popup zu schließen. Wird auch
+    /// vom Recorder genutzt, damit neue Einträge vor dem ClipBrowser existieren.
+    /// </summary>
+    private bool TrySave()
+    {
         string name = nameInput != null ? nameInput.text.Trim() : "";
         if (string.IsNullOrEmpty(name))
-            return;
+            return false;
 
         bool enabled = enabledToggle == null || enabledToggle.IsActive();
 
         // Namen sind pro Bereich eindeutig (eigene ID ausgenommen).
         if (CustomizationStore.IsHitSectorNameTaken(name, editingId))
-            return;
+            return false;
 
         CustomizationStore.SaveHitSector(new CustomHitDef
         {
@@ -134,10 +144,28 @@ public class SectorEditorPopup : UIScreen, IUIScreen
             builtIn = editingBuiltIn
         });
 
+        editingName = name;
+
         // Direkt-Refresh der eigenen Liste (sofort sichtbar, siehe PenaltyEditorPopup).
         sectorsPage?.Refresh();
+        return true;
+    }
 
-        CloseAndRefresh();
+    /// <summary>
+    /// Recorder-Button: speichert zunächst den aktuellen Stand (neue Einträge
+    /// inklusive), schließt das Popup und öffnet den ClipBrowser für diese ID.
+    /// </summary>
+    public void OnClickOpenClips()
+    {
+        if (string.IsNullOrEmpty(editingId) || !TrySave())
+            return;
+
+        string label = nameInput != null && !string.IsNullOrEmpty(nameInput.text)
+            ? nameInput.text.Trim()
+            : editingName;
+
+        windowHandler?.HidePopup(0f);
+        sectorsPage?.OnClickOpenClips(editingId, label);
     }
 
     public void OnClickDelete()
