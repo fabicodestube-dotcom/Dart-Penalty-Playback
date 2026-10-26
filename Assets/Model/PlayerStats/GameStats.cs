@@ -236,7 +236,7 @@ public class GameStats
 
         totalThrowsCount++;
 
-        if (t.HitType == HitType.Board)
+        if (t.HitType == HitType.Board || (t.HitType == HitType.Custom && t.Value > 0))
         {
             if (t.Multiplier == DartMultiplier.Double)
             {

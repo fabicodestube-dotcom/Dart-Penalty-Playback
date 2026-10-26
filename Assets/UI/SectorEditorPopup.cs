@@ -24,6 +24,10 @@ public class SectorEditorPopup : UIScreen, IUIScreen
     public TMP_InputField nameInput;
     public CustomToggle enabledToggle;
 
+    [Header("Wert (nur Custom-Sektoren)")]
+    public TMP_Dropdown valueDropdown;
+    public TMP_Dropdown multiplierDropdown;
+
     private string editingId;
     private bool editingBuiltIn;
 
@@ -107,6 +111,66 @@ public class SectorEditorPopup : UIScreen, IUIScreen
             nameInput.text = name;
 
         enabledToggle?.Initialize(enabled);
+
+        var def = CustomizationStore.GetHitSectors().Find(x => x != null && x.id == editingId);
+
+        if (valueDropdown != null)
+        {
+            // Optionen: 0-20 + 25. Index 0..20 = Wert 0..20, Index 21 = 25.
+            valueDropdown.ClearOptions();
+            var vOpts = new System.Collections.Generic.List<string>();
+            for (int v = 0; v <= 20; v++)
+                vOpts.Add(v.ToString());
+            vOpts.Add("25");
+            valueDropdown.AddOptions(vOpts);
+
+            int idx = 0;
+            if (def != null)
+            {
+                if (def.value == 25)
+                    idx = 21;
+                else
+                    idx = Mathf.Clamp(def.value, 0, 20);
+            }
+            valueDropdown.SetValueWithoutNotify(idx);
+            valueDropdown.interactable = !editingBuiltIn;
+
+            if (valueDropdown.captionText != null)
+                valueDropdown.captionText.text = valueDropdown.options.Count > idx
+                    ? valueDropdown.options[idx].text : "";
+        }
+
+        if (multiplierDropdown != null)
+        {
+            multiplierDropdown.ClearOptions();
+            multiplierDropdown.AddOptions(new System.Collections.Generic.List<string> { "Single", "Double", "Triple" });
+
+            int idx = 0;
+            if (def != null)
+            {
+                string target = def.multiplier switch
+                {
+                    DartMultiplier.Double => "Double",
+                    DartMultiplier.Triple => "Triple",
+                    _ => "Single"
+                };
+
+                for (int i = 0; i < multiplierDropdown.options.Count; i++)
+                {
+                    if (string.Equals(multiplierDropdown.options[i].text, target, System.StringComparison.OrdinalIgnoreCase))
+                    {
+                        idx = i;
+                        break;
+                    }
+                }
+            }
+            multiplierDropdown.SetValueWithoutNotify(idx);
+            multiplierDropdown.interactable = !editingBuiltIn;
+
+            if (multiplierDropdown.captionText != null)
+                multiplierDropdown.captionText.text = multiplierDropdown.options.Count > idx
+                    ? multiplierDropdown.options[idx].text : "";
+        }
     }
 
     public void ToggleEnabled()
@@ -132,6 +196,43 @@ public class SectorEditorPopup : UIScreen, IUIScreen
 
         bool enabled = enabledToggle == null || enabledToggle.IsActive();
 
+        // Wert/Multiplier nur für Custom-Sektoren (built-ins bleiben 0/Single).
+        int value = 0;
+        DartMultiplier multiplier = DartMultiplier.Single;
+        if (!editingBuiltIn)
+        {
+            if (valueDropdown != null)
+            {
+                int idx = valueDropdown.value;
+                value = (idx >= 21) ? 25 : Mathf.Clamp(idx, 0, 20);
+            }
+            if (multiplierDropdown != null)
+            {
+                string label = multiplierDropdown.options.Count > multiplierDropdown.value
+                    ? multiplierDropdown.options[multiplierDropdown.value].text
+                    : "";
+
+                multiplier = label switch
+                {
+                    var l when string.Equals(l, "Double", System.StringComparison.OrdinalIgnoreCase) => DartMultiplier.Double,
+                    var l when string.Equals(l, "Triple", System.StringComparison.OrdinalIgnoreCase) => DartMultiplier.Triple,
+                    _ => DartMultiplier.Single
+                };
+            }
+            // Triple nicht auf 25.
+            if (multiplier == DartMultiplier.Triple && value == 25)
+                value = 20;
+        }
+        else
+        {
+            var existing = CustomizationStore.GetHitSectors().Find(x => x != null && x.id == editingId);
+            if (existing != null)
+            {
+                value = existing.value;
+                multiplier = existing.multiplier;
+            }
+        }
+
         // Namen sind pro Bereich eindeutig (eigene ID ausgenommen).
         if (CustomizationStore.IsHitSectorNameTaken(name, editingId))
             return false;
@@ -141,7 +242,9 @@ public class SectorEditorPopup : UIScreen, IUIScreen
             id = editingId,
             name = name,
             enabled = enabled,
-            builtIn = editingBuiltIn
+            builtIn = editingBuiltIn,
+            value = value,
+            multiplier = multiplier
         });
 
         editingName = name;

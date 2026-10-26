@@ -15,6 +15,9 @@ public class CustomizationPenaltiesPage : MonoBehaviour, ICustomizationRowOwner
 
     [Header("Liste")]
     public Transform listParent;
+    public Transform turnPatternParent;
+    public Transform exactScoreParent;
+    public Transform gameEventParent;
     public GameObject rowPrefab;
 
     [Header("Editor")]
@@ -59,34 +62,18 @@ public class CustomizationPenaltiesPage : MonoBehaviour, ICustomizationRowOwner
 
     public void Refresh()
     {
-        if (listParent == null || rowPrefab == null)
+        if (rowPrefab == null)
             return;
 
         var wanted = new System.Collections.Generic.HashSet<string>();
 
-        int sibling = 0;
-        // Alle Einträge (Seeds + Customs) aus einer Tabelle.
+        // Alle Einträge (Seeds + Customs) gruppieren nach Bedingung.
         foreach (var def in CustomizationStore.GetPenalties())
         {
             if (def == null || string.IsNullOrEmpty(def.id))
                 continue;
 
-            wanted.Add(def.id);
-
-            if (!rowsById.TryGetValue(def.id, out var row) || row == null)
-            {
-                row = AddRow(def.id, def.name, def.enabled, def.builtIn);
-                if (row == null)
-                    continue;
-                rowsById[def.id] = row;
-            }
-            else
-            {
-                // Bestehende Row nur aktualisieren (kein Instantiate).
-                row.Setup(this, def.id, def.name, def.enabled);
-            }
-
-            row.transform.SetSiblingIndex(sibling++);
+            UpsertRow(def, wanted);
         }
 
         // Verschwundene Rows entfernen.
@@ -104,20 +91,51 @@ public class CustomizationPenaltiesPage : MonoBehaviour, ICustomizationRowOwner
         }
     }
 
-    private CustomizationListItem AddRow(string id, string name, bool enabled, bool builtIn)
+    private void UpsertRow(CustomPenaltyDef def, System.Collections.Generic.HashSet<string> wanted)
     {
-        var go = Instantiate(rowPrefab, listParent);
-        var row = go.GetComponent<CustomizationListItem>();
+        if (def == null || string.IsNullOrEmpty(def.id))
+            return;
 
-        if (row == null)
+        wanted.Add(def.id);
+
+        Transform parent = ParentFor(def.condition != null ? def.condition.kind : PenaltyConditionKind.TurnPattern);
+        if (parent == null)
+            parent = listParent;
+        if (parent == null || rowPrefab == null)
+            return;
+
+        if (!rowsById.TryGetValue(def.id, out var row) || row == null)
         {
-            Debug.LogError("CustomizationPenaltiesPage: rowPrefab ohne CustomizationListItem.");
-            Destroy(go);
-            return null;
+            var go = Instantiate(rowPrefab, parent);
+            row = go.GetComponent<CustomizationListItem>();
+            if (row == null)
+            {
+                Debug.LogError("CustomizationPenaltiesPage: rowPrefab ohne CustomizationListItem.");
+                Destroy(go);
+                return;
+            }
+            row.Setup(this, def.id, def.name, def.enabled);
+            rowsById[def.id] = row;
         }
+        else
+        {
+            if (row.transform.parent != parent)
+                row.transform.SetParent(parent, false);
+            row.Setup(this, def.id, def.name, def.enabled);
+        }
+    }
 
-        row.Setup(this, id, name, enabled);
-        return row;
+    private Transform ParentFor(PenaltyConditionKind kind)
+    {
+        return kind switch
+        {
+            PenaltyConditionKind.ExactScore => exactScoreParent != null ? exactScoreParent : listParent,
+            PenaltyConditionKind.RemainingExactScore => exactScoreParent != null ? exactScoreParent : listParent,
+            PenaltyConditionKind.LegLost => gameEventParent != null ? gameEventParent : listParent,
+            PenaltyConditionKind.SetLost => gameEventParent != null ? gameEventParent : listParent,
+            PenaltyConditionKind.GameLost => gameEventParent != null ? gameEventParent : listParent,
+            _ => turnPatternParent != null ? turnPatternParent : listParent
+        };
     }
 
     public void OnClickNewPenalty()

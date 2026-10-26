@@ -412,7 +412,7 @@ public class GameStatsX01 : GameStats
     {
         string key = null;
 
-        if (t.HitType != HitType.Board || t.GetScore() == 0)
+        if ((t.HitType != HitType.Board && t.HitType != HitType.Custom) || t.GetScore() == 0)
         {
             key = "0";
         }
@@ -453,7 +453,7 @@ public class GameStatsX01 : GameStats
     // (Analog zu deiner ApplyThrowToStats Logik)
     private string GetSectorKey(Throw t)
     {
-        if (t.HitType != HitType.Board || t.GetScore() == 0) return "0";
+        if ((t.HitType != HitType.Board && t.HitType != HitType.Custom) || t.GetScore() == 0) return "0";
         
         if (t.Value == 25)
             return (t.Multiplier == DartMultiplier.Double) ? "D25" : "25";

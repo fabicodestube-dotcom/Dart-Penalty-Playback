@@ -67,7 +67,7 @@ public class PenaltyEditorPopup : UIScreen, IUIScreen
     // Index-Reihenfolge = Dropdown-Reihenfolge (Code füllt die Optionen).
     private static readonly List<string> ConditionOptions = new List<string>
     {
-        "Turn pattern", "Exact score", "Game event", "Single miss (instant)"
+        "Turn pattern", "Exact score", "Game event"
     };
 
     /// <summary>Sektor-IDs in Dropdown-Reihenfolge (Wall/Ceiling zuerst).</summary>
@@ -389,16 +389,6 @@ public class PenaltyEditorPopup : UIScreen, IUIScreen
                     kind = IndexToGameEvent(eventKindDropdown != null ? eventKindDropdown.value : 0)
                 };
 
-            case 3:
-                string sectorId = SelectedInstantSectorId();
-                HitType hitType = CustomHitDef.HitTypeForSector(sectorId);
-                return new PenaltyCondition
-                {
-                    kind = PenaltyConditionKind.HitTypeMiss,
-                    hitType = hitType,
-                    customHitId = hitType == HitType.Custom ? sectorId : null
-                };
-
             default:
                 return new PenaltyCondition
                 {
@@ -483,8 +473,6 @@ public class PenaltyEditorPopup : UIScreen, IUIScreen
             return 1;
         if (CustomPenaltyDef.IsGameEventKind(kind))
             return 2;
-        if (kind == PenaltyConditionKind.HitTypeMiss)
-            return 3;
         return 0;
     }
 

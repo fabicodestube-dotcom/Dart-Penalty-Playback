@@ -120,7 +120,13 @@ public abstract class InputHandler : MonoBehaviour
         if (!inputEnabled || string.IsNullOrEmpty(sectorId))
             return;
 
-        gameEngine.AddThrow(new Throw(DartMultiplier.Single, 0, HitType.Custom, false, -1, sectorId));
+        var def = CustomizationStore.GetHitSectors()
+            .Find(x => x != null && x.id == sectorId);
+
+        int value = def != null ? def.value : 0;
+        DartMultiplier mult = def != null ? def.multiplier : DartMultiplier.Single;
+
+        gameEngine.AddThrow(new Throw(mult, value, HitType.Custom, false, -1, sectorId));
         TriggerHaptic();
         CloseSectorPanel();
     }

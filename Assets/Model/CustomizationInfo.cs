@@ -64,6 +64,17 @@ public static class CustomizationInfo
         if (string.Equals(id, "builtin:ceiling", System.StringComparison.OrdinalIgnoreCase))
             return "Hit the ceiling";
 
+        if (def != null && def.value > 0)
+        {
+            string mult = def.multiplier switch
+            {
+                DartMultiplier.Double => "D",
+                DartMultiplier.Triple => "T",
+                _ => ""
+            };
+            return $"Custom area ({mult}{def.value})";
+        }
+
         return "Custom out-of-board area (0 points)";
     }
 

@@ -15,7 +15,7 @@ public class Throw
 
     /// <summary>
     /// Sektor-ID eines Custom-Treffer-Bereichs (nur bei HitType.Custom gesetzt,
-    /// sonst null). Custom-Sektoren haben immer Value 0 / Multiplier Single.
+    /// sonst null). Value/Multiplier bestimmen den Score (0 = Miss).
     /// </summary>
     [JsonProperty] public string CustomHitId { get; }
 
@@ -44,7 +44,7 @@ public class Throw
     /// Wichtig: Nur gültige Board-Treffer zählen, alles andere = 0.
     /// </summary>
     public int GetScore() => 
-        HitType != HitType.Board 
+        (HitType != HitType.Board && HitType != HitType.Custom)
             ? 0 
             : Multiplier switch
             {
@@ -63,11 +63,11 @@ public class Throw
     /// Prüft, ob der Wurf ein Double-Finish sein könnte.
     /// </summary>
     public bool IsDouble() => 
-        HitType == HitType.Board && Multiplier == DartMultiplier.Double;
+        (HitType == HitType.Board || HitType == HitType.Custom) && Multiplier == DartMultiplier.Double;
 
     /// <summary>
     /// Prüft, ob der Wurf ein Triple-Finish sein könnte.
     /// </summary>
     public bool IsTriple() => 
-        HitType == HitType.Board && Multiplier == DartMultiplier.Triple;
+        (HitType == HitType.Board || HitType == HitType.Custom) && Multiplier == DartMultiplier.Triple;
 }

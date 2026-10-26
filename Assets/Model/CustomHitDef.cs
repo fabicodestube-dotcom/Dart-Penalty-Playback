@@ -3,7 +3,8 @@ using Newtonsoft.Json;
 /// <summary>
 /// Treffer-Bereich aus Tab 1 („Bereiche“): Fehlwurf-Variante neben Wall/Ceiling.
 /// Board-Treffer sind fest verdrahtet und erscheinen hier nicht. Custom-Sektoren
-/// haben immer Value 0 / Multiplier Single (0 Punkte). Stabile String-ID, damit
+/// können einen Dart-Wert und Multiplier haben (zählen dann wie Board-Treffer).
+/// Value 0 / Multiplier Single = Miss (0 Punkte). Stabile String-ID, damit
 /// Pattern-Referenzen und Audio-Clips beim Editieren verlinkt bleiben.
 /// Seeds: "builtin:wall" (Wand), "builtin:ceiling" (Decke).
 /// </summary>
@@ -16,6 +17,12 @@ public class CustomHitDef
     [JsonProperty] public string id;
     [JsonProperty] public string name = "New area";
     [JsonProperty] public bool enabled = true;
+
+    /// <summary>Dart-Wert des Sektors (0-20, 25). 0 = Miss (keine Punkte).</summary>
+    [JsonProperty] public int value = 0;
+
+    /// <summary>Multiplier des Sektors (Single/Double/Triple).</summary>
+    [JsonProperty] public DartMultiplier multiplier = DartMultiplier.Single;
 
     /// <summary>
     /// Generated English description of the setting (function for built-in

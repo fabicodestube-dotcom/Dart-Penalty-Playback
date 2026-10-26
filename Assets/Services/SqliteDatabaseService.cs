@@ -113,13 +113,14 @@ public static class SqliteDatabaseService
         connection.Execute("CREATE TABLE IF NOT EXISTS player_stats_cricket (player_id TEXT PRIMARY KEY, stat_data TEXT NOT NULL, FOREIGN KEY(player_id) REFERENCES players(id));");
         connection.Execute("CREATE TABLE IF NOT EXISTS player_stats_atc (player_id TEXT PRIMARY KEY, stat_data TEXT NOT NULL, FOREIGN KEY(player_id) REFERENCES players(id));");
         connection.Execute("CREATE TABLE IF NOT EXISTS custom_penalties (id TEXT PRIMARY KEY, name TEXT NOT NULL, short_name TEXT NOT NULL DEFAULT '', info TEXT NOT NULL DEFAULT '', enabled INTEGER NOT NULL DEFAULT 1, cost INTEGER NOT NULL DEFAULT 0, builtin INTEGER NOT NULL DEFAULT 0, condition_kind INTEGER NOT NULL DEFAULT 0, condition_json TEXT NOT NULL DEFAULT '{}');");
-        connection.Execute("CREATE TABLE IF NOT EXISTS custom_hit_sectors (id TEXT PRIMARY KEY, name TEXT NOT NULL, info TEXT NOT NULL DEFAULT '', enabled INTEGER NOT NULL DEFAULT 1, builtin INTEGER NOT NULL DEFAULT 0);");
+        connection.Execute("CREATE TABLE IF NOT EXISTS custom_hit_sectors (id TEXT PRIMARY KEY, name TEXT NOT NULL, info TEXT NOT NULL DEFAULT '', enabled INTEGER NOT NULL DEFAULT 1, builtin INTEGER NOT NULL DEFAULT 0, value INTEGER NOT NULL DEFAULT 0, multiplier INTEGER NOT NULL DEFAULT 0);");
         connection.Execute("CREATE TABLE IF NOT EXISTS audio_events (id TEXT PRIMARY KEY, name TEXT NOT NULL, info TEXT NOT NULL DEFAULT '', builtin INTEGER NOT NULL DEFAULT 0, enabled INTEGER NOT NULL DEFAULT 1, category INTEGER NOT NULL DEFAULT 0, kind INTEGER NOT NULL DEFAULT 0, params_json TEXT NOT NULL DEFAULT '{}');");
         connection.Execute("CREATE TABLE IF NOT EXISTS recorded_clips (id INTEGER PRIMARY KEY AUTOINCREMENT, category TEXT NOT NULL, score INTEGER NOT NULL DEFAULT 0, penalty_type TEXT, special_type TEXT, custom_key TEXT, file_name TEXT NOT NULL, slot_index INTEGER NOT NULL DEFAULT 0);");
         EnsureThrowCompatibility(connection);
         EnsurePenaltyShortName(connection);
         EnsureAudioEventEnabled(connection);
         EnsureCustomizationInfo(connection);
+        EnsureCustomHitSectorValueMultiplier(connection);
 
         connection.Execute("CREATE INDEX IF NOT EXISTS idx_games_last_activity ON games(last_activity_at);");
         connection.Execute("CREATE INDEX IF NOT EXISTS idx_games_finished_at ON games(finished_at);");
@@ -194,6 +195,20 @@ public static class SqliteDatabaseService
 
         if (!columns.Any(column => string.Equals(column.Name, "info", StringComparison.OrdinalIgnoreCase)))
             connection.Execute($"ALTER TABLE {table} ADD COLUMN info TEXT NOT NULL DEFAULT '';");
+    }
+
+    /// <summary>value/multiplier-Spalten für Bestands-DBs nachrüsten.</summary>
+    private static void EnsureCustomHitSectorValueMultiplier(SQLiteConnection connection)
+    {
+        var columns = connection.Query<ColumnInfo>("PRAGMA table_info(custom_hit_sectors);");
+        if (columns == null || columns.Count == 0)
+            return;
+
+        if (!columns.Any(column => string.Equals(column.Name, "value", StringComparison.OrdinalIgnoreCase)))
+            connection.Execute("ALTER TABLE custom_hit_sectors ADD COLUMN value INTEGER NOT NULL DEFAULT 0;");
+
+        if (!columns.Any(column => string.Equals(column.Name, "multiplier", StringComparison.OrdinalIgnoreCase)))
+            connection.Execute("ALTER TABLE custom_hit_sectors ADD COLUMN multiplier INTEGER NOT NULL DEFAULT 0;");
     }
 
     private class SettingsRow

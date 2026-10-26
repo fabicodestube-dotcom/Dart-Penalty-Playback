@@ -16,8 +16,8 @@ public enum HitType
     [JsonProperty] Ceiling,
     /// <summary>
     /// Benutzerdefinierter Treffer-Bereich (Tab 1 „Bereiche“).
-    /// Die Sektor-ID steht in Throw.CustomHitId. Zählt wie Wall/Ceiling
-    /// als Fehlwurf (0 Punkte, kein Board-Treffer).
+    /// Die Sektor-ID steht in Throw.CustomHitId. Score hängt von Value/Multiplier ab
+    /// (0 = Miss).
     /// </summary>
     [JsonProperty] Custom
 }

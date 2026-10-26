@@ -239,7 +239,7 @@ public class DartBot : BasePlayer
 
     private void UpdateForm(Throw dart)
     {
-        if (dart.HitType == HitType.Board)
+        if (dart.HitType == HitType.Board || (dart.HitType == HitType.Custom && dart.Value > 0))
         {
             streak++;
             confidence += 0.2f;

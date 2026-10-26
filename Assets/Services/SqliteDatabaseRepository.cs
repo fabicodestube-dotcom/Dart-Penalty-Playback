@@ -2099,6 +2099,8 @@ public static class SqliteDatabaseRepository
         public string Info { get; set; }
         public int Enabled { get; set; }
         public int Builtin { get; set; }
+        public int Value { get; set; }
+        public int Multiplier { get; set; }
     }
 
     public static List<CustomHitDef> LoadCustomHitSectors()
@@ -2120,7 +2122,9 @@ public static class SqliteDatabaseRepository
                     name = row.Name ?? row.Id,
                     info = row.Info,
                     enabled = row.Enabled != 0,
-                    builtIn = row.Builtin != 0
+                    builtIn = row.Builtin != 0,
+                    value = row.Value,
+                    multiplier = (DartMultiplier)row.Multiplier
                 });
             }
         }
@@ -2138,12 +2142,14 @@ public static class SqliteDatabaseRepository
         using (var connection = SqliteDatabaseService.Open())
         {
             connection.Execute(
-                "INSERT OR REPLACE INTO custom_hit_sectors (id, name, info, enabled, builtin) VALUES (?, ?, ?, ?, ?);",
+                "INSERT OR REPLACE INTO custom_hit_sectors (id, name, info, enabled, builtin, value, multiplier) VALUES (?, ?, ?, ?, ?, ?, ?);",
                 def.id,
                 def.name ?? def.id,
                 def.info ?? "",
                 def.enabled ? 1 : 0,
-                def.builtIn ? 1 : 0);
+                def.builtIn ? 1 : 0,
+                def.value,
+                (int)def.multiplier);
         }
     }
 

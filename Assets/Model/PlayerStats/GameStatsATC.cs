@@ -88,7 +88,7 @@ public class GameStatsATC : GameStats
     /// </summary>
     public static string GetAttemptSectorKey(Throw t, int target)
     {
-        if (t == null || t.HitType != HitType.Board || t.GetScore() == 0)
+        if (t == null || (t.HitType != HitType.Board && !(t.HitType == HitType.Custom && t.Value > 0)) || t.GetScore() == 0)
             return "0";
         if (t.Multiplier == DartMultiplier.Double)
             return "D" + target;

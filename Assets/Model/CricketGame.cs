@@ -184,7 +184,12 @@ public class CricketGame : Game
         // =====================================================
         CheckCustomInstantPenalties(playerId, t, currentTurn);
 
-        if (t.HitType != HitType.Board)
+        // Custom-Sektoren mit Wert>0 zählen wie Board-Treffer (Marks).
+        bool isScoringCustom = t.HitType == HitType.Custom
+            && t.Value > 0
+            && !(t.Value == 25 && t.Multiplier == DartMultiplier.Triple);
+
+        if (t.HitType != HitType.Board && !isScoringCustom)
         {
             // Wichtig: Auch Fehlwürfe müssen registriert werden (0 Marks)
             stats?.RegisterThrow(t, 0);
@@ -701,8 +706,8 @@ public class CricketGame : Game
                 int totalMarks = 0;
                 int pts = 0;
 
-                // 2. Nur wenn es ein Board-Treffer ist, berechnen wir Marks und Punkte
-                if (thr.HitType == HitType.Board)
+                // 2. Nur wenn es ein Board-Treffer oder ein Custom-Sektor mit Wert ist
+                if (thr.HitType == HitType.Board || (thr.HitType == HitType.Custom && thr.Value > 0))
                 {
                     int value = thr.Value;
                     int mult = ConvertMultiplier(thr.Multiplier);
@@ -946,7 +951,7 @@ public class CricketGame : Game
         var numbersSet = new HashSet<int>(GetNumbers());
         int hitDarts = GetAllTurns(playerId)
             .SelectMany(t => t.GetThrows())
-            .Count(th => th.HitType == HitType.Board
+            .Count(th => (th.HitType == HitType.Board || (th.HitType == HitType.Custom && th.Value > 0))
                 && numbersSet.Contains(th.Value)
                 && !(th.Value == 25 && th.Multiplier == DartMultiplier.Triple));
 
@@ -997,7 +1002,7 @@ public class CricketGame : Game
 
                     foreach (var thr in turn.GetThrows())
                     {
-                        if (thr.HitType != HitType.Board)
+                        if (thr.HitType != HitType.Board && !(thr.HitType == HitType.Custom && thr.Value > 0))
                             continue;
 
                         int value = thr.Value;
@@ -1161,7 +1166,7 @@ public class CricketGame : Game
         bool pointsEnabled,
         bool cutThroat)
     {
-        if (thr.HitType != HitType.Board)
+        if (thr.HitType != HitType.Board && !(thr.HitType == HitType.Custom && thr.Value > 0))
             return null;
 
         int value = thr.Value;
