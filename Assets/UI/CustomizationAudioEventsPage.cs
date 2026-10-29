@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using TMPro;
 using UnityEngine;
 
@@ -69,28 +70,51 @@ public class CustomizationAudioEventsPage : MonoBehaviour, ICustomizationRowOwne
             return;
 
         var wanted = new HashSet<string>();
+        var siblingByParent = new Dictionary<Transform, int>();
 
         // Store-Defs (Seeds + Customs): Seeds sind nicht löschbar, werden
         // aber normal angezeigt, editiert und von der Engine ausgewertet.
         var defs = CustomizationStore.GetAudioEvents();
         if (defs != null)
         {
-            foreach (var def in defs)
+            foreach (var def in defs
+                .Where(d => d != null && !string.IsNullOrEmpty(d.id))
+                .OrderBy(d => d.enabled ? 0 : 1))
             {
-                if (def == null || string.IsNullOrEmpty(def.id))
-                    continue;
                 UpsertRow(def, !def.builtIn, wanted);
+
+                if (rowsById.TryGetValue(def.id, out var row) && row != null)
+                {
+                    var parent = row.transform.parent;
+                    if (parent == null)
+                        continue;
+                    if (!siblingByParent.TryGetValue(parent, out int sib))
+                        sib = 0;
+                    row.transform.SetSiblingIndex(sib);
+                    siblingByParent[parent] = sib + 1;
+                }
             }
         }
 
         // Fallback für leeren Store (sollte nach Seeding nicht vorkommen).
         if (wanted.Count == 0)
         {
-            foreach (var def in AudioEventCatalog.BuildBuiltIns())
+            foreach (var def in AudioEventCatalog.BuildBuiltIns()
+                .Where(d => d != null && !string.IsNullOrEmpty(d.id))
+                .OrderBy(d => d.enabled ? 0 : 1))
             {
-                if (def == null || string.IsNullOrEmpty(def.id))
-                    continue;
                 UpsertRow(def, false, wanted);
+
+                if (rowsById.TryGetValue(def.id, out var row) && row != null)
+                {
+                    var parent = row.transform.parent;
+                    if (parent == null)
+                        continue;
+                    if (!siblingByParent.TryGetValue(parent, out int sib))
+                        sib = 0;
+                    row.transform.SetSiblingIndex(sib);
+                    siblingByParent[parent] = sib + 1;
+                }
             }
         }
 
@@ -350,6 +374,13 @@ public class CustomizationAudioEventsPage : MonoBehaviour, ICustomizationRowOwne
             scoreGrid.Show();
         else
             Debug.LogWarning("CustomizationAudioEventsPage: kein ScoreClipGridHandler in der Szene.");
+    }
+
+    public void RefreshScoreGridCounts()
+    {
+        if (scoreGrid == null)
+            scoreGrid = FindAnyObjectByType<ScoreClipGridHandler>();
+        scoreGrid?.RefreshCounts();
     }
 
     public void OnClickDeleteAudioEvent(string id)

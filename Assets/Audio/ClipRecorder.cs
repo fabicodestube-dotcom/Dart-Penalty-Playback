@@ -29,17 +29,17 @@ public class ClipRecorder : MonoBehaviour
     public int sampleRate = 44100;
     public float blinkFrequency = 1.5f;
 
-    [Tooltip("Sicherer Maximal-Peak nach Normalisierung (0.89 = -1 dB, verhindert Clipping). Wird auf max. 0.99 begrenzt.")]
-    public float normalizeTargetPeak = 0.89f;
+    [Tooltip("Sicherer Maximal-Peak nach Normalisierung (0.95 = -0.4 dB, verhindert Clipping). Wird auf max. 0.99 begrenzt.")]
+    public float normalizeTargetPeak = 0.95f;
 
-    [Tooltip("Optionaler Referenzclip - seine Lautheit (RMS) ist das Ziel für alle Aufnahmen")]
-    public AudioClip normalizationReferenceClip;
+    [Tooltip("Mindest-Ziel-Lautheit in dBFS RMS. Aufnahmen werden mindestens auf diesen Wert angehoben.")]
+    public float targetLoudnessDbfs = -14f;
 
     [Tooltip("Minimaler Gain (Aufnahmen werden nie leiser als das gemacht)")]
     public float minNormalizationGain = 0.25f;
 
-    [Tooltip("Maximaler Gain (begrenzt, wie stark leise Aufnahmen verstärkt werden). 10-15 für Handy-Mics.")]
-    public float maxNormalizationGain = 20f;
+    [Tooltip("Maximaler Gain (begrenzt, wie stark leise Aufnahmen verstärkt werden).")]
+    public float maxNormalizationGain = 64f;
 
     [Header("Silence Trimming")]
     [SerializeField] private float minThreshold = 0.01f;
@@ -169,13 +169,28 @@ public class ClipRecorder : MonoBehaviour
 
         microphoneDevice = Microphone.devices[0];
 
+        int recordingSampleRate = sampleRate;
+
+        Microphone.GetDeviceCaps(
+            microphoneDevice,
+            out int minFrequency,
+            out int maxFrequency);
+
+        if (maxFrequency > 0)
+        {
+            recordingSampleRate = Mathf.Clamp(
+                sampleRate,
+                minFrequency,
+                maxFrequency);
+        }
+
         recordedClip = null;
 
         recordedClip = Microphone.Start(
             microphoneDevice,
             false,
             maxRecordingLength,
-            sampleRate
+            recordingSampleRate
         );
 
         isRecording = true;
@@ -204,7 +219,16 @@ public class ClipRecorder : MonoBehaviour
             clipBrowser.SetLocked(false);
         }
 
-        if (position <= 0)
+        if (recordedClip == null)
+        {
+            Debug.LogWarning("Keine Aufnahme erkannt.");
+            return;
+        }
+
+        int recordedChannels = recordedClip.channels;
+        int recordedFrequency = recordedClip.frequency;
+
+        if (position <= 0 || recordedChannels <= 0)
         {
             recordedClip = null;
             clipBrowser?.SetLocked(false);
@@ -213,13 +237,22 @@ public class ClipRecorder : MonoBehaviour
             return;
         }
 
-        float[] samples =
-            new float[recordedClip.samples * recordedClip.channels];
+        position = Mathf.Clamp(position, 0, recordedClip.samples);
 
-        recordedClip.GetData(samples, 0);
+        float[] samples =
+            new float[recordedClip.samples * recordedChannels];
+
+        if (!recordedClip.GetData(samples, 0))
+        {
+            recordedClip = null;
+            clipBrowser?.SetLocked(false);
+
+            Debug.LogWarning("Aufnahmedaten konnten nicht gelesen werden.");
+            return;
+        }
 
         float[] clippedSamples =
-            new float[position * recordedClip.channels];
+            new float[position * recordedChannels];
 
         System.Array.Copy(
             samples,
@@ -228,14 +261,18 @@ public class ClipRecorder : MonoBehaviour
         );
 
         recordedClip =
-            CreateClipFromSamples(clippedSamples, recordedClip.channels);
+            CreateClipFromSamples(
+                clippedSamples,
+                recordedChannels,
+                recordedFrequency);
 
         if (trimSilenceToggle.IsActive())
         {
             AudioClip trimmed =
                 TrimSilence(
                     clippedSamples,
-                    recordedClip.channels
+                    recordedChannels,
+                    recordedFrequency
                 );
 
             if (trimmed != null)
@@ -249,11 +286,7 @@ public class ClipRecorder : MonoBehaviour
             return;
         }
 
-        recordedClip =
-            NormalizeRecordedClip(
-                recordedClip,
-                normalizationReferenceClip
-            );
+        recordedClip = NormalizeRecordedClip(recordedClip);
         AddRecordedClipToBrowser();
         ResetRecorder();
     }
@@ -271,13 +304,16 @@ public class ClipRecorder : MonoBehaviour
     }
 
 
-    private AudioClip CreateClipFromSamples(float[] samples, int channels)
+    private AudioClip CreateClipFromSamples(
+        float[] samples,
+        int channels,
+        int frequency)
     {
         AudioClip clip = AudioClip.Create(
             "Recording",
             samples.Length / channels,
             channels,
-            sampleRate,
+            frequency,
             false
         );
 
@@ -330,7 +366,10 @@ public class ClipRecorder : MonoBehaviour
     // ====================================================
     // SILENCE TRIMMING
     // ====================================================
-    private AudioClip TrimSilence(float[] samples, int channels)
+    private AudioClip TrimSilence(
+        float[] samples,
+        int channels,
+        int frequency)
     {
         if (samples == null || samples.Length == 0)
             return null;
@@ -403,7 +442,7 @@ public class ClipRecorder : MonoBehaviour
             "TrimmedRecording",
             trimmedSamples.Length / channels,
             channels,
-            sampleRate,
+            frequency,
             false
         );
 
@@ -417,115 +456,66 @@ public class ClipRecorder : MonoBehaviour
     // NORMALIZATION
     // ====================================================
 
-    private AudioClip NormalizeRecordedClip(
-        AudioClip clip,
-        AudioClip referenceClip)
+    private AudioClip NormalizeRecordedClip(AudioClip clip)
     {
         if (clip == null)
             return null;
 
-        // Legacy-Werte aus Prefabs (z.B. 1.2) heilen: physikalisch max. 0.99
-        float ceiling = normalizeTargetPeak <= 0f ? 0.89f : normalizeTargetPeak;
+        float ceiling = normalizeTargetPeak <= 0f ? 0.95f : normalizeTargetPeak;
         ceiling = Mathf.Clamp(ceiling, 0.05f, 0.99f);
 
         int sampleCount = clip.samples * clip.channels;
 
+        if (sampleCount <= 0)
+            return clip;
+
         float[] samples = new float[sampleCount];
 
-        clip.GetData(samples, 0);
+        if (!clip.GetData(samples, 0))
+        {
+            Debug.LogWarning("[RECORDER] Aufnahmedaten konnten nicht gelesen werden.");
+            return clip;
+        }
 
         ComputeStats(samples, out float recPeak, out float recRms);
 
-        if (recPeak <= 1e-6f || recRms <= 1e-6f)
+        if (!IsFinite(recPeak) || !IsFinite(recRms) ||
+            recPeak <= 1e-6f || recRms <= 1e-6f)
+        {
+            Debug.LogWarning(
+                $"[RECORDER] Keine gültigen Samples: peak={recPeak}, rms={recRms}");
             return clip;
-
-        float gain;
-
-        // Referenz-RMS bestimmen: manueller Clip (Inspector) hat Vorrang,
-        // sonst Durchschnitt über alle nicht-null Clips des Default-Sets
-        // (AudioLibrary), damit die Ziel-Lautheit repräsentativ ist.
-        float refRms = 0f;
-        float refPeak = 0f;
-
-        if (referenceClip != null)
-        {
-            ComputeClipStats(referenceClip, out refPeak, out refRms);
-        }
-        else if (AudioLibrary.Instance != null)
-        {
-            AudioClip[] clips = AudioLibrary.Instance.WillBePublished
-                ? AudioLibrary.Instance.numberClips
-                : AudioLibrary.Instance.customNumberClips;
-
-            if (clips != null)
-            {
-                float sumRms = 0f;
-                float sumPeak = 0f;
-                int count = 0;
-                foreach (var c in clips)
-                {
-                    if (c == null)
-                        continue;
-
-                    ComputeClipStats(c, out float p, out float r);
-                    if (r > 1e-6f)
-                    {
-                        sumRms += r;
-                        sumPeak += p;
-                        count++;
-                    }
-                }
-
-                if (count > 0)
-                {
-                    refRms = sumRms / count;
-                    refPeak = sumPeak / count;
-                }
-            }
         }
 
-        if (refRms > 1e-6f)
-        {
-            // Echte Lautheits-Angleichung: gleiche RMS wie Referenz/Durchschnitt
-            gain = refRms / recRms;
-        }
-        else if (refPeak > 1e-6f)
-        {
-            gain = refPeak / recPeak;
-        }
-        else
-        {
-            // Fallback ohne Referenz: klassische Peak-Normalisierung
-            gain = ceiling / recPeak;
-        }
+        float targetRms = Mathf.Pow(
+            10f,
+            Mathf.Clamp(targetLoudnessDbfs, -60f, -1f) / 20f);
+
+        if (!IsFinite(targetRms) || targetRms <= 0f)
+            targetRms = 0.2f;
+
+        float gain = targetRms / recRms;
 
         float minGain = Mathf.Max(0.01f, minNormalizationGain);
         float maxGain = Mathf.Max(minGain, maxNormalizationGain);
         gain = Mathf.Clamp(gain, minGain, maxGain);
+
+        if (!IsFinite(gain))
+            return clip;
 
         for (int i = 0; i < sampleCount; i++)
         {
             samples[i] *= gain;
         }
 
-        // Limiter: stellt sicher, dass wir nie über ceiling clippen
-        // (schützt WavUtility 16-bit Konvertierung vor Verzerrung)
-        float outPeak = 0f;
-        for (int i = 0; i < sampleCount; i++)
-        {
-            float abs = Mathf.Abs(samples[i]);
-            if (abs > outPeak)
-                outPeak = abs;
-        }
+        ApplySoftLimiter(samples, ceiling);
 
-        if (outPeak > ceiling && outPeak > 1e-6f)
-        {
-            float limiterScale = ceiling / outPeak;
-            for (int i = 0; i < sampleCount; i++)
-            {
-                samples[i] *= limiterScale;
-            }
-        }
+        ComputeStats(samples, out float outPeak, out float outRms);
+
+        Debug.Log(
+            $"[RECORDER] recPeak={recPeak:F4} recRms={recRms:F4} " +
+            $"targetRms={targetRms:F4} gain={gain:F2} " +
+            $"outPeak={outPeak:F4} outRms={outRms:F4}");
 
         AudioClip normalizedClip =
             AudioClip.Create(
@@ -539,6 +529,44 @@ public class ClipRecorder : MonoBehaviour
         normalizedClip.SetData(samples, 0);
 
         return normalizedClip;
+    }
+
+    private static void ApplySoftLimiter(float[] samples, float ceiling)
+    {
+        if (samples == null || samples.Length == 0)
+            return;
+
+        float knee = ceiling * 0.7f;
+        float room = ceiling - knee;
+
+        if (room <= 1e-6f)
+            return;
+
+        for (int i = 0; i < samples.Length; i++)
+        {
+            float sample = samples[i];
+
+            if (!IsFinite(sample))
+            {
+                samples[i] = 0f;
+                continue;
+            }
+
+            float abs = Mathf.Abs(sample);
+
+            if (abs <= knee)
+                continue;
+
+            float over = abs - knee;
+            float limited = knee + room * (1f - Mathf.Exp(-over / room));
+
+            samples[i] = Mathf.Sign(sample) * limited;
+        }
+    }
+
+    private static bool IsFinite(float value)
+    {
+        return !float.IsNaN(value) && !float.IsInfinity(value);
     }
 
     /// <summary>
@@ -570,35 +598,6 @@ public class ClipRecorder : MonoBehaviour
         }
 
         rms = Mathf.Sqrt((float)(sumSq / samples.Length));
-    }
-
-    private void ComputeClipStats(AudioClip clip, out float peak, out float rms)
-    {
-        peak = 0f;
-        rms = 0f;
-
-        if (clip == null)
-            return;
-
-        int sampleCount = clip.samples * clip.channels;
-        if (sampleCount <= 0)
-            return;
-
-        float[] samples = new float[sampleCount];
-        clip.GetData(samples, 0);
-        ComputeStats(samples, out peak, out rms);
-    }
-
-    private float GetClipPeak(AudioClip clip)
-    {
-        ComputeClipStats(clip, out float peak, out _);
-        return peak;
-    }
-
-    private float GetClipRms(AudioClip clip)
-    {
-        ComputeClipStats(clip, out _, out float rms);
-        return rms;
     }
 
     private void UpdateRecordingWaveform()

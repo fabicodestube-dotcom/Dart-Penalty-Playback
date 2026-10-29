@@ -10,6 +10,7 @@ public class Database
     [JsonProperty] private List<GameSummary> gameSummaries;
     [JsonProperty] private List<BasePlayer> activePlayers;
     [JsonProperty] private List<BasePlayer> reservePlayers;
+    [JsonProperty] private List<Guid> playerOrder;
 
     [JsonProperty] private X01GameSettings x01Settings;
     [JsonProperty] private CricketGameSettings cricketSettings;
@@ -23,6 +24,19 @@ public class Database
 
     public List<BasePlayer> GetPlayers()
     {
+        if (playerOrder != null && playerOrder.Count > 0)
+        {
+            var result = new List<BasePlayer>();
+            foreach (var id in playerOrder)
+            {
+                var p = GetPlayerByID(id);
+                if (p != null && !p.GotDeleted())
+                    result.Add(p);
+            }
+            if (result.Count > 0)
+                return result;
+        }
+
         return activePlayers
             .Union(reservePlayers)
             .Where(p => !p.GotDeleted())
@@ -222,6 +236,19 @@ public class Database
         }
 
         activePlayers = reordered;
+    }
+
+    public void SetPlayerOrder(List<Guid> newOrder)
+    {
+        if (newOrder == null)
+            return;
+
+        playerOrder = new List<Guid>(newOrder);
+    }
+
+    public List<Guid> GetPlayerOrder()
+    {
+        return playerOrder;
     }
 
     public void SetPlayerVisibleInStatistics(Guid id, bool isVisible)

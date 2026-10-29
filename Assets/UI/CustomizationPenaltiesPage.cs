@@ -1,3 +1,4 @@
+using System.Linq;
 using TMPro;
 using UnityEngine;
 
@@ -66,14 +67,24 @@ public class CustomizationPenaltiesPage : MonoBehaviour, ICustomizationRowOwner
             return;
 
         var wanted = new System.Collections.Generic.HashSet<string>();
+        var siblingByParent = new System.Collections.Generic.Dictionary<Transform, int>();
 
-        // Alle Einträge (Seeds + Customs) gruppieren nach Bedingung.
-        foreach (var def in CustomizationStore.GetPenalties())
+        foreach (var def in CustomizationStore.GetPenalties()
+            .Where(d => d != null && !string.IsNullOrEmpty(d.id))
+            .OrderBy(d => d.enabled ? 0 : 1))
         {
-            if (def == null || string.IsNullOrEmpty(def.id))
-                continue;
-
             UpsertRow(def, wanted);
+
+            if (rowsById.TryGetValue(def.id, out var row) && row != null)
+            {
+                var parent = row.transform.parent;
+                if (parent == null)
+                    continue;
+                if (!siblingByParent.TryGetValue(parent, out int sib))
+                    sib = 0;
+                row.transform.SetSiblingIndex(sib);
+                siblingByParent[parent] = sib + 1;
+            }
         }
 
         // Verschwundene Rows entfernen.

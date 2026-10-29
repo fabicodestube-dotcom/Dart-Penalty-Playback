@@ -112,6 +112,7 @@ public class CustomizationHandler : MonoBehaviour, IUIScreen
         sectorsPage?.Refresh();
         penaltiesPage?.Refresh();
         audioEventsPage?.Refresh();
+        audioEventsPage?.RefreshScoreGridCounts();
     }
 
     /// <summary>Aktiver Refresh aller Clip-Anzahlen (z. B. nach AudioLibrary-Load).</summary>

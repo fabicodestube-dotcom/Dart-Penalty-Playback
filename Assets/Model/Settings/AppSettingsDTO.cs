@@ -9,6 +9,7 @@ public class AppSettings
 {
     [JsonProperty] public LanguageSaveData Language = new LanguageSaveData();
     [JsonProperty] public ThemeColorScheme Theme = ThemeColorScheme.Green;
+    [JsonProperty] public ThemeMode ThemeMode = ThemeMode.Dark;
     [JsonProperty] public SoundSettings Sound = new SoundSettings();
     [JsonProperty] public VibrationSettings Vibration = new VibrationSettings();
     [JsonProperty] public PenaltySettings Penalties = new PenaltySettings();

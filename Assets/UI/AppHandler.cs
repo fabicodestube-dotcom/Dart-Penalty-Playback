@@ -471,7 +471,13 @@ public class AppHandler : MonoBehaviour
     public void SetActivePlayerOrder(List<Guid> newOrder)
     {
         database.SetActivePlayerOrder(newOrder);
-        MarkDatabaseDirty();
+        databaseDirty = true;
+    }
+
+    public void SetPlayerOrder(List<Guid> newOrder)
+    {
+        database.SetPlayerOrder(newOrder);
+        databaseDirty = true;
     }
 
     public void SaveSettings()

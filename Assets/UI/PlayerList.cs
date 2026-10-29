@@ -2,12 +2,15 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class PlayerList : MonoBehaviour
+public class PlayerList : MonoBehaviour, IPlayerItemOwner
 {
     public GameObject prefab;
+    public GameObject playerPrefab;
+    public GameObject botPrefab;
+
     public Transform contentParent;
 
-    private List<PlayerListItem> items = new List<PlayerListItem>();
+    private List<GameObject> items = new List<GameObject>();
 
     private PlayerHandler handler;
 
@@ -18,49 +21,76 @@ public class PlayerList : MonoBehaviour
 
     public void UpdateList(List<BasePlayer> players)
     {
-        int i = 0;
-
-        // Update / Create
-        for (; i < players.Count; i++)
+        // 🔥 1. Alte Items zerstören
+        if (items != null)
         {
-            BasePlayer player = players[i];
-
-            if (i < items.Count)
+            foreach (var item in items)
             {
-                items[i].SetData(player);
+                if (item != null)
+                    Destroy(item);
             }
+            items.Clear();
+        }
+
+        if (players == null)
+            return;
+
+        // 🔥 2. Neue UI Elemente erzeugen
+        foreach (var player in players)
+        {
+            GameObject template = prefab;
+            if (player is DartBot && botPrefab != null)
+                template = botPrefab;
+            else if (!(player is DartBot) && playerPrefab != null)
+                template = playerPrefab;
+
+            if (template == null)
+                continue;
+
+            GameObject goObj = Instantiate(template, contentParent);
+
+            var playerItem = goObj.GetComponent<PlayerItem>();
+            if (playerItem != null)
+                playerItem.Initialize(player, this);
             else
             {
-                GameObject goObj = Instantiate(prefab, contentParent);
-                PlayerListItem item = goObj.GetComponent<PlayerListItem>();
-
-                item.Initialize(this);
-                item.SetData(player);
-
-                items.Add(item);
+                var botItem = goObj.GetComponent<BotItem>();
+                if (botItem != null)
+                    botItem.Initialize(player, this);
             }
+
+            items.Add(goObj);
+        }
+    }
+
+    public void UpdateOrderFromUI()
+    {
+        if (appHandler == null)
+            return;
+
+        List<Guid> newOrder = new List<Guid>();
+
+        foreach (Transform child in contentParent)
+        {
+            var drag = child.GetComponent<PlayerDragHandler>();
+            if (drag == null)
+                continue;
+
+            newOrder.Add(drag.playerID);
         }
 
-        // Überschüssige deaktivieren
-        for (; i < items.Count; i++)
-        {
-            items[i].gameObject.SetActive(false);
-        }
-
-        // Aktivieren falls wieder benötigt
-        for (int j = 0; j < players.Count; j++)
-        {
-            items[j].gameObject.SetActive(true);
-        }
+        appHandler.SetPlayerOrder(newOrder);
     }
 
     public void RenameClicked(Guid id)
     {
-        handler.OpenRenamePopup(id);
+        handler?.OpenRenamePopup(id);
     }
 
     public void DeleteClicked(Guid id)
     {
-        handler.OpenDeletePopup(id);
+        handler?.OpenDeletePopup(id);
     }
+
+    private AppHandler appHandler => handler != null ? handler.appHandler : null;
 }

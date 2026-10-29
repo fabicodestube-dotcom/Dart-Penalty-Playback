@@ -148,7 +148,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 11ad9a79eebe81fe6a7c958f52002787, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CustomClipButton
-  customClipHandler: {fileID: 0}
+  clipNav: {fileID: 0}
+  scoreGridHandler: {fileID: 0}
   clipCountText: {fileID: 4491436033113740224}
   staticText: {fileID: 8674204213848198657}
   imageGotClips: {fileID: 7165631679097213070}
@@ -499,7 +500,6 @@ GameObject:
   - component: {fileID: 5582151313646215713}
   - component: {fileID: 7557019342176274745}
   - component: {fileID: 8674204213848198657}
-  - component: {fileID: 6646879819696085701}
   m_Layer: 0
   m_Name: StaticLabelText
   m_TagString: Untagged
@@ -626,19 +626,6 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
---- !u!114 &6646879819696085701
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7110008011226618118}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7a0368f7840987e639f0bdecbc803891, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ThemeColorBinding
-  role: 6
 --- !u!1 &7735417697653786208
 GameObject:
   m_ObjectHideFlags: 0
@@ -650,7 +637,6 @@ GameObject:
   - component: {fileID: 3848569988038893708}
   - component: {fileID: 5836047042509512228}
   - component: {fileID: 4491436033113740224}
-  - component: {fileID: 4255890225574740583}
   m_Layer: 0
   m_Name: ClipCountText
   m_TagString: Untagged
@@ -777,19 +763,6 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
---- !u!114 &4255890225574740583
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7735417697653786208}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7a0368f7840987e639f0bdecbc803891, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ThemeColorBinding
-  role: 9
 --- !u!1 &8076041049457245611
 GameObject:
   m_ObjectHideFlags: 0

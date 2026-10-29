@@ -1,3 +1,4 @@
+using System.Linq;
 using TMPro;
 using UnityEngine;
 
@@ -65,11 +66,10 @@ public class CustomizationSectorsPage : MonoBehaviour, ICustomizationRowOwner
         var wanted = new System.Collections.Generic.HashSet<string>();
 
         int sibling = 0;
-        foreach (var def in CustomizationStore.GetHitSectors())
+        foreach (var def in CustomizationStore.GetHitSectors()
+            .Where(d => d != null && !string.IsNullOrEmpty(d.id))
+            .OrderBy(d => d.enabled ? 0 : 1))
         {
-            if (def == null || string.IsNullOrEmpty(def.id))
-                continue;
-
             wanted.Add(def.id);
 
             if (!rowsById.TryGetValue(def.id, out var row) || row == null)

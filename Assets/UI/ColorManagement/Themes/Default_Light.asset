@@ -1,0 +1,53 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0210e6dc65f1b834db81e6698b8dcc32, type: 3}
+  m_Name: Default_Light
+  m_EditorClassIdentifier: Assembly-CSharp::Theme
+  colors:
+  - role: 0
+    color: {r: 1, g: 0.9843, b: 0.9961, a: 1}
+  - role: 1
+    color: {r: 0.1098, g: 0.1059, b: 0.1216, a: 1}
+  - role: 2
+    color: {r: 0.9411765, g: 0.9412, b: 0.9804, a: 1}
+  - role: 3
+    color: {r: 1, g: 1, b: 1, a: 1}
+  - role: 4
+    color: {r: 0.9412, g: 0.9412, b: 0.9412, a: 1}
+  - role: 5
+    color: {r: 0.2039, g: 0.6588, b: 0.3255, a: 1}
+  - role: 6
+    color: {r: 1, g: 1, b: 1, a: 1}
+  - role: 8
+    color: {r: 0.1098, g: 0.1059, b: 0.1216, a: 1}
+  - role: 9
+    color: {r: 0.2863, g: 0.2706, b: 0.3098, a: 1}
+  - role: 10
+    color: {r: 0.4745, g: 0.4549, b: 0.4941, a: 1}
+  - role: 11
+    color: {r: 0.4745, g: 0.4549, b: 0.4941, a: 1}
+  - role: 12
+    color: {r: 0.8516, g: 0.9179, b: 0.8626, a: 1}
+  - role: 13
+    color: {r: 0.05, g: 0.05, b: 0.05, a: 1}
+  - role: 14
+    color: {r: 0.702, g: 0.149, b: 0.1176, a: 1}
+  - role: 15
+    color: {r: 0, g: 0.4235, b: 0.298, a: 1}
+  - role: 16
+    color: {r: 0.4902, g: 0.3216, b: 0.3765, a: 1}
+  - role: 17
+    color: {r: 0.2902, g: 0.1608, b: 0.2118, a: 1}
+  - role: 18
+    color: {r: 0.6902, g: 0.3529, b: 0, a: 1}
+  - role: 19
+    color: {r: 0.3608, g: 0.1804, b: 0, a: 1}

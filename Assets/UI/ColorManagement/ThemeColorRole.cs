@@ -14,7 +14,7 @@ public enum ThemeColorRole
     // ==========================================================
     Accent1, // Aktive Single-Selection-Buttons / jeder gefärbte Button
     TextOnAccent1,
-    Accent2, // Top Bar Elemente
+    Accent2, // DEPRECATED → Accent1 (Enum-Wert beibehalten für Serialisierung)
     // TextOnAccent2, wahrscheinlich nicht nötig?
 
     // ==========================================================

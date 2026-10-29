@@ -6,6 +6,7 @@ using System.Collections.Generic;
 public struct ThemeEntry
 {
     public ThemeColorScheme scheme;
+    public ThemeMode mode;
     public Theme theme;
 }
 
@@ -15,19 +16,19 @@ public class ThemeManager : MonoBehaviour
 
     [SerializeField] private List<ThemeEntry> themes;
 
-    private Dictionary<ThemeColorScheme, Theme> _map;
+    [Header("Defaults (Fallback für fehlende Rollen)")]
+    [SerializeField] private Theme defaultDarkTheme;
+    [SerializeField] private Theme defaultLightTheme;
 
+    private Dictionary<(ThemeColorScheme, ThemeMode), Theme> _map;
     private Theme activeTheme;
-
     public event Action OnThemeChanged;
-
     public Theme ActiveTheme => activeTheme;
-
     public bool IsReady { get; private set; }
-
     private ThemeColorScheme currentScheme;
-
+    private ThemeMode currentMode;
     public ThemeColorScheme CurrentScheme => currentScheme;
+    public ThemeMode CurrentMode => currentMode;
 
     private void Awake()
     {
@@ -40,69 +41,128 @@ public class ThemeManager : MonoBehaviour
         Instance = this;
         DontDestroyOnLoad(gameObject);
 
-        _map = new Dictionary<ThemeColorScheme, Theme>();
-
+        _map = new Dictionary<(ThemeColorScheme, ThemeMode), Theme>();
         foreach (var t in themes)
         {
-            _map[t.scheme] = t.theme;
+            if (t.theme == null)
+                continue;
+            _map[(t.scheme, t.mode)] = t.theme;
         }
     }
 
-    public void Initialize(ThemeColorScheme scheme)
+    public void Initialize(ThemeColorScheme scheme, ThemeMode mode)
     {
-        SetTheme(scheme, notify: false);
+        SetTheme(scheme, mode, notify: false);
 
-        // 🔥 Chrome initial setzen
         ApplicationChrome.navigationBarColor = 0xFF000000;
         ApplicationChrome.statusBarColor = 0xFF000000;
-
         ApplicationChrome.navigationBarState = ApplicationChrome.States.Visible;
         ApplicationChrome.statusBarState = ApplicationChrome.States.VisibleOverContent;
-
-        ApplicationChrome.statusbar_light_mode = false; // dunkle Icons passen zu schwarzer Bar
+        ApplicationChrome.statusbar_light_mode = false;
 
         IsReady = true;
     }
 
-    public void SetTheme(ThemeColorScheme scheme, bool notify = true)
+    public void SetTheme(ThemeColorScheme scheme, ThemeMode mode, bool notify = true)
     {
-        if (!_map.TryGetValue(scheme, out var theme))
+        if (!_map.TryGetValue((scheme, mode), out var theme))
         {
-            Debug.LogError($"Theme fehlt: {scheme}");
-            return;
+            // Fallback: gleiche Scheme, anderer Mode, dann beliebiger.
+            if (!_map.TryGetValue((scheme, ThemeMode.Dark), out theme))
+            {
+                foreach (var kv in _map)
+                {
+                    theme = kv.Value;
+                    break;
+                }
+            }
+            if (theme == null)
+            {
+                Debug.LogError($"Theme fehlt: {scheme} {mode}");
+                return;
+            }
         }
 
         currentScheme = scheme;
-
+        currentMode = mode;
         activeTheme = theme;
         activeTheme.Init();
 
-        IsReady = true; // 🔥 NEU
+        IsReady = true;
 
         if (notify)
             OnThemeChanged?.Invoke();
     }
 
+    public void SetTheme(ThemeColorScheme scheme, bool notify = true)
+    {
+        SetTheme(scheme, currentMode, notify);
+    }
+
+    public void SetMode(ThemeMode mode, bool notify = true)
+    {
+        SetTheme(currentScheme, mode, notify);
+    }
+
     public Color GetColor(ThemeColorRole role)
     {
-        if (activeTheme == null)
-        {
-            //Debug.LogError("Kein aktives Theme gesetzt!");
-            return Color.magenta;
-        }
+        // Accent2 deprecated → Accent1
+        if (role == ThemeColorRole.Accent2)
+            role = ThemeColorRole.Accent1;
 
-        return activeTheme.Get(role);
+        if (activeTheme == null)
+            return Color.magenta;
+
+        if (activeTheme.Has(role))
+            return activeTheme.Get(role);
+
+        var def = currentMode == ThemeMode.Light ? defaultLightTheme : defaultDarkTheme;
+        if (def != null && def.Has(role))
+            return def.Get(role);
+
+        return Color.magenta;
     }
 
     public Color GetColor(ThemeColorScheme scheme, ThemeColorRole role)
     {
-        if (!_map.TryGetValue(scheme, out var theme))
+        // Accent2 deprecated → Accent1
+        if (role == ThemeColorRole.Accent2)
+            role = ThemeColorRole.Accent1;
+
+        if (!_map.TryGetValue((scheme, currentMode), out var theme))
         {
-            Debug.LogError($"Theme fehlt: {scheme}");
-            return Color.magenta;
+            if (!_map.TryGetValue((scheme, ThemeMode.Dark), out theme))
+            {
+                Debug.LogError($"Theme fehlt: {scheme}");
+                return Color.magenta;
+            }
         }
 
-        return theme.Get(role);
+        if (theme.Has(role))
+            return theme.Get(role);
+
+        var def = currentMode == ThemeMode.Light ? defaultLightTheme : defaultDarkTheme;
+        if (def != null && def.Has(role))
+            return def.Get(role);
+
+        return Color.magenta;
+    }
+
+    public Color GetBotDifficultyColor(DartBotDifficulty difficulty)
+    {
+        switch (difficulty)
+        {
+            case DartBotDifficulty.Easy:
+                return GetColor(ThemeColorScheme.Green, ThemeColorRole.Accent1);
+            case DartBotDifficulty.Medium:
+                return GetColor(ThemeColorRole.Double);
+            case DartBotDifficulty.Hard:
+                return GetColor(ThemeColorRole.Triple);
+            case DartBotDifficulty.Pro:
+                return GetColor(ThemeColorRole.Error);
+            default:
+                return Color.clear;
+        }
     }
 
     public void ForceApplyAll()

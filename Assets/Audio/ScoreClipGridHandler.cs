@@ -35,6 +35,7 @@ public class ScoreClipGridHandler : MonoBehaviour
 
     private readonly List<CustomClipButton> buttons = new List<CustomClipButton>();
     private bool scoresBuilt = false;
+    private bool themeSubscribed = false;
 
     private void Awake()
     {
@@ -47,6 +48,7 @@ public class ScoreClipGridHandler : MonoBehaviour
     private void OnEnable()
     {
         EnsureSubscribed();
+        EnsureThemeSubscribed();
 
         // Während versteckt ggf. verpasst: Counts auffrischen.
         RefreshCounts();
@@ -56,6 +58,11 @@ public class ScoreClipGridHandler : MonoBehaviour
     {
         if (AudioLibrary.Instance != null)
             AudioLibrary.Instance.OnLibraryChanged -= HandleLibraryChanged;
+
+        if (ThemeManager.Instance != null && themeSubscribed)
+            ThemeManager.Instance.OnThemeChanged -= HandleThemeChanged;
+
+        themeSubscribed = false;
     }
 
     /// <summary>Idempotent subscriben (Doppel-Subscription vermeiden).</summary>
@@ -68,8 +75,28 @@ public class ScoreClipGridHandler : MonoBehaviour
         AudioLibrary.Instance.OnLibraryChanged += HandleLibraryChanged;
     }
 
+    private void EnsureThemeSubscribed()
+    {
+        if (ThemeManager.Instance == null)
+        {
+            themeSubscribed = false;
+            return;
+        }
+
+        if (themeSubscribed)
+            return;
+
+        ThemeManager.Instance.OnThemeChanged -= HandleThemeChanged;
+        ThemeManager.Instance.OnThemeChanged += HandleThemeChanged;
+
+        themeSubscribed = true;
+    }
+
     private void Start()
     {
+        EnsureSubscribed();
+        EnsureThemeSubscribed();
+
         if (AudioLibrary.Instance != null && AudioLibrary.Instance.IsReady)
         {
             EnsureScoresBuilt();
@@ -83,6 +110,8 @@ public class ScoreClipGridHandler : MonoBehaviour
     /// <summary>Grid einblenden (Page ruft auf): baut einmalig, frischt Counts auf.</summary>
     public void Show()
     {
+        EnsureSubscribed();
+        EnsureThemeSubscribed();
         EnsureScoresBuilt();
         RefreshCounts();
         gameObject.SetActive(true);
@@ -154,12 +183,18 @@ public class ScoreClipGridHandler : MonoBehaviour
         RefreshCounts();
     }
 
+    private void HandleThemeChanged()
+    {
+        RefreshCounts();
+    }
+
     private IEnumerator WaitForLibraryLoad()
     {
         while (AudioLibrary.Instance == null || !AudioLibrary.Instance.IsReady)
             yield return null;
 
         EnsureSubscribed();
+        EnsureThemeSubscribed();
         EnsureScoresBuilt();
     }
 

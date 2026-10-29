@@ -90,6 +90,20 @@ public class CustomClipButton : MonoBehaviour
 
         bool hasClips = count > 0;
 
+        if (ThemeManager.Instance != null)
+        {
+            Color textColor = ThemeManager.Instance.GetColor(
+                hasClips
+                    ? ThemeColorRole.TextOnAccent1
+                    : ThemeColorRole.Text2);
+
+            if (clipCountText != null)
+                clipCountText.color = textColor;
+
+            if (staticText != null)
+                staticText.color = textColor;
+        }
+
         if (imageGotClips != null)
             imageGotClips.gameObject.SetActive(hasClips);
 

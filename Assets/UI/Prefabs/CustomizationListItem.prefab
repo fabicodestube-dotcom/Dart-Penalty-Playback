@@ -382,7 +382,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7a0368f7840987e639f0bdecbc803891, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ThemeColorBinding
-  role: 15
+  role: 5
 --- !u!1 &3636724692189072102
 GameObject:
   m_ObjectHideFlags: 0
@@ -1549,7 +1549,6 @@ GameObject:
   - component: {fileID: 510071548360278801}
   - component: {fileID: 552937940762851309}
   - component: {fileID: 5166141555726853217}
-  - component: {fileID: 5581775178977021581}
   m_Layer: 0
   m_Name: ClipCountText
   m_TagString: Untagged
@@ -1676,16 +1675,3 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
---- !u!114 &5581775178977021581
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9128515008086245196}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7a0368f7840987e639f0bdecbc803891, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ThemeColorBinding
-  role: 6

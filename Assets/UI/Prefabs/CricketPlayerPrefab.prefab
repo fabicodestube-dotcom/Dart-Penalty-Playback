@@ -3893,6 +3893,7 @@ GameObject:
   - component: {fileID: 8298467028911083104}
   - component: {fileID: 1973244499958235685}
   - component: {fileID: 2312314482393112041}
+  - component: {fileID: 4458083328209433731}
   m_Layer: 0
   m_Name: LastDart 1
   m_TagString: Untagged
@@ -3960,6 +3961,19 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &4458083328209433731
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4832039144296746391}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7a0368f7840987e639f0bdecbc803891, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ThemeColorBinding
+  role: 2
 --- !u!1 &4902470902699532411
 GameObject:
   m_ObjectHideFlags: 0
@@ -5674,6 +5688,7 @@ GameObject:
   - component: {fileID: 6029733906019312119}
   - component: {fileID: 7017998832661683122}
   - component: {fileID: 7110795545566297124}
+  - component: {fileID: 7951344674514449649}
   m_Layer: 0
   m_Name: LastDart 2
   m_TagString: Untagged
@@ -5741,6 +5756,19 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &7951344674514449649
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7276830655007341508}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7a0368f7840987e639f0bdecbc803891, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ThemeColorBinding
+  role: 2
 --- !u!1 &7305332556761011948
 GameObject:
   m_ObjectHideFlags: 0
@@ -5877,6 +5905,7 @@ GameObject:
   - component: {fileID: 8246761625014833362}
   - component: {fileID: 3922871093362959590}
   - component: {fileID: 4760085989832156143}
+  - component: {fileID: 3812340673866574358}
   m_Layer: 0
   m_Name: LastDart 3
   m_TagString: Untagged
@@ -5944,6 +5973,19 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &3812340673866574358
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7677868823395167580}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7a0368f7840987e639f0bdecbc803891, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ThemeColorBinding
+  role: 2
 --- !u!1 &7832222647178495844
 GameObject:
   m_ObjectHideFlags: 0

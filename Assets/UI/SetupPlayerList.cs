@@ -13,16 +13,18 @@ public class SetupPlayerList : MonoBehaviour
 {
     public AppHandler appHandler;
     public GameObject prefab;
+    public GameObject playerPrefab;
+    public GameObject botPrefab;
 
     public Transform contentParent;
 
     public PlayerListType listType;
 
-    private List<SetupPlayerItem> items;
+    private List<GameObject> items;
 
     private void Start()
     {
-        items = new List<SetupPlayerItem>();
+        items = new List<GameObject>();
 
         // 🔥 Wichtig:
         // UI Aufbau wird NICHT direkt gemacht,
@@ -59,7 +61,7 @@ public class SetupPlayerList : MonoBehaviour
             foreach (var item in items)
             {
                 if (item != null)
-                    Destroy(item.gameObject);
+                    Destroy(item);
             }
 
             items.Clear();
@@ -74,12 +76,28 @@ public class SetupPlayerList : MonoBehaviour
         // 🔥 3. Neue UI Elemente erzeugen
         foreach (var player in players)
         {
-            GameObject goObj = Instantiate(prefab, contentParent);
-            var item = goObj.GetComponent<SetupPlayerItem>();
+            GameObject template = prefab;
+            if (player is DartBot && botPrefab != null)
+                template = botPrefab;
+            else if (!(player is DartBot) && playerPrefab != null)
+                template = playerPrefab;
 
-            item.Initialize(player);
+            if (template == null)
+                continue;
 
-            items.Add(item);
+            GameObject goObj = Instantiate(template, contentParent);
+
+            var playerItem = goObj.GetComponent<PlayerItem>();
+            if (playerItem != null)
+                playerItem.Initialize(player);
+            else
+            {
+                var botItem = goObj.GetComponent<BotItem>();
+                if (botItem != null)
+                    botItem.Initialize(player);
+            }
+
+            items.Add(goObj);
         }
     }
 

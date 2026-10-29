@@ -15,6 +15,13 @@ public class Theme : ScriptableObject
 
     private Dictionary<ThemeColorRole, Color> _map;
 
+    public bool Has(ThemeColorRole role)
+    {
+        if (_map == null)
+            Init();
+        return _map != null && _map.ContainsKey(role);
+    }
+
     public void Init()
     {
         _map = new Dictionary<ThemeColorRole, Color>();
@@ -22,18 +29,17 @@ public class Theme : ScriptableObject
         foreach (var c in colors)
             _map[c.role] = c.color;
 
-        // 🔥 VALIDATION
-        foreach (ThemeColorRole role in System.Enum.GetValues(typeof(ThemeColorRole)))
-        {
-            if (!_map.ContainsKey(role))
-            {
-                Debug.LogWarning($"Theme '{name}' fehlt Farbe für: {role}");
-            }
-        }
+        // Validation: nur warnen, wenn Theme komplett leer ist.
+        if (_map.Count == 0)
+            Debug.LogWarning($"Theme '{name}' hat keine Farben definiert.");
     }
 
     public Color Get(ThemeColorRole role)
     {
+        // Accent2 ist deprecated → Accent1 verwenden.
+        if (role == ThemeColorRole.Accent2)
+            role = ThemeColorRole.Accent1;
+
         if (_map == null)
             Init();
 

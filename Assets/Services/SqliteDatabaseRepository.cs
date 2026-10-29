@@ -1081,7 +1081,8 @@ public static class SqliteDatabaseRepository
             atcSettings = database.GetATCSettings(),
             setsAndLegsMode = database.GetSetsAndLegsMode(),
             setCount = database.GetSetCount(),
-            legCount = database.GetLegCount()
+            legCount = database.GetLegCount(),
+            playerOrder = database.GetPlayerOrder()
         };
 
         connection.Execute(
@@ -1119,6 +1120,9 @@ public static class SqliteDatabaseRepository
                 database.SetSetupState(database.GetLastGameMode(), setsAndLegsMode, payload.SetCount > 0 ? payload.SetCount : 1, payload.LegCount > 0 ? payload.LegCount : 1);
             else
                 database.SetSetupState(database.GetLastGameMode(), SetsAndLegs.BestOf, payload.SetCount > 0 ? payload.SetCount : 1, payload.LegCount > 0 ? payload.LegCount : 1);
+
+            if (payload.PlayerOrder != null && payload.PlayerOrder.Count > 0)
+                database.SetPlayerOrder(payload.PlayerOrder);
         }
         catch (Exception e)
         {
@@ -1959,6 +1963,7 @@ public static class SqliteDatabaseRepository
         public string SetsAndLegsMode { get; set; }
         public int SetCount { get; set; }
         public int LegCount { get; set; }
+        public List<Guid> PlayerOrder { get; set; }
     }
 
     private class ThrowRow

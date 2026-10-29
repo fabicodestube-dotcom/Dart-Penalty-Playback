@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 677012705316629894}
   - component: {fileID: 2593997388631312672}
   - component: {fileID: 1301235473708512210}
+  - component: {fileID: 4961850578525773030}
   m_Layer: 0
   m_Name: TableHeadlineText
   m_TagString: Untagged
@@ -137,6 +138,19 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
+--- !u!114 &4961850578525773030
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 122274610839022037}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7a0368f7840987e639f0bdecbc803891, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ThemeColorBinding
+  role: 8
 --- !u!1 &2914745300141390775
 GameObject:
   m_ObjectHideFlags: 0
@@ -231,6 +245,8 @@ MonoBehaviour:
   dividerPrefab: {fileID: 4464470145349019267, guid: 4016ff3548be21a819ba9f2a5aa2f2ca, type: 3}
   rootLayout: {fileID: 6800716999133541654}
   contentLayout: {fileID: 5302581014820360681}
+  horizontalScroll: 0
+  fixedColumnWidth: 72
 --- !u!114 &6800716999133541654
 MonoBehaviour:
   m_ObjectHideFlags: 0

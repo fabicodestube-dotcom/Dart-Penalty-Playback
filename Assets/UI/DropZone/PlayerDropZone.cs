@@ -12,6 +12,7 @@ public class PlayerDropZone : MonoBehaviour
     public AppHandler appHandler;
     public Transform contentParent;
     public ZoneType zoneType;
+    public bool singleZone = false;
     [SerializeField] private PlayerDropZone otherZone;
 
 
@@ -72,6 +73,12 @@ public class PlayerDropZone : MonoBehaviour
 
     private void SyncZones()
     {
+        if (singleZone || otherZone == null)
+        {
+            appHandler.SetPlayerOrder(GetIDs());
+            return;
+        }
+
         PlayerDropZone active = zoneType == ZoneType.Active ? this : otherZone;
         PlayerDropZone reserve = zoneType == ZoneType.Active ? otherZone : this;
 

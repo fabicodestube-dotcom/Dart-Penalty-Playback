@@ -14,6 +14,7 @@ public class AppSettingsManager : MonoBehaviour
 
     private string legacyFilePath;
     private bool isChangingLanguage = false;
+    private string pendingLocaleCode;
 
     private void Awake()
     {
@@ -96,9 +97,28 @@ public class AppSettingsManager : MonoBehaviour
 
     public void SetLanguage(string localeCode)
     {
-        // Reentrancy-Guard: kein zweiter Wechsel während einer läuft
-        if (isChangingLanguage)
+        if (string.IsNullOrWhiteSpace(localeCode))
+        {
+            Debug.LogWarning("[Settings] Ignoring empty locale code.");
             return;
+        }
+
+        if (Settings == null)
+            Settings = new AppSettings();
+
+        Settings.Language ??= new LanguageSaveData();
+
+        if (!string.Equals(Settings.Language.lastLocaleCode, localeCode, System.StringComparison.OrdinalIgnoreCase))
+        {
+            Settings.Language.lastLocaleCode = localeCode;
+            Save();
+        }
+
+        if (isChangingLanguage)
+        {
+            pendingLocaleCode = localeCode;
+            return;
+        }
 
         StartCoroutine(ChangeLocaleCoroutine(localeCode));
     }
@@ -106,13 +126,27 @@ public class AppSettingsManager : MonoBehaviour
     private IEnumerator ChangeLocaleCoroutine(string localeCode)
     {
         isChangingLanguage = true;
-        
+
         // Wait for system initialization to complete before changing the locale
         yield return LocalizationSettings.InitializationOperation;
 
+        ApplyLocale(localeCode);
+
+        while (!string.IsNullOrEmpty(pendingLocaleCode))
+        {
+            string nextLocaleCode = pendingLocaleCode;
+            pendingLocaleCode = null;
+            ApplyLocale(nextLocaleCode);
+        }
+
+        isChangingLanguage = false;
+    }
+
+    private void ApplyLocale(string localeCode)
+    {
         // Find the target locale based on the provided locale code
         Locale targetLocale = LocalizationSettings.AvailableLocales.Locales.Find(
-            locale => locale.Identifier.Code == localeCode
+            locale => string.Equals(locale.Identifier.Code, localeCode, System.StringComparison.OrdinalIgnoreCase)
         );
 
         if (targetLocale != null)
@@ -124,8 +158,6 @@ public class AppSettingsManager : MonoBehaviour
         {
             Debug.LogWarning($"Language code '{localeCode}' was not found in the available locales!");
         }
-
-        isChangingLanguage = false;
     }
 
     // =========================
@@ -135,8 +167,16 @@ public class AppSettingsManager : MonoBehaviour
     public void SetTheme(ThemeColorScheme scheme)
     {
         // Aktualisiert aktiv das Theme im laufenden System
-        ThemeManager.Instance.SetTheme(scheme);
+        ThemeManager.Instance.SetTheme(scheme, Settings.ThemeMode);
         Settings.Theme = scheme;
+        Save();
+    }
+
+    public void SetThemeMode(ThemeMode mode)
+    {
+        Settings.ThemeMode = mode;
+        if (ThemeManager.Instance != null)
+            ThemeManager.Instance.SetMode(mode);
         Save();
     }
 
@@ -227,6 +267,7 @@ public class AppSettingsManager : MonoBehaviour
         // 🎨 THEME DEFAULT
         // =========================
         Settings.Theme = ThemeColorScheme.Green;
+        Settings.ThemeMode = ThemeMode.Dark;
 
         // =========================
         // 🔊 SOUND DEFAULT
@@ -267,6 +308,14 @@ public class AppSettingsManager : MonoBehaviour
     // =========================================================
     private void EnsureDefaults()
     {
+        Settings.Language ??= new LanguageSaveData();
+
+        if (string.IsNullOrWhiteSpace(Settings.Language.lastLocaleCode))
+        {
+            Debug.Log("[Settings] Missing language code -> defaulting to 'en'");
+            Settings.Language.lastLocaleCode = "en";
+        }
+
         foreach (PenaltyType type in System.Enum.GetValues(typeof(PenaltyType)))
         {
             var existing = Settings.Penalties.Settings.Find(x => x.Type == type);
@@ -311,7 +360,7 @@ public class AppSettingsManager : MonoBehaviour
         StartCoroutine(InitializeLanguageRoutine());
 
         // 🎨 Apply theme (themes can usually be applied instantly)
-        ThemeManager.Instance.Initialize(Settings.Theme);
+        ThemeManager.Instance.Initialize(Settings.Theme, Settings.ThemeMode);
     }
 
 

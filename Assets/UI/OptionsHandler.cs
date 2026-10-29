@@ -26,10 +26,6 @@ public class OptionsHandler : MonoBehaviour
     [Header("Vibration Settings")]
     [SerializeField] private SingleSelectionGroup vibrationStrengthSelection;
 
-    // Penalty-Kosten werden seit Customization (Seite 1) dort editiert.
-    // Enable-Toggles (UiSwitchBinder) bleiben hier unangetastet.
-
-
 
 
     // =========================
@@ -43,50 +39,51 @@ public class OptionsHandler : MonoBehaviour
 
 
 
-private void UpdateLanguageText(string locale)
-{
-    if (selectedLanguageText == null) return;
-
-    // Fallback: If no locale string is passed, load the one saved in your AppSettings
-    if (string.IsNullOrEmpty(locale))
+    private void UpdateLanguageText(string locale)
     {
-        locale = AppSettingsManager.Instance.Settings.Language.lastLocaleCode;
-    }
+        if (selectedLanguageText == null) return;
 
-    // Modern switch statement to display the correct name for each locale code
-    switch (locale.ToLower())
-    {
-        case "de":
-            selectedLanguageText.text = "Deutsch";
-            break;
-        case "en":
-            selectedLanguageText.text = "English";
-            break;
-        case "fr":
-            selectedLanguageText.text = "Français";
-            break;
-        case "es":
-            selectedLanguageText.text = "Español";
-            break;
-        case "ru":
-            selectedLanguageText.text = "Русский";
-            break;
-        case "pl":
-            selectedLanguageText.text = "Polski";
-            break;
-        case "it":
-            selectedLanguageText.text = "Italiano";
-            break;
-        case "tr":
-            selectedLanguageText.text = "Türkçe";
-            break;
-        default:
-            // Fallback in case a locale is requested that is not yet configured
-            selectedLanguageText.text = "English"; 
-            Debug.LogWarning($"[LanguageUI] Unhandled locale code: {locale}. Defaulting to English.");
-            break;
+        // Fallback: If no locale string is passed, load the one saved in your AppSettings
+        if (string.IsNullOrEmpty(locale))
+        {
+            Debug.LogWarning("[OptionsHandler] No locale provided to UpdateLanguageText. Falling back to saved locale.");
+            locale = AppSettingsManager.Instance.Settings.Language.lastLocaleCode;
+        }
+
+        // Modern switch statement to display the correct name for each locale code
+        switch (locale.ToLower())
+        {
+            case "de":
+                selectedLanguageText.text = "Deutsch";
+                break;
+            case "en":
+                selectedLanguageText.text = "English";
+                break;
+            case "fr":
+                selectedLanguageText.text = "Français";
+                break;
+            case "es":
+                selectedLanguageText.text = "Español";
+                break;
+            case "ru":
+                selectedLanguageText.text = "Русский";
+                break;
+            case "pl":
+                selectedLanguageText.text = "Polski";
+                break;
+            case "it":
+                selectedLanguageText.text = "Italiano";
+                break;
+            case "tr":
+                selectedLanguageText.text = "Türkçe";
+                break;
+            default:
+                // Fallback in case a locale is requested that is not yet configured
+                selectedLanguageText.text = "English"; 
+                Debug.LogWarning($"[LanguageUI] Unhandled locale code: {locale}. Defaulting to English.");
+                break;
+        }
     }
-}
 
 
 
@@ -102,6 +99,17 @@ private void UpdateLanguageText(string locale)
         {
             if (binder != null)
                 binder.Initialize(this);
+        }
+
+        // Härtung: alle UiSwitchBinder in Children initialisieren, auch wenn
+        // sie nicht in der binders-Liste stehen.
+        foreach (var binder in GetComponentsInChildren<UISwitchBinder>(true))
+        {
+            if (binder != null && !binders.Contains(binder))
+            {
+                binders.Add(binder);
+                binder.Initialize(this);
+            }
         }
 
         var settings = AppSettingsManager.Instance.Settings;
@@ -149,7 +157,7 @@ private void UpdateLanguageText(string locale)
     {
         AppSettingsManager.Instance.SetLanguage(localeCode);
         UpdateLanguageText(localeCode);
-        ReturnFromPopupLanguages();
+        //ReturnFromPopupLanguages();
     }
 
 
@@ -187,6 +195,11 @@ private void UpdateLanguageText(string locale)
     public void SetGold()
     {
         SetColorScheme(ThemeColorScheme.Gold);
+    }
+
+    public void SetThemeMode(bool dark)
+    {
+        AppSettingsManager.Instance.SetThemeMode(dark ? ThemeMode.Dark : ThemeMode.Light);
     }
 
     private void SetColorScheme(ThemeColorScheme scheme)

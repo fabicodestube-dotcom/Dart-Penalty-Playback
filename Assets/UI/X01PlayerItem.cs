@@ -110,7 +110,7 @@ public class X01PlayerItem : MonoBehaviour
         int totalTurnPoints = stats.turnScore;
         Color totalPointsColor = stats.isBust ? colorRed : Color.white;
 
-        MarkDartImages(stats.isBust ? colorRed : colorBlack);
+        MarkDartImages(stats.isBust ? ThemeManager.Instance.GetColor(ThemeColorRole.Error) : ThemeManager.Instance.GetColor(ThemeColorRole.Background2));
 
         lastTurnScoreText.text = totalTurnPoints.ToString();
         lastTurnScoreText.color = totalPointsColor;

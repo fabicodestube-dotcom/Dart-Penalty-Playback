@@ -12,7 +12,12 @@ public enum SwitchBindingType
     /// Unity serialisiert Enums als int, ein Einfügen in der Mitte würde die
     /// bestehenden bindingType-Werte in der Szene verschieben.
     /// </summary>
-    UseDefaultClipsAsFallback
+    UseDefaultClipsAsFallback,
+
+    /// <summary>
+    /// Dark-Modus (true = Dark, false = Light). NEU — immer am Ende anhängen.
+    /// </summary>
+    DarkMode
 }
 
 public class UISwitchBinder : MonoBehaviour
@@ -54,6 +59,10 @@ public class UISwitchBinder : MonoBehaviour
             case SwitchBindingType.UseDefaultClipsAsFallback:
                 value = AppSettingsManager.Instance.Settings.Sound.UseDefaultClipsAsFallback;
                 break;
+
+            case SwitchBindingType.DarkMode:
+                value = AppSettingsManager.Instance.Settings.ThemeMode == ThemeMode.Dark;
+                break;
         }
 
         uiSwitch.toggle.SetIsOnWithoutNotify(value);
@@ -79,6 +88,10 @@ public class UISwitchBinder : MonoBehaviour
 
             case SwitchBindingType.UseDefaultClipsAsFallback:
                 options.SetDefaultClipsFallback(value);
+                break;
+
+            case SwitchBindingType.DarkMode:
+                options.SetThemeMode(value);
                 break;
         }
 
