@@ -80,10 +80,6 @@ MonoBehaviour:
     m_Localized: Bust
     m_Metadata:
       m_Items: []
-  - m_Id: 16
-    m_Localized: Cancelar
-    m_Metadata:
-      m_Items: []
   - m_Id: 17
     m_Localized: Techo
     m_Metadata:
@@ -167,8 +163,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 36
-    m_Localized: "\xBFEst\xE1s seguro de que deseas eliminar al jugador {name}? \xA1Esta
-      acci\xF3n no se puede deshacer!"
+    m_Localized: "\xBFSeguro que quieres eliminar al jugador {0}? \xA1Esta acci\xF3n
+      no se puede deshacer!"
     m_Metadata:
       m_Items: []
   - m_Id: 37
@@ -393,7 +389,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 91
-    m_Localized: Renombrar jugador {name}
+    m_Localized: Renombrar jugador {0}
     m_Metadata:
       m_Items: []
   - m_Id: 92
@@ -543,6 +539,752 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 723894777368577
     m_Localized: No hay juegos Around the Clock disponibles
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954469629952
+    m_Localized: Activo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954490601472
+    m_Localized: Penalizaciones activas
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954490601473
+    m_Localized: Cancelar
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954490601474
+    m_Localized: "Condici\xF3n"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954490601475
+    m_Localized: Cantidad
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954490601476
+    m_Localized: "Personalizaci\xF3n"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954494795776
+    m_Localized: "Eliminar penalizaci\xF3n"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954494795777
+    m_Localized: "Eliminar \xE1rea objetivo"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954494795778
+    m_Localized: Detalles
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954494795779
+    m_Localized: Desactivado
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954494795780
+    m_Localized: "Editar penalizaci\xF3n"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954494795781
+    m_Localized: "Editar \xE1rea objetivo"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954494795782
+    m_Localized: Activado
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954494795783
+    m_Localized: Mantener el orden
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954494795784
+    m_Localized: Nombre
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954494795785
+    m_Localized: Nuevo evento de audio
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954494795786
+    m_Localized: "Nueva penalizaci\xF3n"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954494795787
+    m_Localized: "\xC1reas objetivo"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706055340032
+    m_Localized: Detalles de la partida
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311552
+    m_Localized: Idioma
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311553
+    m_Localized: Idiomas
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311554
+    m_Localized: Modo oscuro
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311555
+    m_Localized: Valores predeterminados como respaldo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311556
+    m_Localized: Determina si se reproduce un sonido predeterminado cuando se activa
+      un evento integrado.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311557
+    m_Localized: Notas del parche
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311558
+    m_Localized: Licencia
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311559
+    m_Localized: "Pol\xEDtica de privacidad"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311560
+    m_Localized: Partida en pausa
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311561
+    m_Localized: Eliminar
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311562
+    m_Localized: Continuar
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311563
+    m_Localized: Eventos de audio
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311564
+    m_Localized: Nueva zona de impacto
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311565
+    m_Localized: Global
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311566
+    m_Localized: Evento
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311567
+    m_Localized: Modo de juego
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311568
+    m_Localized: Cantidad de dardos
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311569
+    m_Localized: Dardo 1
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311570
+    m_Localized: Dardo 2
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311571
+    m_Localized: Dardo 3
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311572
+    m_Localized: "Puntuaci\xF3n"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311573
+    m_Localized: "Puntuaci\xF3n exacta"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311574
+    m_Localized: "Patr\xF3n de tirada"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311575
+    m_Localized: Eventos de partida
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505856
+    m_Localized: "Informaci\xF3n del clip"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505857
+    m_Localized: Zona objetivo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505858
+    m_Localized: "\xDAltimo sector"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505859
+    m_Localized: Bull
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505860
+    m_Localized: "Gr\xE1fico de barras"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505861
+    m_Localized: Mapa de calor
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505862
+    m_Localized: 'Penalizaciones activas:'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505863
+    m_Localized: 'Suma:'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505864
+    m_Localized: No se aplican penalizaciones.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505865
+    m_Localized: Total
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505866
+    m_Localized: 'Total: {0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505867
+    m_Localized: N/D
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505868
+    m_Localized: MURO
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505869
+    m_Localized: TECHO
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505870
+    m_Localized: "1\xD73"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505871
+    m_Localized: Repdigito
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505872
+    m_Localized: No hay clips disponibles
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505873
+    m_Localized: '{0} ({1}) - Clip {2}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505874
+    m_Localized: '{0} clips'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505875
+    m_Localized: "Anuncios de puntuaci\xF3n"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505876
+    m_Localized: "Sonido para anuncios de puntuaci\xF3n 0-180"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505877
+    m_Localized: Eliminar partida
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505878
+    m_Localized: Eliminar zona de impacto
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505879
+    m_Localized: "\xBFSeguro que quieres eliminar esta zona objetivo? \xA1Esta acci\xF3n
+      no se puede deshacer!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505880
+    m_Localized: Eliminar evento de audio
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505881
+    m_Localized: "\xBFSeguro que quieres eliminar este evento de audio? \xA1Esta
+      acci\xF3n no se puede deshacer!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505882
+    m_Localized: "\xBFEliminar esta penalizaci\xF3n?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505883
+    m_Localized: "\xBFEliminar la penalizaci\xF3n? Clips de audio vinculados: {0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505884
+    m_Localized: "\xBFEliminar este evento de audio?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505885
+    m_Localized: "\xBFEliminar el evento de audio? Clips de audio vinculados: {0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505886
+    m_Localized: "\xBFEliminar la penalizaci\xF3n \xAB{0}\xBB?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505887
+    m_Localized: "\xBFEliminar el evento de audio \xAB{0}\xBB?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505888
+    m_Localized: "\xBFEliminar la zona objetivo \xAB{0}\xBB?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505889
+    m_Localized: "\xBFEliminar la zona objetivo \xAB{0}\xBB? Usada por penalizaciones:
+      {1}. Tambi\xE9n se eliminar\xE1n."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505890
+    m_Localized: "\xBFEliminar la zona objetivo? Usada por penalizaciones: {0}. Tambi\xE9n
+      se eliminar\xE1n."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505891
+    m_Localized: "\xBFEliminar de todos modos? Las penalizaciones afectadas tambi\xE9n
+      se eliminar\xE1n."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505892
+    m_Localized: "\xBFEliminar de todos modos? Clips de audio vinculados: {0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505893
+    m_Localized: "\xBFEliminar esta zona objetivo?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505894
+    m_Localized: "El nombre es demasiado largo (m\xE1x. 12 caracteres)."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505895
+    m_Localized: El nombre debe contener al menos una letra.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505896
+    m_Localized: "El nombre ya est\xE1 en uso."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505897
+    m_Localized: "Partida a\xFAn en curso (a fecha de {0})"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505898
+    m_Localized: 'Puntos: {0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505899
+    m_Localized: 'Objetivos: {0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505900
+    m_Localized: 'Fuera del tablero: muro'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505901
+    m_Localized: 'Fuera del tablero: techo'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505902
+    m_Localized: 'Fallo: {0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505903
+    m_Localized: Tirada = {0}
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505904
+    m_Localized: Restante = {0}
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505905
+    m_Localized: "Repdigito \u2265 {0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505906
+    m_Localized: Tirada [{0}] (en orden)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505907
+    m_Localized: Tirada [{0}] (cualquier orden)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505908
+    m_Localized: Leg perdido
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505909
+    m_Localized: Set perdido
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505910
+    m_Localized: Partida perdida
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505911
+    m_Localized: Manual
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505912
+    m_Localized: "Puntuaci\xF3n = {0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505913
+    m_Localized: "Marcas \u2265 {0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505914
+    m_Localized: "Puntos \u2265 {0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505915
+    m_Localized: "Aciertos/tirada \u2265 {0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505916
+    m_Localized: "Racha \u2265 {0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505917
+    m_Localized: "Marcas \u2265"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505918
+    m_Localized: "Puntos \u2265"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505919
+    m_Localized: "Aciertos/tirada \u2265"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505920
+    m_Localized: "Racha \u2265"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505921
+    m_Localized: "Puntuaci\xF3n alcanzada (=)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505922
+    m_Localized: en orden
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505923
+    m_Localized: cualquier orden
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505924
+    m_Localized: "Penalizaci\xF3n"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505925
+    m_Localized: "Penalizaci\xF3n por impacto en el muro"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505926
+    m_Localized: "Penalizaci\xF3n por impacto en el techo"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505927
+    m_Localized: "Penalizaci\xF3n por fallo personalizado"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505928
+    m_Localized: "Penalizaci\xF3n por {0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505929
+    m_Localized: "Puntuaci\xF3n de la tirada: {0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505930
+    m_Localized: "Alcanzar la puntuaci\xF3n exacta: {0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505931
+    m_Localized: "Puntuaci\xF3n repdigito \u2265 {0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505932
+    m_Localized: Cuando se pierde un leg
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505933
+    m_Localized: Cuando se pierde un set
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505934
+    m_Localized: Cuando se pierde la partida
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505935
+    m_Localized: Impacto fuera del tablero (muro)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505936
+    m_Localized: Impacto en el techo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505937
+    m_Localized: Zona personalizada ({0}{1})
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505938
+    m_Localized: Zona personalizada fuera del tablero (0 puntos)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505939
+    m_Localized: Evento manual
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505940
+    m_Localized: Sonido al deshacer
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505941
+    m_Localized: Sonido al ganar la partida
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505942
+    m_Localized: Sonido al inicio de la partida
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505943
+    m_Localized: Sonido al pasarse (bust)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505944
+    m_Localized: "Sonido en muerte s\xFAbita"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505945
+    m_Localized: Sonido tras las marcas de Cricket
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505946
+    m_Localized: Sonido en white horse
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505947
+    m_Localized: Sonido con 9 marcas
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505948
+    m_Localized: Sonido al acertar
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700160
+    m_Localized: Sonido en racha ATC
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700161
+    m_Localized: Cualquiera
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700162
+    m_Localized: Tablero
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700163
+    m_Localized: 1 dardo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700164
+    m_Localized: 2 dardos
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700165
+    m_Localized: 3 dardos
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700166
+    m_Localized: Jugador
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700167
+    m_Localized: Partidas
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700168
+    m_Localized: Victorias %
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700169
+    m_Localized: Doble %
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700170
+    m_Localized: Triple %
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700171
+    m_Localized: "\xD8 Puntos"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700172
+    m_Localized: "\xD8 Primeros 9"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700173
+    m_Localized: "Puntuaci\xF3n m\xE1x."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700174
+    m_Localized: Mejor checkout
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700175
+    m_Localized: Intentos
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700176
+    m_Localized: Favorito
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700177
+    m_Localized: Checkouts
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700178
+    m_Localized: "\xD8 Puntos/tirada"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700179
+    m_Localized: "Puntos m\xE1x."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700180
+    m_Localized: Puntos de overkill
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700181
+    m_Localized: "MPR m\xE1x."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700182
+    m_Localized: 9 marcas
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700183
+    m_Localized: White Horse
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700184
+    m_Localized: Mismo triple
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700185
+    m_Localized: Primero cerrado
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700186
+    m_Localized: "\xDAltimo cerrado"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700187
+    m_Localized: "M\xE1s puntos"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700188
+    m_Localized: "Participaci\xF3n"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700189
+    m_Localized: Aciertos %
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700190
+    m_Localized: Sectores acertados
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700191
+    m_Localized: Aciertos por sector
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700192
+    m_Localized: Intentos por campo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700193
+    m_Localized: "\xD8 tiradas"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700194
+    m_Localized: "\xD8 aciertos"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700195
+    m_Localized: "\xD8 aciertos %"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700196
+    m_Localized: Acierto 1er dardo %
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700197
+    m_Localized: "Racha m\xE1s larga"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700198
+    m_Localized: Mayor choke
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700199
+    m_Localized: 3 aciertos +
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700200
+    m_Localized: 6 aciertos +
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700201
+    m_Localized: 9 aciertos +
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700202
+    m_Localized: 12 aciertos +
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700203
+    m_Localized: Rachas y chokes
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700204
+    m_Localized: Sets
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700205
+    m_Localized: Legs
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700206
+    m_Localized: Sin checkouts
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700207
+    m_Localized: Sin datos
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368320
+    m_Localized: Editar evento de audio
     m_Metadata:
       m_Items: []
   references:

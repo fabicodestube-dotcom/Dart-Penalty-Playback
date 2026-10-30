@@ -30,6 +30,8 @@ public class HistoryItem : MonoBehaviour
     private GameSummary gameSummary;
     private System.Action<Guid> onClick;
     private HistoryItemMode mode;
+    private AppHandler historyAppHandler;
+    private System.Func<Guid, string> historyPlayerNameResolver;
 
     private readonly Stack<GameObject> playerRowPool = new Stack<GameObject>();
     private readonly Stack<GameObject> dividerPool = new Stack<GameObject>();
@@ -58,6 +60,8 @@ public class HistoryItem : MonoBehaviour
         this.gameSummary = summary;
         this.mode = mode;
         this.onClick = onClick;
+        this.historyAppHandler = appHandler;
+        this.historyPlayerNameResolver = playerNameResolver;
 
         RenderHeader(summary);
         RenderBody(appHandler, summary, playerNameResolver);
@@ -86,13 +90,23 @@ public class HistoryItem : MonoBehaviour
         return gameSummary.Id;
     }
 
+    public void RefreshLocalization()
+    {
+        if (gameSummary == null)
+            return;
+
+        RenderHeader(gameSummary);
+        RenderBody(historyAppHandler, gameSummary, historyPlayerNameResolver);
+        headline?.RefreshLocalization();
+    }
+
     private void RenderHeader(GameSummary summary)
     {
         var finishedAt = summary.FinishedAt;
 
         textDate.text = finishedAt.HasValue
             ? finishedAt.Value.ToString("dd.MM.yyyy HH:mm")
-            : $"Spiel läuft noch (Stand: {summary.LastActivityAt:dd.MM.yyyy HH:mm})";
+            : LocalizationText.Format("Game_running_since", "Game still running (as of {0})", summary.LastActivityAt.ToString("dd.MM.yyyy HH:mm"));
 
         if (finishedAt.HasValue)
         {
@@ -176,7 +190,7 @@ public class HistoryItem : MonoBehaviour
                 item.ShowPlayer(
                     rank: i + 1,
                     playerName: ResolvePlayerName(appHandler, entry.PlayerId, playerNameResolver),
-                    metricLabel: "Punkte: " + entry.Score.ToString(),
+                    metricLabel: LocalizationText.Get("Points", "Points") + ": " + entry.Score.ToString(),
                     stats: BuildPenaltyStats(entry, summary),
                     setsWonOverride: entry.SetsWon,
                     legsWonOverride: summary.IsFinished ? 0 : entry.LegsWon
@@ -203,7 +217,7 @@ public class HistoryItem : MonoBehaviour
                 item.ShowPlayer(
                     rank: i + 1,
                     playerName: ResolvePlayerName(appHandler, entry.PlayerId, playerNameResolver),
-                    metricLabel: "Punkte: " + entry.Score.ToString(),
+                    metricLabel: LocalizationText.Get("Points", "Points") + ": " + entry.Score.ToString(),
                     stats: BuildPenaltyStats(entry, summary),
                     setsWonOverride: entry.SetsWon,
                     legsWonOverride: summary.IsFinished ? 0 : entry.LegsWon
@@ -229,7 +243,7 @@ public class HistoryItem : MonoBehaviour
                 item.ShowPlayer(
                     rank: i + 1,
                     playerName: ResolvePlayerName(appHandler, entry.PlayerId, playerNameResolver),
-                    metricLabel: "Stand: " + $"{entry.TargetsHit} / {entry.TotalTargets}",
+                    metricLabel: LocalizationText.Get("Targets", "Targets") + ": " + $"{entry.TargetsHit} / {entry.TotalTargets}",
                     stats: BuildPenaltyStats(entry, summary),
                     setsWonOverride: entry.SetsWon,
                     legsWonOverride: summary.IsFinished ? 0 : entry.LegsWon

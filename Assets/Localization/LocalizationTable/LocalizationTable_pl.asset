@@ -81,10 +81,6 @@ MonoBehaviour:
     m_Localized: "Prze\u0142amanie"
     m_Metadata:
       m_Items: []
-  - m_Id: 16
-    m_Localized: Anuluj
-    m_Metadata:
-      m_Items: []
   - m_Id: 17
     m_Localized: Sufit
     m_Metadata:
@@ -168,8 +164,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 36
-    m_Localized: "Czy na pewno chcesz usun\u0105\u0107 gracza {name}? Tej operacji
-      nie mo\u017Cna cofn\u0105\u0107!"
+    m_Localized: "Czy na pewno chcesz usun\u0105\u0107 gracza {0}? Tej operacji nie
+      mo\u017Cna cofn\u0105\u0107!"
     m_Metadata:
       m_Items: []
   - m_Id: 37
@@ -395,7 +391,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 91
-    m_Localized: "Zmie\u0144 nazw\u0119 gracza {name}"
+    m_Localized: "Zmie\u0144 nazw\u0119 gracza {0}"
     m_Metadata:
       m_Items: []
   - m_Id: 92
@@ -545,6 +541,752 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 723894777368577
     m_Localized: "Brak dost\u0119pnych gier Around the Clock"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954469629952
+    m_Localized: Aktywne
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954490601472
+    m_Localized: Aktywne kary
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954490601473
+    m_Localized: Anuluj
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954490601474
+    m_Localized: Warunek
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954490601475
+    m_Localized: Liczba
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954490601476
+    m_Localized: Dostosowywanie
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954494795776
+    m_Localized: "Usu\u0144 kar\u0119"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954494795777
+    m_Localized: "Usu\u0144 obszar docelowy"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954494795778
+    m_Localized: "Szczeg\xF3\u0142y"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954494795779
+    m_Localized: "Wy\u0142\u0105czone"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954494795780
+    m_Localized: "Edytuj kar\u0119"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954494795781
+    m_Localized: Edytuj obszar docelowy
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954494795782
+    m_Localized: "W\u0142\u0105czone"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954494795783
+    m_Localized: "Zachowaj kolejno\u015B\u0107"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954494795784
+    m_Localized: Nazwa
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954494795785
+    m_Localized: Nowe zdarzenie audio
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954494795786
+    m_Localized: Nowa kara
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954494795787
+    m_Localized: Obszary docelowe
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706055340032
+    m_Localized: "Szczeg\xF3\u0142y gry"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311552
+    m_Localized: "J\u0119zyk"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311553
+    m_Localized: "J\u0119zyki"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311554
+    m_Localized: Tryb ciemny
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311555
+    m_Localized: "Domy\u015Blne jako zapasowe"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311556
+    m_Localized: "Okre\u015Bla, czy po wywo\u0142aniu wbudowanego zdarzenia odtwarzany
+      jest domy\u015Blny d\u017Awi\u0119k."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311557
+    m_Localized: Informacje o wersji
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311558
+    m_Localized: Licencja
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311559
+    m_Localized: "Polityka prywatno\u015Bci"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311560
+    m_Localized: Gra wstrzymana
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311561
+    m_Localized: "Usu\u0144"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311562
+    m_Localized: Kontynuuj
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311563
+    m_Localized: Zdarzenia audio
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311564
+    m_Localized: Nowy obszar trafienia
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311565
+    m_Localized: Globalne
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311566
+    m_Localized: Zdarzenie
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311567
+    m_Localized: Tryb gry
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311568
+    m_Localized: Liczba lotek
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311569
+    m_Localized: Lotka 1
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311570
+    m_Localized: Lotka 2
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311571
+    m_Localized: Lotka 3
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311572
+    m_Localized: Wynik
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311573
+    m_Localized: "Dok\u0142adny wynik"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311574
+    m_Localized: Wzorzec rzutu
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311575
+    m_Localized: Zdarzenia gry
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505856
+    m_Localized: Informacje o klipie
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505857
+    m_Localized: Obszar docelowy
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505858
+    m_Localized: Ostatni sektor
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505859
+    m_Localized: Bull
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505860
+    m_Localized: "Wykres s\u0142upkowy"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505861
+    m_Localized: Mapa cieplna
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505862
+    m_Localized: 'Aktywne kary:'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505863
+    m_Localized: 'Suma:'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505864
+    m_Localized: "Brak na\u0142o\u017Conych kar."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505865
+    m_Localized: Razem
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505866
+    m_Localized: 'Razem: {0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505867
+    m_Localized: Brak
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505868
+    m_Localized: "\u015ACIANA"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505869
+    m_Localized: SUFIT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505870
+    m_Localized: "1\xD73"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505871
+    m_Localized: Repdigit
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505872
+    m_Localized: Brak klipu
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505873
+    m_Localized: "{0} ({1}) \u2013 klip {2}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505874
+    m_Localized: "{0} klip\xF3w"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505875
+    m_Localized: Zapowiedzi wyniku
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505876
+    m_Localized: "D\u017Awi\u0119k zapowiedzi wyniku 0\u2013180"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505877
+    m_Localized: "Usu\u0144 gr\u0119"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505878
+    m_Localized: "Usu\u0144 obszar trafienia"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505879
+    m_Localized: "Czy na pewno chcesz usun\u0105\u0107 ten obszar docelowy? Tej operacji
+      nie mo\u017Cna cofn\u0105\u0107!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505880
+    m_Localized: "Usu\u0144 zdarzenie audio"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505881
+    m_Localized: "Czy na pewno chcesz usun\u0105\u0107 to zdarzenie audio? Tej operacji
+      nie mo\u017Cna cofn\u0105\u0107!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505882
+    m_Localized: "Usun\u0105\u0107 t\u0119 kar\u0119?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505883
+    m_Localized: "Usun\u0105\u0107 kar\u0119? Powi\u0105zane klipy audio: {0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505884
+    m_Localized: "Usun\u0105\u0107 to zdarzenie audio?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505885
+    m_Localized: "Usun\u0105\u0107 zdarzenie audio? Powi\u0105zane klipy audio: {0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505886
+    m_Localized: "Usun\u0105\u0107 kar\u0119 \u201E{0}\u201D?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505887
+    m_Localized: "Usun\u0105\u0107 zdarzenie audio \u201E{0}\u201D?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505888
+    m_Localized: "Usun\u0105\u0107 obszar docelowy \u201E{0}\u201D?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505889
+    m_Localized: "Usun\u0105\u0107 obszar docelowy \u201E{0}\u201D? U\u017Cywany
+      przez kary: {1}. Zostan\u0105 one r\xF3wnie\u017C usuni\u0119te."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505890
+    m_Localized: "Usun\u0105\u0107 obszar docelowy? U\u017Cywany przez kary: {0}.
+      Zostan\u0105 one r\xF3wnie\u017C usuni\u0119te."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505891
+    m_Localized: "Usun\u0105\u0107 mimo to? Powi\u0105zane kary r\xF3wnie\u017C zostan\u0105
+      usuni\u0119te."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505892
+    m_Localized: "Usun\u0105\u0107 mimo to? Powi\u0105zane klipy audio: {0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505893
+    m_Localized: "Usun\u0105\u0107 ten obszar docelowy?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505894
+    m_Localized: "Nazwa jest za d\u0142uga (maks. 12 znak\xF3w)."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505895
+    m_Localized: "Nazwa musi zawiera\u0107 co najmniej jedn\u0105 liter\u0119."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505896
+    m_Localized: "Nazwa jest ju\u017C zaj\u0119ta."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505897
+    m_Localized: Gra nadal trwa (stan na {0})
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505898
+    m_Localized: 'Punkty: {0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505899
+    m_Localized: 'Cele: {0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505900
+    m_Localized: "Poza tarcz\u0105: \u015Bciana"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505901
+    m_Localized: "Poza tarcz\u0105: sufit"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505902
+    m_Localized: "Pud\u0142o: {0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505903
+    m_Localized: Rzut = {0}
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505904
+    m_Localized: "Pozosta\u0142o = {0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505905
+    m_Localized: "Repdigit \u2265 {0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505906
+    m_Localized: "Rzut [{0}] (w kolejno\u015Bci)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505907
+    m_Localized: "Rzut [{0}] (dowolna kolejno\u015B\u0107)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505908
+    m_Localized: Przegrana partia
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505909
+    m_Localized: Przegrany set
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505910
+    m_Localized: Przegrana gra
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505911
+    m_Localized: "R\u0119cznie"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505912
+    m_Localized: Wynik = {0}
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505913
+    m_Localized: "Znaczniki \u2265 {0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505914
+    m_Localized: "Punkty \u2265 {0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505915
+    m_Localized: "Trafienia/rzut \u2265 {0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505916
+    m_Localized: "Seria \u2265 {0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505917
+    m_Localized: "Znaczniki \u2265"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505918
+    m_Localized: "Punkty \u2265"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505919
+    m_Localized: "Trafienia/rzut \u2265"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505920
+    m_Localized: "Seria \u2265"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505921
+    m_Localized: "Wynik osi\u0105gni\u0119ty (=)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505922
+    m_Localized: "w kolejno\u015Bci"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505923
+    m_Localized: "dowolna kolejno\u015B\u0107"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505924
+    m_Localized: Kara
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505925
+    m_Localized: "Kara za trafienie w \u015Bcian\u0119"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505926
+    m_Localized: Kara za trafienie w sufit
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505927
+    m_Localized: "Kara za niestandardowe pud\u0142o"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505928
+    m_Localized: Kara za {0}
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505929
+    m_Localized: 'Wynik rzutu: {0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505930
+    m_Localized: "Osi\u0105gnij dok\u0142adny wynik: {0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505931
+    m_Localized: "Wynik repdigit \u2265 {0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505932
+    m_Localized: Gdy przegrana jest partia
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505933
+    m_Localized: Gdy przegrany jest set
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505934
+    m_Localized: Gdy gra jest przegrana
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505935
+    m_Localized: "Trafienie poza tarcz\u0105 (\u015Bciana)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505936
+    m_Localized: Trafienie w sufit
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505937
+    m_Localized: Obszar niestandardowy ({0}{1})
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505938
+    m_Localized: "Niestandardowy obszar poza tarcz\u0105 (0 punkt\xF3w)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505939
+    m_Localized: "Zdarzenie r\u0119czne"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505940
+    m_Localized: "D\u017Awi\u0119k przy cofaniu"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505941
+    m_Localized: "D\u017Awi\u0119k przy wygranej"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505942
+    m_Localized: "D\u017Awi\u0119k na starcie meczu"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505943
+    m_Localized: "D\u017Awi\u0119k przy przekroczeniu (bust)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505944
+    m_Localized: "D\u017Awi\u0119k przy nag\u0142ej \u015Bmierci"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505945
+    m_Localized: "D\u017Awi\u0119k po znacznikach w Cricket"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505946
+    m_Localized: "D\u017Awi\u0119k przy white horse"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505947
+    m_Localized: "D\u017Awi\u0119k przy 9 znacznikach"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505948
+    m_Localized: "D\u017Awi\u0119k przy trafieniach"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700160
+    m_Localized: "D\u017Awi\u0119k przy serii ATC"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700161
+    m_Localized: Dowolny
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700162
+    m_Localized: Tarcza
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700163
+    m_Localized: 1 lotka
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700164
+    m_Localized: 2 lotki
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700165
+    m_Localized: 3 lotki
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700166
+    m_Localized: Gracz
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700167
+    m_Localized: Gry
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700168
+    m_Localized: Wygrane %
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700169
+    m_Localized: Double %
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700170
+    m_Localized: Triple %
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700171
+    m_Localized: "\xD8 Punkty"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700172
+    m_Localized: "\xD8 Pierwsze 9"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700173
+    m_Localized: Maks. wynik
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700174
+    m_Localized: "Najwy\u017Cszy checkout"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700175
+    m_Localized: "Pr\xF3by"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700176
+    m_Localized: Ulubiony
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700177
+    m_Localized: Checkouty
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700178
+    m_Localized: "\xD8 Punkty/rzut"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700179
+    m_Localized: Maks. punkty
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700180
+    m_Localized: Punkty overkill
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700181
+    m_Localized: Maks. MPR
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700182
+    m_Localized: "9 znacznik\xF3w"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700183
+    m_Localized: White Horse
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700184
+    m_Localized: Ten sam triple
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700185
+    m_Localized: "Pierwszy zamkni\u0119ty"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700186
+    m_Localized: "Ostatni zamkni\u0119ty"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700187
+    m_Localized: "Najwi\u0119cej punkt\xF3w"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700188
+    m_Localized: "Udzia\u0142"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700189
+    m_Localized: Trafienia %
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700190
+    m_Localized: Trafione sektory
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700191
+    m_Localized: Trafienia w sektor
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700192
+    m_Localized: "Pr\xF3by na pole"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700193
+    m_Localized: "\xD8 rzuty"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700194
+    m_Localized: "\xD8 trafienia"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700195
+    m_Localized: "\xD8 trafienia %"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700196
+    m_Localized: Trafienie 1. lotki %
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700197
+    m_Localized: "Najd\u0142u\u017Csza seria"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700198
+    m_Localized: "Najwi\u0119kszy choke"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700199
+    m_Localized: 3 trafienia +
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700200
+    m_Localized: "6 trafie\u0144 +"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700201
+    m_Localized: "9 trafie\u0144 +"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700202
+    m_Localized: "12 trafie\u0144 +"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700203
+    m_Localized: Serie i choke
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700204
+    m_Localized: Sety
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700205
+    m_Localized: Legi
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700206
+    m_Localized: "Brak checkout\xF3w"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700207
+    m_Localized: Brak danych
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368320
+    m_Localized: "Edytuj wydarzenie d\u017Awi\u0119kowe"
     m_Metadata:
       m_Items: []
   references:

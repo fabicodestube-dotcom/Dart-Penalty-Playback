@@ -632,7 +632,7 @@ public class ClipBrowser : MonoBehaviour
 
     private void UpdateHeadline()
     {
-        string categoryText = currentCategory.ToString();
+        string categoryText = GetCategoryLabel(currentCategory);
         string specification = "";
 
         switch (currentCategory)
@@ -655,6 +655,18 @@ public class ClipBrowser : MonoBehaviour
         }
 
         headline.text = $"{categoryText} ({specification})";
+    }
+
+    private static string GetCategoryLabel(AudioCategory category)
+    {
+        return category switch
+        {
+            AudioCategory.Score => LocalizationText.Get("Score", "Score"),
+            AudioCategory.Penalty => LocalizationText.Get("Penalties", "Penalties"),
+            AudioCategory.Special => LocalizationText.Get("Special_clips", "Special clips"),
+            AudioCategory.Custom => LocalizationText.Get("Custom_clips", "Custom clips"),
+            _ => category.ToString()
+        };
     }
 
     private void UpdateButtonState()
@@ -680,12 +692,12 @@ public class ClipBrowser : MonoBehaviour
     {
         if (clip == null)
         {
-            clipNameText.text = noClipText;
+            clipNameText.text = LocalizationText.Get("No_clip_available", noClipText);
             clipLengthText.text = "--:--";
             return;
         }
 
-        string categoryPart = currentCategory.ToString();
+        string categoryPart = GetCategoryLabel(currentCategory);
         string specPart = "";
 
         switch (currentCategory)
@@ -695,7 +707,7 @@ public class ClipBrowser : MonoBehaviour
                 break;
 
             case AudioCategory.Penalty:
-                specPart = currentPenaltyType.ToString();
+                specPart = PenaltyDisplay.BuiltInDisplayName(currentPenaltyType);
                 break;
 
             case AudioCategory.Special:
@@ -709,7 +721,7 @@ public class ClipBrowser : MonoBehaviour
 
         int displayIndex = currentIndex + 1;
 
-        clipNameText.text = $"{categoryPart} ({specPart}) - Clip {displayIndex}";
+        clipNameText.text = LocalizationText.Format("Clip_number_format", "{0} ({1}) - Clip {2}", categoryPart, specPart, displayIndex);
 
         int totalSeconds = Mathf.RoundToInt(clip.length);
         clipLengthText.text = $"{totalSeconds / 60:00}:{totalSeconds % 60:00}";
@@ -1199,7 +1211,7 @@ public class ClipBrowser : MonoBehaviour
 //     {
 //         if (clip == null)
 //         {
-//             clipNameText.text = noClipText;
+//             clipNameText.text = LocalizationText.Get("No_clip_available", noClipText);
 //             clipLengthText.text = "--:--";
 //             return;
 //         }
@@ -1224,7 +1236,7 @@ public class ClipBrowser : MonoBehaviour
 
 //         int displayIndex = currentIndex + 1;   // exakt gleiche Logik wie clipCountText
 
-//         clipNameText.text = $"{categoryPart} ({specPart}) - Clip {displayIndex}";
+//         clipNameText.text = LocalizationText.Format("Clip_number_format", "{0} ({1}) - Clip {2}", categoryPart, specPart, displayIndex);
 
 //         int totalSeconds = Mathf.RoundToInt(clip.length);
 //         clipLengthText.text = $"{totalSeconds / 60:00}:{totalSeconds % 60:00}";

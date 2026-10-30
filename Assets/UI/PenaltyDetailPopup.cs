@@ -163,7 +163,7 @@ public class PenaltyDetailPopup : UIScreen, IUIScreen
             return;
 
         ClearContent();
-        SetTitle(string.IsNullOrWhiteSpace(playerName) ? "Strafen" : playerName);
+        SetTitle(string.IsNullOrWhiteSpace(playerName) ? LocalizationText.Get("Penalties", "Penalties") : playerName);
         AddTableHeader();
 
         var entry = summary.PlayerEntries?.Find(e => e != null && e.PlayerId == playerId);
@@ -216,7 +216,7 @@ public class PenaltyDetailPopup : UIScreen, IUIScreen
         }
 
         if (!anyRow)
-            AddInfoRow("Keine Penalties", "");
+            AddInfoRow(LocalizationText.Get("No_penalties", "No penalties applied."), "");
 
         SetTotal(grandTotal);
         FinishShow();
@@ -229,7 +229,7 @@ public class PenaltyDetailPopup : UIScreen, IUIScreen
     public void ShowPlayerAggregates(string playerName, GameStats stats)
     {
         ClearContent();
-        SetTitle(string.IsNullOrWhiteSpace(playerName) ? "Strafen" : playerName);
+        SetTitle(string.IsNullOrWhiteSpace(playerName) ? LocalizationText.Get("Penalties", "Penalties") : playerName);
         AddTableHeader();
 
         float grandTotal = 0f;
@@ -266,7 +266,7 @@ public class PenaltyDetailPopup : UIScreen, IUIScreen
         }
 
         if (!anyRow)
-            AddInfoRow("Keine Penalties", "");
+            AddInfoRow(LocalizationText.Get("No_penalties", "No penalties applied."), "");
 
         // TEMP-DIAG: Objekt-Identität Tap vs. Tabelle + Zeilenbilanz.
         int childCount = contentParent != null ? contentParent.childCount : -1;
@@ -350,7 +350,7 @@ public class PenaltyDetailPopup : UIScreen, IUIScreen
     /// <summary>Grand Total in den Header-Bereich (sumText) oder Titel-Suffix.</summary>
     private void SetTotal(float grandTotal)
     {
-        string text = "Gesamt: " + grandTotal.ToString("0.##");
+        string text = LocalizationText.Get("Total", "Total") + ": " + grandTotal.ToString("0.##");
         if (sumText != null)
         {
             sumText.text = text;
@@ -364,7 +364,11 @@ public class PenaltyDetailPopup : UIScreen, IUIScreen
     /// <summary>Kopfzeile der 4 Detail-Spalten (Name | Kosten | Anzahl | Summe).</summary>
     private void AddTableHeader()
     {
-        AddItemRow("Name", "Kosten", "Anzahl", "Summe");
+        AddItemRow(
+            LocalizationText.Get("Name", "Name"),
+            LocalizationText.Get("Costs", "Costs"),
+            LocalizationText.Get("Count", "Count"),
+            LocalizationText.Get("Sum", "Sum"));
     }
 
     /// <summary>

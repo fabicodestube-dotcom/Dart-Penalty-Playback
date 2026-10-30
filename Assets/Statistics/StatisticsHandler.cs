@@ -1348,12 +1348,25 @@ public class StatisticsHandler : MonoBehaviour, IUIScreen
     public void OnShow()
     {
         screenVisible = true;
+        RefreshLocalization();
 
         // Laufende Arbeit fortsetzen lassen (kein Doppelstart).
         if (buildRoutine != null || dirtyRoutine != null)
             return;
 
         buildRoutine = StartCoroutine(OnShowWorkSequence());
+    }
+
+    private void RefreshLocalization()
+    {
+        pageAllAlltime?.RefreshLocalization();
+        pageX01Alltime?.RefreshLocalization();
+        pageCricketAlltime?.RefreshLocalization();
+        pageATCAlltime?.RefreshLocalization();
+        liveAllPage?.RefreshLocalization();
+        liveX01Page?.RefreshLocalization();
+        liveCricketPage?.RefreshLocalization();
+        liveATCPage?.RefreshLocalization();
     }
 
     public void OnHide()

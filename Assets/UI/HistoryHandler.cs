@@ -8,6 +8,7 @@ using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.Localization;
 using UnityEngine.Localization.Components;
+using UnityEngine.Localization.Settings;
 using UnityEngine.UI;
 
 public class HistoryHandler : MonoBehaviour, IUIScreen
@@ -70,6 +71,7 @@ public class HistoryHandler : MonoBehaviour, IUIScreen
         SnapshotSummaries();
         EnsurePlayerNameCache(cachedSummaries);
         HookScrollRects();
+        LocalizationSettings.SelectedLocaleChanged += HandleLocaleChanged;
 
         if (swipeMenu != null)
         {
@@ -733,6 +735,8 @@ public class HistoryHandler : MonoBehaviour, IUIScreen
 
     private void OnDestroy()
     {
+        LocalizationSettings.SelectedLocaleChanged -= HandleLocaleChanged;
+
         if (swipeMenu != null)
             swipeMenu.OnPageChanged -= HandleSwipePageChanged;
 
@@ -751,6 +755,23 @@ public class HistoryHandler : MonoBehaviour, IUIScreen
             appHandler.OnAddGame -= HandleAddGame;
             appHandler.OnDeleteGamesOfMode -= HandleDeleteGamesOfMode;
             appHandler.OnAllGamesDeleted -= HandleAllGamesDeleted;
+        }
+    }
+
+    private void HandleLocaleChanged(Locale locale)
+    {
+        if (tabs == null)
+            return;
+
+        foreach (var tab in tabs)
+        {
+            if (tab?.items == null)
+                continue;
+            foreach (var item in tab.items)
+            {
+                if (item != null)
+                    item.RefreshLocalization();
+            }
         }
     }
 

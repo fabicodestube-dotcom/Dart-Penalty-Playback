@@ -100,7 +100,7 @@ public class ATCGameSettings : GameSettings
         var allowedCounts = new HashSet<int> { 1, 3, 5, 7, 9 };
         if (!allowedCounts.Contains(setCount) || !allowedCounts.Contains(legCount))
         {
-            reason = "Sets/Legs müssen 1, 3, 5, 7 oder 9 sein";
+            reason = "Sets/Legs must be 1, 3, 5, 7 or 9";
             return false;
         }
 

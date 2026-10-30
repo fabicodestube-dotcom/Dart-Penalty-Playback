@@ -117,7 +117,7 @@ public class StatisticsPageATC : MonoBehaviour
             ATCPenaltiesKey,
             parent,
             "Penalties",
-            new TableCellData[] { "Anzahl", "Kosten", "Details" });
+            new TableCellData[] { "Count", "Costs", "Details" });
 
         if (penaltyTable != null)
         {
@@ -216,7 +216,7 @@ public class StatisticsPageATC : MonoBehaviour
         if (prefabHitSectorChart != null)
         {
             if (attemptsHeadline == null)
-                attemptsHeadline = CreateHeadline(parent, "Versuche pro Feld");
+                attemptsHeadline = CreateHeadline(parent, "Attempts per Field");
             else
                 attemptsHeadline.SetActive(true);
 
@@ -309,6 +309,7 @@ public class StatisticsPageATC : MonoBehaviour
         if (cachedTables.TryGetValue(key, out var existingTable) && existingTable != null)
         {
             existingTable.SetTitle(title);
+            existingTable.SetHeader(header);
             return existingTable;
         }
 
@@ -350,6 +351,18 @@ public class StatisticsPageATC : MonoBehaviour
         }
     }
 
+    public void RefreshLocalization()
+    {
+        foreach (var table in cachedTables.Values)
+            table?.RefreshLocalization();
+        if (attemptsHeadline != null)
+        {
+            var tmp = attemptsHeadline.GetComponent<TMP_Text>();
+            if (tmp != null)
+                tmp.text = LocalizationText.GetByEnglish("Attempts per Field", "Attempts per Field");
+        }
+    }
+
     private GameObject CreateHeadline(Transform parentTransform, string text)
     {
         if (prefabHeadline == null || parentTransform == null) return null;
@@ -357,7 +370,7 @@ public class StatisticsPageATC : MonoBehaviour
         var tmp = go.GetComponent<TMP_Text>();
         if (tmp != null)
         {
-            tmp.text = text;
+            tmp.text = LocalizationText.GetByEnglish(text, text);
             // Perf (M1): Headline ist nie interaktiv.
             if (tmp.raycastTarget)
                 tmp.raycastTarget = false;
@@ -440,7 +453,7 @@ public class StatisticsPageATC : MonoBehaviour
             ATCPenaltiesKey,
             parent,
             "Penalties",
-            new TableCellData[] { "Anzahl", "Kosten", "Details" });
+            new TableCellData[] { "Count", "Costs", "Details" });
 
         penaltyTable.gameObject.SetActive(true);
 
@@ -635,7 +648,7 @@ public class StatisticsPageATC : MonoBehaviour
         if (prefabHitSectorChart != null)
         {
             if (attemptsHeadline == null)
-                attemptsHeadline = CreateHeadline(parent, "Versuche pro Feld");
+                attemptsHeadline = CreateHeadline(parent, "Attempts per Field");
             else
                 attemptsHeadline.SetActive(true);
 

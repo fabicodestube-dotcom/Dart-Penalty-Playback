@@ -280,7 +280,7 @@ public class CustomizationAudioEventsPage : MonoBehaviour, ICustomizationRowOwne
             return "";
 
         if (id == ScoreRowId)
-            return "Sound for score announcements 0-180";
+            return LocalizationText.Get("Sound_score_announcements", "Sound for score announcements 0-180");
 
         var def = CustomizationStore.GetAudioEvents().Find(x => x != null && x.id == id);
         if (def == null)
@@ -288,7 +288,7 @@ public class CustomizationAudioEventsPage : MonoBehaviour, ICustomizationRowOwne
         if (def == null)
             return "";
 
-        return string.IsNullOrEmpty(def.info) ? CustomizationInfo.BuildAudioEvent(def) : def.info;
+        return CustomizationInfo.LocalizeInfo(string.IsNullOrEmpty(def.info) ? CustomizationInfo.BuildAudioEvent(def) : def.info);
     }
 
     /// <summary>
@@ -401,8 +401,8 @@ public class CustomizationAudioEventsPage : MonoBehaviour, ICustomizationRowOwne
         if (deletePopupText != null)
         {
             deletePopupText.text = clipCount > 0
-                ? $"Event löschen? Es sind noch {clipCount} Audio-Clips damit verbunden."
-                : "Event wirklich löschen?";
+                ? LocalizationText.Format("Delete_audio_event_with_clips", "Delete audio event? Linked audio clips: {0}", clipCount)
+                : LocalizationText.Get("Delete_audio_event_confirm", "Delete this audio event?");
         }
 
         if (windowHandler != null && deletePopup != null)

@@ -27,6 +27,8 @@ public class TableView : MonoBehaviour
     public DynamicTableRow HeaderRow { get; private set; }
 
     private float[] columnWidths;
+    private string originalTitle;
+    private TableCellData[] originalHeader;
 
     /// <summary>Zuletzt gültige Spaltenbreiten (Fallback, siehe CalculateColumnWidths).</summary>
     private float[] lastGoodColumnWidths;
@@ -57,6 +59,7 @@ public class TableView : MonoBehaviour
     public void Build(string title, TableCellData[] header)
     {
         Clear();
+        originalHeader = header;
         SetTitle(title);
 
         // Perf (M1): Titel ist nie interaktiv.
@@ -69,7 +72,7 @@ public class TableView : MonoBehaviour
         columnWidths = CalculateColumnWidths(header);
 
         var headerRow = Instantiate(headerPrefab, rowsContainer).GetComponent<DynamicTableRow>();
-        headerRow.Setup(" ", header, columnWidths, true);
+        headerRow.Setup(" ", LocalizeHeader(header), columnWidths, true);
         HeaderRow = headerRow;
         // Explizit nach vorne: Clear() behält alte Kinder, Instantiate hängt
         // hinten an, Pool-Reuse sortiert nicht um (SetParent behält Position).
@@ -233,7 +236,46 @@ public class TableView : MonoBehaviour
 
     public void SetTitle(string title)
     {
-        headline.text = title;
+        originalTitle = title;
+        if (headline != null)
+            headline.text = LocalizationText.GetByEnglish(title, title);
+    }
+
+    public void SetHeader(TableCellData[] header)
+    {
+        originalHeader = header;
+        if (HeaderRow == null)
+            return;
+
+        columnWidths = CalculateColumnWidths(header);
+        HeaderRow.Setup(" ", LocalizeHeader(header), columnWidths, true);
+    }
+
+    public void RefreshLocalization()
+    {
+        if (headline != null)
+            headline.text = LocalizationText.GetByEnglish(originalTitle, originalTitle);
+
+        if (HeaderRow != null && originalHeader != null)
+        {
+            columnWidths = CalculateColumnWidths(originalHeader);
+            HeaderRow.Setup(" ", LocalizeHeader(originalHeader), columnWidths, true);
+        }
+    }
+
+    private static TableCellData[] LocalizeHeader(TableCellData[] header)
+    {
+        if (header == null)
+            return null;
+
+        var localized = new TableCellData[header.Length];
+        for (int i = 0; i < header.Length; i++)
+        {
+            localized[i] = header[i];
+            if (!header[i].isIcon)
+                localized[i].text = LocalizationText.GetByEnglish(header[i].text, header[i].text);
+        }
+        return localized;
     }
 
     public void ApplyLayout()

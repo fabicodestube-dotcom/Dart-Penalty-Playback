@@ -132,6 +132,47 @@ public static class CustomizationInfo
         }
     }
 
+
+    public static string LocalizeInfo(string info)
+    {
+        if (string.IsNullOrEmpty(info))
+            return info;
+
+        if (info.StartsWith("Turn score: "))
+            return LocalizationText.Format("Turn_score_value", "Turn score: {0}", info.Substring("Turn score: ".Length));
+        if (info.StartsWith("Reach exact score: "))
+            return LocalizationText.Format("Reach_exact_score_value", "Reach exact score: {0}", info.Substring("Reach exact score: ".Length));
+        if (info.StartsWith("Repdigit turn score \u2265 "))
+            return LocalizationText.Format("Repdigit_turn_score_min", "Repdigit turn score \u2265 {0}", info.Substring("Repdigit turn score \u2265 ".Length));
+        if (info.StartsWith("Marks \u2265 "))
+            return LocalizationText.Format("Marks_at_least", "Marks \u2265 {0}", info.Substring("Marks \u2265 ".Length));
+        if (info.StartsWith("Points \u2265 "))
+            return LocalizationText.Format("Points_at_least", "Points \u2265 {0}", info.Substring("Points \u2265 ".Length));
+        if (info.StartsWith("Hits per turn \u2265 "))
+            return LocalizationText.Format("Hits_per_turn_at_least", "Hits/Turn \u2265 {0}", info.Substring("Hits per turn \u2265 ".Length));
+        if (info.StartsWith("Streak \u2265 "))
+            return LocalizationText.Format("Streak_at_least", "Streak \u2265 {0}", info.Substring("Streak \u2265 ".Length));
+
+        if (info.StartsWith("Turn: "))
+        {
+            string pattern = info.Substring("Turn: ".Length);
+            if (pattern.EndsWith(" (in order)"))
+                return LocalizationText.Format("Turn_pattern_order", "Turn [{0}] (in order)", pattern.Substring(0, pattern.Length - " (in order)".Length));
+            if (pattern.EndsWith(" (any order)"))
+                return LocalizationText.Format("Turn_pattern_any_order", "Turn [{0}] (any order)", pattern.Substring(0, pattern.Length - " (any order)".Length));
+        }
+
+        if (info.StartsWith("Custom area (") && info.EndsWith(")"))
+        {
+            string value = info.Substring("Custom area (".Length, info.Length - "Custom area (".Length - 1);
+            string mult = value.StartsWith("D") || value.StartsWith("T") ? value.Substring(0, 1) : "";
+            string number = mult.Length > 0 ? value.Substring(1) : value;
+            return LocalizationText.Format("Custom_area_mult_value", "Custom area ({0}{1})", mult, number);
+        }
+
+        return LocalizationText.GetByEnglish(info, info);
+    }
+
     /// <summary>Compact turn-pattern description (e.g. "T20,1,Miss").</summary>
     public static string DescribePattern(List<TurnPatternEntry> pattern)
     {

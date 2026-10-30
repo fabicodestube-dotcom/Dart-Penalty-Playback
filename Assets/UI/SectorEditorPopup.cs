@@ -284,8 +284,8 @@ public class SectorEditorPopup : UIScreen, IUIScreen
         if (confirmText != null)
         {
             confirmText.text = usage > 0
-                ? $"Sektor „{editingName}“ löschen?\n({usage} Penalty{ (usage > 1 ? "en" : "") } werden mitgelöscht.)"
-                : $"Sektor „{editingName}“ löschen?";
+                ? LocalizationText.Format("Delete_sector_named_usage", "Delete target area “{0}”? Used by penalties: {1}. These will also be deleted.", editingName, usage)
+                : LocalizationText.Format("Delete_sector_named", "Delete target area “{0}”?", editingName);
         }
 
         SetConfirmView(true);

@@ -214,7 +214,7 @@ public class CustomizationPenaltiesPage : MonoBehaviour, ICustomizationRowOwner
         if (def == null)
             return "";
 
-        return string.IsNullOrEmpty(def.info) ? CustomizationInfo.BuildPenalty(def) : def.info;
+        return CustomizationInfo.LocalizeInfo(string.IsNullOrEmpty(def.info) ? CustomizationInfo.BuildPenalty(def) : def.info);
     }
 
     /// <summary>Toggle direkt in der Zeile: enabled speichern (Changed → Refresh).</summary>
@@ -276,8 +276,8 @@ public class CustomizationPenaltiesPage : MonoBehaviour, ICustomizationRowOwner
         if (deletePopupText != null)
         {
             deletePopupText.text = clipCount > 0
-                ? $"Penalty löschen? Es sind noch {clipCount} Audio-Clips damit verbunden."
-                : "Penalty wirklich löschen?";
+                ? LocalizationText.Format("Delete_penalty_with_clips", "Delete penalty? Linked audio clips: {0}", clipCount)
+                : LocalizationText.Get("Delete_penalty_confirm", "Delete this penalty?");
         }
 
         if (windowHandler != null && deletePopup != null)

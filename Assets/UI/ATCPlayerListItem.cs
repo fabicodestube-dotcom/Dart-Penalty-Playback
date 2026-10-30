@@ -109,13 +109,13 @@ public class ATCPlayerListItem : MonoBehaviour
 
         if (stats.isFinished)
         {
-            currentTargetText.text = "Finished";
+            currentTargetText.text = LocalizationText.Get("Finished", "Finished");
             return;
         }
 
         if (stats.currentTarget == -1)
         {
-            currentTargetText.text = "N/A";
+            currentTargetText.text = LocalizationText.Get("Not_available", "N/A");
             return;
         }
 

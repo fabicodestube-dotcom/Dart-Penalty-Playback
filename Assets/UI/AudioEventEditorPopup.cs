@@ -51,11 +51,6 @@ public class AudioEventEditorPopup : UIScreen, IUIScreen
     private string editingName;
 
     // Dropdown-Reihenfolge = Enum-Reihenfolge (Global=0, X01=1, Cricket=2, ATC=3).
-    private static readonly List<string> CategoryOptions = new List<string>
-    {
-        "Global", "X01", "Cricket", "ATC"
-    };
-
     private void OnValidate()
     {
         id = ScreenId.Popup;
@@ -81,7 +76,10 @@ public class AudioEventEditorPopup : UIScreen, IUIScreen
         if (categoryDropdown != null)
         {
             categoryDropdown.ClearOptions();
-            categoryDropdown.AddOptions(CategoryOptions);
+            categoryDropdown.AddOptions(new List<string>
+            {
+                LocalizationText.Get("Global", "Global"), "X01", "Cricket", "ATC"
+            });
             categoryDropdown.onValueChanged.AddListener(_ => OnCategoryChanged());
         }
 
@@ -170,7 +168,7 @@ public class AudioEventEditorPopup : UIScreen, IUIScreen
         }
 
         if (categoryLabel != null)
-            categoryLabel.text = newCategory.ToString();
+            categoryLabel.text = LocalizationText.Get(newCategory.ToString(), newCategory.ToString());
 
         UpdateTriggerGroups();
     }
@@ -180,10 +178,10 @@ public class AudioEventEditorPopup : UIScreen, IUIScreen
     {
         return category switch
         {
-            AudioEventCategory.X01 => new List<string> { "Score reached (=)", "Turn pattern" },
-            AudioEventCategory.Cricket => new List<string> { "Marks ≥", "Points ≥", "Score reached (=)", "Turn pattern" },
-            AudioEventCategory.ATC => new List<string> { "Hits/Turn ≥", "Streak ≥", "Turn pattern" },
-            _ => new List<string> { "Score reached (=)", "Turn pattern" }
+            AudioEventCategory.X01 => new List<string> { LocalizationText.Get("Score_reached", "Score reached"), LocalizationText.Get("Turn_pattern", "Turn pattern") },
+            AudioEventCategory.Cricket => new List<string> { LocalizationText.Get("Marks_at_least_short", "Marks ≥"), LocalizationText.Get("Points_at_least_short", "Points ≥"), LocalizationText.Get("Score_reached", "Score reached"), LocalizationText.Get("Turn_pattern", "Turn pattern") },
+            AudioEventCategory.ATC => new List<string> { LocalizationText.Get("Hits_per_turn_at_least_short", "Hits/Turn ≥"), LocalizationText.Get("Streak_at_least_short", "Streak ≥"), LocalizationText.Get("Turn_pattern", "Turn pattern") },
+            _ => new List<string> { LocalizationText.Get("Score_reached", "Score reached"), LocalizationText.Get("Turn_pattern", "Turn pattern") }
         };
     }
 
@@ -223,7 +221,7 @@ public class AudioEventEditorPopup : UIScreen, IUIScreen
             categoryDropdown.SetValueWithoutNotify((int)editingCategory);
 
         if (categoryLabel != null)
-            categoryLabel.text = editingCategory.ToString();
+            categoryLabel.text = LocalizationText.Get(editingCategory.ToString(), editingCategory.ToString());
 
         if (triggerKindDropdown != null)
         {
@@ -410,7 +408,7 @@ public class AudioEventEditorPopup : UIScreen, IUIScreen
         pendingDeleteId = editingId;
 
         if (confirmText != null)
-            confirmText.text = $"Audio-Event „{editingName}“ löschen?";
+            confirmText.text = LocalizationText.Format("Delete_audio_event_named", "Delete audio event “{0}”?", editingName);
 
         SetConfirmView(true);
     }

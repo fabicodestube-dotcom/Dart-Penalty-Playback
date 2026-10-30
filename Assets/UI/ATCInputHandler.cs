@@ -104,7 +104,7 @@ public class ATCInputHandler : InputHandler
 
     private string GetTargetLabel(int target, DartMultiplier required)
     {
-        if (target == -1) return "Finished";
+        if (target == -1) return LocalizationText.Get("Finished", "Finished");
 
         return required switch
         {

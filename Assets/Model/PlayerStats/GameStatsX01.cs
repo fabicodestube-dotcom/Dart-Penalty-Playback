@@ -361,7 +361,7 @@ public class GameStatsX01 : GameStats
     public string GetMostFrequentClosingSector()
     {
         if (checkoutTurns == null || checkoutTurns.Count == 0)
-            return "Keine Checkouts";
+            return LocalizationText.Get("No_checkouts", "No checkouts");
 
         // Wir sammeln den Key (z.B. "D20", "D16") des jeweils LETZTEN Wurfs jedes Checkout-Turns
         var closingSectors = checkoutTurns
@@ -371,7 +371,7 @@ public class GameStatsX01 : GameStats
             .ToList();
 
         if (closingSectors.Count == 0)
-            return "Keine Daten";
+            return LocalizationText.Get("No_data", "No data");
 
         // Gruppieren nach dem Key, zählen und den mit dem höchsten Count nehmen
         return closingSectors

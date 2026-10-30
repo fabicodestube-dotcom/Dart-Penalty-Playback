@@ -38,8 +38,8 @@ public class HistoryItemPlayerPrefab : MonoBehaviour
 
         if (stats != null)
         {
-            setsText.text = "Sets: " + (setsWonOverride ?? stats.totalSetsWon).ToString();
-            legsText.text = "Legs: " + (legsWonOverride ?? stats.currentLegCount).ToString();
+            setsText.text = LocalizationText.Get("Sets", "Sets") + ": " + (setsWonOverride ?? stats.totalSetsWon).ToString();
+            legsText.text = LocalizationText.Get("Legs", "Legs") + ": " + (legsWonOverride ?? stats.currentLegCount).ToString();
             textMetricLabel.text = metricLabel;
 
             if (textTotalPenaltyCostSum != null)
@@ -47,8 +47,8 @@ public class HistoryItemPlayerPrefab : MonoBehaviour
         }
         else
         {
-            setsText.text = "Sets: " + (setsWonOverride ?? 0).ToString();
-            legsText.text = "Legs: " + (legsWonOverride ?? 0).ToString();
+            setsText.text = LocalizationText.Get("Sets", "Sets") + ": " + (setsWonOverride ?? 0).ToString();
+            legsText.text = LocalizationText.Get("Legs", "Legs") + ": " + (legsWonOverride ?? 0).ToString();
             textMetricLabel.text = metricLabel;
 
             if (textTotalPenaltyCostSum != null)

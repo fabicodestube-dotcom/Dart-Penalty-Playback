@@ -65,18 +65,8 @@ public class PenaltyEditorPopup : UIScreen, IUIScreen
     private bool editingRemainingScore;
 
     // Index-Reihenfolge = Dropdown-Reihenfolge (Code füllt die Optionen).
-    private static readonly List<string> ConditionOptions = new List<string>
-    {
-        "Turn pattern", "Exact score", "Game event"
-    };
-
     /// <summary>Sektor-IDs in Dropdown-Reihenfolge (Wall/Ceiling zuerst).</summary>
     private readonly List<string> instantSectorIds = new List<string>();
-
-    private static readonly List<string> GameEventOptions = new List<string>
-    {
-        "Leg lost", "Set lost", "Game lost"
-    };
 
     private void OnValidate()
     {
@@ -103,7 +93,12 @@ public class PenaltyEditorPopup : UIScreen, IUIScreen
         if (conditionTypeDropdown != null)
         {
             conditionTypeDropdown.ClearOptions();
-            conditionTypeDropdown.AddOptions(ConditionOptions);
+            conditionTypeDropdown.AddOptions(new List<string>
+            {
+                LocalizationText.Get("Turn_pattern", "Turn pattern"),
+                LocalizationText.Get("Exact_score", "Exact score"),
+                LocalizationText.Get("Game_events", "Game events")
+            });
             // EINZIGER Umschalt-Listener (kein Inspector-Event nötig).
             conditionTypeDropdown.onValueChanged.AddListener(_ => UpdateConditionGroups());
         }
@@ -111,7 +106,12 @@ public class PenaltyEditorPopup : UIScreen, IUIScreen
         if (eventKindDropdown != null)
         {
             eventKindDropdown.ClearOptions();
-            eventKindDropdown.AddOptions(GameEventOptions);
+            eventKindDropdown.AddOptions(new List<string>
+            {
+                LocalizationText.Get("Leg_lost", "Leg lost"),
+                LocalizationText.Get("Set_lost", "Set lost"),
+                LocalizationText.Get("Game_lost", "Game lost")
+            });
         }
 
         RefreshInstantSectorOptions();
@@ -411,7 +411,7 @@ public class PenaltyEditorPopup : UIScreen, IUIScreen
         pendingDeleteId = editingId;
 
         if (confirmText != null)
-            confirmText.text = $"Penalty „{editingName}“ löschen?";
+            confirmText.text = LocalizationText.Format("Delete_penalty_named", "Delete penalty “{0}”?", editingName);
 
         SetConfirmView(true);
     }

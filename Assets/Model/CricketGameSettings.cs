@@ -11,8 +11,8 @@ public class CricketGameSettings : GameSettings
 
     public override string GetString()
     {
-        string points = pointsEnabled ? "Punkte an" : "Punkte aus";
-        string ct = cutThroatEnabled ? "CutThroat an" : "CutThroat aus";
+        string points = pointsEnabled ? "Points on" : "Points off";
+        string ct = cutThroatEnabled ? "CutThroat on" : "CutThroat off";
 
         string setText = setCount == 1 ? "Set" : "Sets";
         string legText = legCount == 1 ? "Leg" : "Legs";
@@ -28,14 +28,14 @@ public class CricketGameSettings : GameSettings
     {
         if (setCount < 1 || legCount < 1)
         {
-            reason = "Sets/Legs müssen >= 1 sein";
+            reason = "Sets/Legs must be >= 1";
             return false;
         }
 
         // As requested: Only "Punkte aus" + "CutThroat an" is not allowed.
         if (!pointsEnabled && cutThroatEnabled)
         {
-            reason = "Cricket: 'Punkte aus' + 'CutThroat an' ist nicht erlaubt.";
+            reason = "Cricket: 'Points off' + 'CutThroat on' is not allowed.";
             return false;
         }
 

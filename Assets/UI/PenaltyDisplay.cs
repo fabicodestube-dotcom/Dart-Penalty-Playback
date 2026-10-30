@@ -15,31 +15,32 @@ public static class PenaltyDisplay
         switch (condition.kind)
         {
             case PenaltyConditionKind.HitTypeMiss:
-                return condition.hitType == HitType.Wall ? "Board daneben: Wand"
-                    : condition.hitType == HitType.Ceiling ? "Board daneben: Decke"
-                    : $"Fehlwurf: {condition.hitType}";
+                return condition.hitType == HitType.Wall ? LocalizationText.Get("Board_miss_wall", "Off board: wall")
+                    : condition.hitType == HitType.Ceiling ? LocalizationText.Get("Board_miss_ceiling", "Off board: ceiling")
+                    : LocalizationText.Format("Miss_throw_type", "Miss: {0}", condition.hitType);
 
             case PenaltyConditionKind.ExactScore:
-                return $"Turn = {condition.score}";
+                return LocalizationText.Format("Turn_equals", "Turn = {0}", condition.score);
 
             case PenaltyConditionKind.RemainingExactScore:
-                return $"Rest = {condition.score}";
+                return LocalizationText.Format("Remaining_equals", "Remaining = {0}", condition.score);
 
             case PenaltyConditionKind.RepdigitScore:
-                return $"Schnapszahl ≥ {condition.minScore}";
+                return LocalizationText.Format("Repdigit_min", "Repdigit ≥ {0}", condition.minScore);
 
             case PenaltyConditionKind.TurnPattern:
-                return $"Turn [{DescribePattern(condition.pattern)}]"
-                    + (condition.matchOrder ? " (Reihenfolge)" : " (egal)");
+                return condition.matchOrder
+                    ? LocalizationText.Format("Turn_pattern_order", "Turn [{0}] (in order)", DescribePattern(condition.pattern))
+                    : LocalizationText.Format("Turn_pattern_any_order", "Turn [{0}] (any order)", DescribePattern(condition.pattern));
 
             case PenaltyConditionKind.LegLost:
-                return "Leg verloren";
+                return LocalizationText.Get("Leg_lost", "Leg lost");
 
             case PenaltyConditionKind.SetLost:
-                return "Set verloren";
+                return LocalizationText.Get("Set_lost", "Set lost");
 
             case PenaltyConditionKind.GameLost:
-                return "Game verloren";
+                return LocalizationText.Get("Game_lost", "Game lost");
 
             default:
                 return "-";
@@ -53,9 +54,9 @@ public static class PenaltyDisplay
             return "-";
 
         if (string.Equals(sectorId, "builtin:wall", System.StringComparison.OrdinalIgnoreCase))
-            return "Wand";
+            return LocalizationText.Get("Wall", "Wall");
         if (string.Equals(sectorId, "builtin:ceiling", System.StringComparison.OrdinalIgnoreCase))
-            return "Decke";
+            return LocalizationText.Get("Ceiling", "Ceiling");
 
         try
         {
@@ -87,7 +88,7 @@ public static class PenaltyDisplay
 
             if (slot.anyMissHitType)
             {
-                parts.Add("Miss");
+                parts.Add(LocalizationText.Get("Miss", "Miss"));
                 continue;
             }
 
@@ -101,7 +102,7 @@ public static class PenaltyDisplay
             };
             string hit = slot.anyHitType || slot.hitType == HitType.Board ? ""
                 : slot.hitType == HitType.Custom ? $"@{SectorName(slot.customHitId)}"
-                : $"@{slot.hitType}";
+                : $"@{LocalizationText.Get(slot.hitType.ToString(), slot.hitType.ToString())}";
             parts.Add(string.IsNullOrEmpty(mult) ? value : $"{mult}{value}{hit}");
         }
 
@@ -112,12 +113,12 @@ public static class PenaltyDisplay
     {
         return type switch
         {
-            PenaltyType.Wall => "Board daneben: Wand",
-            PenaltyType.Ceiling => "Board daneben: Decke",
-            PenaltyType.AllMiss => "Turn ohne Boardtreffer",
-            PenaltyType.ThreeOnes => "Turn [1,1,1] (exakt)",
-            PenaltyType.Schnapszahl => "Schnapszahl (Rest ≥ 100)",
-            PenaltyType.LostGame => "Spiel verloren",
+            PenaltyType.Wall => LocalizationText.Get("Board_miss_wall", "Off board: wall"),
+            PenaltyType.Ceiling => LocalizationText.Get("Board_miss_ceiling", "Off board: ceiling"),
+            PenaltyType.AllMiss => LocalizationText.Get("No_board_hit", "No board hit"),
+            PenaltyType.ThreeOnes => LocalizationText.Get("Three_ones", "Three ones"),
+            PenaltyType.Schnapszahl => LocalizationText.Get("Lucky_number", "Lucky number"),
+            PenaltyType.LostGame => LocalizationText.Get("Game_lost", "Game lost"),
             _ => type.ToString()
         };
     }
@@ -126,12 +127,12 @@ public static class PenaltyDisplay
     {
         return type switch
         {
-            PenaltyType.Wall => "Wall",
-            PenaltyType.Ceiling => "Ceiling",
-            PenaltyType.AllMiss => "No board hit",
-            PenaltyType.ThreeOnes => "Three Ones",
-            PenaltyType.Schnapszahl => "Lucky number",
-            PenaltyType.LostGame => "Lose",
+            PenaltyType.Wall => LocalizationText.Get("Wall", "Wall"),
+            PenaltyType.Ceiling => LocalizationText.Get("Ceiling", "Ceiling"),
+            PenaltyType.AllMiss => LocalizationText.Get("No_board_hit", "No board hit"),
+            PenaltyType.ThreeOnes => LocalizationText.Get("Three_ones", "Three ones"),
+            PenaltyType.Schnapszahl => LocalizationText.Get("Lucky_number", "Lucky number"),
+            PenaltyType.LostGame => LocalizationText.Get("Lose", "Lose"),
             _ => type.ToString()
         };
     }
@@ -144,14 +145,15 @@ public static class PenaltyDisplay
         var t = def.trigger;
         return t.kind switch
         {
-            AudioEventTriggerKind.Manual => "Manuell",
-            AudioEventTriggerKind.ScoreReached => $"Score = {t.score}",
-            AudioEventTriggerKind.TurnPattern =>
-                $"Turn [{DescribePattern(t.pattern)}]" + (t.matchOrder ? " (Reihenfolge)" : " (egal)"),
-            AudioEventTriggerKind.MarksThreshold => $"Marken ≥ {t.threshold}",
-            AudioEventTriggerKind.PointsReached => $"Punkte ≥ {t.threshold}",
-            AudioEventTriggerKind.HitsInTurnThreshold => $"Treffer/Turn ≥ {t.threshold}",
-            AudioEventTriggerKind.StreakReached => $"Streak ≥ {t.threshold}",
+            AudioEventTriggerKind.Manual => LocalizationText.Get("Manual", "Manual"),
+            AudioEventTriggerKind.ScoreReached => LocalizationText.Format("Score_equals", "Score = {0}", t.score),
+            AudioEventTriggerKind.TurnPattern => t.matchOrder
+                ? LocalizationText.Format("Turn_pattern_order", "Turn [{0}] (in order)", DescribePattern(t.pattern))
+                : LocalizationText.Format("Turn_pattern_any_order", "Turn [{0}] (any order)", DescribePattern(t.pattern)),
+            AudioEventTriggerKind.MarksThreshold => LocalizationText.Format("Marks_at_least", "Marks ≥ {0}", t.threshold),
+            AudioEventTriggerKind.PointsReached => LocalizationText.Format("Points_at_least", "Points ≥ {0}", t.threshold),
+            AudioEventTriggerKind.HitsInTurnThreshold => LocalizationText.Format("Hits_per_turn_at_least", "Hits/Turn ≥ {0}", t.threshold),
+            AudioEventTriggerKind.StreakReached => LocalizationText.Format("Streak_at_least", "Streak ≥ {0}", t.threshold),
             _ => "-"
         };
     }
@@ -176,12 +178,12 @@ public static class PenaltyDisplay
     {
         return type switch
         {
-            PenaltyType.Wall => "Wall",
-            PenaltyType.Ceiling => "Decke",
-            PenaltyType.AllMiss => "Miss",
-            PenaltyType.ThreeOnes => "1en",
-            PenaltyType.Schnapszahl => "Schnaps",
-            PenaltyType.LostGame => "Lose",
+            PenaltyType.Wall => LocalizationText.Get("Wall_short", "WALL"),
+            PenaltyType.Ceiling => LocalizationText.Get("Ceiling_short", "CEIL"),
+            PenaltyType.AllMiss => LocalizationText.Get("Miss", "Miss"),
+            PenaltyType.ThreeOnes => LocalizationText.Get("Three_ones_short", "1×3"),
+            PenaltyType.Schnapszahl => LocalizationText.Get("Lucky_number_short", "Repdigit"),
+            PenaltyType.LostGame => LocalizationText.Get("Lose", "Lose"),
             _ => type.ToString()
         };
     }

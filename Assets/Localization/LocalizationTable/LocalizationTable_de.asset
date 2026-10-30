@@ -79,10 +79,6 @@ MonoBehaviour:
     m_Localized: Verlauf
     m_Metadata:
       m_Items: []
-  - m_Id: 16
-    m_Localized: Abbrechen
-    m_Metadata:
-      m_Items: []
   - m_Id: 17
     m_Localized: Decke
     m_Metadata:
@@ -166,8 +162,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 36
-    m_Localized: "Bist du sicher, dass du den Spieler {name} l\xF6schen m\xF6chtest?
-      Diese Aktion kann nicht r\xFCckg\xE4ngig gemacht werden!"
+    m_Localized: "M\xF6chtest du Spieler {0} wirklich l\xF6schen? Dies kann nicht
+      r\xFCckg\xE4ngig gemacht werden!"
     m_Metadata:
       m_Items: []
   - m_Id: 37
@@ -392,7 +388,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 91
-    m_Localized: Spieler {name} umbenennen
+    m_Localized: Spieler {0} umbenennen
     m_Metadata:
       m_Items: []
   - m_Id: 92
@@ -542,6 +538,751 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 723894777368577
     m_Localized: Keine Around the Clock-Spiele vorhanden
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954469629952
+    m_Localized: Aktiv
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954490601472
+    m_Localized: Aktivierte Strafen
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954490601473
+    m_Localized: Abbrechen
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954490601474
+    m_Localized: Bedingung
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954490601475
+    m_Localized: Anzahl
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954490601476
+    m_Localized: Anpassung
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954494795776
+    m_Localized: "L\xF6sche Strafe"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954494795777
+    m_Localized: "L\xF6sche Zielbereich"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954494795778
+    m_Localized: Details
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954494795779
+    m_Localized: Deaktiviert
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954494795780
+    m_Localized: Strafe anpassen
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954494795781
+    m_Localized: Zielbereich anpassen
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954494795782
+    m_Localized: Aktiviert
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954494795783
+    m_Localized: Reihenfolge erhalten
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954494795784
+    m_Localized: Name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954494795785
+    m_Localized: Neues Audioevent
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954494795786
+    m_Localized: Neue Strafe
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954494795787
+    m_Localized: Zielbereiche
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706055340032
+    m_Localized: Spieldetails
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311552
+    m_Localized: Sprache
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311553
+    m_Localized: Sprachen
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311554
+    m_Localized: Dunkelmodus
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311555
+    m_Localized: Standard als Fallback
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311556
+    m_Localized: Legt fest, ob bei einem integrierten Ereignis ein Standardsound
+      abgespielt wird.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311557
+    m_Localized: Patch-Hinweise
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311558
+    m_Localized: Lizenz
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311559
+    m_Localized: "Datenschutzerkl\xE4rung"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311560
+    m_Localized: Spiel pausiert
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311561
+    m_Localized: "L\xF6schen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311562
+    m_Localized: Weiter
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311563
+    m_Localized: Audioereignisse
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311564
+    m_Localized: Neuer Trefferbereich
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311565
+    m_Localized: Global
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311566
+    m_Localized: Ereignis
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311567
+    m_Localized: Spielmodus
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311568
+    m_Localized: Dart-Anzahl
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311569
+    m_Localized: Dart 1
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311570
+    m_Localized: Dart 2
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311571
+    m_Localized: Dart 3
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311572
+    m_Localized: Punktzahl
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311573
+    m_Localized: Exakte Punktzahl
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311574
+    m_Localized: Wurfmuster
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311575
+    m_Localized: Spielereignisse
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505856
+    m_Localized: Clip-Info
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505857
+    m_Localized: Zielbereich
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505858
+    m_Localized: Letzter Sektor
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505859
+    m_Localized: Bull
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505860
+    m_Localized: Balkendiagramm
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505861
+    m_Localized: Heatmap
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505862
+    m_Localized: 'Aktive Strafen:'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505863
+    m_Localized: 'Summe:'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505864
+    m_Localized: Keine Strafen angewendet.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505865
+    m_Localized: Gesamt
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505866
+    m_Localized: 'Gesamt: {0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505867
+    m_Localized: N/V
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505868
+    m_Localized: WAND
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505869
+    m_Localized: DECKE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505870
+    m_Localized: 1er
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505871
+    m_Localized: Schnaps
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505872
+    m_Localized: "Kein Clip verf\xFCgbar"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505873
+    m_Localized: "{0} ({1}) \u2013 Clip {2}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505874
+    m_Localized: '{0} Clips'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505875
+    m_Localized: Punktansagen
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505876
+    m_Localized: "Sound f\xFCr Punktansagen 0\u2013180"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505877
+    m_Localized: "Spiel l\xF6schen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505878
+    m_Localized: "Trefferbereich l\xF6schen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505879
+    m_Localized: "M\xF6chtest du diesen Zielbereich wirklich l\xF6schen? Dies kann
+      nicht r\xFCckg\xE4ngig gemacht werden!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505880
+    m_Localized: "Audioereignis l\xF6schen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505881
+    m_Localized: "M\xF6chtest du dieses Audioereignis wirklich l\xF6schen? Dies kann
+      nicht r\xFCckg\xE4ngig gemacht werden!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505882
+    m_Localized: "Diese Strafe l\xF6schen?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505883
+    m_Localized: "Strafe l\xF6schen? Verkn\xFCpfte Audioclips: {0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505884
+    m_Localized: "Dieses Audioereignis l\xF6schen?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505885
+    m_Localized: "Audioereignis l\xF6schen? Verkn\xFCpfte Audioclips: {0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505886
+    m_Localized: "Strafe \u201E{0}\u201C l\xF6schen?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505887
+    m_Localized: "Audioereignis \u201E{0}\u201C l\xF6schen?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505888
+    m_Localized: "Zielbereich \u201E{0}\u201C l\xF6schen?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505889
+    m_Localized: "Zielbereich \u201E{0}\u201C l\xF6schen? Verwendet von Strafen:
+      {1}. Diese werden ebenfalls gel\xF6scht."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505890
+    m_Localized: "Zielbereich l\xF6schen? Verwendet von Strafen: {0}. Diese werden
+      ebenfalls gel\xF6scht."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505891
+    m_Localized: "Trotzdem l\xF6schen? Die betroffenen Strafen werden ebenfalls gel\xF6scht."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505892
+    m_Localized: "Trotzdem l\xF6schen? Verkn\xFCpfte Audioclips: {0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505893
+    m_Localized: "Diesen Zielbereich l\xF6schen?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505894
+    m_Localized: Name ist zu lang (max. 12 Zeichen).
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505895
+    m_Localized: Der Name muss mindestens einen Buchstaben enthalten.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505896
+    m_Localized: Name ist bereits vergeben.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505897
+    m_Localized: "Spiel l\xE4uft noch (Stand: {0})"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505898
+    m_Localized: 'Punkte: {0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505899
+    m_Localized: 'Ziele: {0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505900
+    m_Localized: 'Board daneben: Wand'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505901
+    m_Localized: 'Board daneben: Decke'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505902
+    m_Localized: 'Fehlwurf: {0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505903
+    m_Localized: Aufnahme = {0}
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505904
+    m_Localized: Rest = {0}
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505905
+    m_Localized: "Schnapszahl \u2265 {0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505906
+    m_Localized: Aufnahme [{0}] (in Reihenfolge)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505907
+    m_Localized: Aufnahme [{0}] (beliebige Reihenfolge)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505908
+    m_Localized: Leg verloren
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505909
+    m_Localized: Satz verloren
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505910
+    m_Localized: Spiel verloren
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505911
+    m_Localized: Manuell
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505912
+    m_Localized: Punktzahl = {0}
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505913
+    m_Localized: "Marken \u2265 {0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505914
+    m_Localized: "Punkte \u2265 {0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505915
+    m_Localized: "Treffer/Aufnahme \u2265 {0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505916
+    m_Localized: "Serie \u2265 {0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505917
+    m_Localized: "Marken \u2265"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505918
+    m_Localized: "Punkte \u2265"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505919
+    m_Localized: "Treffer/Aufnahme \u2265"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505920
+    m_Localized: "Serie \u2265"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505921
+    m_Localized: Punktzahl erreicht (=)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505922
+    m_Localized: in Reihenfolge
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505923
+    m_Localized: beliebige Reihenfolge
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505924
+    m_Localized: Strafe
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505925
+    m_Localized: Strafe bei Wandtreffer
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505926
+    m_Localized: Strafe bei Deckentreffer
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505927
+    m_Localized: Strafe bei benutzerdefiniertem Fehlwurf
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505928
+    m_Localized: Strafe bei {0}
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505929
+    m_Localized: 'Aufnahmepunktzahl: {0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505930
+    m_Localized: 'Exakte Punktzahl erreichen: {0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505931
+    m_Localized: "Schnapszahl-Aufnahme \u2265 {0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505932
+    m_Localized: Wenn ein Leg verloren geht
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505933
+    m_Localized: Wenn ein Satz verloren geht
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505934
+    m_Localized: Wenn das Spiel verloren geht
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505935
+    m_Localized: "Treffer au\xDFerhalb des Boards (Wand)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505936
+    m_Localized: Deckentreffer
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505937
+    m_Localized: Benutzerdefinierter Bereich ({0}{1})
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505938
+    m_Localized: "Benutzerdefinierter Bereich au\xDFerhalb des Boards (0 Punkte)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505939
+    m_Localized: Manuelles Ereignis
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505940
+    m_Localized: "Sound bei R\xFCckg\xE4ngig"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505941
+    m_Localized: Sound bei Spielgewinn
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505942
+    m_Localized: Sound bei Spielstart
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505943
+    m_Localized: "Sound bei \xDCberwurf (Bust)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505944
+    m_Localized: Sound bei Sudden Death
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505945
+    m_Localized: Sound nach Cricket-Marken
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505946
+    m_Localized: Sound bei White Horse
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505947
+    m_Localized: Sound bei 9 Marken
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505948
+    m_Localized: Sound bei Treffern
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700160
+    m_Localized: Sound bei ATC-Serie
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700161
+    m_Localized: Beliebig
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700162
+    m_Localized: Board
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700163
+    m_Localized: 1 Dart
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700164
+    m_Localized: 2 Darts
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700165
+    m_Localized: 3 Darts
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700166
+    m_Localized: Spieler
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700167
+    m_Localized: Spiele
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700168
+    m_Localized: Sieg %
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700169
+    m_Localized: Doppel %
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700170
+    m_Localized: Triple %
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700171
+    m_Localized: "\xD8 Punkte"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700172
+    m_Localized: "\xD8 Erste 9"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700173
+    m_Localized: Max. Punktzahl
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700174
+    m_Localized: "H\xF6chstes Checkout"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700175
+    m_Localized: Versuche
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700176
+    m_Localized: Favorit
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700177
+    m_Localized: Checkouts
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700178
+    m_Localized: "\xD8 Punkte/Aufnahme"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700179
+    m_Localized: Max. Punkte
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700180
+    m_Localized: Overkill-Punkte
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700181
+    m_Localized: Max. MPR
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700182
+    m_Localized: 9 Marken
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700183
+    m_Localized: White Horse
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700184
+    m_Localized: Gleiches Triple
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700185
+    m_Localized: Zuerst geschlossen
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700186
+    m_Localized: Zuletzt geschlossen
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700187
+    m_Localized: Meiste Punkte
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700188
+    m_Localized: Teilnahme
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700189
+    m_Localized: Treffer %
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700190
+    m_Localized: Treffersektoren
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700191
+    m_Localized: Treffer im Sektor
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700192
+    m_Localized: Versuche pro Feld
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700193
+    m_Localized: "\xD8 W\xFCrfe"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700194
+    m_Localized: "\xD8 Treffer"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700195
+    m_Localized: "\xD8 Treffer %"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700196
+    m_Localized: 1. Dart Treffer %
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700197
+    m_Localized: "L\xE4ngste Serie"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700198
+    m_Localized: "Gr\xF6\xDFter Choke"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700199
+    m_Localized: 3 Treffer +
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700200
+    m_Localized: 6 Treffer +
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700201
+    m_Localized: 9 Treffer +
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700202
+    m_Localized: 12 Treffer +
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700203
+    m_Localized: Serien & Chokes
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700204
+    m_Localized: "S\xE4tze"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700205
+    m_Localized: Legs
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700206
+    m_Localized: Keine Checkouts
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700207
+    m_Localized: Keine Daten
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368320
+    m_Localized: Audio-Event bearbeiten
     m_Metadata:
       m_Items: []
   references:

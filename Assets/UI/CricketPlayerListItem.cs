@@ -188,7 +188,7 @@ public class CricketPlayerListItem : MonoBehaviour
                 if (i < wallImages.Length && wallImages[i] != null)
                     wallImages[i].gameObject.SetActive(true);
                 else
-                    ShowThrowText(i, "WALL");
+                    ShowThrowText(i, LocalizationText.Get("Wall_short", "WALL"));
 
                 continue;
             }
@@ -198,7 +198,7 @@ public class CricketPlayerListItem : MonoBehaviour
                 if (i < ceilingImages.Length && ceilingImages[i] != null)
                     ceilingImages[i].gameObject.SetActive(true);
                 else
-                    ShowThrowText(i, "CEIL");
+                    ShowThrowText(i, LocalizationText.Get("Ceiling_short", "CEIL"));
 
                 continue;
             }

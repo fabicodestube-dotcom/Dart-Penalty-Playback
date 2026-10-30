@@ -116,7 +116,7 @@ public class StatisticsPageCricket : MonoBehaviour
             CricketPenaltiesKey,
             parent,
             "Penalties",
-            new TableCellData[] { "Anzahl", "Kosten", "Details" });
+            new TableCellData[] { "Count", "Costs", "Details" });
 
         if (penaltyTable != null)
         {
@@ -304,7 +304,13 @@ public class StatisticsPageCricket : MonoBehaviour
     }
 
 
-    private TableView GetOrCreateCachedTable(string key, Transform parent, string title, TableCellData[] header)
+    public void RefreshLocalization()
+    {
+        foreach (var table in cachedTables.Values)
+            table?.RefreshLocalization();
+    }
+
+        private TableView GetOrCreateCachedTable(string key, Transform parent, string title, TableCellData[] header)
     {
         if (string.IsNullOrEmpty(key) || parent == null)
             return null;
@@ -312,6 +318,7 @@ public class StatisticsPageCricket : MonoBehaviour
         if (cachedTables.TryGetValue(key, out var existingTable) && existingTable != null)
         {
             existingTable.SetTitle(title);
+            existingTable.SetHeader(header);
             return existingTable;
         }
 
@@ -400,7 +407,7 @@ public class StatisticsPageCricket : MonoBehaviour
             CricketPenaltiesKey,
             parent,
             "Penalties",
-            new TableCellData[] { "Anzahl", "Kosten", "Details" });
+            new TableCellData[] { "Count", "Costs", "Details" });
 
         penaltyTable.gameObject.SetActive(true);
 

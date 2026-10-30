@@ -156,7 +156,7 @@ public class CustomizationSectorsPage : MonoBehaviour, ICustomizationRowOwner
         if (def == null)
             return "";
 
-        return string.IsNullOrEmpty(def.info) ? CustomizationInfo.BuildSector(def) : def.info;
+        return CustomizationInfo.LocalizeInfo(string.IsNullOrEmpty(def.info) ? CustomizationInfo.BuildSector(def) : def.info);
     }
 
     /// <summary>Toggle direkt in der Zeile: enabled speichern (Changed → Refresh).</summary>
@@ -237,8 +237,8 @@ public class CustomizationSectorsPage : MonoBehaviour, ICustomizationRowOwner
         if (deletePopupText != null)
         {
             deletePopupText.text = usage > 0
-                ? $"Bereich löschen? {usage} Penalties verwenden ihn und werden mitgelöscht."
-                : "Bereich wirklich löschen?";
+                ? LocalizationText.Format("Delete_sector_usage", "Delete target area? Used by penalties: {0}. These will also be deleted.", usage)
+                : LocalizationText.Get("Delete_sector_confirm", "Delete this target area?");
         }
 
         if (windowHandler != null && deletePopup != null)
@@ -278,8 +278,8 @@ public class CustomizationSectorsPage : MonoBehaviour, ICustomizationRowOwner
             if (deletePopupText != null)
             {
                 deletePopupText.text = clipCount > 0
-                    ? $"Wirklich löschen? Es sind noch {clipCount} Audio-Clips mit den betroffenen Penalties verbunden."
-                    : "Wirklich löschen? Die betroffenen Penalties werden mitgelöscht.";
+                    ? LocalizationText.Format("Delete_sector_stage2_clips", "Delete anyway? Linked audio clips: {0}", clipCount)
+                    : LocalizationText.Get("Delete_sector_stage2", "Delete anyway? The affected penalties will also be deleted.");
             }
 
             // Popup bleibt offen (WindowHandler meldet „bereits aktiv“),

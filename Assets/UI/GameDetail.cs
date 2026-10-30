@@ -84,7 +84,10 @@ public class GameDetail : UIScreen, IUIScreen
             buttonContinue.SetActive(gameSummary != null && !gameSummary.IsFinished);
 
         if (historyItemHeadline != null)
+        {
             historyItemHeadline.Initialize(gameSummary);
+            historyItemHeadline.RefreshLocalization();
+        }
 
         HideAllCachedSections();
 
@@ -99,6 +102,39 @@ public class GameDetail : UIScreen, IUIScreen
             buttonContinue.transform.SetAsLastSibling();
         if (buttonDelete != null)
             buttonDelete.transform.SetAsLastSibling();
+
+        RefreshCachedLocalization();
+    }
+
+    public void RefreshLocalization()
+    {
+        if (historyItemHeadline != null)
+            historyItemHeadline.RefreshLocalization();
+
+        if (x01HitSectorHeadline != null)
+        {
+            var text = x01HitSectorHeadline.GetComponentInChildren<TMP_Text>();
+            if (text != null)
+                text.text = LocalizationText.Get("Hit_sectors", "Hit Sectors");
+        }
+
+        if (atcHitSectorHeadline != null)
+        {
+            var text = atcHitSectorHeadline.GetComponentInChildren<TMP_Text>();
+            if (text != null)
+                text.text = LocalizationText.Get("Attempts_per_field", "Attempts per Field");
+        }
+
+        RefreshCachedLocalization();
+    }
+
+    private void RefreshCachedLocalization()
+    {
+        foreach (var table in cachedTables.Values)
+        {
+            if (table != null)
+                table.RefreshLocalization();
+        }
     }
 
     private Guid GetLastClickedGameId()
@@ -142,7 +178,7 @@ public class GameDetail : UIScreen, IUIScreen
 
         CreateCachedTable("X01_PlayerSummary", "Player", new TableCellData[] { "Sets", "Legs", "Score" });
 
-        CreateCachedTable("X01_Penalties", "Strafen", new TableCellData[] { "Anzahl", "Kosten", "Details" });
+        CreateCachedTable("X01_Penalties", "Penalties", new TableCellData[] { "Count", "Costs", "Details" });
 
         CreateCachedTable("X01_Legs", "Legs",
             new TableCellData[] { "Played", "Won", "Win %" });
@@ -160,16 +196,16 @@ public class GameDetail : UIScreen, IUIScreen
             new TableCellData[] { "Max Checkout", "Attempts", "Favorite" });
 
         CreateCachedTable("Cricket_PlayerSummary", "Players", new TableCellData[] { "Sets", "Legs", "Score" });
-        CreateCachedTable("Cricket_Penalties", "Penalties", new TableCellData[] { "Anzahl", "Kosten", "Details" });
+        CreateCachedTable("Cricket_Penalties", "Penalties", new TableCellData[] { "Count", "Costs", "Details" });
         CreateCachedTable("Cricket_Legs", "Legs", new TableCellData[] { "Played", "Won", "Win %" });
         CreateCachedTable("Cricket_Throws", "Throws", new TableCellData[] { "Throws", "Double %", "Triple %" });
         CreateCachedTable("Cricket_Scores", "Points", new TableCellData[] { "Ø Points/Turn", "Max Points", "Overkill Points" });
         CreateCachedTable("Cricket_MPR", "Marks per Round", new TableCellData[] { "MPR", "Marks", "Max MPR" });
         CreateCachedTable("Cricket_Highscores", "Highscores", new TableCellData[] { "9 Marks", "White Horse", "Same Triple" });
-        CreateCachedTable("Cricket_Preferences", "Preferences", new TableCellData[] { "First closed", "Last closed", "Most Points" });
+        CreateCachedTable("Cricket_Preferences", "Preferences", new TableCellData[] { "First Closed", "Last Closed", "Most Points" });
 
         CreateCachedTable("ATC_PlayerSummary", "Player", new TableCellData[] { "Sets", "Legs", "Targets" });
-        CreateCachedTable("ATC_Penalties", "Strafen", new TableCellData[] { "Anzahl", "Kosten", "Details" });
+        CreateCachedTable("ATC_Penalties", "Penalties", new TableCellData[] { "Count", "Costs", "Details" });
         CreateCachedTable("ATC_Legs", "Legs", new TableCellData[] { "Played", "Won", "Win %" });
         CreateCachedTable("ATC_Scoring", "Scoring", new TableCellData[] { "Throws", "Hits", "Hit %" });
         CreateCachedTable("ATC_Streaks", "Streaks & Chokes", new TableCellData[] { "First Dart Hit %", "Longest Streak", "Biggest Choke" });
@@ -345,7 +381,7 @@ public class GameDetail : UIScreen, IUIScreen
             var headlineText = x01HitSectorHeadline.GetComponentInChildren<TMP_Text>();
             if (headlineText != null)
             {
-                headlineText.text = "Hit Sectors";
+                headlineText.text = LocalizationText.Get("Hit_sectors", "Hit Sectors");
             }
         }
         x01HitSectorHeadline.SetActive(true);
@@ -465,7 +501,7 @@ public class GameDetail : UIScreen, IUIScreen
             CreateTable(
                 GameMode.Cricket,
                 "Cricket_Scores",
-                "Punkte",
+                "Points",
                 new TableCellData[] { "Ø Points/Turn", "Max Points", "Overkill Points" },
                 pid =>
                 {
@@ -526,7 +562,7 @@ public class GameDetail : UIScreen, IUIScreen
         CreateTable(
             GameMode.Cricket,
             "Cricket_Preferences",
-            "Präferenzen",
+            "Preferences",
             new TableCellData[] { "First Closed", "Last Closed", "Most Points" },
             pid =>
             {
@@ -671,7 +707,7 @@ public class GameDetail : UIScreen, IUIScreen
                 atcHitSectorHeadline = Instantiate(prefabHeadline, contentParent);
                 var atcHeadlineText = atcHitSectorHeadline.GetComponentInChildren<TMP_Text>();
                 if (atcHeadlineText != null)
-                    atcHeadlineText.text = "Versuche pro Feld";
+                    atcHeadlineText.text = LocalizationText.Get("Attempts_per_field", "Attempts per Field");
             }
             atcHitSectorHeadline.SetActive(true);
 
@@ -765,6 +801,8 @@ public class GameDetail : UIScreen, IUIScreen
             cachedTables[cacheKey] = table;
         }
 
+        table.SetTitle(title);
+        table.SetHeader(header);
         table.gameObject.SetActive(true);
 
         var activeKeys = new HashSet<string>();
@@ -857,7 +895,7 @@ public class GameDetail : UIScreen, IUIScreen
             {
                 count.ToString(),
                 cost,
-                "› Details"
+                "› " + LocalizationText.Get("Details", "Details")
             }, false);
 
             table.SetRowActive(key, true);

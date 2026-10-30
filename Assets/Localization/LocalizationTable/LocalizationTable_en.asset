@@ -79,10 +79,6 @@ MonoBehaviour:
     m_Localized: Bust
     m_Metadata:
       m_Items: []
-  - m_Id: 16
-    m_Localized: Cancel
-    m_Metadata:
-      m_Items: []
   - m_Id: 17
     m_Localized: Ceiling
     m_Metadata:
@@ -166,8 +162,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 36
-    m_Localized: Are you sure you want to delete player {name}? This action cannot
-      be undone!
+    m_Localized: Are you sure you want to delete player {0}? This action cannot be
+      undone!
     m_Metadata:
       m_Items: []
   - m_Id: 37
@@ -391,7 +387,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 91
-    m_Localized: Rename player {name}
+    m_Localized: Rename player {0}
     m_Metadata:
       m_Items: []
   - m_Id: 92
@@ -538,6 +534,751 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 723894777368577
     m_Localized: No Around the Clock games available
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954469629952
+    m_Localized: Active
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954490601472
+    m_Localized: Active penalties
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954490601473
+    m_Localized: Cancel
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954490601474
+    m_Localized: Condition
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954490601475
+    m_Localized: Count
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954490601476
+    m_Localized: Customization
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954494795776
+    m_Localized: Delete penalty
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954494795777
+    m_Localized: Delete target area
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954494795778
+    m_Localized: Details
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954494795779
+    m_Localized: Disabled
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954494795780
+    m_Localized: Edit penalty
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954494795781
+    m_Localized: Edit target area
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954494795782
+    m_Localized: Enabled
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954494795783
+    m_Localized: Match order
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954494795784
+    m_Localized: Name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954494795785
+    m_Localized: New audio event
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954494795786
+    m_Localized: New penalty
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954494795787
+    m_Localized: Target areas
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706055340032
+    m_Localized: Game details
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311552
+    m_Localized: Language
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311553
+    m_Localized: Languages
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311554
+    m_Localized: Dark mode
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311555
+    m_Localized: Defaults as fallback
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311556
+    m_Localized: Determines whether a default sound is played when a built-in event
+      is triggered.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311557
+    m_Localized: Patch notes
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311558
+    m_Localized: License
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311559
+    m_Localized: Privacy Policy
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311560
+    m_Localized: Game paused
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311561
+    m_Localized: Delete
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311562
+    m_Localized: Continue
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311563
+    m_Localized: Audio events
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311564
+    m_Localized: New custom hit
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311565
+    m_Localized: Global
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311566
+    m_Localized: Event
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311567
+    m_Localized: Game mode
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311568
+    m_Localized: Dart count
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311569
+    m_Localized: Dart 1
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311570
+    m_Localized: Dart 2
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311571
+    m_Localized: Dart 3
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311572
+    m_Localized: Score
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311573
+    m_Localized: Exact score
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311574
+    m_Localized: Turn pattern
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311575
+    m_Localized: Game events
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505856
+    m_Localized: Clip info
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505857
+    m_Localized: Target area
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505858
+    m_Localized: Last sector
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505859
+    m_Localized: Bull
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505860
+    m_Localized: Bar chart
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505861
+    m_Localized: Heat map
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505862
+    m_Localized: 'Active penalties:'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505863
+    m_Localized: 'Sum:'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505864
+    m_Localized: No penalties applied.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505865
+    m_Localized: Total
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505866
+    m_Localized: 'Total: {0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505867
+    m_Localized: N/A
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505868
+    m_Localized: WALL
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505869
+    m_Localized: CEIL
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505870
+    m_Localized: "1\xD73"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505871
+    m_Localized: Repdigit
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505872
+    m_Localized: No clip available
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505873
+    m_Localized: '{0} ({1}) - Clip {2}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505874
+    m_Localized: '{0} Clips'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505875
+    m_Localized: Score announcements
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505876
+    m_Localized: Sound for score announcements 0-180
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505877
+    m_Localized: Delete game
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505878
+    m_Localized: Delete custom hit
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505879
+    m_Localized: Are you sure you want to delete this target area? This action cannot
+      be undone!
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505880
+    m_Localized: Delete audio event
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505881
+    m_Localized: Are you sure you want to delete this audio event? This action cannot
+      be undone!
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505882
+    m_Localized: Delete this penalty?
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505883
+    m_Localized: 'Delete penalty? Linked audio clips: {0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505884
+    m_Localized: Delete this audio event?
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505885
+    m_Localized: 'Delete audio event? Linked audio clips: {0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505886
+    m_Localized: "Delete penalty \u201C{0}\u201D?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505887
+    m_Localized: "Delete audio event \u201C{0}\u201D?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505888
+    m_Localized: "Delete target area \u201C{0}\u201D?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505889
+    m_Localized: "Delete target area \u201C{0}\u201D? Used by penalties: {1}. These
+      will also be deleted."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505890
+    m_Localized: 'Delete target area? Used by penalties: {0}. These will also be
+      deleted.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505891
+    m_Localized: Delete anyway? The affected penalties will also be deleted.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505892
+    m_Localized: 'Delete anyway? Linked audio clips: {0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505893
+    m_Localized: Delete this target area?
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505894
+    m_Localized: Name is too long (max. 12 characters).
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505895
+    m_Localized: Name must contain at least one letter.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505896
+    m_Localized: Name is already taken.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505897
+    m_Localized: Game still running (as of {0})
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505898
+    m_Localized: 'Points: {0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505899
+    m_Localized: 'Targets: {0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505900
+    m_Localized: 'Off board: wall'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505901
+    m_Localized: 'Off board: ceiling'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505902
+    m_Localized: 'Miss: {0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505903
+    m_Localized: Turn = {0}
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505904
+    m_Localized: Remaining = {0}
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505905
+    m_Localized: "Repdigit \u2265 {0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505906
+    m_Localized: Turn [{0}] (in order)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505907
+    m_Localized: Turn [{0}] (any order)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505908
+    m_Localized: Leg lost
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505909
+    m_Localized: Set lost
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505910
+    m_Localized: Game lost
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505911
+    m_Localized: Manual
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505912
+    m_Localized: Score = {0}
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505913
+    m_Localized: "Marks \u2265 {0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505914
+    m_Localized: "Points \u2265 {0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505915
+    m_Localized: "Hits/Turn \u2265 {0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505916
+    m_Localized: "Streak \u2265 {0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505917
+    m_Localized: "Marks \u2265"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505918
+    m_Localized: "Points \u2265"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505919
+    m_Localized: "Hits/Turn \u2265"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505920
+    m_Localized: "Streak \u2265"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505921
+    m_Localized: Score reached (=)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505922
+    m_Localized: in order
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505923
+    m_Localized: any order
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505924
+    m_Localized: Penalty
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505925
+    m_Localized: Penalty on wall hit
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505926
+    m_Localized: Penalty on ceiling hit
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505927
+    m_Localized: Penalty on custom miss
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505928
+    m_Localized: Penalty on {0}
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505929
+    m_Localized: 'Turn score: {0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505930
+    m_Localized: 'Reach exact score: {0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505931
+    m_Localized: "Repdigit turn score \u2265 {0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505932
+    m_Localized: When a leg is lost
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505933
+    m_Localized: When a set is lost
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505934
+    m_Localized: When the game is lost
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505935
+    m_Localized: Hit outside the board (wall)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505936
+    m_Localized: Hit the ceiling
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505937
+    m_Localized: Custom area ({0}{1})
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505938
+    m_Localized: Custom out-of-board area (0 points)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505939
+    m_Localized: Manual event
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505940
+    m_Localized: Sound on undo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505941
+    m_Localized: Sound when the match is won
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505942
+    m_Localized: Sound at match start
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505943
+    m_Localized: Sound when overthrow (bust)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505944
+    m_Localized: Sound on sudden death
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505945
+    m_Localized: Sound after Cricket marks
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505946
+    m_Localized: Sound on white horse
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505947
+    m_Localized: Sound on 9 marks
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505948
+    m_Localized: Sound on hits
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700160
+    m_Localized: Sound on ATC streak
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700161
+    m_Localized: Any
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700162
+    m_Localized: Board
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700163
+    m_Localized: 1 Dart
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700164
+    m_Localized: 2 Darts
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700165
+    m_Localized: 3 Darts
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700166
+    m_Localized: Player
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700167
+    m_Localized: Games
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700168
+    m_Localized: Win %
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700169
+    m_Localized: Double %
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700170
+    m_Localized: Triple %
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700171
+    m_Localized: "\xD8 Points"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700172
+    m_Localized: "\xD8 First-9"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700173
+    m_Localized: Max Score
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700174
+    m_Localized: Max Checkout
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700175
+    m_Localized: Attempts
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700176
+    m_Localized: Favorite
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700177
+    m_Localized: Checkouts
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700178
+    m_Localized: "\xD8 Points/Turn"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700179
+    m_Localized: Max Points
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700180
+    m_Localized: Overkill Points
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700181
+    m_Localized: Max MPR
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700182
+    m_Localized: 9 Marks
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700183
+    m_Localized: White Horse
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700184
+    m_Localized: Same Triple
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700185
+    m_Localized: First Closed
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700186
+    m_Localized: Last Closed
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700187
+    m_Localized: Most Points
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700188
+    m_Localized: Participation
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700189
+    m_Localized: Hit %
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700190
+    m_Localized: Hit Sectors
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700191
+    m_Localized: Hits In Sector
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700192
+    m_Localized: Attempts per Field
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700193
+    m_Localized: "\xD8 Throws"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700194
+    m_Localized: "\xD8 Hits"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700195
+    m_Localized: "\xD8 Hit %"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700196
+    m_Localized: 1st Dart Hit %
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700197
+    m_Localized: Longest Streak
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700198
+    m_Localized: Biggest Choke
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700199
+    m_Localized: 3 Hits +
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700200
+    m_Localized: 6 Hits +
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700201
+    m_Localized: 9 Hits +
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700202
+    m_Localized: 12 Hits +
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700203
+    m_Localized: Streaks & Chokes
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700204
+    m_Localized: Sets
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700205
+    m_Localized: Legs
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700206
+    m_Localized: No checkouts
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700207
+    m_Localized: No data
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368320
+    m_Localized: Edit audio event
     m_Metadata:
       m_Items: []
   references:

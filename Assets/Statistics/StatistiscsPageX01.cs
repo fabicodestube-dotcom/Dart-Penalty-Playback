@@ -114,7 +114,7 @@ public class StatisticsPageX01 : MonoBehaviour
             X01PenaltiesKey,
             parent,
             "Penalties",
-            new TableCellData[] { "Anzahl", "Kosten", "Details" });
+            new TableCellData[] { "Count", "Costs", "Details" });
 
         if (penaltyTable != null)
         {
@@ -290,6 +290,18 @@ public class StatisticsPageX01 : MonoBehaviour
         }
     }
 
+    public void RefreshLocalization()
+    {
+        foreach (var table in cachedTables.Values)
+            table?.RefreshLocalization();
+        if (hitsHeadline != null)
+        {
+            var tmp = hitsHeadline.GetComponent<TMP_Text>();
+            if (tmp != null)
+                tmp.text = LocalizationText.GetByEnglish("Hits In Sector", "Hits In Sector");
+        }
+    }
+
     private GameObject CreateHeadline(Transform parentTransform, string text)
     {
         if (prefabHeadline == null || parentTransform == null) return null;
@@ -297,7 +309,7 @@ public class StatisticsPageX01 : MonoBehaviour
         var tmp = go.GetComponent<TMP_Text>();
         if (tmp != null)
         {
-            tmp.text = text;
+            tmp.text = LocalizationText.GetByEnglish(text, text);
             // Perf (M1): Headline ist nie interaktiv.
             if (tmp.raycastTarget)
                 tmp.raycastTarget = false;
@@ -314,6 +326,7 @@ public class StatisticsPageX01 : MonoBehaviour
         if (cachedTables.TryGetValue(key, out var existingTable) && existingTable != null)
         {
             existingTable.SetTitle(title);
+            existingTable.SetHeader(header);
             return existingTable;
         }
 
@@ -431,7 +444,7 @@ public class StatisticsPageX01 : MonoBehaviour
             X01PenaltiesKey,
             parent,
             "Penalties",
-            new TableCellData[] { "Anzahl", "Kosten", "Details" });
+            new TableCellData[] { "Count", "Costs", "Details" });
 
         penaltyTable.gameObject.SetActive(true);
         var activePenaltyKeys = new HashSet<string>();

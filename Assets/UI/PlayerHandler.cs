@@ -36,8 +36,6 @@ public class PlayerHandler : MonoBehaviour
     private Guid currentPlayerID;
     private bool isResetting; // Verhindert rotes Aufflackern beim Leeren
 
-    private const string RenameTemplate = "Rename Player {0}";
-    private const string DeleteTemplate = "Are you sure you want to delete player {0}? This action cannot be undone!";
 
     void Start()
     {
@@ -107,7 +105,7 @@ public class PlayerHandler : MonoBehaviour
         
         renameErrorText.text = "";
         string name = appHandler.GetPlayerNameByID(id);
-        renameHeadline.text = string.Format(RenameTemplate, name);
+        renameHeadline.text = LocalizationText.Format("Rename_player", "Rename player {0}", name);
         renameInput.text = name;
         
         // Initial prüfen (da der aktuelle Name gültig ist)
@@ -140,7 +138,7 @@ public class PlayerHandler : MonoBehaviour
     {
         currentPlayerID = id;
         string name = appHandler.GetPlayerNameByID(id);
-        deleteText.text = string.Format(DeleteTemplate, name);
+        deleteText.text = LocalizationText.Format("Delete_player_expl", "Are you sure you want to delete player {0}? This action cannot be undone!", name);
         OpenPopup(popupDeletePlayer);
     }
 

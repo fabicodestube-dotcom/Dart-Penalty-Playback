@@ -38,14 +38,14 @@ public class TurnPatternEditor : MonoBehaviour
     private bool updating;
     private bool initialized;
 
-    private static readonly List<string> ValueOptionsFull = BuildValueOptions(false);
-    private static readonly List<string> ValueOptionsNoBull = BuildValueOptions(true);
-    private static readonly List<string> MultOptionsFull = new List<string> { "Any", "Single", "Double", "Triple" };
-    private static readonly List<string> MultOptionsNoTriple = new List<string> { "Any", "Single", "Double" };
+    private List<string> valueOptionsFull;
+    private List<string> valueOptionsNoBull;
+    private List<string> multOptionsFull;
+    private List<string> multOptionsNoTriple;
 
     private static List<string> BuildValueOptions(bool excludeBull)
     {
-        var options = new List<string> { "Any" };
+        var options = new List<string> { LocalizationText.Get("Any", "Any") };
         for (int v = 0; v <= 25; v++)
         {
             if (excludeBull && v == 25)
@@ -67,6 +67,17 @@ public class TurnPatternEditor : MonoBehaviour
 
         initialized = true;
 
+        valueOptionsFull = BuildValueOptions(false);
+        valueOptionsNoBull = BuildValueOptions(true);
+        multOptionsFull = new List<string>
+        {
+            LocalizationText.Get("Any", "Any"), "Single", "Double", "Triple"
+        };
+        multOptionsNoTriple = new List<string>
+        {
+            LocalizationText.Get("Any", "Any"), "Single", "Double"
+        };
+
         FillValueDropdowns();
         FillMultDropdowns();
         FillHitDropdowns();
@@ -85,7 +96,12 @@ public class TurnPatternEditor : MonoBehaviour
         if (slotCountDropdown != null)
         {
             slotCountDropdown.ClearOptions();
-            slotCountDropdown.AddOptions(new List<string> { "1 Dart", "2 Darts", "3 Darts" });
+            slotCountDropdown.AddOptions(new List<string>
+            {
+                LocalizationText.Get("One_dart", "1 Dart"),
+                LocalizationText.Get("Two_darts", "2 Darts"),
+                LocalizationText.Get("Three_darts", "3 Darts")
+            });
             slotCountDropdown.SetValueWithoutNotify(Mathf.Clamp(slotCount, 1, 3) - 1);
             slotCountDropdown.onValueChanged.AddListener(_ => OnSlotCountChanged());
         }
@@ -144,10 +160,10 @@ public class TurnPatternEditor : MonoBehaviour
             TurnPatternEntry slot = entries != null && i < entries.Count ? entries[i] : null;
 
             if (valueDropdowns != null && i < valueDropdowns.Length && valueDropdowns[i] != null)
-                SetDropdownByText(valueDropdowns[i], slot == null || slot.anyValue ? "Any" : slot.value.ToString());
+                SetDropdownIndex(valueDropdowns[i], slot == null || slot.anyValue ? 0 : slot.value + 1);
 
             if (multDropdowns != null && i < multDropdowns.Length && multDropdowns[i] != null)
-                SetDropdownByText(multDropdowns[i], slot == null || slot.anyMultiplier ? "Any" : slot.multiplier.ToString());
+                SetDropdownIndex(multDropdowns[i], slot == null || slot.anyMultiplier ? 0 : (int)slot.multiplier + 1);
 
             if (hitDropdowns != null && i < hitDropdowns.Length && hitDropdowns[i] != null)
                 hitDropdowns[i].SetValueWithoutNotify(HitIndexForSlot(slot));
@@ -168,13 +184,17 @@ public class TurnPatternEditor : MonoBehaviour
         {
             var slot = new TurnPatternEntry();
 
-            string valueText = DropdownText(valueDropdowns, i);
-            slot.anyValue = string.IsNullOrEmpty(valueText) || valueText == "Any";
-            slot.value = slot.anyValue ? 0 : Mathf.Clamp(ParseInt(valueText), 0, 25);
+            int valueIndex = valueDropdowns != null && i < valueDropdowns.Length && valueDropdowns[i] != null
+                ? valueDropdowns[i].value : 0;
+            slot.anyValue = valueIndex <= 0;
+            slot.value = slot.anyValue ? 0 : Mathf.Clamp(valueIndex - 1, 0, 25);
 
-            string multText = DropdownText(multDropdowns, i);
-            slot.anyMultiplier = string.IsNullOrEmpty(multText) || multText == "Any";
-            slot.multiplier = slot.anyMultiplier ? DartMultiplier.Single : ParseMultiplier(multText);
+            int multIndex = multDropdowns != null && i < multDropdowns.Length && multDropdowns[i] != null
+                ? multDropdowns[i].value : 0;
+            slot.anyMultiplier = multIndex <= 0;
+            slot.multiplier = slot.anyMultiplier
+                ? DartMultiplier.Single
+                : (DartMultiplier)Mathf.Clamp(multIndex - 1, 0, 2);
 
             int h = hitDropdowns != null && i < hitDropdowns.Length && hitDropdowns[i] != null
                 ? hitDropdowns[i].value : 0;
@@ -253,11 +273,13 @@ public class TurnPatternEditor : MonoBehaviour
             return;
 
         // Triple gewählt + Value 25 -> Value auf Any zurücksetzen (kein Triple Bull).
-        string multText = DropdownText(multDropdowns, slot);
-        string valueText = DropdownText(valueDropdowns, slot);
+        int multIndex = multDropdowns != null && slot < multDropdowns.Length && multDropdowns[slot] != null
+            ? multDropdowns[slot].value : 0;
+        int valueIndex = valueDropdowns != null && slot < valueDropdowns.Length && valueDropdowns[slot] != null
+            ? valueDropdowns[slot].value : 0;
 
-        if (multText == "Triple" && valueText == "25")
-            SetDropdownByText(valueDropdowns[slot], "Any");
+        if (multIndex == 3 && valueIndex == 26)
+            SetDropdownIndex(valueDropdowns[slot], 0);
 
         RefreshSlotConstraints(slot);
     }
@@ -271,25 +293,27 @@ public class TurnPatternEditor : MonoBehaviour
         updating = true;
         try
         {
-            string valueText = DropdownText(valueDropdowns, slot);
-            string multText = DropdownText(multDropdowns, slot);
+            int valueIndex = valueDropdowns != null && slot < valueDropdowns.Length && valueDropdowns[slot] != null
+                ? valueDropdowns[slot].value : 0;
+            int multIndex = multDropdowns != null && slot < multDropdowns.Length && multDropdowns[slot] != null
+                ? multDropdowns[slot].value : 0;
 
             if (valueDropdowns != null && slot < valueDropdowns.Length && valueDropdowns[slot] != null)
             {
-                bool wantNoBull = multText == "Triple";
-                var want = wantNoBull ? ValueOptionsNoBull : ValueOptionsFull;
+                bool wantNoBull = multIndex == 3;
+                var want = wantNoBull ? valueOptionsNoBull : valueOptionsFull;
                 if (!SameOptions(valueDropdowns[slot], want))
-                    SetDropdownByText(valueDropdowns[slot], valueText, want);
+                    SetDropdownIndex(valueDropdowns[slot], valueIndex, want);
             }
 
             if (multDropdowns != null && slot < multDropdowns.Length && multDropdowns[slot] != null)
             {
-                // Value nach möglicher Korrektur neu lesen
-                valueText = DropdownText(valueDropdowns, slot);
-                bool wantNoTriple = valueText == "25";
-                var want = wantNoTriple ? MultOptionsNoTriple : MultOptionsFull;
+                int correctedValueIndex = valueDropdowns != null && slot < valueDropdowns.Length && valueDropdowns[slot] != null
+                    ? valueDropdowns[slot].value : 0;
+                bool wantNoTriple = correctedValueIndex == 26;
+                var want = wantNoTriple ? multOptionsNoTriple : multOptionsFull;
                 if (!SameOptions(multDropdowns[slot], want))
-                    SetDropdownByText(multDropdowns[slot], multText, want);
+                    SetDropdownIndex(multDropdowns[slot], multIndex, want);
             }
         }
         finally
@@ -326,19 +350,26 @@ public class TurnPatternEditor : MonoBehaviour
 
     private void FillValueDropdowns()
     {
-        SetOptions(valueDropdowns, ValueOptionsFull);
+        SetOptions(valueDropdowns, valueOptionsFull);
     }
 
     private void FillMultDropdowns()
     {
-        SetOptions(multDropdowns, MultOptionsFull);
+        SetOptions(multDropdowns, multOptionsFull);
     }
 
     private void FillHitDropdowns()
     {
         customSectorIds.Clear();
 
-        var options = new List<string> { "Any", "Board", "Wall", "Ceiling", "Miss" };
+        var options = new List<string>
+        {
+            LocalizationText.Get("Any", "Any"),
+            LocalizationText.Get("Board", "Board"),
+            LocalizationText.Get("Wall", "Wall"),
+            LocalizationText.Get("Ceiling", "Ceiling"),
+            LocalizationText.Get("Miss", "Miss")
+        };
 
         foreach (var def in CustomizationStore.GetHitSectors())
         {
@@ -390,24 +421,22 @@ public class TurnPatternEditor : MonoBehaviour
         return true;
     }
 
-    private static void SetDropdownByText(TMP_Dropdown dropdown, string text)
+    private static void SetDropdownIndex(TMP_Dropdown dropdown, int index)
     {
         if (dropdown == null || dropdown.options == null)
             return;
 
-        SetDropdownByText(dropdown, text, dropdown.options.ConvertAll(o => o.text));
+        SetDropdownIndex(dropdown, index, dropdown.options.ConvertAll(o => o.text));
     }
 
-    private static void SetDropdownByText(TMP_Dropdown dropdown, string text, List<string> options)
+    private static void SetDropdownIndex(TMP_Dropdown dropdown, int index, List<string> options)
     {
         if (dropdown == null)
             return;
 
         dropdown.ClearOptions();
         dropdown.AddOptions(options);
-
-        int index = string.IsNullOrEmpty(text) ? 0 : Mathf.Max(0, options.IndexOf(text));
-        dropdown.SetValueWithoutNotify(index);
+        dropdown.SetValueWithoutNotify(Mathf.Clamp(index, 0, Mathf.Max(0, options.Count - 1)));
         dropdown.RefreshShownValue();
     }
 

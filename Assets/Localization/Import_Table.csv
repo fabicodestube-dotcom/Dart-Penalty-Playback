@@ -7,23 +7,29 @@ Abort_game_expl,"The game is not finished yet. Would you like to save the game s
 About,About,Über,À propos,Acerca de,О программе,O programie,Informazioni,Hakkında
 Acitve_vibration,Activate Vibration,Vibration aktivieren,Vibration active,Vibración activa,Вибрация активна,Wibracje aktywne,Vibrazione attiva,Titreşim aktif
 Acitve_vibration_expl,Determines whether haptic feedback should occur when entering inputs,"Bestimmt, ob bei Eingaben ein haptisches Feedback erfolgen soll",Détermine si un retour haptique doit se produire lors des saisies,Determina si debe producirse una respuesta háptica al introducir datos,"Определяет, должна ли происходить тактильная обратная связь при вводе данных","Określa, czy podczas wprowadzania danych ma występować reakcja haptyczna",Determina se deve verificarsi un feedback aptico durante l'inserimento degli input,Girişler yapılırken dokunsal geri bildirimin gerçekleşip gerçekleşmeyeceğini belirler
+Active,Active,Aktiv,Actif,Activo,Активно,Aktywne,Attivo,Aktif
+Active_penalties,Active penalties,Aktivierte Strafen,Pénalités activées,Penalizaciones activas,Активные штрафы,Aktywne kary,Penalità attive,Etkin cezalar
 AddBot,Add bot,Bot hinzufügen,Ajouter un bot,Añadir bot,Добавить бота,Dodaj bota,Aggiungi bot,Bot ekle
 All,All,Alle,Tout,Todo,Все,Wszystko,Tutto,Hepsi
+Apply,Apply,Anwenden,Appliquer,Aplicar,Применить,Zastosuj,Applica,Uygula
 Ascending,Ascending,Aufsteigend,Croissant,Ascendente,По возрастанию,Rosnąco,Crescente,Artan
 Audio,Audio,Audio,Audio,Audio,Аудио,Audio,Audio,Ses
 Blue,Blue,Blau,Bleu,Azul,Синий,Niebieski,Blu,Mavi
 Bronze,Bronze,Bronze,Bronze,Bronce,Бронза,Brąz,Bronzo,Bronz
 Bust,Bust,Verlauf,Bust,Bust,Перебор,Przełamanie,Sballato,Bust
-Cancle,Cancel,Abbrechen,Annuler,Cancelar,Отмена,Anuluj,Anulla,İptal
+Cancel,Cancel,Abbrechen,Annuler,Cancelar,Отмена,Anuluj,Anulla,İptal
 Ceiling,Ceiling,Decke,Plafond,Techo,Потолок,Sufit,Soffitto,Tavan
 Ceiling_expl,"Ceiling hit, which can be entered via button click instead of a 0-dart","Deckentreffer, der per Tastendruck statt eines 0-Darts eingegeben werden kann","Impact au plafond, qui peut être saisi via un clic sur un bouton au lieu d'un dardo à 0","Impacto en el techo, que se puede introducir haciendo clic en un botón en lugar de un dardo de 0","Попадание в потолок, которое можно ввести нажатием кнопки вместо 0-дротика","Trafienie w sufit, które można wprowadzić kliknięciem przycisku zamiast rzutki 0","Colpo al soffitto, che può essere inserito tramite clic del pulsante invece di una freccetta da 0",0-ok yerine buton tıklamasıyla girilebilen tavan vuruşu
 Clips,Clips,Clips,Clips,Clips,Клипы,Klipy,Clip,Klipler
+Condition,Condition,Bedingung,Condition,Condición,Условие,Warunek,Condizione,Koşul
 Confirm,Confirm,Bestätigen,Confirmer,Confirmar,Подтвердить,Potwierdź,Conferma,Onayla
 Costs,Costs,Kosten,Coûts,Costos,Стоимость,Koszty,Costi,Maliyetler
+Count,Count,Anzahl,Nombre,Cantidad,Количество,Liczba,Quantità,Sayı
 Custom_clip_browser,Custom clip browser,Eigener Clip-Browser,Navigateur de clips personnalisés,Navegador de clips personalizados,Пользовательский браузер клипов,Przeglądarka własnych klipów,Browser clip personalizzati,Özel klip tarayıcısı
 Custom_clips,Custom clips,Eigene Clips,Clips personnalisés,Clips personalizados,Пользовательские клипы,Własne klipy,Clip personalizzate,Özel klipler
 Custom_sound,Custom sound,Eigener Sound,Son personnalisé,Sonido personalizado,Пользовательский звук,Własny dźwięk,Suono personalizzato,Özel ses
 Custom_sound_expl,"Custom sounds are user-recorded sounds, otherwise the default package is used","Eigene Sounds sind vom Benutzer aufgenommene Sounds, andernfalls wird das Standardpaket verwendet","Les sons personnalisés sind des sons enregistrés par l'utilisateur, sinon le pack par défaut est utilisé","Los sonidos personalizados son sonidos grabados por el usuario; de lo contrario, se utiliza el paquete predeterminado","Пользовательские звуки — это звуки, записанные пользователем, иначе используется стандартный пакет","Własne dźwięki to dźwięki nagrane przez użytkownika, w przeciwnym razie używany jest pakiet domyślny","I suoni personalizzati sono registrati dall'utente, altrimenti viene utilizzato il pacchetto predefinito","Özel sesler kullanıcı tarafından kaydedilen seslerdir, aksi takdirde varsayılan paket kullanılır"
+Customization,Customization,Anpassung,Personnalisation,Personalización,Настройка,Dostosowywanie,Personalizzazione,Özelleştirme
 Cyan,Cyan,Cyan,Cyan,Cian,Циан,Cyjan,Ciano,Camgöbeği
 Delete_all_games,Delete all games,Alle Spiele löschen,Supprimer toutes les parties,Eliminar todos los juegos,Удалить все игры,Usuń wszystkie gry,Elimina tutti i giochi,Tüm oyunları sil
 Delete_all_games_expl,Are you sure you want to delete all recorded games? This action cannot be undone!,"Bist du sicher, dass du alle aufgezeichneten Spiele löschen möchtest? Diese Aktion kann nicht rückgängig gemacht werden!",Êtes-vous sûr de vouloir supprimer toutes les parties enregistrées ? Cette action est irréversible !,¿Estás seguro de que deseas eliminar todos los juegos grabados? ¡Esta acción no se puede deshacer!,"Вы уверены, что хотите удалить все записанные игры? Это действие нельзя отменить!",Czy na pewno chcesz usunąć wszystkie zapisane gry? Tej operacji nie można cofnąć!,Sei sicuro di voler eliminare tutti i giochi registrati? Questa azione nicht può essere annullata!,Tüm kaydedilen oyunları silmek istediğinizden emin misiniz? Bu işlem geri alınamaz!
@@ -33,13 +39,21 @@ Delete_clip,Delete clip,Clip löschen,Supprimer le clip,Eliminar clip,Удали
 Delete_clip_expl,Are you sure you want to delete the currently displayed clip? This action cannot be undone!,"Bist du sicher, dass du den aktuell angezeigten Clip löschen möchtest? Diese Aktion kann nicht rückgängig gemacht werden!",Êtes-vous sûr de vouloir supprimer le clip actuellement affiché ? Cette action est irréversible !,¿Estás seguro de que deseas eliminar el clip que se muestra actualmente? ¡Esta acción no se puede deshacer!,"Вы уверены, что хотите удалить текущий клип? Это действие нельзя отменить!",Czy na pewno chcesz usunąć aktualnie wyświetlany klip? Tej operacji nie można cofnąć!,Sei sicuro di voler eliminare il clip attualmente visualizzato? Questa azione non può essere annullata!,Şu anda görüntülenen klibi silmek istediğinizden emin misiniz? Bu işlem geri alınamaz!
 Delete_cricket_games,Delete Cricket games,„Cricket“-Spiele löschen,Supprimer les parties de Cricket,Eliminar juegos de Cricket,Удалить игры в Крикет,Usuń gry Cricket,Elimina i giochi Cricket,Cricket oyunlarını sil
 Delete_cricket_games_expl,Are you sure you want to delete all Cricket games? This action cannot be undone!,"Bist du sicher, dass du alle „Cricket“-Spiele löschen möchtest? Diese Aktion kann nicht rückgängig gemacht werden!",Êtes-vous sûr de vouloir supprimer toutes les parties de Cricket ? Cette action est irréversible !,¿Estás seguro de que deseas eliminar todos los juegos de Cricket? ¡Esta acción no se puede deshacer!,"Вы уверены, что хотите удалить все игры в Крикет? Это действие нельзя отменить!",Czy na pewno chcesz usunąć wszystkie gry Cricket? Tej operacji nie można cofnąć!,Sei sicuro di voler eliminare tutti i giochi Cricket? Questa azione non può essere annullata!,Tüm Cricket oyunlarını silmek istediğinizden emin misiniz? Bu işlem geri alınamaz!
+Delete_game,Do you really want to delete the displayed game? This can't be undone!,Möchtest du das angezeigte Spiel wirklich löschen? Dies kann nicht rückgängig gemacht werden!,Voulez-vous vraiment supprimer le jeu affiché ? Cette action est irréversible !,¿Realmente quieres borrar el juego mostrado? ¡Esto nicht se puede deshacer!,Вы действительно хотите удалить отображаемую игру? Это действие нельзя отменить!,Czy na pewno chcesz usunąć wyświetloną grę? Tego kroku nie można cofnąć!,Vuoi davvero eliminare il gioco visualizzato? L'azione non può essere annullata!,Görüntülenen oyunu gerçekten silmek istiyor musunuz? Bu işlem geri alınamaz!
+Delete_penalty,Delete penalty,Lösche Strafe,Supprimer la pénalité,Eliminar penalización,Удалить штраф,Usuń karę,Elimina penalità,Cezayı sil
 Delete_player,Delete player,Spieler löschen,Supprimer le joueur,Eliminar jugador,Удалить игрока,Usuń gracza,Elimina giocatore,Oyuncuyu sil
-Delete_player_expl,Are you sure you want to delete player {name}? This action cannot be undone!,"Bist du sicher, dass du den Spieler {name} löschen möchtest? Diese Aktion kann nicht rückgängig gemacht werden!",Êtes-vous sûr de vouloir supprimer le joueur {name} ? Cette action est irréversible !,¿Estás seguro de que deseas eliminar al jugador {name}? ¡Esta acción no se puede deshacer!,"Вы уверены, что хотите удалить игрока {name}? Это действие нельзя отменить!",Czy na pewno chcesz usunąć gracza {name}? Tej operacji nie można cofnąć!,Sei sicuro di voler eliminare il giocatore {name}? Questa azione non può essere annullata!,{name} isimli oyuncuyu silmek istediğinizden emin misiniz? Bu işlem geri alınamaz!
+Delete_player_expl,Are you sure you want to delete player {0}? This action cannot be undone!,Möchtest du Spieler {0} wirklich löschen? Dies kann nicht rückgängig gemacht werden!,Voulez-vous vraiment supprimer le joueur {0} ? Cette action est irréversible !,¿Seguro que quieres eliminar al jugador {0}? ¡Esta acción no se puede deshacer!,"Вы уверены, что хотите удалить игрока {0}? Это действие нельзя отменить!",Czy na pewno chcesz usunąć gracza {0}? Tej operacji nie można cofnąć!,Sei sicuro di voler eliminare il giocatore {0}? Questa azione non può essere annullata!,{0} adlı oyuncuyu silmek istediğinizden emin misiniz? Bu işlem geri alınamaz!
+Delete_target_area,Delete target area,Lösche Zielbereich,Supprimer la zone cible,Eliminar área objetivo,Удалить целевую область,Usuń obszar docelowy,Elimina area bersaglio,Hedef alanını sil
 Delete_x01_games,Delete X01 games,„X01“-Spiele löschen,Supprimer les parties de X01,Eliminar juegos de X01,Удалить игры X01,Usuń gry X01,Elimina i giochi X01,X01 oyunlarını sil
 Delete_x01_games_expl,Are you sure you want to delete all X01 games? This action cannot be undone!,"Bist du sicher, dass du alle „X01“-Spiele löschen möchtest? Diese Aktion kann nicht rückgängig gemacht werden!",Êtes-vous sûr de vouloir supprimer toutes les parties de X01 ? Cette action est irréversible !,¿Estás seguro de que deseas eliminar todos los juegos de X01? ¡Esta acción no se puede deshacer!,"Вы уверены, что хотите удалить все игры X01? Это действие нельзя отменить!",Czy na pewno chcesz usunąć wszystkie gry X01? Tej operacji nie można cofnąć!,Sei sicuro di voler eliminare tutti i giochi X01? Questa azione non kann essere annullata!,Tüm X01 oyunlarını silmek istediğinizden emin misiniz? Bu işlem geri alınamaz!
 Descending,Descending,Absteigend,Décroissant,Descendente,По убыванию,Malejąco,Decrescente,Azalan
+Details,Details,Details,Détails,Detalles,Подробности,Szczegóły,Dettagli,Ayrıntılar
+Disabled,Disabled,Deaktiviert,Désactivé,Desactivado,Отключено,Wyłączone,Disattivato,Devre dışı
 Dont_save,Don't save,Nicht speichern,Ne pas sauvegarder,No guardar,Не сохранять,Nie zapisuj,Non salvare,Kaydetme
 Easy,Easy,Einfach,Facile,Fácil,Легко,Łatwy,Facile,Kolay
+Edit_penalty,Edit penalty,Strafe anpassen,Modifier la pénalité,Editar penalización,Изменить штраф,Edytuj karę,Modifica penalità,Cezayı düzenle
+Edit_target_area,Edit target area,Zielbereich anpassen,Modifier la zone cible,Editar área objetivo,Изменить целевую область,Edytuj obszar docelowy,Modifica area bersaglio,Hedef alanını düzenle
+Enabled,Enabled,Aktiviert,Activé,Activado,Включено,Włączone,Attivato,Etkin
 Filter_by_players,Filter by players,Nach Spielern filtern,Filtrer par joueurs,Filtrar por jugadores,Фильтр по игрокам,Filtruj według graczy,Flitra per giocatori,Oyunculara göre filtrele
 Finished,Finished,Beendet,Terminé,Terminado,Завершено,Zakończono,Terminato,Bitti
 Game_not_saved_yet,Game not saved yet,Spiel noch nicht gespeichert,Jeu pas encore sauvegardé,Juego no guardado aún,Игра еще не сохранена,Gra nie została jeszcze zapisana,Gioco non ancora salvato,Oyun henüz kaydedilmedi
@@ -64,18 +78,22 @@ Lucky_number_expl,"Penalty if you reach a score that is a repdigit (e. g. 111, 2
 Mark_everything,Mark everything,Alles markieren,Tout cocher,Marcar todo,Выделить все,Zaznacz wszystko,Seleziona tutto,Hepsini işaretle
 Marks,Marks,Marks,Marques,Marcas,Отметки,Oznaczenia,Contrassegni,İşaretler
 Marks_per_round,Marks per round,Marks pro Runde,Marques par tour,Marcas por ronda,Отметок за раунд,Oznaczenia na rundę,Contrassegni per round,Tur başına işaretler
+Match_order,Match order,Reihenfolge erhalten,Conserver l'ordre,Mantener el orden,Сохранить порядок,Zachowaj kolejność,Mantieni l'ordine,Sıralamayı koru
 Medium,Medium,Mittel,Moyen,Medio,Средне,Średni,Medio,Orta
 Miss,Miss,Fehlschuss,Raté,Fallo,Proмах,Chybienie,Mancato,Iskat
 Mode,Mode,Modus,Mode,Modo,Режим,Tryb,Modalità,Mod
+Name,Name,Name,Nom,Nombre,Название,Nazwa,Nome,Ad
+New_audio_event,New audio event,Neues Audioevent,Nouvel événement audio,Nuevo evento de audio,Новое аудиособытие,Nowe zdarzenie audio,Nuovo evento audio,Yeni ses olayı
+New_penalty,New penalty,Neue Strafe,Nouvelle pénalité,Nueva penalización,Новый штраф,Nowa kara,Nuova penalità,Yeni ceza
 New_player,New player,Neuer Spieler,Nouveau joueur,Nuevo jugador,Новый игрок,Nowy gracz,Nuovo giocatore,Yeni oyuncu
 New_player_name_too_short,Name is too short (min. 2 characters),Name ist zu kurz (mind. 2 Zeichen),Le nom est trop court (min. 2 caractères),El nombre es demasiado corto (mín. 2 caracteres),Имя слишком короткое (минимум 2 символа),Nazwa jest za krótka (min. 2 znaki),Il nome è troppo corto (min. 2 caratteri),İsim çok kısa (en az 2 karakter)
 No_board_hit,No board hit,Kein Scheibentreffer,Aucun impact sur la cible,Sin impacto en la diana,Нет попадания в мишень,Brak trafienia w tarczę,Nessun colpo sul bersaglio,Borda isabet yok
 No_board_hit_expl,Penalty if all darts are wall or ceiling hits,"Strafe, wenn alle Darts Wand- oder Deckentreffer sind",Pénalité si toutes les fléchettes touchent le mur ou le plafond,Penalización si dardos impactan en la pared o el techo,"Штраф, если все дротики попали в стену или потолок","Kara, jeśli wszystkie rzutki trafią w ścianę lub sufit",Penalità se tutte le freccette colpiscono il muro o il soffitto,Tüm okların duvara veya tavana gelmesi durumunda verilen ceza
 No_clips_recorded,No clips recorded,Keine Clips aufgezeichnet,Aucun clip enregistré,No hay clips grabados,Клипы не записаны,Brak nagranych klipów,Nessun clip registrato,Kaydedilmiş klip yok
 No_games_available,No games available,Keine Spiele vorhanden,Aucun jeu disponible,No hay juegos disponibles,Нет доступных игр,Brak dostępnych gier,Nessun gioco disponibile,Mevcut oyun yok
-No_games_available_x01,No X01 games available,Keine X01-Spiele vorhanden,Aucun jeu X01 disponible,No hay juegos X01 disponibles,Нет доступных игр X01,Brak dostępnych gier X01,Nessun gioco X01 disponibile,Mevcut X01 oyunu yok
-No_games_available_cricket,No Cricket games available,Keine Cricket-Spiele vorhanden,Aucun jeu Cricket disponible,No hay juegos de Cricket disponibles,Нет доступных игр в Крикет,Brak dostępnych gier w Krykieta,Nessun gioco Cricket disponibile,Mevcut Kriket oyunu yok
 No_games_available_atc,No Around the Clock games available,Keine Around the Clock-Spiele vorhanden,Aucun jeu Around the Clock disponible,No hay juegos Around the Clock disponibles,Нет доступных игр Around the Clock,Brak dostępnych gier Around the Clock,Nessun gioco Around the Clock disponibile,Mevcut Around the Clock oyunu yok
+No_games_available_cricket,No Cricket games available,Keine Cricket-Spiele vorhanden,Aucun jeu Cricket disponible,No hay juegos de Cricket disponibles,Нет доступных игр в Крикет,Brak dostępnych gier w Krykieta,Nessun gioco Cricket disponibile,Mevcut Kriket oyunu yok
+No_games_available_x01,No X01 games available,Keine X01-Spiele vorhanden,Aucun jeu X01 disponible,No hay juegos X01 disponibles,Нет доступных игр X01,Brak dostępnych gier X01,Nessun gioco X01 disponibile,Mevcut X01 oyunu yok
 No_players_added,No players added,Keine Spieler hinzugefügt,Aucun joueur ajouté,No se han añadido jugadores,Игроки не добавлены,Nie dodano graczy,Nessun giocatore aggiunto,Oyuncu eklenmedi
 No_players_added_expl,No players have been added to the participant list yet. At least one player must be assigned!,Es wurden noch keine Spieler zur Teilnehmerliste hinzugefügt. Mindestens ein Spieler muss zugewiesen werden!,Aucun joueur n'a encore été ajouté à la liste des participants. Au moins un joueur doit être attribué !,Aún no se han añadido jugadores a la lista de participantes. ¡Se debe asignar al menos un jugador!,В список участников еще nicht добавлены игроки. Необходимо назначить как минимум одного игрока!,Nie dodano jeszcze żadnych graczy do listy uczestników. Musi być przypisany co najmniej jeden gracz!,Non sono ancora stati aggiunti giocatori alla lista dei partecipanti. Deve essere assegnato almeno un giocatore!,Katılımcı listesine henüz oyuncu eklenmedi. En az bir oyuncu atanmalıdır!
 Ok,OK,OK,OK,Aceptar,ОК,OK,OK,Tamam
@@ -94,11 +112,12 @@ Random,Random,Zufall,Aléatoire,Aleatorio,Случайно,Losowo,Casuale,Rastge
 Random_Order,Random order,Zufällige Reihenfolge,Ordre aléatoire,Orden aleatorio,Случайный порядок,Losowa kolejność,Ordine casuale,Rastgele sıralama
 Recorder,Recorder,Recorder,Enregistreur,Grabador,Рекордер,Rejestrator,Registratore,Kaydedici
 Red,Red,Rot,Rouge,Rojo,Красный,Czerwony,Rosso,Kırmızı
-Rename_player,Rename player {name},Spieler {name} umbenennen,Renommer le joueur {name},Renombrar jugador {name},Переименовать игрока {name},Zmień nazwę gracza {name},Rinomina giocatore {name},{name} oyuncusunu yeniden adlandır
+Rename_player,Rename player {0},Spieler {0} umbenennen,Renommer le joueur {0},Renombrar jugador {0},Переименовать игрока {0},Zmień nazwę gracza {0},Rinomina giocatore {0},Oyuncuyu yeniden adlandır {0}
 Save,Save,Speichern,Sauvegarder,Guardar,Сохранить,Zapisz,Salva,Kaydet
 Save_game,Save game,Spiel speichern,Sauvegarder la partie,Guardar juego,Сохранить игру,Zapisz grę,Salva gioco,Oyunu kaydet
 Score_clips,Score clips,Punkte-Clips,Clips de score,Clips de puntuación,Клипы очков,Klipy z wynikami,Clip di punteggio,Skor klipleri
 Scoring,Scoring,Punkteerfassung,Saisie des scores,Anotación,Подсчет очков,Punktacja,Punteggio,Skorlama
+Settings,Settings,Einstellungen,Paramètres,Ajustes,Настройки,Ustawienia,Impostazioni,Ayarlar
 Share,Share,Teilen,Partager,Compartir,Поделиться,Udostępnij,Condividi,Paylaş
 Share_expl,Check out my new Darts app that I found on GitHub! https://github.com/fabicodestube-dotcom/Dart-Penalty-Playback/,"Schau dir meine neue Darts-App an, die ich auf GitHub gefunden habe! https://github.com/fabicodestube-dotcom/Dart-Penalty-Playback/",Découvrez ma nouvelle application de fléchettes trouvée sur GitHub ! https://github.com/fabicodestube-dotcom/Dart-Penalty-Playback/,¡Mira mi nueva aplicación de dardos que encontré en GitHub! https://github.com/fabicodestube-dotcom/Dart-Penalty-Playback/,"Посмотрите мое новое приложение для дартса, которое я нашел на GitHub! https://github.com/fabicodestube-dotcom/Dart-Penalty-Playback/","Sprawdź moją nową aplikację do rzutek, którą znalazłem na GitHubie! https://github.com/fabicodestube-dotcom/Dart-Penalty-Playback/",Dai un'occhiata alla mia nuova app per le freccette che ho trovato su GitHub! https://github.com/fabicodestube-dotcom/Dart-Penalty-Playback/,GitHub'da bulduğum yeni Dart uygulamama göz atın! https://github.com/fabicodestube-dotcom/Dart-Penalty-Playback/
 Special_clips,Special clips,Spezial-Clips,Clips spéciaux,Clips especiales,Специальные клипы,Klipy specjalne,Clip speciali,Özel klipler
@@ -109,6 +128,7 @@ Sum,Sum,Summe,Somme,Suma,Сумма,Suma,Somma,Toplam
 Summary,Summary,Zusammenfassung,Résumé,Resumen,Итоги,Podsumowanie,Riepilogo,Özet
 Support,Support,Unterstützen,Soutenir,Apoyar,Поддержать,Wsparcie,Supporto,Destekle
 Support_expl,"If you want to support the app, feel free to donate via one of the following options.","Wenn du die App unterstützen möchtest, kannst du gerne über eine der folgenden Optionen spenden.","Si vous souhaitez soutenir l'application, n'hésitez pas à faire un don via l'une des options suivantes.","Si deseas apoyar la aplicación, siéntete libre de donar a través de una de las siguientes opciones.","Если вы хотите поддержать приложение, вы можете сделать пожертвование с помощью одного из следующих вариантов.","Jeśli chcesz wesprzeć aplikację, możesz przekazać darowiznę za pomocą jednej z poniższych opcji.","Se vuoi supportare l'app, sentiti libero di donare tramite una delle seguenti opzioni.","Uygulamayı desteklemek isterseniz, aşağıdaki seçeneklerden biriyle bağışta bulunabilirsiniz."
+Target_areas,Target areas,Zielbereiche,Zones cibles,Áreas objetivo,Целевые области,Obszary docelowe,Aree bersaglio,Hedef alanları
 Targets,Targets,Ziele,Cibles,Objetivos,Цели,Cele,Obiettivi,Hedefler
 Theme,Theme,Design,Thème,Tema,Тема,Motyw,Tema,Tema
 Three_ones,Three ones,Drei Einsen,Trois uns,Tres unos,Три единицы,Trzy jedynki,Tre uni,Üç tane bir
@@ -123,22 +143,170 @@ Volume,Volume,Lautstärke,Volume,Volumen,Громкость,Głośność,Volume,
 Wall,Wall,Wand,Mur,Pared,Стена,Ściana,Muro,Duvar
 Wall_expl,"Wall hit, which can be entered via button click instead of a 0-dart","Wandtreffer, der per Tastendruck statt eines 0-Darts eingegeben werden kann","Impact au mur, qui peut être saisi via un clic sur un bouton au lieu d'un dardo à 0","Impacto en la pared, que se puede introducir haciendo clic en un botón en lugar de un dardo de 0","Попадание в стену, которое можно ввести нажатием кнопки вместо 0-дротика","Trafienie w ścianę, które można wprowadzić kliknięciem przycisku zamiast rzutki 0","Colpo al muro, che può essere inserito tramite clic del pulsante invece di una freccetta da 0",0-ok yerine buton tıklamasıyla girilebilen duvar vuruşu
 Weak,Weak,Schwach,Faible,Débil,Слабый,Słaby,Debole,Zayıf
-Delete_game,Do you really want to delete the displayed game? This can't be undone!,Möchtest du das angezeigte Spiel wirklich löschen? Dies kann nicht rückgängig gemacht werden!,Voulez-vous vraiment supprimer le jeu affiché ? Cette action est irréversible !,¿Realmente quieres borrar el juego mostrado? ¡Esto nicht se puede deshacer!,Вы действительно хотите удалить отображаемую игру? Это действие нельзя отменить!,Czy na pewno chcesz usunąć wyświetloną grę? Tego kroku nie można cofnąć!,Vuoi davvero eliminare il gioco visualizzato? L'azione non può essere annullata!,Görüntülenen oyunu gerçekten silmek istiyor musunuz? Bu işlem geri alınamaz!
-Settings,Settings,Einstellungen,Paramètres,Ajustes,Настройки,Ustawienia,Impostazioni,Ayarlar
-Apply,Apply,Anwenden,Appliquer,Aplicar,Применить,Zastosuj,Applica,UygulaCustomization,Customization,Anpassung,,,,,,
-Tab_Penalties,Penalties,Strafen,,,,,,
-Tab_AudioEvents,Audio Events,Audio-Events,,,,,,
-Tab_AudioClips,Audio Clips,Audio-Clips,,,,,,
-Penalty_New,New penalty,Neues Penalty,,,,,,
-Penalty_Edit,Edit penalty,Penalty bearbeiten,,,,,,
-Penalty_DeleteConfirm,Really delete penalty?,Penalty wirklich löschen?,,,,,,
-Penalty_DeleteWithClips,Delete penalty? {0} audio clips are still linked to it.,Penalty löschen? Es sind noch {0} Audio-Clips damit verbunden.,,,,,,
-Event_New,New event,Neues Event,,,,,,
-Event_DeleteConfirm,Really delete event?,Event wirklich löschen?,,,,,,
-Event_DeleteWithClips,Delete event? {0} audio clips are still linked to it.,Event löschen? Es sind noch {0} Audio-Clips damit verbunden.,,,,,,
-Button_Save,Save,Speichern,,,,,,
-Button_Cancel,Cancel,Abbrechen,,,,,,
-Button_Delete,Delete,Löschen,,,,,,
-Button_Edit,Edit,Bearbeiten,,,,,,
-Button_Yes,Yes,Ja,,,,,,
-Button_No,No,Nein,,,,,,
+Game_details,Game details,Spieldetails,Détails de la partie,Detalles de la partida,Детали игры,Szczegóły gry,Dettagli partita,Oyun ayrıntıları
+Language,Language,Sprache,Langue,Idioma,Язык,Język,Lingua,Dil
+Languages,Languages,Sprachen,Langues,Idiomas,Языки,Języki,Lingue,Diller
+Dark_mode,Dark mode,Dunkelmodus,Mode sombre,Modo oscuro,Тёмный режим,Tryb ciemny,Modalità scura,Karanlık mod
+Defaults_as_fallback,Defaults as fallback,Standard als Fallback,Valeurs par défaut en secours,Valores predeterminados como respaldo,Стандартные как резерв,Domyślne jako zapasowe,Predefiniti come fallback,Yedek olarak varsayılanlar
+Defaults_as_fallback_expl,Determines whether a default sound is played when a built-in event is triggered.,"Legt fest, ob bei einem integrierten Ereignis ein Standardsound abgespielt wird.",Détermine si un son par défaut est joué lorsqu’un événement intégré est déclenché.,Determina si se reproduce un sonido predeterminado cuando se activa un evento integrado.,"Определяет, воспроизводится ли звук по умолчанию при срабатывании встроенного события.","Określa, czy po wywołaniu wbudowanego zdarzenia odtwarzany jest domyślny dźwięk.",Determina se riprodurre un suono predefinito quando viene attivato un evento integrato.,Yerleşik bir olay tetiklendiğinde varsayılan sesin çalınıp çalınmayacağını belirler.
+Patch_notes,Patch notes,Patch-Hinweise,Notes de version,Notas del parche,Примечания к патчу,Informacje o wersji,Note della patch,Yama notları
+License,License,Lizenz,Licence,Licencia,Лицензия,Licencja,Licenza,Lisans
+Privacy_policy,Privacy Policy,Datenschutzerklärung,Politique de confidentialité,Política de privacidad,Политика конфиденциальности,Polityka prywatności,Informativa sulla privacy,Gizlilik politikası
+Game_paused,Game paused,Spiel pausiert,Partie en pause,Partida en pausa,Игра приостановлена,Gra wstrzymana,Partita in pausa,Oyun duraklatıldı
+Delete,Delete,Löschen,Supprimer,Eliminar,Удалить,Usuń,Elimina,Sil
+Continue,Continue,Weiter,Continuer,Continuar,Продолжить,Kontynuuj,Continua,Devam et
+Audio_events,Audio events,Audioereignisse,Événements audio,Eventos de audio,Аудиособытия,Zdarzenia audio,Eventi audio,Ses olayları
+New_custom_hit,New custom hit,Neuer Trefferbereich,Nouvelle zone de touche,Nueva zona de impacto,Новая зона попадания,Nowy obszar trafienia,Nuova zona di colpo,Yeni isabet alanı
+Global,Global,Global,Global,Global,Глобально,Globalne,Globale,Genel
+Event,Event,Ereignis,Événement,Evento,Событие,Zdarzenie,Evento,Olay
+Game_mode,Game mode,Spielmodus,Mode de jeu,Modo de juego,Режим игры,Tryb gry,Modalità di gioco,Oyun modu
+Dart_count,Dart count,Dart-Anzahl,Nombre de fléchettes,Cantidad de dardos,Количество дротиков,Liczba lotek,Numero di freccette,Dart sayısı
+Dart_1,Dart 1,Dart 1,Fléchette 1,Dardo 1,Дротик 1,Lotka 1,Freccetta 1,Dart 1
+Dart_2,Dart 2,Dart 2,Fléchette 2,Dardo 2,Дротик 2,Lotka 2,Freccetta 2,Dart 2
+Dart_3,Dart 3,Dart 3,Fléchette 3,Dardo 3,Дротик 3,Lotka 3,Freccetta 3,Dart 3
+Score,Score,Punktzahl,Score,Puntuación,Счёт,Wynik,Punteggio,Puan
+Exact_score,Exact score,Exakte Punktzahl,Score exact,Puntuación exacta,Точный счёт,Dokładny wynik,Punteggio esatto,Tam puan
+Turn_pattern,Turn pattern,Wurfmuster,Schéma de lancer,Patrón de tirada,Шаблон броска,Wzorzec rzutu,Schema del tiro,Atış deseni
+Game_events,Game events,Spielereignisse,Événements de partie,Eventos de partida,События игры,Zdarzenia gry,Eventi di gioco,Oyun olayları
+Clip_info,Clip info,Clip-Info,Infos du clip,Información del clip,Информация о клипе,Informacje o klipie,Info clip,Klip bilgisi
+Target_area,Target area,Zielbereich,Zone cible,Zona objetivo,Целевая зона,Obszar docelowy,Area bersaglio,Hedef alanı
+Last_sector,Last sector,Letzter Sektor,Dernier secteur,Último sector,Последний сектор,Ostatni sektor,Ultimo settore,Son sektör
+Bull,Bull,Bull,Bull,Bull,Булл,Bull,Bull,Bull
+Bar_chart,Bar chart,Balkendiagramm,Diagramme en barres,Gráfico de barras,Гистограмма,Wykres słupkowy,Grafico a barre,Çubuk grafik
+Heat_map,Heat map,Heatmap,Carte de chaleur,Mapa de calor,Тепловая карта,Mapa cieplna,Mappa di calore,Isı haritası
+Active_penalties_label,Active penalties:,Aktive Strafen:,Pénalités actives :,Penalizaciones activas:,Активные штрафы:,Aktywne kary:,Penalità attive:,Etkin cezalar:
+Sum_label,Sum:,Summe:,Somme :,Suma:,Сумма:,Suma:,Somma:,Toplam:
+No_penalties,No penalties applied.,Keine Strafen angewendet.,Aucune pénalité appliquée.,No se aplican penalizaciones.,Штрафы не применены.,Brak nałożonych kar.,Nessuna penalità applicata.,Uygulanan ceza yok.
+Total,Total,Gesamt,Total,Total,Всего,Razem,Totale,Toplam
+Total_value,Total: {0},Gesamt: {0},Total : {0},Total: {0},Всего: {0},Razem: {0},Totale: {0},Toplam: {0}
+Not_available,N/A,N/V,N/D,N/D,Н/Д,Brak,N/D,Yok
+Wall_short,WALL,WAND,MUR,MURO,СТЕНА,ŚCIANA,MURO,DUVAR
+Ceiling_short,CEIL,DECKE,PLAFOND,TECHO,ПОТОЛОК,SUFIT,SOFFITTO,TAVAN
+Three_ones_short,1×3,1er,1×3,1×3,1×3,1×3,1×3,1×3
+Lucky_number_short,Repdigit,Schnaps,Repdigit,Repdigito,Репдигит,Repdigit,Repdigit,Tekrar
+No_clip_available,No clip available,Kein Clip verfügbar,Aucun clip disponible,No hay clips disponibles,Клип недоступен,Brak klipu,Nessun clip disponibile,Klibi yok
+Clip_number_format,{0} ({1}) - Clip {2},{0} ({1}) – Clip {2},{0} ({1}) - Clip {2},{0} ({1}) - Clip {2},{0} ({1}) — клип {2},{0} ({1}) – klip {2},{0} ({1}) - Clip {2},{0} ({1}) - Klip {2}
+Clip_count,{0} Clips,{0} Clips,{0} clips,{0} clips,{0} клипов,{0} klipów,{0} clip,{0} klip
+Score_announcements,Score announcements,Punktansagen,Annonces de score,Anuncios de puntuación,Озвучивание счёта,Zapowiedzi wyniku,Annunci del punteggio,Puan anonsları
+Sound_score_announcements,Sound for score announcements 0-180,Sound für Punktansagen 0–180,Son pour les annonces de score 0-180,Sonido para anuncios de puntuación 0-180,Звук для озвучивания счёта 0–180,Dźwięk zapowiedzi wyniku 0–180,Suono per annunci del punteggio 0-180,0-180 puan anonsları için ses
+Delete_game_title,Delete game,Spiel löschen,Supprimer la partie,Eliminar partida,Удалить игру,Usuń grę,Elimina partita,Oyunu sil
+Delete_custom_hit,Delete custom hit,Trefferbereich löschen,Supprimer la zone de touche,Eliminar zona de impacto,Удалить зону попадания,Usuń obszar trafienia,Elimina zona di colpo,İsabet alanını sil
+Delete_custom_hit_expl,Are you sure you want to delete this target area? This action cannot be undone!,Möchtest du diesen Zielbereich wirklich löschen? Dies kann nicht rückgängig gemacht werden!,Voulez-vous vraiment supprimer cette zone cible ? Cette action est irréversible !,¿Seguro que quieres eliminar esta zona objetivo? ¡Esta acción no se puede deshacer!,"Вы уверены, что хотите удалить эту целевую зону? Это действие нельзя отменить!",Czy na pewno chcesz usunąć ten obszar docelowy? Tej operacji nie można cofnąć!,Sei sicuro di voler eliminare questa area bersaglio? Questa azione non può essere annullata!,Bu hedef alanı silmek istediğinizden emin misiniz? Bu işlem geri alınamaz!
+Delete_audio_event,Delete audio event,Audioereignis löschen,Supprimer l’événement audio,Eliminar evento de audio,Удалить аудиособытие,Usuń zdarzenie audio,Elimina evento audio,Ses olayını sil
+Delete_audio_event_expl,Are you sure you want to delete this audio event? This action cannot be undone!,Möchtest du dieses Audioereignis wirklich löschen? Dies kann nicht rückgängig gemacht werden!,Voulez-vous vraiment supprimer cet événement audio ? Cette action est irréversible !,¿Seguro que quieres eliminar este evento de audio? ¡Esta acción no se puede deshacer!,"Вы уверены, что хотите удалить это аудиособытие? Это действие нельзя отменить!",Czy na pewno chcesz usunąć to zdarzenie audio? Tej operacji nie można cofnąć!,Sei sicuro di voler eliminare questo evento audio? Questa azione non può essere annullata!,Bu ses olayını silmek istediğinizden emin misiniz? Bu işlem geri alınamaz!
+Delete_penalty_confirm,Delete this penalty?,Diese Strafe löschen?,Supprimer cette pénalité ?,¿Eliminar esta penalización?,Удалить этот штраф?,Usunąć tę karę?,Eliminare questa penalità?,Bu ceza silinsin mi?
+Delete_penalty_with_clips,Delete penalty? Linked audio clips: {0},Strafe löschen? Verknüpfte Audioclips: {0},Supprimer la pénalité ? Clips audio liés : {0},¿Eliminar la penalización? Clips de audio vinculados: {0},Удалить штраф? Связанные аудиоклипы: {0},Usunąć karę? Powiązane klipy audio: {0},Eliminare la penalità? Clip audio collegati: {0},Ceza silinsin mi? Bağlı ses klipleri: {0}
+Delete_audio_event_confirm,Delete this audio event?,Dieses Audioereignis löschen?,Supprimer cet événement audio ?,¿Eliminar este evento de audio?,Удалить это аудиособытие?,Usunąć to zdarzenie audio?,Eliminare questo evento audio?,Bu ses olayı silinsin mi?
+Delete_audio_event_with_clips,Delete audio event? Linked audio clips: {0},Audioereignis löschen? Verknüpfte Audioclips: {0},Supprimer l’événement audio ? Clips audio liés : {0},¿Eliminar el evento de audio? Clips de audio vinculados: {0},Удалить аудиособытие? Связанные аудиоклипы: {0},Usunąć zdarzenie audio? Powiązane klipy audio: {0},Eliminare l’evento audio? Clip audio collegati: {0},Ses olayı silinsin mi? Bağlı ses klipleri: {0}
+Delete_penalty_named,Delete penalty “{0}”?,Strafe „{0}“ löschen?,Supprimer la pénalité « {0} » ?,¿Eliminar la penalización «{0}»?,Удалить штраф «{0}»?,Usunąć karę „{0}”?,Eliminare la penalità “{0}”?,“{0}” cezası silinsin mi?
+Delete_audio_event_named,Delete audio event “{0}”?,Audioereignis „{0}“ löschen?,Supprimer l’événement audio « {0} » ?,¿Eliminar el evento de audio «{0}»?,Удалить аудиособытие «{0}»?,Usunąć zdarzenie audio „{0}”?,Eliminare l’evento audio “{0}”?,“{0}” ses olayı silinsin mi?
+Delete_sector_named,Delete target area “{0}”?,Zielbereich „{0}“ löschen?,Supprimer la zone cible « {0} » ?,¿Eliminar la zona objetivo «{0}»?,Удалить целевую зону «{0}»?,Usunąć obszar docelowy „{0}”?,Eliminare l’area bersaglio “{0}”?,“{0}” hedef alanı silinsin mi?
+Delete_sector_named_usage,Delete target area “{0}”? Used by penalties: {1}. These will also be deleted.,Zielbereich „{0}“ löschen? Verwendet von Strafen: {1}. Diese werden ebenfalls gelöscht.,Supprimer la zone cible « {0} » ? Utilisée par les pénalités : {1}. Celles-ci seront aussi supprimées.,¿Eliminar la zona objetivo «{0}»? Usada por penalizaciones: {1}. También se eliminarán.,Удалить целевую зону «{0}»? Используется штрафами: {1}. Они также будут удалены.,Usunąć obszar docelowy „{0}”? Używany przez kary: {1}. Zostaną one również usunięte.,Eliminare l’area bersaglio “{0}”? Usata dalle penalità: {1}. Verranno eliminate anche queste.,“{0}” hedef alanı silinsin mi? Cezalar tarafından kullanılıyor: {1}. Bunlar da silinecek.
+Delete_sector_usage,Delete target area? Used by penalties: {0}. These will also be deleted.,Zielbereich löschen? Verwendet von Strafen: {0}. Diese werden ebenfalls gelöscht.,Supprimer la zone cible ? Utilisée par les pénalités : {0}. Celles-ci seront aussi supprimées.,¿Eliminar la zona objetivo? Usada por penalizaciones: {0}. También se eliminarán.,Удалить целевую зону? Используется штрафами: {0}. Они также будут удалены.,Usunąć obszar docelowy? Używany przez kary: {0}. Zostaną one również usunięte.,Eliminare l’area bersaglio? Usata dalle penalità: {0}. Verranno eliminate anche queste.,Hedef alanı silinsin mi? Cezalar tarafından kullanılıyor: {0}. Bunlar da silinecek.
+Delete_sector_stage2,Delete anyway? The affected penalties will also be deleted.,Trotzdem löschen? Die betroffenen Strafen werden ebenfalls gelöscht.,Supprimer quand même ? Les pénalités concernées seront aussi supprimées.,¿Eliminar de todos modos? Las penalizaciones afectadas también se eliminarán.,Всё равно удалить? Затронутые штрафы также будут удалены.,Usunąć mimo to? Powiązane kary również zostaną usunięte.,Eliminare comunque? Verranno eliminate anche le penalità interessate.,Yine de silinsin mi? Etkilenen cezalar da silinecek.
+Delete_sector_stage2_clips,Delete anyway? Linked audio clips: {0},Trotzdem löschen? Verknüpfte Audioclips: {0},Supprimer quand même ? Clips audio liés : {0},¿Eliminar de todos modos? Clips de audio vinculados: {0},Всё равно удалить? Связанные аудиоклипы: {0},Usunąć mimo to? Powiązane klipy audio: {0},Eliminare comunque? Clip audio collegati: {0},Yine de silinsin mi? Bağlı ses klipleri: {0}
+Delete_sector_confirm,Delete this target area?,Diesen Zielbereich löschen?,Supprimer cette zone cible ?,¿Eliminar esta zona objetivo?,Удалить эту целевую зону?,Usunąć ten obszar docelowy?,Eliminare questa area bersaglio?,Bu hedef alanı silinsin mi?
+Name_too_long,Name is too long (max. 12 characters).,Name ist zu lang (max. 12 Zeichen).,Le nom est trop long (12 caractères max.).,El nombre es demasiado largo (máx. 12 caracteres).,Имя слишком длинное (не более 12 символов).,Nazwa jest za długa (maks. 12 znaków).,Il nome è troppo lungo (max 12 caratteri).,Ad çok uzun (en fazla 12 karakter).
+Name_needs_letter,Name must contain at least one letter.,Der Name muss mindestens einen Buchstaben enthalten.,Le nom doit contenir au moins une lettre.,El nombre debe contener al menos una letra.,Имя должно содержать хотя бы одну букву.,Nazwa musi zawierać co najmniej jedną literę.,Il nome deve contenere almeno una lettera.,Ad en az bir harf içermelidir.
+Name_taken,Name is already taken.,Name ist bereits vergeben.,Ce nom est déjà utilisé.,El nombre ya está en uso.,Имя уже занято.,Nazwa jest już zajęta.,Il nome è già in uso.,Ad zaten kullanılıyor.
+Game_running_since,Game still running (as of {0}),Spiel läuft noch (Stand: {0}),Partie en cours (au {0}),Partida aún en curso (a fecha de {0}),Игра ещё идёт (на {0}),Gra nadal trwa (stan na {0}),Partita ancora in corso (al {0}),Oyun hâlâ devam ediyor ({0} itibarıyla)
+Metric_points,Points: {0},Punkte: {0},Points : {0},Puntos: {0},Очки: {0},Punkty: {0},Punti: {0},Puanlar: {0}
+Metric_targets,Targets: {0},Ziele: {0},Cibles : {0},Objetivos: {0},Цели: {0},Cele: {0},Obiettivi: {0},Hedefler: {0}
+Board_miss_wall,Off board: wall,Board daneben: Wand,Hors cible : mur,Fuera del tablero: muro,Мимо доски: стена,Poza tarczą: ściana,Fuori bersaglio: muro,Tahta dışı: duvar
+Board_miss_ceiling,Off board: ceiling,Board daneben: Decke,Hors cible : plafond,Fuera del tablero: techo,Мимо доски: потолок,Poza tarczą: sufit,Fuori bersaglio: soffitto,Tahta dışı: tavan
+Miss_throw_type,Miss: {0},Fehlwurf: {0},Raté : {0},Fallo: {0},Промах: {0},Pudło: {0},Errore: {0},Kaçırma: {0}
+Turn_equals,Turn = {0},Aufnahme = {0},Lancer = {0},Tirada = {0},Бросок = {0},Rzut = {0},Tiro = {0},Atış = {0}
+Remaining_equals,Remaining = {0},Rest = {0},Restant = {0},Restante = {0},Остаток = {0},Pozostało = {0},Rimanente = {0},Kalan = {0}
+Repdigit_min,Repdigit ≥ {0},Schnapszahl ≥ {0},Repdigit ≥ {0},Repdigito ≥ {0},Репдигит ≥ {0},Repdigit ≥ {0},Repdigit ≥ {0},Tekrar eden sayı ≥ {0}
+Turn_pattern_order,Turn [{0}] (in order),Aufnahme [{0}] (in Reihenfolge),Lancer [{0}] (dans l’ordre),Tirada [{0}] (en orden),Бросок [{0}] (по порядку),Rzut [{0}] (w kolejności),Tiro [{0}] (in ordine),Atış [{0}] (sırayla)
+Turn_pattern_any_order,Turn [{0}] (any order),Aufnahme [{0}] (beliebige Reihenfolge),Lancer [{0}] (ordre libre),Tirada [{0}] (cualquier orden),Бросок [{0}] (в любом порядке),Rzut [{0}] (dowolna kolejność),Tiro [{0}] (qualsiasi ordine),Atış [{0}] (herhangi bir sıra)
+Leg_lost,Leg lost,Leg verloren,Manche perdue,Leg perdido,Лег проигран,Przegrana partia,Leg perso,Leg kaybedildi
+Set_lost,Set lost,Satz verloren,Set perdu,Set perdido,Сет проигран,Przegrany set,Set perso,Set kaybedildi
+Game_lost,Game lost,Spiel verloren,Partie perdue,Partida perdida,Игра проиграна,Przegrana gra,Partita persa,Oyun kaybedildi
+Manual,Manual,Manuell,Manuel,Manual,Вручную,Ręcznie,Manuale,Manuel
+Score_equals,Score = {0},Punktzahl = {0},Score = {0},Puntuación = {0},Счёт = {0},Wynik = {0},Punteggio = {0},Puan = {0}
+Marks_at_least,Marks ≥ {0},Marken ≥ {0},Marques ≥ {0},Marcas ≥ {0},Метки ≥ {0},Znaczniki ≥ {0},Marchi ≥ {0},İşaretler ≥ {0}
+Points_at_least,Points ≥ {0},Punkte ≥ {0},Points ≥ {0},Puntos ≥ {0},Очки ≥ {0},Punkty ≥ {0},Punti ≥ {0},Puan ≥ {0}
+Hits_per_turn_at_least,Hits/Turn ≥ {0},Treffer/Aufnahme ≥ {0},Touches/lancer ≥ {0},Aciertos/tirada ≥ {0},Попадания/бросок ≥ {0},Trafienia/rzut ≥ {0},Colpi/tiro ≥ {0},İsabet/atış ≥ {0}
+Streak_at_least,Streak ≥ {0},Serie ≥ {0},Série ≥ {0},Racha ≥ {0},Серия ≥ {0},Seria ≥ {0},Serie ≥ {0},Seri ≥ {0}
+Marks_at_least_short,Marks ≥,Marken ≥,Marques ≥,Marcas ≥,Метки ≥,Znaczniki ≥,Marchi ≥,İşaretler ≥
+Points_at_least_short,Points ≥,Punkte ≥,Points ≥,Puntos ≥,Очки ≥,Punkty ≥,Punti ≥,Puan ≥
+Hits_per_turn_at_least_short,Hits/Turn ≥,Treffer/Aufnahme ≥,Touches/lancer ≥,Aciertos/tirada ≥,Попадания/бросок ≥,Trafienia/rzut ≥,Colpi/tiro ≥,İsabet/atış ≥
+Streak_at_least_short,Streak ≥,Serie ≥,Série ≥,Racha ≥,Серия ≥,Seria ≥,Serie ≥,Seri ≥
+Score_reached,Score reached (=),Punktzahl erreicht (=),Score atteint (=),Puntuación alcanzada (=),Счёт достигнут (=),Wynik osiągnięty (=),Punteggio raggiunto (=),Puan ulaşıldı (=)
+In_order,in order,in Reihenfolge,dans l’ordre,en orden,по порядку,w kolejności,in ordine,sırayla
+Any_order,any order,beliebige Reihenfolge,ordre libre,cualquier orden,в любом порядке,dowolna kolejność,qualsiasi ordine,herhangi bir sıra
+Penalty_generic,Penalty,Strafe,Pénalité,Penalización,Штраф,Kara,Penalità,Ceza
+Penalty_on_wall_hit,Penalty on wall hit,Strafe bei Wandtreffer,Pénalité sur touche au mur,Penalización por impacto en el muro,Штраф за попадание в стену,Kara za trafienie w ścianę,Penalità per colpo al muro,Duvara isabet cezası
+Penalty_on_ceiling_hit,Penalty on ceiling hit,Strafe bei Deckentreffer,Pénalité sur touche au plafond,Penalización por impacto en el techo,Штраф за попадание в потолок,Kara za trafienie w sufit,Penalità per colpo al soffitto,Tavana isabet cezası
+Penalty_on_custom_miss,Penalty on custom miss,Strafe bei benutzerdefiniertem Fehlwurf,Pénalité sur raté personnalisé,Penalización por fallo personalizado,Штраф за пользовательский промах,Kara za niestandardowe pudło,Penalità per errore personalizzato,Özel kaçırma cezası
+Penalty_on_type,Penalty on {0},Strafe bei {0},Pénalité sur {0},Penalización por {0},Штраф за {0},Kara za {0},Penalità per {0},{0} cezası
+Turn_score_value,Turn score: {0},Aufnahmepunktzahl: {0},Score du lancer : {0},Puntuación de la tirada: {0},Счёт броска: {0},Wynik rzutu: {0},Punteggio del tiro: {0},Atış puanı: {0}
+Reach_exact_score_value,Reach exact score: {0},Exakte Punktzahl erreichen: {0},Atteindre le score exact : {0},Alcanzar la puntuación exacta: {0},Достичь точного счёта: {0},Osiągnij dokładny wynik: {0},Raggiungi il punteggio esatto: {0},Tam puana ulaş: {0}
+Repdigit_turn_score_min,Repdigit turn score ≥ {0},Schnapszahl-Aufnahme ≥ {0},Score repdigit ≥ {0},Puntuación repdigito ≥ {0},Репдигит-счёт ≥ {0},Wynik repdigit ≥ {0},Punteggio repdigit ≥ {0},Tekrar eden atış puanı ≥ {0}
+When_leg_lost,When a leg is lost,Wenn ein Leg verloren geht,Lorsqu’une manche est perdue,Cuando se pierde un leg,Когда проигран лег,Gdy przegrana jest partia,Quando un leg viene perso,Bir leg kaybedildiğinde
+When_set_lost,When a set is lost,Wenn ein Satz verloren geht,Lorsqu’un set est perdu,Cuando se pierde un set,Когда проигран сет,Gdy przegrany jest set,Quando un set viene perso,Bir set kaybedildiğinde
+When_game_lost,When the game is lost,Wenn das Spiel verloren geht,Lorsque la partie est perdue,Cuando se pierde la partida,Когда игра проиграна,Gdy gra jest przegrana,Quando la partita viene persa,Oyun kaybedildiğinde
+Hit_outside_board_wall,Hit outside the board (wall),Treffer außerhalb des Boards (Wand),Touche hors du plateau (mur),Impacto fuera del tablero (muro),Попадание вне доски (стена),Trafienie poza tarczą (ściana),Colpo fuori dal tabellone (muro),Tahta dışına isabet (duvar)
+Hit_ceiling,Hit the ceiling,Deckentreffer,Touche au plafond,Impacto en el techo,Попадание в потолок,Trafienie w sufit,Colpo al soffitto,Tavana isabet
+Custom_area_mult_value,Custom area ({0}{1}),Benutzerdefinierter Bereich ({0}{1}),Zone personnalisée ({0}{1}),Zona personalizada ({0}{1}),Пользовательская зона ({0}{1}),Obszar niestandardowy ({0}{1}),Area personalizzata ({0}{1}),Özel alan ({0}{1})
+Custom_area_zero,Custom out-of-board area (0 points),Benutzerdefinierter Bereich außerhalb des Boards (0 Punkte),Zone personnalisée hors plateau (0 point),Zona personalizada fuera del tablero (0 puntos),Пользовательская зона вне доски (0 очков),Niestandardowy obszar poza tarczą (0 punktów),Area personalizzata fuori dal tabellone (0 punti),Tahta dışı özel alan (0 puan)
+Manual_event,Manual event,Manuelles Ereignis,Événement manuel,Evento manual,Ручное событие,Zdarzenie ręczne,Evento manuale,Manuel olay
+Sound_on_undo,Sound on undo,Sound bei Rückgängig,Son lors de l’annulation,Sonido al deshacer,Звук при отмене,Dźwięk przy cofaniu,Suono durante annullamento,Geri alırken ses
+Sound_on_match_won,Sound when the match is won,Sound bei Spielgewinn,Son lorsque le match est gagné,Sonido al ganar la partida,Звук при победе в матче,Dźwięk przy wygranej,Suono alla vittoria del match,Maç kazanıldığında ses
+Sound_on_match_start,Sound at match start,Sound bei Spielstart,Son au début du match,Sonido al inicio de la partida,Звук в начале матча,Dźwięk na starcie meczu,Suono all’inizio del match,Maç başlangıcında ses
+Sound_on_bust,Sound when overthrow (bust),Sound bei Überwurf (Bust),Son lors d’un dépassement (bust),Sonido al pasarse (bust),Звук при переборе (bust),Dźwięk przy przekroczeniu (bust),Suono al superamento (bust),Aşımda ses (bust)
+Sound_on_sudden_death,Sound on sudden death,Sound bei Sudden Death,Son en mort subite,Sonido en muerte súbita,Звук при внезапной смерти,Dźwięk przy nagłej śmierci,Suono alla morte improvvisa,Ani ölümde ses
+Sound_after_cricket_marks,Sound after Cricket marks,Sound nach Cricket-Marken,Son après les marques au Cricket,Sonido tras las marcas de Cricket,Звук после меток в крикете,Dźwięk po znacznikach w Cricket,Suono dopo i marchi nel Cricket,Cricket işaretlerinden sonra ses
+Sound_on_white_horse,Sound on white horse,Sound bei White Horse,Son lors d’un white horse,Sonido en white horse,Звук при white horse,Dźwięk przy white horse,Suono al white horse,White horse sırasında ses
+Sound_on_nine_marks,Sound on 9 marks,Sound bei 9 Marken,Son à 9 marques,Sonido con 9 marcas,Звук при 9 метках,Dźwięk przy 9 znacznikach,Suono a 9 marchi,9 işarette ses
+Sound_on_hits,Sound on hits,Sound bei Treffern,Son lors des touches,Sonido al acertar,Звук при попаданиях,Dźwięk przy trafieniach,Suono ai colpi,İsabetlerde ses
+Sound_on_atc_streak,Sound on ATC streak,Sound bei ATC-Serie,Son lors d’une série ATC,Sonido en racha ATC,Звук при серии ATC,Dźwięk przy serii ATC,Suono durante serie ATC,ATC serisinde ses
+Any,Any,Beliebig,Tous,Cualquiera,Любой,Dowolny,Qualsiasi,Herhangi
+Board,Board,Board,Cible,Tablero,Доска,Tarcza,Tabellone,Tahta
+One_dart,1 Dart,1 Dart,1 fléchette,1 dardo,1 дротик,1 lotka,1 freccetta,1 dart
+Two_darts,2 Darts,2 Darts,2 fléchettes,2 dardos,2 дротика,2 lotki,2 freccette,2 dart
+Three_darts,3 Darts,3 Darts,3 fléchettes,3 dardos,3 дротика,3 lotki,3 freccette,3 dart
+Player,Player,Spieler,Joueur,Jugador,Игрок,Gracz,Giocatore,Oyuncu
+Games,Games,Spiele,Parties,Partidas,Игры,Gry,Partite,Oyunlar
+Win_percent,Win %,Sieg %,Victoire %,Victorias %,Победы %,Wygrane %,Vittorie %,Kazanma %
+Double_percent,Double %,Doppel %,Double %,Doble %,Дубль %,Double %,Doppio %,Çift %
+Triple_percent,Triple %,Triple %,Triple %,Triple %,Трипл %,Triple %,Triplo %,Üçlü %
+Avg_points,Ø Points,Ø Punkte,Ø Points,Ø Puntos,Ø Очки,Ø Punkty,Ø Punti,Ø Puan
+Avg_first_nine,Ø First-9,Ø Erste 9,Ø 9 premières,Ø Primeros 9,Ø Первые 9,Ø Pierwsze 9,Ø Primi 9,Ø İlk 9
+Max_score,Max Score,Max. Punktzahl,Score max.,Puntuación máx.,Макс. счёт,Maks. wynik,Punteggio max.,Maks. puan
+Max_checkout,Max Checkout,Höchstes Checkout,Meilleur checkout,Mejor checkout,Макс. чек-аут,Najwyższy checkout,Miglior checkout,En yüksek checkout
+Attempts,Attempts,Versuche,Tentatives,Intentos,Попытки,Próby,Tentativi,Denemeler
+Favorite,Favorite,Favorit,Favori,Favorito,Любимый,Ulubiony,Preferito,Favori
+Checkouts,Checkouts,Checkouts,Checkouts,Checkouts,Чек-ауты,Checkouty,Checkout,Checkout'lar
+Points_per_turn,Ø Points/Turn,Ø Punkte/Aufnahme,Ø Points/lancer,Ø Puntos/tirada,Ø Очки/бросок,Ø Punkty/rzut,Ø Punti/tiro,Ø Puan/atış
+Max_points,Max Points,Max. Punkte,Points max.,Puntos máx.,Макс. очки,Maks. punkty,Punti max.,Maks. puan
+Overkill_points,Overkill Points,Overkill-Punkte,Points overkill,Puntos de overkill,Очки перебора,Punkty overkill,Punti overkill,Overkill puanları
+Max_MPR,Max MPR,Max. MPR,MPR max.,MPR máx.,Макс. MPR,Maks. MPR,MPR max.,Maks. MPR
+Nine_marks,9 Marks,9 Marken,9 marques,9 marcas,9 меток,9 znaczników,9 marchi,9 işaret
+White_horse,White Horse,White Horse,White Horse,White Horse,White Horse,White Horse,White Horse,White Horse
+Same_triple,Same Triple,Gleiches Triple,Même triple,Mismo triple,Одинаковый трипл,Ten sam triple,Stesso triplo,Aynı üçlü
+First_closed,First Closed,Zuerst geschlossen,Premier fermé,Primero cerrado,Первый закрыт,Pierwszy zamknięty,Primo chiuso,İlk kapatılan
+Last_closed,Last Closed,Zuletzt geschlossen,Dernier fermé,Último cerrado,Последний закрыт,Ostatni zamknięty,Ultimo chiuso,Son kapatılan
+Most_points,Most Points,Meiste Punkte,Plus de points,Más puntos,Больше очков,Najwięcej punktów,Più punti,En çok puan
+Participation,Participation,Teilnahme,Participation,Participación,Участие,Udział,Partecipazione,Katılım
+Hit_percent,Hit %,Treffer %,Touche %,Aciertos %,Попадания %,Trafienia %,Colpi %,İsabet %
+Hit_sectors,Hit Sectors,Treffersektoren,Secteurs touchés,Sectores acertados,Секторы попаданий,Trafione sektory,Settori colpiti,İsabet sektörleri
+Hits_in_sector,Hits In Sector,Treffer im Sektor,Touches par secteur,Aciertos por sector,Попадания в сектор,Trafienia w sektor,Colpi nel settore,Sektördeki isabetler
+Attempts_per_field,Attempts per Field,Versuche pro Feld,Tentatives par zone,Intentos por campo,Попытки по полю,Próby na pole,Tentativi per campo,Alan başına deneme
+Avg_throws,Ø Throws,Ø Würfe,Ø lancers,Ø tiradas,Ø броски,Ø rzuty,Ø tiri,Ø atış
+Avg_hits,Ø Hits,Ø Treffer,Ø touches,Ø aciertos,Ø попадания,Ø trafienia,Ø colpi,Ø isabet
+Avg_hit_percent,Ø Hit %,Ø Treffer %,Ø touche %,Ø aciertos %,Ø попадания %,Ø trafienia %,Ø colpi %,Ø isabet %
+First_dart_hit_percent,1st Dart Hit %,1. Dart Treffer %,Touche 1re fléchette %,Acierto 1er dardo %,Попадание 1-го дротика %,Trafienie 1. lotki %,Colpo 1ª freccetta %,1. dart isabet %
+Longest_streak,Longest Streak,Längste Serie,Plus longue série,Racha más larga,Самая длинная серия,Najdłuższa seria,Serie più lunga,En uzun seri
+Biggest_choke,Biggest Choke,Größter Choke,Plus gros choke,Mayor choke,Худший чок,Największy choke,Choke più grande,En büyük choke
+Hits_3_plus,3 Hits +,3 Treffer +,3 touches +,3 aciertos +,3 попадания +,3 trafienia +,3 colpi +,3 isabet +
+Hits_6_plus,6 Hits +,6 Treffer +,6 touches +,6 aciertos +,6 попаданий +,6 trafień +,6 colpi +,6 isabet +
+Hits_9_plus,9 Hits +,9 Treffer +,9 touches +,9 aciertos +,9 попаданий +,9 trafień +,9 colpi +,9 isabet +
+Hits_12_plus,12 Hits +,12 Treffer +,12 touches +,12 aciertos +,12 попаданий +,12 trafień +,12 colpi +,12 isabet +
+Streaks_and_chokes,Streaks & Chokes,Serien & Chokes,Séries et chokes,Rachas y chokes,Серии и чоки,Serie i choke,Serie e choke,Seriler ve choke'lar
+Sets,Sets,Sätze,Sets,Sets,Сеты,Sety,Set,Setler
+Legs,Legs,Legs,Manches,Legs,Леги,Legi,Leg,Legler
+No_checkouts,No checkouts,Keine Checkouts,Aucun checkout,Sin checkouts,Нет чек-аутов,Brak checkoutów,Nessun checkout,Checkout yok
+No_data,No data,Keine Daten,Aucune donnée,Sin datos,Нет данных,Brak danych,Nessun dato,Veri yok
+Edit_audio_event,Edit audio event,Audio-Event bearbeiten,Modifier l'événement audio,Editar evento de audio,Редактировать аудиособытие,Edytuj wydarzenie dźwiękowe,Modifica evento audio,Ses olayını düzenle

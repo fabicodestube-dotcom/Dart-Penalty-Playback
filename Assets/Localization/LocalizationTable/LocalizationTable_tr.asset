@@ -80,10 +80,6 @@ MonoBehaviour:
     m_Localized: Bust
     m_Metadata:
       m_Items: []
-  - m_Id: 16
-    m_Localized: "\u0130ptal"
-    m_Metadata:
-      m_Items: []
   - m_Id: 17
     m_Localized: Tavan
     m_Metadata:
@@ -166,7 +162,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 36
-    m_Localized: "{name} isimli oyuncuyu silmek istedi\u011Finizden emin misiniz?
+    m_Localized: "{0} adl\u0131 oyuncuyu silmek istedi\u011Finizden emin misiniz?
       Bu i\u015Flem geri al\u0131namaz!"
     m_Metadata:
       m_Items: []
@@ -393,7 +389,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 91
-    m_Localized: "{name} oyuncusunu yeniden adland\u0131r"
+    m_Localized: "Oyuncuyu yeniden adland\u0131r {0}"
     m_Metadata:
       m_Items: []
   - m_Id: 92
@@ -542,6 +538,751 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 723894777368577
     m_Localized: Mevcut Around the Clock oyunu yok
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954469629952
+    m_Localized: Aktif
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954490601472
+    m_Localized: Etkin cezalar
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954490601473
+    m_Localized: "\u0130ptal"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954490601474
+    m_Localized: "Ko\u015Ful"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954490601475
+    m_Localized: "Say\u0131"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954490601476
+    m_Localized: "\xD6zelle\u015Ftirme"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954494795776
+    m_Localized: "Cezay\u0131 sil"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954494795777
+    m_Localized: "Hedef alan\u0131n\u0131 sil"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954494795778
+    m_Localized: "Ayr\u0131nt\u0131lar"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954494795779
+    m_Localized: "Devre d\u0131\u015F\u0131"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954494795780
+    m_Localized: "Cezay\u0131 d\xFCzenle"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954494795781
+    m_Localized: "Hedef alan\u0131n\u0131 d\xFCzenle"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954494795782
+    m_Localized: Etkin
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954494795783
+    m_Localized: "S\u0131ralamay\u0131 koru"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954494795784
+    m_Localized: Ad
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954494795785
+    m_Localized: "Yeni ses olay\u0131"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954494795786
+    m_Localized: Yeni ceza
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33785954494795787
+    m_Localized: "Hedef alanlar\u0131"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706055340032
+    m_Localized: "Oyun ayr\u0131nt\u0131lar\u0131"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311552
+    m_Localized: Dil
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311553
+    m_Localized: Diller
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311554
+    m_Localized: "Karanl\u0131k mod"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311555
+    m_Localized: "Yedek olarak varsay\u0131lanlar"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311556
+    m_Localized: "Yerle\u015Fik bir olay tetiklendi\u011Finde varsay\u0131lan sesin
+      \xE7al\u0131n\u0131p \xE7al\u0131nmayaca\u011F\u0131n\u0131 belirler."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311557
+    m_Localized: "Yama notlar\u0131"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311558
+    m_Localized: Lisans
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311559
+    m_Localized: "Gizlilik politikas\u0131"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311560
+    m_Localized: "Oyun duraklat\u0131ld\u0131"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311561
+    m_Localized: Sil
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311562
+    m_Localized: Devam et
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311563
+    m_Localized: "Ses olaylar\u0131"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311564
+    m_Localized: "Yeni isabet alan\u0131"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311565
+    m_Localized: Genel
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311566
+    m_Localized: Olay
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311567
+    m_Localized: Oyun modu
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311568
+    m_Localized: "Dart say\u0131s\u0131"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311569
+    m_Localized: Dart 1
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311570
+    m_Localized: Dart 2
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311571
+    m_Localized: Dart 3
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311572
+    m_Localized: Puan
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311573
+    m_Localized: Tam puan
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311574
+    m_Localized: "At\u0131\u015F deseni"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706076311575
+    m_Localized: "Oyun olaylar\u0131"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505856
+    m_Localized: Klip bilgisi
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505857
+    m_Localized: "Hedef alan\u0131"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505858
+    m_Localized: "Son sekt\xF6r"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505859
+    m_Localized: Bull
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505860
+    m_Localized: "\xC7ubuk grafik"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505861
+    m_Localized: "Is\u0131 haritas\u0131"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505862
+    m_Localized: 'Etkin cezalar:'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505863
+    m_Localized: 'Toplam:'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505864
+    m_Localized: Uygulanan ceza yok.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505865
+    m_Localized: Toplam
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505866
+    m_Localized: 'Toplam: {0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505867
+    m_Localized: Yok
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505868
+    m_Localized: DUVAR
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505869
+    m_Localized: TAVAN
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505870
+    m_Localized: "1\xD73"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505871
+    m_Localized: Tekrar
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505872
+    m_Localized: Klibi yok
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505873
+    m_Localized: '{0} ({1}) - Klip {2}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505874
+    m_Localized: '{0} klip'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505875
+    m_Localized: "Puan anonslar\u0131"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505876
+    m_Localized: "0-180 puan anonslar\u0131 i\xE7in ses"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505877
+    m_Localized: Oyunu sil
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505878
+    m_Localized: "\u0130sabet alan\u0131n\u0131 sil"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505879
+    m_Localized: "Bu hedef alan\u0131 silmek istedi\u011Finizden emin misiniz? Bu
+      i\u015Flem geri al\u0131namaz!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505880
+    m_Localized: "Ses olay\u0131n\u0131 sil"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505881
+    m_Localized: "Bu ses olay\u0131n\u0131 silmek istedi\u011Finizden emin misiniz?
+      Bu i\u015Flem geri al\u0131namaz!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505882
+    m_Localized: Bu ceza silinsin mi?
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505883
+    m_Localized: "Ceza silinsin mi? Ba\u011Fl\u0131 ses klipleri: {0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505884
+    m_Localized: "Bu ses olay\u0131 silinsin mi?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505885
+    m_Localized: "Ses olay\u0131 silinsin mi? Ba\u011Fl\u0131 ses klipleri: {0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505886
+    m_Localized: "\u201C{0}\u201D cezas\u0131 silinsin mi?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505887
+    m_Localized: "\u201C{0}\u201D ses olay\u0131 silinsin mi?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505888
+    m_Localized: "\u201C{0}\u201D hedef alan\u0131 silinsin mi?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505889
+    m_Localized: "\u201C{0}\u201D hedef alan\u0131 silinsin mi? Cezalar taraf\u0131ndan
+      kullan\u0131l\u0131yor: {1}. Bunlar da silinecek."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505890
+    m_Localized: "Hedef alan\u0131 silinsin mi? Cezalar taraf\u0131ndan kullan\u0131l\u0131yor:
+      {0}. Bunlar da silinecek."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505891
+    m_Localized: Yine de silinsin mi? Etkilenen cezalar da silinecek.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505892
+    m_Localized: "Yine de silinsin mi? Ba\u011Fl\u0131 ses klipleri: {0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505893
+    m_Localized: "Bu hedef alan\u0131 silinsin mi?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505894
+    m_Localized: "Ad \xE7ok uzun (en fazla 12 karakter)."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505895
+    m_Localized: "Ad en az bir harf i\xE7ermelidir."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505896
+    m_Localized: "Ad zaten kullan\u0131l\u0131yor."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505897
+    m_Localized: "Oyun h\xE2l\xE2 devam ediyor ({0} itibar\u0131yla)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505898
+    m_Localized: 'Puanlar: {0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505899
+    m_Localized: 'Hedefler: {0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505900
+    m_Localized: "Tahta d\u0131\u015F\u0131: duvar"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505901
+    m_Localized: "Tahta d\u0131\u015F\u0131: tavan"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505902
+    m_Localized: "Ka\xE7\u0131rma: {0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505903
+    m_Localized: "At\u0131\u015F = {0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505904
+    m_Localized: Kalan = {0}
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505905
+    m_Localized: "Tekrar eden say\u0131 \u2265 {0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505906
+    m_Localized: "At\u0131\u015F [{0}] (s\u0131rayla)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505907
+    m_Localized: "At\u0131\u015F [{0}] (herhangi bir s\u0131ra)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505908
+    m_Localized: Leg kaybedildi
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505909
+    m_Localized: Set kaybedildi
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505910
+    m_Localized: Oyun kaybedildi
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505911
+    m_Localized: Manuel
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505912
+    m_Localized: Puan = {0}
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505913
+    m_Localized: "\u0130\u015Faretler \u2265 {0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505914
+    m_Localized: "Puan \u2265 {0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505915
+    m_Localized: "\u0130sabet/at\u0131\u015F \u2265 {0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505916
+    m_Localized: "Seri \u2265 {0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505917
+    m_Localized: "\u0130\u015Faretler \u2265"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505918
+    m_Localized: "Puan \u2265"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505919
+    m_Localized: "\u0130sabet/at\u0131\u015F \u2265"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505920
+    m_Localized: "Seri \u2265"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505921
+    m_Localized: "Puan ula\u015F\u0131ld\u0131 (=)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505922
+    m_Localized: "s\u0131rayla"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505923
+    m_Localized: "herhangi bir s\u0131ra"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505924
+    m_Localized: Ceza
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505925
+    m_Localized: "Duvara isabet cezas\u0131"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505926
+    m_Localized: "Tavana isabet cezas\u0131"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505927
+    m_Localized: "\xD6zel ka\xE7\u0131rma cezas\u0131"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505928
+    m_Localized: "{0} cezas\u0131"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505929
+    m_Localized: "At\u0131\u015F puan\u0131: {0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505930
+    m_Localized: "Tam puana ula\u015F: {0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505931
+    m_Localized: "Tekrar eden at\u0131\u015F puan\u0131 \u2265 {0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505932
+    m_Localized: "Bir leg kaybedildi\u011Finde"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505933
+    m_Localized: "Bir set kaybedildi\u011Finde"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505934
+    m_Localized: "Oyun kaybedildi\u011Finde"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505935
+    m_Localized: "Tahta d\u0131\u015F\u0131na isabet (duvar)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505936
+    m_Localized: Tavana isabet
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505937
+    m_Localized: "\xD6zel alan ({0}{1})"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505938
+    m_Localized: "Tahta d\u0131\u015F\u0131 \xF6zel alan (0 puan)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505939
+    m_Localized: Manuel olay
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505940
+    m_Localized: "Geri al\u0131rken ses"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505941
+    m_Localized: "Ma\xE7 kazan\u0131ld\u0131\u011F\u0131nda ses"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505942
+    m_Localized: "Ma\xE7 ba\u015Flang\u0131c\u0131nda ses"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505943
+    m_Localized: "A\u015F\u0131mda ses (bust)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505944
+    m_Localized: "Ani \xF6l\xFCmde ses"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505945
+    m_Localized: "Cricket i\u015Faretlerinden sonra ses"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505946
+    m_Localized: "White horse s\u0131ras\u0131nda ses"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505947
+    m_Localized: "9 i\u015Farette ses"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706080505948
+    m_Localized: "\u0130sabetlerde ses"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700160
+    m_Localized: ATC serisinde ses
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700161
+    m_Localized: Herhangi
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700162
+    m_Localized: Tahta
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700163
+    m_Localized: 1 dart
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700164
+    m_Localized: 2 dart
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700165
+    m_Localized: 3 dart
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700166
+    m_Localized: Oyuncu
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700167
+    m_Localized: Oyunlar
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700168
+    m_Localized: Kazanma %
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700169
+    m_Localized: "\xC7ift %"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700170
+    m_Localized: "\xDC\xE7l\xFC %"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700171
+    m_Localized: "\xD8 Puan"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700172
+    m_Localized: "\xD8 \u0130lk 9"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700173
+    m_Localized: Maks. puan
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700174
+    m_Localized: "En y\xFCksek checkout"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700175
+    m_Localized: Denemeler
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700176
+    m_Localized: Favori
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700177
+    m_Localized: Checkout'lar
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700178
+    m_Localized: "\xD8 Puan/at\u0131\u015F"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700179
+    m_Localized: Maks. puan
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700180
+    m_Localized: "Overkill puanlar\u0131"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700181
+    m_Localized: Maks. MPR
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700182
+    m_Localized: "9 i\u015Faret"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700183
+    m_Localized: White Horse
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700184
+    m_Localized: "Ayn\u0131 \xFC\xE7l\xFC"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700185
+    m_Localized: "\u0130lk kapat\u0131lan"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700186
+    m_Localized: "Son kapat\u0131lan"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700187
+    m_Localized: "En \xE7ok puan"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700188
+    m_Localized: "Kat\u0131l\u0131m"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700189
+    m_Localized: "\u0130sabet %"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700190
+    m_Localized: "\u0130sabet sekt\xF6rleri"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700191
+    m_Localized: "Sekt\xF6rdeki isabetler"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700192
+    m_Localized: "Alan ba\u015F\u0131na deneme"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700193
+    m_Localized: "\xD8 at\u0131\u015F"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700194
+    m_Localized: "\xD8 isabet"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700195
+    m_Localized: "\xD8 isabet %"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700196
+    m_Localized: 1. dart isabet %
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700197
+    m_Localized: En uzun seri
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700198
+    m_Localized: "En b\xFCy\xFCk choke"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700199
+    m_Localized: 3 isabet +
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700200
+    m_Localized: 6 isabet +
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700201
+    m_Localized: 9 isabet +
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700202
+    m_Localized: 12 isabet +
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700203
+    m_Localized: Seriler ve choke'lar
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700204
+    m_Localized: Setler
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700205
+    m_Localized: Legler
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700206
+    m_Localized: Checkout yok
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33805706084700207
+    m_Localized: Veri yok
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368320
+    m_Localized: "Ses olay\u0131n\u0131 d\xFCzenle"
     m_Metadata:
       m_Items: []
   references:

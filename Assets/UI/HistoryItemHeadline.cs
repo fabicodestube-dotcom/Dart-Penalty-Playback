@@ -15,7 +15,15 @@ public class HistoryItemHeadline : MonoBehaviour
     public TMP_Text textTotelPenaltiesCount;
     public TMP_Text textTotalPenaltyCostSum;
 
+    private GameSummary currentSummary;
+
     public void Initialize(GameSummary summary)
+    {
+        currentSummary = summary;
+        Render(summary);
+    }
+
+    private void Render(GameSummary summary)
     {
         var finishedAt = summary.FinishedAt;
 
@@ -48,6 +56,12 @@ public class HistoryItemHeadline : MonoBehaviour
         }
 
         RenderPenalties(summary);
+    }
+
+    public void RefreshLocalization()
+    {
+        if (currentSummary != null)
+            Render(currentSummary);
     }
 
     private string GetSettingsString(GameSummary summary)
