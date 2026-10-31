@@ -64,7 +64,18 @@ public class AppHandler : MonoBehaviour
     {
         DisableDebugLogs();
         Debug.Log("Application Folder: " + Application.persistentDataPath);
-        LoadDatabase();
+
+        try
+        {
+            DatabaseBootstrapper.EnsureReady();
+            LoadDatabase();
+        }
+        catch (Exception e)
+        {
+            database = new Database();
+            SaveSystem.MarkLoadFailed("AppHandler konnte die Datenbank nicht laden: " + e.Message);
+        }
+
         MaximizeFPS();
     }
 

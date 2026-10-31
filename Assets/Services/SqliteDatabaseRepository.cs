@@ -194,9 +194,9 @@ public static class SqliteDatabaseRepository
                     "INSERT OR REPLACE INTO games (id, game_mode, created_at, last_activity_at, finished_at, current_player_index, starting_player_index, winner_player_id, player_ids, settings_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);",
                     game.GetID().ToString(),
                     game.GetGameMode().ToString(),
-                    game.GetCreatedAt().ToString("o"),
-                    game.GetLastActivityAt().ToString("o"),
-                    game.GetFinishedAt() == null ? null : game.GetFinishedAt().Value.ToString("o"),
+                    DatabaseTimestamp.ToUtcIso(game.GetCreatedAt()),
+                    DatabaseTimestamp.ToUtcIso(game.GetLastActivityAt()),
+                    DatabaseTimestamp.ToUtcIso(game.GetFinishedAt()),
                     currentPlayerIndex,
                     startingPlayerIndex,
                     winnerPlayerId.HasValue ? winnerPlayerId.Value.ToString() : null,
@@ -378,6 +378,76 @@ public static class SqliteDatabaseRepository
         return result;
     }
 
+    public static void SavePlayerGameStatsForGame(Game game)
+    {
+        if (game == null)
+            return;
+
+        SqliteDatabaseService.EnsureSchema();
+
+        using (var connection = SqliteDatabaseService.Open())
+        {
+            connection.BeginTransaction();
+
+            try
+            {
+                SavePlayerGameStats(connection, game);
+                connection.Commit();
+            }
+            catch
+            {
+                connection.Rollback();
+                throw;
+            }
+        }
+    }
+
+    public static List<Guid> LoadGameIdsWithOutdatedPlayerGameStats(int currentStatsVersion)
+    {
+        SqliteDatabaseService.EnsureSchema();
+
+        using (var connection = SqliteDatabaseService.Open())
+        {
+            var rows = connection.Query<OutdatedStatsRow>(
+                "SELECT DISTINCT game_id AS GameId FROM player_game_stats WHERE stats_schema_version < ?;",
+                currentStatsVersion
+            );
+
+            var result = new List<Guid>(rows.Count);
+            foreach (var row in rows)
+            {
+                if (Guid.TryParse(row.GameId, out var gameId))
+                    result.Add(gameId);
+            }
+
+            return result;
+        }
+    }
+
+    public static string LoadPlayerStatsVersion()
+    {
+        SqliteDatabaseService.EnsureSchema();
+
+        using (var connection = SqliteDatabaseService.Open())
+        {
+            return DatabaseMigrationRunner.GetMeta(connection, DatabaseSchema.StatsVersionMetaKey);
+        }
+    }
+
+    public static void MarkPlayerStatsVersion(int version)
+    {
+        SqliteDatabaseService.EnsureSchema();
+
+        using (var connection = SqliteDatabaseService.Open())
+        {
+            DatabaseMigrationRunner.SetMeta(
+                connection,
+                DatabaseSchema.StatsVersionMetaKey,
+                version.ToString()
+            );
+        }
+    }
+
     private static void SavePlayerGameStats(SQLiteConnection connection, Game game)
     {
         connection.Execute("DELETE FROM player_game_stats WHERE game_id = ?;", game.GetID().ToString());
@@ -399,11 +469,12 @@ public static class SqliteDatabaseRepository
             string statData = JsonConvert.SerializeObject(kvp.Value, Formatting.None);
 
             connection.Execute(
-                "INSERT OR REPLACE INTO player_game_stats (game_id, player_id, stat_type, stat_data) VALUES (?, ?, ?, ?);",
+                "INSERT OR REPLACE INTO player_game_stats (game_id, player_id, stat_type, stat_data, stats_schema_version) VALUES (?, ?, ?, ?, ?);",
                 game.GetID().ToString(),
                 kvp.Key.ToString(),
                 statType,
-                statData
+                statData,
+                DatabaseSchema.CurrentStatsVersion
             );
         }
     }
@@ -451,18 +522,37 @@ public static class SqliteDatabaseRepository
 
         using (var connection = SqliteDatabaseService.Open())
         {
-            var json = JsonConvert.SerializeObject(stats, Formatting.None);
-            connection.Execute(
-                "INSERT OR REPLACE INTO player_stats_all (player_id, stat_data) VALUES (?, ?);",
-                playerId.ToString(),
-                json
-            );
+            SavePlayerStatsAll(connection, playerId, stats);
         }
+    }
+
+    private static void SavePlayerStatsAll(SQLiteConnection connection, Guid playerId, GameStats stats)
+    {
+        if (connection == null || stats == null)
+            return;
+
+        var json = JsonConvert.SerializeObject(stats, Formatting.None);
+        connection.Execute(
+            "INSERT OR REPLACE INTO player_stats_all (player_id, stat_data) VALUES (?, ?);",
+            playerId.ToString(),
+            json
+        );
     }
 
     public static void SavePlayerStatsForMode(Guid playerId, GameStats stats, GameMode mode)
     {
         SqliteDatabaseService.EnsureSchema();
+
+        using (var connection = SqliteDatabaseService.Open())
+        {
+            SavePlayerStatsForMode(connection, playerId, stats, mode);
+        }
+    }
+
+    private static void SavePlayerStatsForMode(SQLiteConnection connection, Guid playerId, GameStats stats, GameMode mode)
+    {
+        if (connection == null || stats == null)
+            return;
 
         string tableName = mode switch
         {
@@ -475,15 +565,12 @@ public static class SqliteDatabaseRepository
         if (tableName == null)
             return;
 
-        using (var connection = SqliteDatabaseService.Open())
-        {
-            var json = JsonConvert.SerializeObject(stats, Formatting.None);
-            connection.Execute(
-                $"INSERT OR REPLACE INTO {tableName} (player_id, stat_data) VALUES (?, ?);",
-                playerId.ToString(),
-                json
-            );
-        }
+        var json = JsonConvert.SerializeObject(stats, Formatting.None);
+        connection.Execute(
+            $"INSERT OR REPLACE INTO {tableName} (player_id, stat_data) VALUES (?, ?);",
+            playerId.ToString(),
+            json
+        );
     }
 
     public static GameStats LoadPlayerStatsAll(Guid playerId)
@@ -586,99 +673,85 @@ public static class SqliteDatabaseRepository
 
         using (var connection = SqliteDatabaseService.Open())
         {
-            connection.Execute("DELETE FROM player_stats_all;");
-            connection.Execute("DELETE FROM player_stats_x01;");
-            connection.Execute("DELETE FROM player_stats_cricket;");
-            connection.Execute("DELETE FROM player_stats_atc;");
-        }
+            connection.BeginTransaction();
 
-        var finishedGames = new Dictionary<Guid, GameMode>();
-        List<GameSummary> summaries;
-
-        using (var connection = SqliteDatabaseService.Open())
-        {
-            var finishedRows = connection.Query<FinishedGameRow>(
-                "SELECT id AS Id, game_mode AS GameMode FROM games WHERE finished_at IS NOT NULL;");
-
-            foreach (var row in finishedRows)
+            try
             {
-                if (Guid.TryParse(row.Id, out var gameId))
-                    finishedGames[gameId] = row.GameMode;
-            }
+                connection.Execute("DELETE FROM player_stats_all;");
+                connection.Execute("DELETE FROM player_stats_x01;");
+                connection.Execute("DELETE FROM player_stats_cricket;");
+                connection.Execute("DELETE FROM player_stats_atc;");
 
-            summaries = ReadGames(connection)
-                .Select(CreateGameSummaryFromRowShallow)
-                .Where(s => s != null && s.IsFinished)
-                .ToList();
-        }
+                var finishedGames = new Dictionary<Guid, GameMode>();
+                var finishedRows = connection.Query<FinishedGameRow>(
+                    "SELECT id AS Id, game_mode AS GameMode FROM games WHERE finished_at IS NOT NULL;");
 
-        var aggregated = new Dictionary<Guid, GameStats>();
-
-        using (var connection = SqliteDatabaseService.Open())
-        {
-            var rows = connection.Query<PlayerGameStatRow>(
-                "SELECT game_id AS GameId, player_id AS PlayerId, stat_type AS StatType, stat_data AS StatData FROM player_game_stats;");
-
-            foreach (var row in rows)
-            {
-                if (!Guid.TryParse(row.GameId, out var gameId)) continue;
-                if (!Guid.TryParse(row.PlayerId, out var playerId)) continue;
-                if (!finishedGames.TryGetValue(gameId, out var mode)) continue;
-
-                GameStats gameStats = DeserializeStats(row.StatType, row.StatData);
-                if (gameStats == null) continue;
-
-                if (!aggregated.TryGetValue(playerId, out var allStats))
+                foreach (var row in finishedRows)
                 {
-                    allStats = new GameStats(playerId);
-                    aggregated[playerId] = allStats;
+                    if (Guid.TryParse(row.Id, out var gameId))
+                        finishedGames[gameId] = row.GameMode;
                 }
 
-                allStats.AddGameStat(gameStats, gameId, gameStats.totalPenaltyCost);
+                var aggregatedAll = new Dictionary<Guid, GameStats>();
+                var aggregatedByMode = new Dictionary<Guid, Dictionary<GameMode, GameStats>>();
+
+                var rows = connection.Query<PlayerGameStatRow>(
+                    "SELECT game_id AS GameId, player_id AS PlayerId, stat_type AS StatType, stat_data AS StatData FROM player_game_stats;");
+
+                foreach (var row in rows)
+                {
+                    if (!Guid.TryParse(row.GameId, out var gameId)) continue;
+                    if (!Guid.TryParse(row.PlayerId, out var playerId)) continue;
+                    if (!finishedGames.TryGetValue(gameId, out var mode)) continue;
+
+                    GameStats gameStats = DeserializeStats(row.StatType, row.StatData);
+                    if (gameStats == null) continue;
+
+                    if (!aggregatedAll.TryGetValue(playerId, out var allStats))
+                    {
+                        allStats = new GameStats(playerId);
+                        aggregatedAll[playerId] = allStats;
+                    }
+
+                    allStats.AddGameStat(gameStats, gameId, gameStats.totalPenaltyCost);
+
+                    if (!aggregatedByMode.TryGetValue(playerId, out var modes))
+                    {
+                        modes = new Dictionary<GameMode, GameStats>();
+                        aggregatedByMode[playerId] = modes;
+                    }
+
+                    if (!modes.TryGetValue(mode, out var modeStats))
+                    {
+                        modeStats = CreateStatsForMode(playerId, mode);
+                        modes[mode] = modeStats;
+                    }
+
+                    modeStats.AddGameStat(gameStats, gameId, gameStats.totalPenaltyCost);
+                }
+
+                foreach (var kvp in aggregatedAll)
+                    SavePlayerStatsAll(connection, kvp.Key, kvp.Value);
+
+                foreach (var playerKvp in aggregatedByMode)
+                {
+                    foreach (var modeKvp in playerKvp.Value)
+                        SavePlayerStatsForMode(connection, playerKvp.Key, modeKvp.Value, modeKvp.Key);
+                }
+
+                DatabaseMigrationRunner.SetMeta(
+                    connection,
+                    DatabaseSchema.StatsVersionMetaKey,
+                    DatabaseSchema.CurrentStatsVersion.ToString()
+                );
+
+                connection.Commit();
             }
-        }
-
-        foreach (var kvp in aggregated)
-        {
-            SavePlayerStatsAll(kvp.Key, kvp.Value);
-        }
-
-        foreach (var summary in summaries)
-        {
-            SaveAggregatedPlayerStatsFromSummary(summary);
-        }
-    }
-
-    private static void SaveAggregatedPlayerStatsFromSummary(GameSummary summary)
-    {
-        if (summary == null || !summary.IsFinished)
-            return;
-
-        foreach (var pid in summary.PlayerIds)
-        {
-            if (!LoadPlayerGameStatsForPlayer(summary.Id, pid, out var gameStats))
-                continue;
-
-            var modeStats = LoadPlayerStatsForMode(pid, summary.GameMode) ?? CreateStatsForMode(pid, summary.GameMode);
-            modeStats.AddGameStat(gameStats, summary.Id, gameStats.totalPenaltyCost);
-            SavePlayerStatsForMode(pid, modeStats, summary.GameMode);
-        }
-    }
-
-    private static bool LoadPlayerGameStatsForPlayer(Guid gameId, Guid playerId, out GameStats stats)
-    {
-        stats = null;
-
-        using (var connection = SqliteDatabaseService.Open())
-        {
-            var row = connection.Query<PlayerGameStatRow>(
-                "SELECT game_id AS GameId, player_id AS PlayerId, stat_type AS StatType, stat_data AS StatData FROM player_game_stats WHERE game_id = ? AND player_id = ?;",
-                gameId.ToString(), playerId.ToString()).FirstOrDefault();
-
-            if (row == null) return false;
-
-            stats = DeserializeStats(row.StatType, row.StatData);
-            return stats != null;
+            catch
+            {
+                connection.Rollback();
+                throw;
+            }
         }
     }
 
@@ -1069,6 +1142,11 @@ public static class SqliteDatabaseRepository
         public string PlayerId { get; set; }
         public string StatType { get; set; }
         public string StatData { get; set; }
+    }
+
+    private class OutdatedStatsRow
+    {
+        public string GameId { get; set; }
     }
 
     private static void SaveSetupState(SQLiteConnection connection, Database database)
@@ -2117,7 +2195,7 @@ public static class SqliteDatabaseRepository
         using (var connection = SqliteDatabaseService.Open())
         {
             var rows = connection.Query<CustomHitSectorRow>(
-                "SELECT id AS Id, name AS Name, info AS Info, enabled AS Enabled, builtin AS Builtin FROM custom_hit_sectors;");
+                "SELECT id AS Id, name AS Name, info AS Info, enabled AS Enabled, builtin AS Builtin, value AS Value, multiplier AS Multiplier FROM custom_hit_sectors;");
 
             foreach (var row in rows)
             {
@@ -2351,6 +2429,38 @@ public static class SqliteDatabaseRepository
         using (var connection = SqliteDatabaseService.Open())
         {
             return connection.Execute("DELETE FROM recorded_clips WHERE id = ?;", id) > 0;
+        }
+    }
+
+    public static int DeleteRecordedClipsByIds(IEnumerable<long> ids)
+    {
+        if (ids == null)
+            return 0;
+
+        long[] distinctIds = ids.Distinct().ToArray();
+        if (distinctIds.Length == 0)
+            return 0;
+
+        SqliteDatabaseService.EnsureSchema();
+
+        using (var connection = SqliteDatabaseService.Open())
+        {
+            try
+            {
+                connection.BeginTransaction();
+
+                int deleted = 0;
+                foreach (long id in distinctIds)
+                    deleted += connection.Execute("DELETE FROM recorded_clips WHERE id = ?;", id);
+
+                connection.Commit();
+                return deleted;
+            }
+            catch
+            {
+                connection.Rollback();
+                throw;
+            }
         }
     }
 

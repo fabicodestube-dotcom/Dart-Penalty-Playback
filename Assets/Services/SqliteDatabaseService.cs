@@ -7,14 +7,12 @@ using UnityEngine;
 
 public static class SqliteDatabaseService
 {
-    private const string DatabaseFileName = "darts.sqlite";
-
     private static bool schemaEnsured = false;
     private static readonly object schemaLock = new object();
 
     public static string GetDatabasePath()
     {
-        return Path.Combine(Application.persistentDataPath, DatabaseFileName);
+        return DatabasePaths.DatabasePath;
     }
 
     public static string GetConnectionString()
@@ -24,26 +22,55 @@ public static class SqliteDatabaseService
 
     public static SQLiteConnection Open()
     {
-        return new SQLiteConnection(GetDatabasePath());
+        if (!File.Exists(GetDatabasePath()))
+            throw new DatabaseBootstrapException("Die Datenbankdatei fehlt. Der Datenbank-Bootstrapper wurde nicht ausgeführt.");
+
+        var connection = new SQLiteConnection(GetDatabasePath());
+        connection.Execute("PRAGMA foreign_keys = ON;");
+        connection.Execute("PRAGMA busy_timeout = 5000;");
+        return connection;
+    }
+
+    public static SQLiteConnection OpenReadOnly()
+    {
+        if (!File.Exists(GetDatabasePath()))
+            throw new DatabaseBootstrapException("Die Datenbankdatei fehlt.");
+
+        return new SQLiteConnection(GetDatabasePath(), SQLiteOpenFlags.ReadOnly);
+    }
+
+    public static SQLiteConnection OpenForBootstrap()
+    {
+        return new SQLiteConnection(GetDatabasePath(), SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create);
     }
 
     public static void EnsureSchema()
     {
-        // Einmal pro Prozess: Schema steht nach dem ersten Aufruf (inkl.
-        // Kompatibilitäts-Migrationen). Vorher liefen pro Write ~25
-        // CREATE/PRAGMA-Statements — für einen 1-Zeilen-Upsert der
-        // mit Abstand größte DB-Anteil.
+        // Einmal pro Prozess: Schema steht nach dem Boot-Gate. Alle
+        // Schema-Änderungen laufen ausschließlich über den MigrationRunner.
         lock (schemaLock)
         {
             if (schemaEnsured)
                 return;
 
-            using (var connection = new SQLiteConnection(GetDatabasePath()))
-            {
-                EnsureSchema(connection);
-            }
-
+            DatabaseBootstrapper.EnsureReady();
             schemaEnsured = true;
+        }
+    }
+
+    internal static void MarkSchemaEnsured()
+    {
+        lock (schemaLock)
+        {
+            schemaEnsured = true;
+        }
+    }
+
+    internal static void ResetSchemaEnsured()
+    {
+        lock (schemaLock)
+        {
+            schemaEnsured = false;
         }
     }
 
@@ -57,9 +84,7 @@ public static class SqliteDatabaseService
             var row = rows.FirstOrDefault();
             if (row == null || string.IsNullOrWhiteSpace(row.ValueText))
             {
-                var defaultSettings = new AppSettings();
-                SaveSettings(defaultSettings);
-                return defaultSettings;
+                return new AppSettings();
             }
 
             try
@@ -70,9 +95,7 @@ public static class SqliteDatabaseService
             catch (Exception e)
             {
                 Debug.LogWarning("[SQLiteSettings] Failed to parse saved settings: " + e.Message);
-                var fallback = new AppSettings();
-                SaveSettings(fallback);
-                return fallback;
+                return new AppSettings();
             }
         }
     }
@@ -91,8 +114,10 @@ public static class SqliteDatabaseService
         }
     }
 
-    private static void EnsureSchema(SQLiteConnection connection)
+    internal static void CreateSchemaBaseline(SQLiteConnection connection)
     {
+        connection.Execute("CREATE TABLE IF NOT EXISTS schema_migrations (version INTEGER PRIMARY KEY, name TEXT NOT NULL, applied_at_utc TEXT NOT NULL, app_version TEXT NOT NULL, checksum TEXT NOT NULL);");
+        connection.Execute("CREATE TABLE IF NOT EXISTS app_meta (key_name TEXT PRIMARY KEY, value_text TEXT NOT NULL);");
         connection.Execute("CREATE TABLE IF NOT EXISTS players (id TEXT PRIMARY KEY, name TEXT NOT NULL, type_name TEXT NOT NULL, deleted INTEGER NOT NULL DEFAULT 0, show_in_statistics INTEGER NOT NULL DEFAULT 1, created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')));");
         connection.Execute("CREATE TABLE IF NOT EXISTS player_meta (player_id TEXT NOT NULL, key_name TEXT NOT NULL, value_text TEXT, PRIMARY KEY (player_id, key_name), FOREIGN KEY(player_id) REFERENCES players(id));");
         connection.Execute("CREATE TABLE IF NOT EXISTS games (id TEXT PRIMARY KEY, game_mode TEXT NOT NULL, created_at TEXT NOT NULL, last_activity_at TEXT NOT NULL, finished_at TEXT, current_player_index INTEGER NOT NULL DEFAULT 0, starting_player_index INTEGER NOT NULL DEFAULT 0, winner_player_id TEXT, player_ids TEXT NOT NULL DEFAULT '', settings_json TEXT);");
@@ -107,7 +132,7 @@ public static class SqliteDatabaseService
         connection.Execute("CREATE TABLE IF NOT EXISTS throws (id TEXT PRIMARY KEY, game_id TEXT NOT NULL, turn_id TEXT NOT NULL, order_index INTEGER NOT NULL, hit_type TEXT NOT NULL, multiplier INTEGER NOT NULL, score INTEGER NOT NULL, value INTEGER NOT NULL DEFAULT 0, target_value INTEGER, is_target_hit INTEGER NOT NULL DEFAULT 0, segment INTEGER, custom_hit_id TEXT, FOREIGN KEY(game_id) REFERENCES games(id), FOREIGN KEY(turn_id) REFERENCES turns(id));");
         connection.Execute("CREATE TABLE IF NOT EXISTS throw_meta (throw_id TEXT NOT NULL, key_name TEXT NOT NULL, value_text TEXT, PRIMARY KEY (throw_id, key_name), FOREIGN KEY(throw_id) REFERENCES throws(id));");
         connection.Execute("CREATE TABLE IF NOT EXISTS settings (key_name TEXT PRIMARY KEY, value_text TEXT NOT NULL);");
-        connection.Execute("CREATE TABLE IF NOT EXISTS player_game_stats (game_id TEXT NOT NULL, player_id TEXT NOT NULL, stat_type TEXT NOT NULL, stat_data TEXT NOT NULL, PRIMARY KEY (game_id, player_id), FOREIGN KEY(game_id) REFERENCES games(id) ON DELETE CASCADE, FOREIGN KEY(player_id) REFERENCES players(id));");
+        connection.Execute("CREATE TABLE IF NOT EXISTS player_game_stats (game_id TEXT NOT NULL, player_id TEXT NOT NULL, stat_type TEXT NOT NULL, stat_data TEXT NOT NULL, stats_schema_version INTEGER NOT NULL DEFAULT 1, PRIMARY KEY (game_id, player_id), FOREIGN KEY(game_id) REFERENCES games(id) ON DELETE CASCADE, FOREIGN KEY(player_id) REFERENCES players(id));");
         connection.Execute("CREATE TABLE IF NOT EXISTS player_stats_all (player_id TEXT PRIMARY KEY, stat_data TEXT NOT NULL, FOREIGN KEY(player_id) REFERENCES players(id));");
         connection.Execute("CREATE TABLE IF NOT EXISTS player_stats_x01 (player_id TEXT PRIMARY KEY, stat_data TEXT NOT NULL, FOREIGN KEY(player_id) REFERENCES players(id));");
         connection.Execute("CREATE TABLE IF NOT EXISTS player_stats_cricket (player_id TEXT PRIMARY KEY, stat_data TEXT NOT NULL, FOREIGN KEY(player_id) REFERENCES players(id));");
@@ -121,6 +146,7 @@ public static class SqliteDatabaseService
         EnsureAudioEventEnabled(connection);
         EnsureCustomizationInfo(connection);
         EnsureCustomHitSectorValueMultiplier(connection);
+        EnsureStatsSchemaVersion(connection);
 
         connection.Execute("CREATE INDEX IF NOT EXISTS idx_games_last_activity ON games(last_activity_at);");
         connection.Execute("CREATE INDEX IF NOT EXISTS idx_games_finished_at ON games(finished_at);");
@@ -209,6 +235,17 @@ public static class SqliteDatabaseService
 
         if (!columns.Any(column => string.Equals(column.Name, "multiplier", StringComparison.OrdinalIgnoreCase)))
             connection.Execute("ALTER TABLE custom_hit_sectors ADD COLUMN multiplier INTEGER NOT NULL DEFAULT 0;");
+    }
+
+    /// <summary>stats_schema_version-Spalte für Bestands-DBs nachrüsten.</summary>
+    private static void EnsureStatsSchemaVersion(SQLiteConnection connection)
+    {
+        var columns = connection.Query<ColumnInfo>("PRAGMA table_info(player_game_stats);");
+        if (columns == null || columns.Count == 0)
+            return;
+
+        if (!columns.Any(column => string.Equals(column.Name, "stats_schema_version", StringComparison.OrdinalIgnoreCase)))
+            connection.Execute("ALTER TABLE player_game_stats ADD COLUMN stats_schema_version INTEGER NOT NULL DEFAULT 1;");
     }
 
     private class SettingsRow

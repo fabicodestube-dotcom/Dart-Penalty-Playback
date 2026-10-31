@@ -12,6 +12,7 @@ using UnityEngine;
 /// Szene-Setup: Bootloader-GO als LETZTES Kind unter den Darts-Canvas (damit
 /// es über der App rendert), darauf CanvasGroup + Logo, pulseTarget mit Logo verdrahten.
 /// </summary>
+[DefaultExecutionOrder(-10000)]
 public class BootLoader : MonoBehaviour
 {
     [Header("Loader UI")]
@@ -19,6 +20,12 @@ public class BootLoader : MonoBehaviour
     public CanvasGroup loaderCanvasGroup;
     [Tooltip("Pulsierendes Element (üblicherweise das Logo). Skaliert weich auf/ab.")]
     public RectTransform pulseTarget;
+
+    [Header("Datenbank-Fehler")]
+    [Tooltip("Optionales Panel für einen blockierenden Datenbankfehler.")]
+    public GameObject databaseErrorPanel;
+    [Tooltip("Optionaler Text für einen blockierenden Datenbankfehler.")]
+    public TMPro.TMP_Text databaseErrorText;
 
     [Header("Puls")]
     [Tooltip("Max. Größenänderung (0 = aus, 0.08 = ±8 %). Obergrenze mit viel Spielraum.")]
@@ -42,8 +49,24 @@ public class BootLoader : MonoBehaviour
     private Vector3 baseScale = Vector3.one;
     private bool hasPulseTarget;
 
+    private void Awake()
+    {
+        // Muss vor AppHandler.Awake und AppSettingsManager.Awake laufen.
+        var bootstrapResult = DatabaseBootstrapper.Prepare();
+        if (bootstrapResult == null || !bootstrapResult.Success)
+            ShowDatabaseError(bootstrapResult != null ? bootstrapResult.Error : "Unbekannter Datenbankfehler.");
+    }
+
     private void Start()
     {
+        if (DatabaseBootstrapper.HasFailed)
+        {
+            ShowDatabaseError(DatabaseBootstrapper.Result != null
+                ? DatabaseBootstrapper.Result.Error
+                : "Unbekannter Datenbankfehler.");
+            return;
+        }
+
         if (statisticsHandler == null)
             statisticsHandler = FindFirstObjectByType<StatisticsHandler>();
         if (historyHandler == null)
@@ -96,11 +119,23 @@ public class BootLoader : MonoBehaviour
         yield return null;
         yield return null;
 
+        if (!DatabaseBootstrapper.IsReady || SaveSystem.HasLoadFailed)
+        {
+            ShowDatabaseError(GetDatabaseError());
+            yield break;
+        }
+
         float bootStart = Time.realtimeSinceStartup;
         float deadline = bootStart + Mathf.Max(1f, timeoutSeconds);
 
         while (true)
         {
+            if (!DatabaseBootstrapper.IsReady || SaveSystem.HasLoadFailed)
+            {
+                ShowDatabaseError(GetDatabaseError());
+                yield break;
+            }
+
             bool statsReady = statisticsHandler == null || statisticsHandler.IsInitialBuildDone;
             bool historyReady = historyHandler == null || historyHandler.IsInitialBuildDone;
             bool audioReady = audioLibrary == null || audioLibrary.IsReady;
@@ -128,6 +163,38 @@ public class BootLoader : MonoBehaviour
         ResetPulseScale();
         yield return FadeOut();
         gameObject.SetActive(false);
+    }
+
+    private void ShowDatabaseError(string message)
+    {
+        Debug.LogError("[BootLoader] App-Start blockiert: " + message);
+
+        if (loaderCanvasGroup == null)
+            loaderCanvasGroup = GetComponent<CanvasGroup>();
+
+        if (loaderCanvasGroup != null)
+        {
+            loaderCanvasGroup.alpha = 1f;
+            loaderCanvasGroup.blocksRaycasts = true;
+            loaderCanvasGroup.interactable = false;
+        }
+
+        if (databaseErrorPanel != null)
+            databaseErrorPanel.SetActive(true);
+
+        if (databaseErrorText != null)
+            databaseErrorText.text = "Datenbank konnte nicht vorbereitet werden.\n" + message;
+    }
+
+    private string GetDatabaseError()
+    {
+        if (SaveSystem.HasLoadFailed)
+            return "Die Datenbank konnte nicht geladen werden.";
+
+        var result = DatabaseBootstrapper.Result;
+        return result != null && !string.IsNullOrWhiteSpace(result.Error)
+            ? result.Error
+            : "Unbekannter Datenbankfehler.";
     }
 
     private void ResetPulseScale()

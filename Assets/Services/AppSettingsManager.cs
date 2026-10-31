@@ -1,8 +1,5 @@
-using System.Collections.Generic;
-using System.IO;
-using UnityEngine;
-using Newtonsoft.Json;
 using System.Collections;
+using UnityEngine;
 using UnityEngine.Localization.Settings;
 using UnityEngine.Localization;
 
@@ -12,7 +9,6 @@ public class AppSettingsManager : MonoBehaviour
 
     public AppSettings Settings { get; private set; }
 
-    private string legacyFilePath;
     private bool isChangingLanguage = false;
     private string pendingLocaleCode;
 
@@ -28,8 +24,6 @@ public class AppSettingsManager : MonoBehaviour
         Instance = this;
         DontDestroyOnLoad(gameObject);
 
-        legacyFilePath = Path.Combine(Application.persistentDataPath, "appsettings.json");
-
         Load();
     }
 
@@ -38,41 +32,37 @@ public class AppSettingsManager : MonoBehaviour
     // =========================================================
     public void Load()
     {
+        if (SaveSystem.HasLoadFailed)
+        {
+            CreateDefaultSettings();
+            Debug.LogError("[Settings] Database load failed. Settings stay in memory and are not written.");
+            return;
+        }
+
+        if (!DatabaseBootstrapper.IsReady)
+        {
+            var bootstrapResult = DatabaseBootstrapper.Prepare();
+            if (bootstrapResult == null || !bootstrapResult.Success || SaveSystem.HasLoadFailed)
+            {
+                CreateDefaultSettings();
+                Debug.LogError("[Settings] Database is not ready. Settings stay in memory and are not written.");
+                return;
+            }
+        }
+
         try
         {
             Settings = SqliteDatabaseService.LoadSettings();
             Debug.Log("[Settings] Loaded from SQLite");
             EnsureDefaults();
             ApplyLoadedSettings();
-            return;
         }
         catch (System.Exception e)
         {
-            Debug.LogWarning($"[Settings] SQLite load failed: {e.Message}. Falling back to legacy JSON migration.");
+            CreateDefaultSettings();
+            Debug.LogError("[Settings] SQLite load failed. Settings stay in memory and are not written: " + e.Message);
+            ApplyLoadedSettings();
         }
-
-        try
-        {
-            if (File.Exists(legacyFilePath))
-            {
-                string json = File.ReadAllText(legacyFilePath);
-                Settings = JsonConvert.DeserializeObject<AppSettings>(json) ?? new AppSettings();
-                EnsureDefaults();
-                Save();
-                Debug.Log("[Settings] Migrated legacy JSON settings into SQLite");
-                ApplyLoadedSettings();
-                return;
-            }
-        }
-        catch (System.Exception legacyException)
-        {
-            Debug.LogError($"[Settings] Legacy JSON migration failed: {legacyException.Message}");
-        }
-
-        Debug.Log("[Settings] No settings found -> create defaults");
-        CreateDefaultSettings();
-        Save();
-        ApplyLoadedSettings();
     }
 
     // =========================================================
@@ -80,6 +70,12 @@ public class AppSettingsManager : MonoBehaviour
     // =========================================================
     public void Save()
     {
+        if (!DatabaseBootstrapper.IsReady || SaveSystem.HasLoadFailed)
+        {
+            Debug.LogWarning("[Settings] Save blocked because the database is not ready.");
+            return;
+        }
+
         try
         {
             SqliteDatabaseService.SaveSettings(Settings);
@@ -277,6 +273,7 @@ public class AppSettingsManager : MonoBehaviour
             Enabled = true,
             UseCustomSounds = true,
             UseDefaultClipsAsFallback = true,
+            ScoreAnnouncementsEnabled = true,
             Volume = 1f
         };
 
