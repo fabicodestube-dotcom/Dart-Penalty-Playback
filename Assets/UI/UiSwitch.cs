@@ -26,7 +26,8 @@ public class UISwitch : MonoBehaviour
         float width = ((RectTransform)transform).rect.width;
         float handleWidth = handleRect.rect.width;
 
-        float offset = (width - handleWidth) / 2f;
+        // Handle etwas weiter nach außen verschieben
+        float offset = (width - handleWidth) / 2f + 2f;
 
         handleOnPos = new Vector2(offset, 0);
         handleOffPos = new Vector2(-offset, 0);

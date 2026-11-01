@@ -213,7 +213,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 48
-    m_Localized: Gold
+    m_Localized: Orange
     m_Metadata:
       m_Items: []
   - m_Id: 49
@@ -1283,6 +1283,14 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 33806894813368320
     m_Localized: Audio-Event bearbeiten
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368321
+    m_Localized: Pink
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368322
+    m_Localized: Limette
     m_Metadata:
       m_Items: []
   references:

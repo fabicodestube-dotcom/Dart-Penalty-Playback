@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using SQLite;
 
 public sealed class RecordedClipIntegrityIssue
 {
@@ -22,11 +23,13 @@ public sealed class RecordedClipIntegrityReport
     public int RowCount;
     public int FileCount;
     public List<RecordedClipIntegrityIssue> InvalidRows = new List<RecordedClipIntegrityIssue>();
+    public List<RecordedClipIntegrityIssue> MetadataRows = new List<RecordedClipIntegrityIssue>();
     public List<RecordedClipIntegrityIssue> DuplicateSlotRows = new List<RecordedClipIntegrityIssue>();
     public List<string> OrphanFiles = new List<string>();
 
     public bool IsHealthy =>
         InvalidRows.Count == 0 &&
+        MetadataRows.Count == 0 &&
         DuplicateSlotRows.Count == 0 &&
         OrphanFiles.Count == 0;
 
@@ -35,6 +38,7 @@ public sealed class RecordedClipIntegrityReport
         return "Rows=" + RowCount +
                ", Files=" + FileCount +
                ", InvalidRows=" + InvalidRows.Count +
+               ", MetadataRows=" + MetadataRows.Count +
                ", DuplicateSlots=" + DuplicateSlotRows.Count +
                ", OrphanFiles=" + OrphanFiles.Count +
                ", Healthy=" + IsHealthy;
@@ -46,6 +50,9 @@ public sealed class RecordedClipRepairResult
     public RecordedClipIntegrityReport Before;
     public RecordedClipIntegrityReport After;
     public int DeletedRows;
+    public int RefreshedMetadataRows;
+    public int DeletedDuplicateRows;
+    public int RenumberedSlots;
     public int QuarantinedFiles;
     public string QuarantineRoot;
     public List<string> Failures = new List<string>();
@@ -53,6 +60,9 @@ public sealed class RecordedClipRepairResult
     public string ToSummary()
     {
         return "DeletedRows=" + DeletedRows +
+               ", RefreshedMetadata=" + RefreshedMetadataRows +
+               ", DeletedDuplicates=" + DeletedDuplicateRows +
+               ", RenumberedSlots=" + RenumberedSlots +
                ", QuarantinedFiles=" + QuarantinedFiles +
                ", Failures=" + Failures.Count +
                ", Before=[" + (Before != null ? Before.ToSummary() : "") + "]" +
@@ -62,18 +72,21 @@ public sealed class RecordedClipRepairResult
 
 public static class RecordedClipIntegrityService
 {
-    private const string ScoresFolderName = "Scores";
-    private const string PenaltiesFolderName = "Penalties";
-    private const string SpecialFolderName = "Special";
     private const string QuarantineFolderName = "_quarantine";
 
-    public static RecordedClipIntegrityReport Scan()
+    public static RecordedClipIntegrityReport Scan(bool verifyHashes = false)
     {
         SqliteDatabaseService.EnsureSchema();
 
-        var rows = SqliteDatabaseRepository.LoadAllRecordedClips()
-            ?? new List<SqliteDatabaseRepository.RecordedClipRow>();
+        using (var connection = SqliteDatabaseService.Open())
+        {
+            return Scan(connection, verifyHashes);
+        }
+    }
 
+    internal static RecordedClipIntegrityReport Scan(SQLiteConnection connection, bool verifyHashes)
+    {
+        var rows = SqliteDatabaseRepository.LoadAllRecordedClips(connection);
         var report = new RecordedClipIntegrityReport
         {
             RowCount = rows.Count
@@ -84,34 +97,46 @@ public static class RecordedClipIntegrityService
 
         foreach (var row in rows)
         {
-            if (row == null)
-                continue;
-
-            string folder = GetFolderForCategory(row.Category);
-            if (folder == null)
+            if (!RecordedClipFileStore.TryResolvePath(row.Category, row.FileName, out string fullPath))
             {
-                report.InvalidRows.Add(CreateIssue(row, "Unbekannte Kategorie"));
+                report.InvalidRows.Add(CreateIssue(row, "Ungültige Kategorie oder Dateiname"));
                 continue;
             }
 
-            if (!IsSafeFileName(row.FileName))
-            {
-                report.InvalidRows.Add(CreateIssue(row, "Ungültiger Dateiname"));
-                continue;
-            }
-
-            string fullPath = Path.GetFullPath(Path.Combine(folder, row.FileName));
             expectedFiles.Add(fullPath);
 
             if (!File.Exists(fullPath))
-                report.InvalidRows.Add(CreateIssue(row, "Datei fehlt"));
-
-            if (row.SlotIndex > 0)
             {
-                string slotKey = BuildSlotKey(row);
-                if (!seenSlots.Add(slotKey))
-                    report.DuplicateSlotRows.Add(CreateIssue(row, "Doppelter Slot"));
+                report.InvalidRows.Add(CreateIssue(row, "Datei fehlt"));
+                continue;
             }
+
+            var info = new FileInfo(fullPath);
+            if (!row.FileSize.HasValue || row.FileSize.Value != info.Length)
+            {
+                report.MetadataRows.Add(CreateIssue(row, "Dateigröße weicht ab oder Metadaten fehlen"));
+            }
+            else if (string.IsNullOrWhiteSpace(row.Sha256))
+            {
+                report.MetadataRows.Add(CreateIssue(row, "SHA-256 fehlt"));
+            }
+            else if (verifyHashes)
+            {
+                try
+                {
+                    string actualHash = RecordedClipFileStore.ComputeSha256(fullPath);
+                    if (!string.Equals(actualHash, row.Sha256, StringComparison.OrdinalIgnoreCase))
+                        report.MetadataRows.Add(CreateIssue(row, "SHA-256 weicht ab"));
+                }
+                catch (Exception e)
+                {
+                    report.MetadataRows.Add(CreateIssue(row, "Hash nicht lesbar: " + e.Message));
+                }
+            }
+
+            string slotKey = BuildSlotKey(row);
+            if (!seenSlots.Add(slotKey))
+                report.DuplicateSlotRows.Add(CreateIssue(row, "Doppelter Slot"));
         }
 
         List<string> files = GetRecordingFiles();
@@ -126,26 +151,54 @@ public static class RecordedClipIntegrityService
         return report;
     }
 
-    public static RecordedClipRepairResult Repair(bool quarantineOrphans)
+    public static RecordedClipRepairResult Repair(bool quarantineOrphans, bool verifyHashes = true)
     {
-        var result = new RecordedClipRepairResult
+        SqliteDatabaseService.EnsureSchema();
+
+        using (var connection = SqliteDatabaseService.Open())
         {
-            Before = Scan()
-        };
+            var result = new RecordedClipRepairResult
+            {
+                Before = Scan(connection, verifyHashes)
+            };
 
-        var invalidIds = result.Before.InvalidRows
-            .Select(issue => issue.Id)
-            .Distinct()
-            .ToList();
+            try
+            {
+                connection.BeginTransaction();
 
-        if (invalidIds.Count > 0)
-            result.DeletedRows = SqliteDatabaseRepository.DeleteRecordedClipsByIds(invalidIds);
+                foreach (var issue in result.Before.InvalidRows)
+                    result.DeletedRows += connection.Execute("DELETE FROM recorded_clips WHERE id = ?;", issue.Id);
 
-        if (quarantineOrphans && result.Before.OrphanFiles.Count > 0)
-            QuarantineOrphanFiles(result);
+                var refreshedIds = new HashSet<long>();
+                foreach (var issue in result.Before.MetadataRows)
+                {
+                    if (!refreshedIds.Add(issue.Id))
+                        continue;
 
-        result.After = Scan();
-        return result;
+                    if (SqliteDatabaseRepository.RefreshRecordedClipMetadata(connection, issue.Id))
+                        result.RefreshedMetadataRows++;
+                    else
+                        result.Failures.Add("Metadaten konnten nicht aktualisiert werden: " + issue);
+                }
+
+                var slotRepair = SqliteDatabaseRepository.RepairRecordedClipSlots(connection);
+                result.DeletedDuplicateRows = slotRepair.DeletedDuplicates;
+                result.RenumberedSlots = slotRepair.RenumberedSlots;
+
+                connection.Commit();
+            }
+            catch
+            {
+                connection.Rollback();
+                throw;
+            }
+
+            if (quarantineOrphans && result.Before.OrphanFiles.Count > 0)
+                QuarantineOrphanFiles(result);
+
+            result.After = Scan(connection, false);
+            return result;
+        }
     }
 
     private static void QuarantineOrphanFiles(RecordedClipRepairResult result)
@@ -196,35 +249,6 @@ public static class RecordedClipIntegrityService
         }
 
         return files;
-    }
-
-    private static string GetFolderForCategory(string category)
-    {
-        if (!Enum.TryParse(category, true, out AudioCategory parsed))
-            return null;
-
-        return parsed switch
-        {
-            AudioCategory.Score => Path.Combine(DatabasePaths.RecordingsRoot, ScoresFolderName),
-            AudioCategory.Penalty => Path.Combine(DatabasePaths.RecordingsRoot, PenaltiesFolderName),
-            AudioCategory.Special => Path.Combine(DatabasePaths.RecordingsRoot, SpecialFolderName),
-            AudioCategory.Custom => Path.Combine(DatabasePaths.RecordingsRoot, SpecialFolderName),
-            _ => null
-        };
-    }
-
-    private static bool IsSafeFileName(string fileName)
-    {
-        if (string.IsNullOrWhiteSpace(fileName))
-            return false;
-
-        if (fileName == "." || fileName == "..")
-            return false;
-
-        if (fileName.IndexOf('/') >= 0 || fileName.IndexOf('\\') >= 0)
-            return false;
-
-        return fileName.IndexOfAny(Path.GetInvalidFileNameChars()) < 0;
     }
 
     private static string BuildSlotKey(SqliteDatabaseRepository.RecordedClipRow row)

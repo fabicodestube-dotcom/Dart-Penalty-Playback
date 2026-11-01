@@ -723,6 +723,7 @@ GameObject:
   - component: {fileID: 2085008018808524889}
   - component: {fileID: 802563174149318356}
   - component: {fileID: 4535519169678463710}
+  - component: {fileID: 3071915194409082770}
   m_Layer: 0
   m_Name: PlayerItem
   m_TagString: Untagged
@@ -830,7 +831,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerItem
   playerName: {fileID: 6533985890430697094}
-  backgroundImage: {fileID: 875022460017146964}
   playerImage: {fileID: 2842979749251245848}
   renameButton: {fileID: 0}
   deleteButton: {fileID: 0}
@@ -916,3 +916,16 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+--- !u!114 &3071915194409082770
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6974497125308894579}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7a0368f7840987e639f0bdecbc803891, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ThemeColorBinding
+  role: 5

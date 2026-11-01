@@ -60,7 +60,7 @@ Game_not_saved_yet,Game not saved yet,Spiel noch nicht gespeichert,Jeu pas encor
 Game_not_saved_yet_expl,The game has not been saved yet. Would you like to save it now?,Das Spiel wurde noch nicht gespeichert. Möchtest du es jetzt speichern?,Le jeu n'a pas encore été sauvegardé. Souhaitez-vous le sauvegarder maintenant ?,El juego aún no se ha guardado. ¿Te gustaría guardarlo ahora?,Игра еще не сохранена. Хотите сохранить ее сейчас?,Gra nie została jeszcze zapisana. Czy chcesz ją teraz zapisać?,Il gioco non è ancora stato salvato. Vuoi salvarlo ora?,Oyun henüz kaydedilmedi. Şimdi kaydetmek ister misiniz?
 Game_over,Game over,Spiel vorbei,Partie terminée,Fin del juego,Игра окончена,Koniec gry,Game over,Oyun bitti
 Game_start,Start game,Spiel starten,Commencer la partie,Iniciar juego,Начать игру,Uruchom grę,Avvia gioco,Oyunu başlat
-Gold,Gold,Gold,Or,Oro,Золото,Złoto,Oro,Altın
+Orange,Orange,Orange,Orange,Naranja,Оранжевый,Pomarańczowy,Arancione,Turuncu
 Green,Green,Grün,Vert,Verde,Зеленыe,Zielony,Verde,Yeşil
 Hard,Hard,Schwer,Difficile,Difícil,Сложно,Trudny,Difficile,Zor
 Highscores,Highscores,Bestenlisten,Meilleurs scores,Puntajes máximos,Рекорды,Najlepsze wyniki,Classifiche,Yüksek skorlar
@@ -310,3 +310,5 @@ Legs,Legs,Legs,Manches,Legs,Леги,Legi,Leg,Legler
 No_checkouts,No checkouts,Keine Checkouts,Aucun checkout,Sin checkouts,Нет чек-аутов,Brak checkoutów,Nessun checkout,Checkout yok
 No_data,No data,Keine Daten,Aucune donnée,Sin datos,Нет данных,Brak danych,Nessun dato,Veri yok
 Edit_audio_event,Edit audio event,Audio-Event bearbeiten,Modifier l'événement audio,Editar evento de audio,Редактировать аудиособытие,Edytuj wydarzenie dźwiękowe,Modifica evento audio,Ses olayını düzenle
+Pink,Pink,Pink,Rose,Rosa,Розовый,Różowy,Rosa,Pembe
+Lime,Lime,Limette,Citron vert,Lima,Лаймовый,Limonkowy,Lime,Misket limonu

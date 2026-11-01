@@ -123,7 +123,9 @@ public static class DatabaseMigrations
     public static readonly IDatabaseMigration[] All =
     {
         new Migration001InitialSchema(),
-        new Migration002NormalizeTimestamps()
+        new Migration002NormalizeTimestamps(),
+        new Migration003RecordedClipMetadata(),
+        new Migration004NormalizeSchema()
     };
 }
 

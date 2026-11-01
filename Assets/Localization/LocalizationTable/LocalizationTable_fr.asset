@@ -213,7 +213,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 48
-    m_Localized: Or
+    m_Localized: Orange
     m_Metadata:
       m_Items: []
   - m_Id: 49
@@ -1287,6 +1287,14 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 33806894813368320
     m_Localized: "Modifier l'\xE9v\xE9nement audio"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368321
+    m_Localized: Rose
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368322
+    m_Localized: Citron vert
     m_Metadata:
       m_Items: []
   references:

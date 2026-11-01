@@ -65,10 +65,12 @@ public static class SqliteDatabaseRepository
                     current_player_index AS CurrentPlayerIndex,
                     starting_player_index AS StartingPlayerIndex,
                     winner_player_id AS WinnerPlayerId,
-                    player_ids AS PlayerIdsRaw
+                    settings_json AS SettingsJson
                 FROM games
                 WHERE finished_at IS NOT NULL
                 ORDER BY last_activity_at DESC;");
+
+            PopulateGamePlayerIds(connection, finishedGames);
 
             foreach (var gameRow in finishedGames)
             {
@@ -77,7 +79,7 @@ public static class SqliteDatabaseRepository
                     continue;
 
                 RestoreGameStructure(connection, game);
-                RestoreRuntimeGameMeta(connection, gameRow.Id, game);
+                RestoreRuntimeGameState(connection, gameRow.Id, game);
                 game.InitializeAfterLoad();
                 game.CalculatePlayerStatsOnSave();
 
@@ -146,7 +148,7 @@ public static class SqliteDatabaseRepository
                 return null;
 
             RestoreGameStructure(connection, game);
-            RestoreRuntimeGameMeta(connection, gameRow.Id, game);
+            RestoreRuntimeGameState(connection, gameRow.Id, game);
             game.InitializeAfterLoad();
 
             // playerStats werden nicht persistiert (nur Struktur + Runtime-Meta),
@@ -191,7 +193,17 @@ public static class SqliteDatabaseRepository
                 var settingsJson = game.GetSettings() != null ? JsonConvert.SerializeObject(game.GetSettings()) : null;
 
                 connection.Execute(
-                    "INSERT OR REPLACE INTO games (id, game_mode, created_at, last_activity_at, finished_at, current_player_index, starting_player_index, winner_player_id, player_ids, settings_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);",
+                    @"INSERT INTO games (id, game_mode, created_at, last_activity_at, finished_at, current_player_index, starting_player_index, winner_player_id, settings_json)
+                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                      ON CONFLICT(id) DO UPDATE SET
+                        game_mode = excluded.game_mode,
+                        created_at = excluded.created_at,
+                        last_activity_at = excluded.last_activity_at,
+                        finished_at = excluded.finished_at,
+                        current_player_index = excluded.current_player_index,
+                        starting_player_index = excluded.starting_player_index,
+                        winner_player_id = excluded.winner_player_id,
+                        settings_json = excluded.settings_json;",
                     game.GetID().ToString(),
                     game.GetGameMode().ToString(),
                     DatabaseTimestamp.ToUtcIso(game.GetCreatedAt()),
@@ -200,7 +212,6 @@ public static class SqliteDatabaseRepository
                     currentPlayerIndex,
                     startingPlayerIndex,
                     winnerPlayerId.HasValue ? winnerPlayerId.Value.ToString() : null,
-                    string.Join("|", game.GetPlayerIDs()),
                     settingsJson
                 );
 
@@ -215,10 +226,7 @@ public static class SqliteDatabaseRepository
                     );
                 }
 
-                connection.Execute("DELETE FROM game_meta WHERE game_id = ?;", game.GetID().ToString());
-                SaveMeta(connection, "game_meta", "game_id", game.GetID().ToString(), game);
-                SaveRuntimeGameMeta(connection, game);
-                SaveGameSettings(connection, game);
+                SaveRuntimeGameState(connection, game);
 
                 // Alte Struktur-Zeilen löschen, sonst bleiben nach erneutem
                 // Speichern verwaiste Legs/Turns/Throws übrig (neue IDs pro
@@ -243,13 +251,9 @@ public static class SqliteDatabaseRepository
 
     private static void DeleteGameStructure(SQLiteConnection connection, string gameId)
     {
-        connection.Execute("DELETE FROM throw_meta WHERE throw_id IN (SELECT id FROM throws WHERE game_id = ?);", gameId);
         connection.Execute("DELETE FROM throws WHERE game_id = ?;", gameId);
-        connection.Execute("DELETE FROM turn_meta WHERE turn_id IN (SELECT id FROM turns WHERE game_id = ?);", gameId);
         connection.Execute("DELETE FROM turns WHERE game_id = ?;", gameId);
-        connection.Execute("DELETE FROM leg_meta WHERE leg_id IN (SELECT id FROM legs WHERE game_id = ?);", gameId);
         connection.Execute("DELETE FROM legs WHERE game_id = ?;", gameId);
-        connection.Execute("DELETE FROM set_meta WHERE set_id IN (SELECT id FROM sets WHERE game_id = ?);", gameId);
         connection.Execute("DELETE FROM sets WHERE game_id = ?;", gameId);
     }
 
@@ -260,7 +264,6 @@ public static class SqliteDatabaseRepository
         using (var connection = SqliteDatabaseService.Open())
         {
             DeleteGameStructure(connection, id.ToString());
-            connection.Execute("DELETE FROM game_meta WHERE game_id = ?;", id.ToString());
             connection.Execute("DELETE FROM game_players WHERE game_id = ?;", id.ToString());
             connection.Execute("DELETE FROM player_game_stats WHERE game_id = ?;", id.ToString());
             connection.Execute("DELETE FROM games WHERE id = ?;", id.ToString());
@@ -277,7 +280,6 @@ public static class SqliteDatabaseRepository
             foreach (var row in rows)
             {
                 DeleteGameStructure(connection, row.Id);
-                connection.Execute("DELETE FROM game_meta WHERE game_id = ?;", row.Id);
                 connection.Execute("DELETE FROM game_players WHERE game_id = ?;", row.Id);
                 connection.Execute("DELETE FROM player_game_stats WHERE game_id = ?;", row.Id);
             }
@@ -291,16 +293,11 @@ public static class SqliteDatabaseRepository
 
         using (var connection = SqliteDatabaseService.Open())
         {
-            connection.Execute("DELETE FROM throw_meta;");
             connection.Execute("DELETE FROM throws;");
-            connection.Execute("DELETE FROM turn_meta;");
             connection.Execute("DELETE FROM turns;");
-            connection.Execute("DELETE FROM leg_meta;");
             connection.Execute("DELETE FROM legs;");
-            connection.Execute("DELETE FROM set_meta;");
             connection.Execute("DELETE FROM sets;");
             connection.Execute("DELETE FROM game_players;");
-            connection.Execute("DELETE FROM game_meta;");
             connection.Execute("DELETE FROM player_game_stats;");
             connection.Execute("DELETE FROM games;");
         }
@@ -852,9 +849,8 @@ public static class SqliteDatabaseRepository
     {
         var result = new Dictionary<string, List<CustomPenaltyDef>>();
 
-        // game_meta hat (game_id, key_name) als PK.
         var fullRows = connection.Query<SnapshotMetaRow>(
-            "SELECT game_id AS GameId, value_text AS ValueText FROM game_meta WHERE key_name = 'custom_penalties_snapshot';");
+            "SELECT game_id AS GameId, custom_penalties_snapshot_json AS ValueText FROM game_runtime_state WHERE custom_penalties_snapshot_json IS NOT NULL;");
 
         foreach (var row in fullRows)
         {
@@ -1119,7 +1115,7 @@ public static class SqliteDatabaseRepository
 
     private static GameRow ReadGameById(SQLiteConnection connection, string gameId)
     {
-        return connection.Query<GameRow>(@"
+        var row = connection.Query<GameRow>(@"
             SELECT
                 id AS Id,
                 game_mode AS GameMode,
@@ -1129,11 +1125,14 @@ public static class SqliteDatabaseRepository
                 current_player_index AS CurrentPlayerIndex,
                 starting_player_index AS StartingPlayerIndex,
                 winner_player_id AS WinnerPlayerId,
-                player_ids AS PlayerIdsRaw,
                 settings_json AS SettingsJson
             FROM games
             WHERE id = ?;
         ", gameId).FirstOrDefault();
+
+        if (row != null)
+            PopulateGamePlayerIds(connection, new List<GameRow> { row });
+        return row;
     }
 
     private class PlayerGameStatRow
@@ -1208,126 +1207,107 @@ public static class SqliteDatabaseRepository
         }
     }
 
-    private static void RestoreRuntimeGameMeta(SQLiteConnection connection, string gameId, Game game)
+    private static void RestoreRuntimeGameState(SQLiteConnection connection, string gameId, Game game)
     {
-        var rows = connection.Query<GameMetaRow>("SELECT key_name AS KeyName, value_text AS ValueText FROM game_meta WHERE game_id = ?;", gameId);
+        var row = connection.Query<GameRuntimeStateRow>(
+            @"SELECT
+                x01_player_scores_json AS X01PlayerScoresJson,
+                x01_player_checked_in_json AS X01PlayerCheckedInJson,
+                x01_sudden_death_triggered AS X01SuddenDeathTriggered,
+                x01_player_stats_json AS X01PlayerStatsJson,
+                atc_targets_json AS AtcTargetsJson,
+                atc_target_multipliers_json AS AtcTargetMultipliersJson,
+                atc_progress_json AS AtcProgressJson,
+                custom_penalties_snapshot_json AS CustomPenaltiesSnapshotJson,
+                audio_events_snapshot_json AS AudioEventsSnapshotJson
+            FROM game_runtime_state
+            WHERE game_id = ?;", gameId).FirstOrDefault();
 
         List<int> atcTargets = null;
         List<DartMultiplier> atcMultipliers = null;
         Dictionary<Guid, int> atcProgress = null;
 
-        foreach (var row in rows)
+        if (row != null)
         {
-            switch (row.KeyName)
+            if (game is X01Game x01 && !string.IsNullOrWhiteSpace(row.X01PlayerScoresJson))
             {
-                case "player_scores":
-                    if (game is X01Game x01)
-                    {
-                        var scoreMap = JsonConvert.DeserializeObject<Dictionary<string, int>>(row.ValueText ?? "{}") ?? new Dictionary<string, int>();
-                        var scores = scoreMap.ToDictionary(kvp => Guid.Parse(kvp.Key), kvp => kvp.Value);
-                        SetPrivateField(x01, "playerScores", scores);
-                    }
-                    break;
-                case "player_checked_in":
-                    if (game is X01Game x01CheckedIn)
-                    {
-                        var checkInMap = JsonConvert.DeserializeObject<Dictionary<string, bool>>(row.ValueText ?? "{}") ?? new Dictionary<string, bool>();
-                        var checkedIn = checkInMap.ToDictionary(kvp => Guid.Parse(kvp.Key), kvp => kvp.Value);
-                        SetPrivateField(x01CheckedIn, "playerCheckedIn", checkedIn);
-                    }
-                    break;
-                case "sudden_death_triggered":
-                    if (game is X01Game x01SuddenDeath)
-                        SetPrivateField(x01SuddenDeath, "suddenDeathTriggered", bool.TryParse(row.ValueText, out var triggered) && triggered);
-                    break;
-                case "player_x01_stats":
-                    if (!string.IsNullOrWhiteSpace(row.ValueText) && game is X01Game x01StatsGame)
-                    {
-                        var x01Stats = JsonConvert.DeserializeObject<Dictionary<string, GameStatsX01>>(row.ValueText) ?? new Dictionary<string, GameStatsX01>();
-                        var playerStatsField = typeof(Game).GetField("playerStats", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
-                        var playerStatsMap = playerStatsField?.GetValue(game) as Dictionary<Guid, GameStats>;
+                var scoreMap = JsonConvert.DeserializeObject<Dictionary<string, int>>(row.X01PlayerScoresJson) ?? new Dictionary<string, int>();
+                var scores = scoreMap
+                    .Where(kvp => Guid.TryParse(kvp.Key, out _))
+                    .ToDictionary(kvp => Guid.Parse(kvp.Key), kvp => kvp.Value);
+                SetPrivateField(x01, "playerScores", scores);
+            }
 
-                        foreach (var kv in x01Stats)
-                        {
-                            if (Guid.TryParse(kv.Key, out var playerId) && x01StatsGame.GetPlayerIDs().Contains(playerId) && playerStatsMap != null)
-                                playerStatsMap[playerId] = kv.Value;
-                        }
-                    }
-                    break;
-                case "game_settings":
-                    if (!string.IsNullOrWhiteSpace(row.ValueText))
-                    {
-                        var json = row.ValueText;
-                        switch (game.GetGameMode())
-                        {
-                            case GameMode.X01:
-                                SetPrivateField(game, "settings", JsonConvert.DeserializeObject<X01GameSettings>(json));
-                                break;
-                            case GameMode.Cricket:
-                                SetPrivateField(game, "settings", JsonConvert.DeserializeObject<CricketGameSettings>(json));
-                                break;
-                            case GameMode.ATC:
-                                SetPrivateField(game, "settings", JsonConvert.DeserializeObject<ATCGameSettings>(json));
-                                break;
-                        }
-                    }
-                    break;
+            if (game is X01Game x01CheckedIn && !string.IsNullOrWhiteSpace(row.X01PlayerCheckedInJson))
+            {
+                var checkInMap = JsonConvert.DeserializeObject<Dictionary<string, bool>>(row.X01PlayerCheckedInJson) ?? new Dictionary<string, bool>();
+                var checkedIn = checkInMap
+                    .Where(kvp => Guid.TryParse(kvp.Key, out _))
+                    .ToDictionary(kvp => Guid.Parse(kvp.Key), kvp => kvp.Value);
+                SetPrivateField(x01CheckedIn, "playerCheckedIn", checkedIn);
+            }
 
-                case "atc_targets":
-                    atcTargets = SafeParseIntList(row.ValueText);
-                    break;
+            if (game is X01Game x01SuddenDeath && row.X01SuddenDeathTriggered.HasValue)
+                SetPrivateField(x01SuddenDeath, "suddenDeathTriggered", row.X01SuddenDeathTriggered.Value != 0);
 
-                case "atc_target_multipliers":
-                    var multInts = SafeParseIntList(row.ValueText);
-                    if (multInts != null)
-                    {
-                        atcMultipliers = multInts.ConvertAll(i =>
-                            i >= 0 && i <= 2 ? (DartMultiplier)i : DartMultiplier.Single);
-                    }
-                    break;
+            if (!string.IsNullOrWhiteSpace(row.X01PlayerStatsJson) && game is X01Game x01StatsGame)
+            {
+                var x01Stats = JsonConvert.DeserializeObject<Dictionary<string, GameStatsX01>>(row.X01PlayerStatsJson) ?? new Dictionary<string, GameStatsX01>();
+                var playerStatsField = typeof(Game).GetField("playerStats", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+                var playerStatsMap = playerStatsField?.GetValue(game) as Dictionary<Guid, GameStats>;
 
-                case "atc_progress":
-                    atcProgress = SafeParseGuidIntMap(row.ValueText);
-                    break;
+                foreach (var kv in x01Stats)
+                {
+                    if (Guid.TryParse(kv.Key, out var playerId) && x01StatsGame.GetPlayerIDs().Contains(playerId) && playerStatsMap != null)
+                        playerStatsMap[playerId] = kv.Value;
+                }
+            }
 
-                case "custom_penalties_snapshot":
-                    if (!string.IsNullOrWhiteSpace(row.ValueText))
-                    {
-                        try
-                        {
-                            var snap = JsonConvert.DeserializeObject<List<CustomPenaltyDef>>(row.ValueText);
-                            game.RestorePenaltySnapshot(snap);
-                        }
-                        catch (System.Exception e)
-                        {
-                            Debug.LogWarning("[SQLite] Penalty-Snapshot unlesbar: " + e.Message);
-                        }
-                    }
-                    break;
+            if (!string.IsNullOrWhiteSpace(row.AtcTargetsJson))
+                atcTargets = SafeParseIntList(row.AtcTargetsJson);
 
-                case "audio_events_snapshot":
-                    if (!string.IsNullOrWhiteSpace(row.ValueText))
-                    {
-                        try
-                        {
-                            var eventSnap = JsonConvert.DeserializeObject<List<AudioEventDef>>(row.ValueText);
-                            game.RestoreAudioEventSnapshot(eventSnap);
-                        }
-                        catch (System.Exception e)
-                        {
-                            Debug.LogWarning("[SQLite] AudioEvent-Snapshot unlesbar: " + e.Message);
-                        }
-                    }
-                    break;
+            if (!string.IsNullOrWhiteSpace(row.AtcTargetMultipliersJson))
+            {
+                var multInts = SafeParseIntList(row.AtcTargetMultipliersJson);
+                if (multInts != null)
+                {
+                    atcMultipliers = multInts.ConvertAll(i =>
+                        i >= 0 && i <= 2 ? (DartMultiplier)i : DartMultiplier.Single);
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(row.AtcProgressJson))
+                atcProgress = SafeParseGuidIntMap(row.AtcProgressJson);
+
+            if (!string.IsNullOrWhiteSpace(row.CustomPenaltiesSnapshotJson))
+            {
+                try
+                {
+                    var snap = JsonConvert.DeserializeObject<List<CustomPenaltyDef>>(row.CustomPenaltiesSnapshotJson);
+                    game.RestorePenaltySnapshot(snap);
+                }
+                catch (System.Exception e)
+                {
+                    Debug.LogWarning("[SQLite] Penalty-Snapshot unlesbar: " + e.Message);
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(row.AudioEventsSnapshotJson))
+            {
+                try
+                {
+                    var eventSnap = JsonConvert.DeserializeObject<List<AudioEventDef>>(row.AudioEventsSnapshotJson);
+                    game.RestoreAudioEventSnapshot(eventSnap);
+                }
+                catch (System.Exception e)
+                {
+                    Debug.LogWarning("[SQLite] AudioEvent-Snapshot unlesbar: " + e.Message);
+                }
             }
         }
 
-        // ATC-Fortschritt wiederherstellen (immer, auch ohne Keys: Fallback baut
-        // deterministisch neu + replayt aktuelles Leg — alte Saves ohne Keys).
         if (game is ATCGame atcGame)
-        {
             atcGame.RestoreProgressAfterLoad(atcTargets, atcMultipliers, atcProgress);
-        }
     }
 
     private static List<int> SafeParseIntList(string json)
@@ -1370,161 +1350,132 @@ public static class SqliteDatabaseRepository
         }
     }
 
-    private static void ApplyTurnMeta(SQLiteConnection connection, string turnId, Turn turn)
-    {
-        var rows = connection.Query<GameMetaRow>("SELECT key_name AS KeyName, value_text AS ValueText FROM turn_meta WHERE turn_id = ?;", turnId);
-        foreach (var row in rows)
-        {
-            var key = row.KeyName ?? string.Empty;
-            var normalized = key
-                .Replace("<", string.Empty)
-                .Replace(">", string.Empty)
-                .Replace("k__BackingField", string.Empty)
-                .Replace("_", string.Empty)
-                .ToLowerInvariant();
-
-            switch (normalized)
-            {
-                case "scorebeforeturn":
-                    if (int.TryParse(row.ValueText, out var scoreBeforeTurn))
-                        turn.ScoreBeforeTurn = scoreBeforeTurn;
-                    break;
-                case "checkinthrowindex":
-                    if (int.TryParse(row.ValueText, out var checkinIndex))
-                        turn.CheckinThrowIndex = checkinIndex;
-                    break;
-                case "isbust":
-                    if (bool.TryParse(row.ValueText, out var isBust) && isBust)
-                        turn.MarkAsBust();
-                    else
-                        turn.ClearBust();
-                    break;
-            }
-        }
-    }
-
     private static void ClearTables(SQLiteConnection connection)
     {
         connection.Execute("DELETE FROM throws;");
-        connection.Execute("DELETE FROM throw_meta;");
-        connection.Execute("DELETE FROM turn_meta;");
         connection.Execute("DELETE FROM turns;");
-        connection.Execute("DELETE FROM leg_meta;");
         connection.Execute("DELETE FROM legs;");
-        connection.Execute("DELETE FROM set_meta;");
         connection.Execute("DELETE FROM sets;");
         connection.Execute("DELETE FROM game_players;");
-        connection.Execute("DELETE FROM game_meta;");
+        connection.Execute("DELETE FROM game_runtime_state;");
         connection.Execute("DELETE FROM games;");
-        connection.Execute("DELETE FROM player_meta;");
+        connection.Execute("DELETE FROM bot_state;");
         connection.Execute("DELETE FROM players;");
     }
 
     private static void SavePlayer(SQLiteConnection connection, BasePlayer player)
     {
         connection.Execute(
-            "INSERT OR REPLACE INTO players (id, name, type_name, deleted, show_in_statistics) VALUES (?, ?, ?, ?, ?);",
+            @"INSERT INTO players (id, name, type_name, deleted, show_in_statistics, setup_start_position, created_at)
+              VALUES (?, ?, ?, ?, ?, ?, ?)
+              ON CONFLICT(id) DO UPDATE SET
+                name = excluded.name,
+                type_name = excluded.type_name,
+                deleted = excluded.deleted,
+                show_in_statistics = excluded.show_in_statistics,
+                setup_start_position = excluded.setup_start_position;",
             player.GetID().ToString(),
             player.GetName(),
             player.GetType().Name,
             player.GotDeleted() ? 1 : 0,
-            player.IsVisibleInStatistics() ? 1 : 0
+            player.IsVisibleInStatistics() ? 1 : 0,
+            player.GetSetupStartPosition(),
+            DatabaseTimestamp.ToUtcIso(DateTime.UtcNow)
         );
 
-        SaveMeta(connection, "player_meta", "player_id", player.GetID().ToString(), player);
+        if (player is DartBot bot)
+        {
+            connection.Execute(
+                "INSERT OR REPLACE INTO bot_state (player_id, difficulty, number, confidence, darts_thrown, streak) VALUES (?, ?, ?, ?, ?, ?);",
+                player.GetID().ToString(),
+                bot.GetDifficulty().ToString(),
+                bot.GetNumber(),
+                GetPrivateField(bot, "confidence", 0f),
+                GetPrivateField(bot, "dartsThrown", 0),
+                GetPrivateField(bot, "streak", 0)
+            );
+        }
+        else
+        {
+            connection.Execute("DELETE FROM bot_state WHERE player_id = ?;", player.GetID().ToString());
+        }
     }
 
-    private static void SaveRuntimeGameMeta(SQLiteConnection connection, Game game)
+    private static void SaveRuntimeGameState(SQLiteConnection connection, Game game)
     {
+        string x01Scores = null;
+        string x01CheckedIn = null;
+        int? x01SuddenDeath = null;
+        string x01Stats = null;
+        string atcTargets = null;
+        string atcMultipliers = null;
+        string atcProgress = null;
+        string penalties = null;
+        string audio = null;
+
         if (game is X01Game x01)
         {
             var scoreField = typeof(X01Game).GetField("playerScores", BindingFlags.Instance | BindingFlags.NonPublic);
             var checkedInField = typeof(X01Game).GetField("playerCheckedIn", BindingFlags.Instance | BindingFlags.NonPublic);
             var suddenDeathField = typeof(X01Game).GetField("suddenDeathTriggered", BindingFlags.Instance | BindingFlags.NonPublic);
 
-            if (scoreField != null)
-            {
-                var scores = scoreField.GetValue(x01) as Dictionary<Guid, int>;
-                if (scores != null)
-                    connection.Execute("INSERT OR REPLACE INTO game_meta (game_id, key_name, value_text) VALUES (?, ?, ?);", game.GetID().ToString(), "player_scores", JsonConvert.SerializeObject(scores.ToDictionary(kvp => kvp.Key.ToString(), kvp => kvp.Value)));
-            }
+            if (scoreField != null && scoreField.GetValue(x01) is Dictionary<Guid, int> scores)
+                x01Scores = JsonConvert.SerializeObject(scores.ToDictionary(kvp => kvp.Key.ToString(), kvp => kvp.Value));
 
-            if (checkedInField != null)
-            {
-                var checkedIn = checkedInField.GetValue(x01) as Dictionary<Guid, bool>;
-                if (checkedIn != null)
-                    connection.Execute("INSERT OR REPLACE INTO game_meta (game_id, key_name, value_text) VALUES (?, ?, ?);", game.GetID().ToString(), "player_checked_in", JsonConvert.SerializeObject(checkedIn.ToDictionary(kvp => kvp.Key.ToString(), kvp => kvp.Value)));
-            }
+            if (checkedInField != null && checkedInField.GetValue(x01) is Dictionary<Guid, bool> checkedIn)
+                x01CheckedIn = JsonConvert.SerializeObject(checkedIn.ToDictionary(kvp => kvp.Key.ToString(), kvp => kvp.Value));
 
             if (suddenDeathField != null)
-            {
-                connection.Execute("INSERT OR REPLACE INTO game_meta (game_id, key_name, value_text) VALUES (?, ?, ?);", game.GetID().ToString(), "sudden_death_triggered", Convert.ToString((bool)suddenDeathField.GetValue(x01)));
-            }
+                x01SuddenDeath = (bool)suddenDeathField.GetValue(x01) ? 1 : 0;
         }
 
         if (game.GetPlayerStats() != null)
         {
-            var x01Stats = game.GetPlayerStats()
+            var stats = game.GetPlayerStats()
                 .Where(kvp => kvp.Value is GameStatsX01)
                 .ToDictionary(kvp => kvp.Key.ToString(), kvp => (GameStatsX01)kvp.Value);
 
-            if (x01Stats.Count > 0)
-            {
-                connection.Execute("INSERT OR REPLACE INTO game_meta (game_id, key_name, value_text) VALUES (?, ?, ?);", game.GetID().ToString(), "player_x01_stats", JsonConvert.SerializeObject(x01Stats));
-            }
+            if (stats.Count > 0)
+                x01Stats = JsonConvert.SerializeObject(stats);
         }
 
-        if (game.GetSettings() != null)
-        {
-            connection.Execute("INSERT OR REPLACE INTO game_meta (game_id, key_name, value_text) VALUES (?, ?, ?);", game.GetID().ToString(), "game_settings", JsonConvert.SerializeObject(game.GetSettings()));
-        }
-
-        // Custom-Penalty-Snapshot: SPIELSTART-Stand aus dem Game (nicht
-        // Live-Store). History und Statistik lesen ausschließlich diesen
-        // Snapshot — Mid-Game-Toggles sowie gelöschte/umbenannte Defs ändern
-        // vergangene Spiele nicht mehr (enabled-Stand bleibt rückverfolgbar).
         try
         {
-            var snapshot = game.GetPenaltySnapshot();
-            connection.Execute("INSERT OR REPLACE INTO game_meta (game_id, key_name, value_text) VALUES (?, ?, ?);",
-                game.GetID().ToString(), "custom_penalties_snapshot",
-                JsonConvert.SerializeObject(snapshot, Formatting.None));
+            penalties = JsonConvert.SerializeObject(game.GetPenaltySnapshot(), Formatting.None);
         }
         catch (Exception e)
         {
             Debug.LogWarning("[SQLite] Custom-Penalty-Snapshot fehlgeschlagen: " + e.Message);
         }
 
-        // Audio-Event-Snapshot (Spielstart-Stand, inkl. enabled).
         try
         {
-            var eventSnapshot = game.GetAudioEventSnapshot();
-            connection.Execute("INSERT OR REPLACE INTO game_meta (game_id, key_name, value_text) VALUES (?, ?, ?);",
-                game.GetID().ToString(), "audio_events_snapshot",
-                JsonConvert.SerializeObject(eventSnapshot, Formatting.None));
+            audio = JsonConvert.SerializeObject(game.GetAudioEventSnapshot(), Formatting.None);
         }
         catch (Exception e)
         {
             Debug.LogWarning("[SQLite] AudioEvent-Snapshot fehlgeschlagen: " + e.Message);
         }
 
-        // ATC-Schrittliste + Fortschritt persistieren: Nach Load würde das Spiel
-        // sonst auf frischen Singles-Defaults laufen (falsche Targets nach Undo/
-        // Continue, z.B. Single20 statt T20, oder "Finished" bei Kombi-Modi).
         if (game is ATCGame atc)
         {
-            connection.Execute("INSERT OR REPLACE INTO game_meta (game_id, key_name, value_text) VALUES (?, ?, ?);", game.GetID().ToString(), "atc_targets", JsonConvert.SerializeObject(atc.GetTargetNumbers()));
-            connection.Execute("INSERT OR REPLACE INTO game_meta (game_id, key_name, value_text) VALUES (?, ?, ?);", game.GetID().ToString(), "atc_target_multipliers", JsonConvert.SerializeObject(atc.GetTargetMultipliers().ConvertAll(m => (int)m)));
-            connection.Execute("INSERT OR REPLACE INTO game_meta (game_id, key_name, value_text) VALUES (?, ?, ?);", game.GetID().ToString(), "atc_progress", JsonConvert.SerializeObject(atc.GetTargetIndices().ToDictionary(kvp => kvp.Key.ToString(), kvp => kvp.Value)));
+            atcTargets = JsonConvert.SerializeObject(atc.GetTargetNumbers());
+            atcMultipliers = JsonConvert.SerializeObject(atc.GetTargetMultipliers().ConvertAll(m => (int)m));
+            atcProgress = JsonConvert.SerializeObject(atc.GetTargetIndices().ToDictionary(kvp => kvp.Key.ToString(), kvp => kvp.Value));
         }
-    }
 
-    private static void SaveGameSettings(SQLiteConnection connection, Game game)
-    {
-        if (game.GetSettings() != null)
-        {
-            connection.Execute("INSERT OR REPLACE INTO game_meta (game_id, key_name, value_text) VALUES (?, ?, ?);", game.GetID().ToString(), "game_settings", JsonConvert.SerializeObject(game.GetSettings()));
-        }
+        connection.Execute(
+            "INSERT OR REPLACE INTO game_runtime_state (game_id, x01_player_scores_json, x01_player_checked_in_json, x01_sudden_death_triggered, x01_player_stats_json, atc_targets_json, atc_target_multipliers_json, atc_progress_json, custom_penalties_snapshot_json, audio_events_snapshot_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);",
+            game.GetID().ToString(),
+            x01Scores,
+            x01CheckedIn,
+            x01SuddenDeath,
+            x01Stats,
+            atcTargets,
+            atcMultipliers,
+            atcProgress,
+            penalties,
+            audio);
     }
 
     private static void SaveSet(SQLiteConnection connection, Guid gameId, Set set, int order)
@@ -1538,8 +1489,6 @@ public static class SqliteDatabaseRepository
             order,
             set.WinnerPlayerId.HasValue ? set.WinnerPlayerId.Value.ToString() : null
         );
-
-        SaveMeta(connection, "set_meta", "set_id", setId.ToString(), set);
 
         var legs = set.GetLegs();
         for (int i = 0; i < legs.Count; i++)
@@ -1561,8 +1510,6 @@ public static class SqliteDatabaseRepository
             leg.WinnerPlayerId == Guid.Empty ? null : leg.WinnerPlayerId.ToString()
         );
 
-        SaveMeta(connection, "leg_meta", "leg_id", legId.ToString(), leg);
-
         var turns = leg.GetTurns();
         for (int i = 0; i < turns.Count; i++)
         {
@@ -1575,16 +1522,16 @@ public static class SqliteDatabaseRepository
         var turnId = Guid.NewGuid();
 
         connection.Execute(
-            "INSERT INTO turns (id, game_id, leg_id, order_index, player_id, is_bust) VALUES (?, ?, ?, ?, ?, ?);",
+            "INSERT INTO turns (id, game_id, leg_id, order_index, player_id, is_bust, score_before_turn, checkin_throw_index) VALUES (?, ?, ?, ?, ?, ?, ?, ?);",
             turnId.ToString(),
             gameId.ToString(),
             legId.ToString(),
             order,
             turn.PlayerId.ToString(),
-            turn.IsBust ? 1 : 0
+            turn.IsBust ? 1 : 0,
+            turn.ScoreBeforeTurn,
+            turn.CheckinThrowIndex
         );
-
-        SaveMeta(connection, "turn_meta", "turn_id", turnId.ToString(), turn);
 
         var throws = turn.GetThrows();
         for (int i = 0; i < throws.Count; i++)
@@ -1600,7 +1547,7 @@ public static class SqliteDatabaseRepository
         var targetValue = dart.TargetValue > 0 ? (int?)dart.TargetValue : null;
 
         connection.Execute(
-            "INSERT INTO throws (id, game_id, turn_id, order_index, hit_type, multiplier, score, value, target_value, is_target_hit, segment, custom_hit_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);",
+            "INSERT INTO throws (id, game_id, turn_id, order_index, hit_type, multiplier, score, value, target_value, is_target_hit, custom_hit_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);",
             throwId.ToString(),
             gameId.ToString(),
             turnId.ToString(),
@@ -1611,71 +1558,49 @@ public static class SqliteDatabaseRepository
             rawValue,
             targetValue,
             dart.IsTargetHit ? 1 : 0,
-            targetValue,
             dart.HitType == HitType.Custom ? dart.CustomHitId : null
         );
-
-        SaveMeta(connection, "throw_meta", "throw_id", throwId.ToString(), dart);
-    }
-
-    private static void SaveMeta(SQLiteConnection connection, string tableName, string ownerColumn, string ownerId, object instance)
-    {
-        var type = instance.GetType();
-        var fields = type.GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
-
-        foreach (var field in fields)
-        {
-            if (field.IsStatic)
-                continue;
-
-            var value = field.GetValue(instance);
-            if (value == null)
-                continue;
-
-            if (IsSimpleValue(value))
-            {
-                connection.Execute(
-                    $"INSERT OR REPLACE INTO {tableName} ({ownerColumn}, key_name, value_text) VALUES (?, ?, ?);",
-                    ownerId,
-                    field.Name,
-                    ConvertToString(value)
-                );
-            }
-        }
     }
 
     private static List<BasePlayer> ReadPlayers(SQLiteConnection connection)
     {
         var players = new List<BasePlayer>();
-        var rows = connection.Query<PlayerRow>("SELECT id AS Id, name AS Name, type_name AS TypeName, deleted AS Deleted, show_in_statistics AS ShowInStatistics FROM players;");
+        var rows = connection.Query<PlayerRow>(@"
+            SELECT
+                p.id AS Id,
+                p.name AS Name,
+                p.type_name AS TypeName,
+                p.deleted AS Deleted,
+                p.show_in_statistics AS ShowInStatistics,
+                p.setup_start_position AS SetupStartPosition,
+                COALESCE(b.difficulty, 'Easy') AS Difficulty,
+                COALESCE(b.number, 1) AS BotNumber,
+                COALESCE(b.confidence, 0) AS Confidence,
+                COALESCE(b.darts_thrown, 0) AS DartsThrown,
+                COALESCE(b.streak, 0) AS Streak
+            FROM players p
+            LEFT JOIN bot_state b ON b.player_id = p.id;");
 
         foreach (var row in rows)
         {
-            var metaRows = connection.Query<PlayerMetaRow>("SELECT key_name AS KeyName, value_text AS ValueText FROM player_meta WHERE player_id = ?;", row.Id);
             var difficulty = DartBotDifficulty.Easy;
-            var botNumber = 1;
-
-            foreach (var metaRow in metaRows)
-            {
-                if (metaRow.KeyName == "difficulty" && Enum.TryParse<DartBotDifficulty>(metaRow.ValueText, true, out var parsedDifficulty))
-                    difficulty = parsedDifficulty;
-
-                if (metaRow.KeyName == "number" && int.TryParse(metaRow.ValueText, out var parsedNumber))
-                    botNumber = parsedNumber;
-            }
+            if (!string.IsNullOrWhiteSpace(row.Difficulty))
+                Enum.TryParse(row.Difficulty, true, out difficulty);
 
             BasePlayer player = row.TypeName == "DartBot"
-                ? new DartBot(Guid.Parse(row.Id), row.Name, difficulty, botNumber)
+                ? new DartBot(Guid.Parse(row.Id), row.Name, difficulty, row.BotNumber)
                 : new Player(Guid.Parse(row.Id), row.Name);
 
             player.ShowInStatistics(row.ShowInStatistics == 1);
+            player.SetSetupStartPosition(row.SetupStartPosition);
             if (row.Deleted == 1)
                 player.Delete();
 
-            foreach (var metaRow in metaRows)
+            if (player is DartBot bot)
             {
-                if (metaRow.KeyName == "setupStartPosition" && int.TryParse(metaRow.ValueText, out var setupStartPosition))
-                    player.SetSetupStartPosition(setupStartPosition);
+                SetPrivateField(bot, "confidence", (float)row.Confidence);
+                SetPrivateField(bot, "dartsThrown", row.DartsThrown);
+                SetPrivateField(bot, "streak", row.Streak);
             }
 
             players.Add(player);
@@ -1686,7 +1611,7 @@ public static class SqliteDatabaseRepository
 
     private static List<GameRow> ReadGames(SQLiteConnection connection)
     {
-        return connection.Query<GameRow>(@"
+        var rows = connection.Query<GameRow>(@"
             SELECT
                 id AS Id,
                 game_mode AS GameMode,
@@ -1696,23 +1621,32 @@ public static class SqliteDatabaseRepository
                 current_player_index AS CurrentPlayerIndex,
                 starting_player_index AS StartingPlayerIndex,
                 winner_player_id AS WinnerPlayerId,
-                player_ids AS PlayerIdsRaw,
                 settings_json AS SettingsJson
             FROM games
             ORDER BY last_activity_at DESC;
         ");
+
+        PopulateGamePlayerIds(connection, rows);
+        return rows;
     }
 
-    private static List<Guid> ReadPlayerIds(string raw)
+    private static void PopulateGamePlayerIds(SQLiteConnection connection, List<GameRow> games)
     {
-        if (string.IsNullOrWhiteSpace(raw))
-            return new List<Guid>();
+        if (games == null || games.Count == 0)
+            return;
 
-        return raw
-            .Split(new[] { '|' }, StringSplitOptions.RemoveEmptyEntries)
-            .Select(value => Guid.TryParse(value, out var guid) ? guid : Guid.Empty)
-            .Where(id => id != Guid.Empty)
-            .ToList();
+        var byId = games.ToDictionary(game => game.Id, game => game, StringComparer.Ordinal);
+        var rows = connection.Query<GamePlayerRow>(
+            "SELECT game_id AS GameId, player_id AS PlayerId, player_order AS PlayerOrder FROM game_players ORDER BY game_id, player_order;");
+
+        foreach (var row in rows)
+        {
+            if (!byId.TryGetValue(row.GameId, out var game))
+                continue;
+
+            if (Guid.TryParse(row.PlayerId, out var playerId))
+                game.PlayerIds.Add(playerId);
+        }
     }
 
     private static Game CreateGameFromRow(GameRow row)
@@ -1729,6 +1663,22 @@ public static class SqliteDatabaseRepository
 
         if (game == null)
             return null;
+
+        if (!string.IsNullOrWhiteSpace(row.SettingsJson))
+        {
+            switch (row.GameMode)
+            {
+                case GameMode.X01:
+                    SetPrivateField(game, "settings", JsonConvert.DeserializeObject<X01GameSettings>(row.SettingsJson));
+                    break;
+                case GameMode.Cricket:
+                    SetPrivateField(game, "settings", JsonConvert.DeserializeObject<CricketGameSettings>(row.SettingsJson));
+                    break;
+                case GameMode.ATC:
+                    SetPrivateField(game, "settings", JsonConvert.DeserializeObject<ATCGameSettings>(row.SettingsJson));
+                    break;
+            }
+        }
 
         SetPrivateField(game, "id", Guid.Parse(row.Id));
         SetPrivateField(game, "createdAt", DateTime.Parse(row.CreatedAt));
@@ -1782,11 +1732,12 @@ public static class SqliteDatabaseRepository
         foreach (var turnRow in turnRows)
         {
             var turn = new Turn(turnRow.PlayerId);
+            turn.ScoreBeforeTurn = turnRow.ScoreBeforeTurn;
+            turn.CheckinThrowIndex = turnRow.CheckinThrowIndex;
             if (turnRow.IsBust)
                 turn.MarkAsBust();
 
             turnById[turnRow.Id] = turn;
-            ApplyTurnMeta(connection, turnRow.Id, turn);
 
             if (legById.TryGetValue(turnRow.LegId, out var targetLeg))
                 targetLeg.AddTurn(turn);
@@ -1808,7 +1759,7 @@ public static class SqliteDatabaseRepository
                 : HitType.Board;
 
             var value = throwRow.Value > 0 ? throwRow.Value : (throwRow.TargetValue > 0 ? throwRow.TargetValue : throwRow.Score);
-            var targetValue = throwRow.IsTargetHit || throwRow.TargetValue > 0 ? throwRow.TargetValue > 0 ? throwRow.TargetValue : throwRow.Segment : -1;
+            var targetValue = throwRow.IsTargetHit || throwRow.TargetValue > 0 ? throwRow.TargetValue : -1;
             var customHitId = hitType == HitType.Custom ? throwRow.CustomHitId : null;
             var dart = new Throw(multiplier, value, hitType, targetValue > 0, targetValue, customHitId);
             turn.AddThrow(dart);
@@ -1869,7 +1820,7 @@ public static class SqliteDatabaseRepository
     private static List<TurnRow> ReadTurnsForGame(SQLiteConnection connection, string gameId)
     {
         return connection.Query<TurnRow>(@"
-            SELECT id AS Id, game_id AS GameId, leg_id AS LegId, order_index AS OrderIndex, player_id AS PlayerId, is_bust AS IsBust
+            SELECT id AS Id, game_id AS GameId, leg_id AS LegId, order_index AS OrderIndex, player_id AS PlayerId, is_bust AS IsBust, score_before_turn AS ScoreBeforeTurn, checkin_throw_index AS CheckinThrowIndex
             FROM turns
             WHERE game_id = ?
             ORDER BY leg_id, order_index, id;
@@ -1879,7 +1830,7 @@ public static class SqliteDatabaseRepository
     private static List<ThrowRow> ReadThrowsForGame(SQLiteConnection connection, string gameId)
     {
         return connection.Query<ThrowRow>(@"
-            SELECT id AS Id, game_id AS GameId, turn_id AS TurnId, order_index AS OrderIndex, hit_type AS HitType, multiplier AS MultiplierValue, score AS Score, value AS Value, target_value AS TargetValue, is_target_hit AS IsTargetHit, segment AS Segment, custom_hit_id AS CustomHitId
+            SELECT id AS Id, game_id AS GameId, turn_id AS TurnId, order_index AS OrderIndex, hit_type AS HitType, multiplier AS MultiplierValue, score AS Score, value AS Value, target_value AS TargetValue, is_target_hit AS IsTargetHit, custom_hit_id AS CustomHitId
             FROM throws
             WHERE game_id = ?
             ORDER BY turn_id, order_index, id;
@@ -1966,12 +1917,12 @@ public static class SqliteDatabaseRepository
         public string TypeName { get; set; }
         public int Deleted { get; set; }
         public int ShowInStatistics { get; set; }
-    }
-
-    private class PlayerMetaRow
-    {
-        public string KeyName { get; set; }
-        public string ValueText { get; set; }
+        public int SetupStartPosition { get; set; }
+        public string Difficulty { get; set; }
+        public int BotNumber { get; set; }
+        public double Confidence { get; set; }
+        public int DartsThrown { get; set; }
+        public int Streak { get; set; }
     }
 
     private class GameRow
@@ -1984,13 +1935,20 @@ public static class SqliteDatabaseRepository
         public int CurrentPlayerIndex { get; set; }
         public int StartingPlayerIndex { get; set; }
         public Guid? WinnerPlayerId { get; set; }
-        public string PlayerIdsRaw { get; set; }
         public string SettingsJson { get; set; }
+        public List<Guid> PlayerIds { get; } = new List<Guid>();
 
         public List<Guid> GetPlayerIds()
         {
-            return ReadPlayerIds(PlayerIdsRaw);
+            return PlayerIds;
         }
+    }
+
+    private class GamePlayerRow
+    {
+        public string GameId { get; set; }
+        public string PlayerId { get; set; }
+        public int PlayerOrder { get; set; }
     }
 
     private class SetRow
@@ -2018,12 +1976,21 @@ public static class SqliteDatabaseRepository
         public int OrderIndex { get; set; }
         public Guid PlayerId { get; set; }
         public bool IsBust { get; set; }
+        public int ScoreBeforeTurn { get; set; }
+        public int CheckinThrowIndex { get; set; }
     }
 
-    private class GameMetaRow
+    private class GameRuntimeStateRow
     {
-        public string KeyName { get; set; }
-        public string ValueText { get; set; }
+        public string X01PlayerScoresJson { get; set; }
+        public string X01PlayerCheckedInJson { get; set; }
+        public int? X01SuddenDeathTriggered { get; set; }
+        public string X01PlayerStatsJson { get; set; }
+        public string AtcTargetsJson { get; set; }
+        public string AtcTargetMultipliersJson { get; set; }
+        public string AtcProgressJson { get; set; }
+        public string CustomPenaltiesSnapshotJson { get; set; }
+        public string AudioEventsSnapshotJson { get; set; }
     }
 
     private class SettingsRow
@@ -2056,7 +2023,6 @@ public static class SqliteDatabaseRepository
         public int Value { get; set; }
         public int TargetValue { get; set; }
         public bool IsTargetHit { get; set; }
-        public int Segment { get; set; }
         public string CustomHitId { get; set; }
     }
 
@@ -2386,6 +2352,15 @@ public static class SqliteDatabaseRepository
         public string CustomKey { get; set; }
         public string FileName { get; set; }
         public int SlotIndex { get; set; }
+        public long? FileSize { get; set; }
+        public string Sha256 { get; set; }
+        public string CreatedAtUtc { get; set; }
+    }
+
+    public sealed class RecordedClipSlotRepairResult
+    {
+        public int DeletedDuplicates;
+        public int RenumberedSlots;
     }
 
     public static List<RecordedClipRow> LoadAllRecordedClips()
@@ -2394,9 +2369,14 @@ public static class SqliteDatabaseRepository
 
         using (var connection = SqliteDatabaseService.Open())
         {
-            return connection.Query<RecordedClipRow>(
-                "SELECT id AS Id, category AS Category, score AS Score, penalty_type AS PenaltyType, special_type AS SpecialType, custom_key AS CustomKey, file_name AS FileName, slot_index AS SlotIndex FROM recorded_clips ORDER BY id;");
+            return LoadAllRecordedClips(connection);
         }
+    }
+
+    internal static List<RecordedClipRow> LoadAllRecordedClips(SQLiteConnection connection)
+    {
+        return connection.Query<RecordedClipRow>(
+            "SELECT id AS Id, category AS Category, score AS Score, penalty_type AS PenaltyType, special_type AS SpecialType, custom_key AS CustomKey, file_name AS FileName, slot_index AS SlotIndex, file_size AS FileSize, sha256 AS Sha256, created_at_utc AS CreatedAtUtc FROM recorded_clips ORDER BY id;");
     }
 
     public static int CountRecordedClips()
@@ -2415,11 +2395,120 @@ public static class SqliteDatabaseRepository
 
         using (var connection = SqliteDatabaseService.Open())
         {
+            RecordedClipFileStore.TryResolvePath(category, fileName, out string fullPath);
+            RecordedClipFileStore.TryReadMetadata(
+                fullPath,
+                out long fileSize,
+                out string sha256,
+                out string createdAtUtc);
+
             connection.Execute(
-                "INSERT INTO recorded_clips (category, score, penalty_type, special_type, custom_key, file_name, slot_index) VALUES (?, ?, ?, ?, ?, ?, ?);",
-                category, score, penaltyType, specialType, customKey, fileName, slotIndex);
+                "INSERT INTO recorded_clips (category, score, penalty_type, special_type, custom_key, file_name, slot_index, file_size, sha256, created_at_utc) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);",
+                category, score, penaltyType, specialType, customKey, fileName, slotIndex,
+                fullPath != null ? fileSize : null, sha256, createdAtUtc);
             return connection.ExecuteScalar<long>("SELECT last_insert_rowid();");
         }
+    }
+
+    public static bool RefreshRecordedClipMetadata(long id)
+    {
+        SqliteDatabaseService.EnsureSchema();
+
+        using (var connection = SqliteDatabaseService.Open())
+        {
+            return RefreshRecordedClipMetadata(connection, id);
+        }
+    }
+
+    internal static bool RefreshRecordedClipMetadata(SQLiteConnection connection, long id)
+    {
+        var row = connection.Query<RecordedClipRow>(
+            "SELECT id AS Id, category AS Category, file_name AS FileName FROM recorded_clips WHERE id = ?;",
+            id).FirstOrDefault();
+
+        if (row == null ||
+            !RecordedClipFileStore.TryResolvePath(row.Category, row.FileName, out string fullPath) ||
+            !RecordedClipFileStore.TryReadMetadata(fullPath, out long fileSize, out string sha256, out string createdAtUtc))
+            return false;
+
+        return connection.Execute(
+            "UPDATE recorded_clips SET file_size = ?, sha256 = ?, created_at_utc = ? WHERE id = ?;",
+            fileSize,
+            sha256,
+            createdAtUtc,
+            id) > 0;
+    }
+
+    public static RecordedClipSlotRepairResult RepairRecordedClipSlots()
+    {
+        SqliteDatabaseService.EnsureSchema();
+
+        using (var connection = SqliteDatabaseService.Open())
+        {
+            connection.BeginTransaction();
+            try
+            {
+                var result = RepairRecordedClipSlots(connection);
+                connection.Commit();
+                return result;
+            }
+            catch
+            {
+                connection.Rollback();
+                throw;
+            }
+        }
+    }
+
+    internal static RecordedClipSlotRepairResult RepairRecordedClipSlots(SQLiteConnection connection)
+    {
+        var result = new RecordedClipSlotRepairResult();
+        var rows = LoadAllRecordedClips(connection);
+        var groups = rows.GroupBy(BuildClipSlotGroupKey, StringComparer.Ordinal);
+
+        foreach (var group in groups)
+        {
+            var usedSlots = new Dictionary<int, RecordedClipRow>();
+            int nextSlot = group.Max(row => row.SlotIndex) + 1;
+
+            foreach (var row in group.OrderBy(row => row.Id))
+            {
+                if (!usedSlots.TryGetValue(row.SlotIndex, out var existing))
+                {
+                    usedSlots[row.SlotIndex] = row;
+                    continue;
+                }
+
+                if (string.Equals(existing.FileName, row.FileName, StringComparison.Ordinal))
+                {
+                    result.DeletedDuplicates += connection.Execute("DELETE FROM recorded_clips WHERE id = ?;", row.Id);
+                    continue;
+                }
+
+                while (usedSlots.ContainsKey(nextSlot))
+                    nextSlot++;
+
+                result.RenumberedSlots += connection.Execute(
+                    "UPDATE recorded_clips SET slot_index = ? WHERE id = ?;",
+                    nextSlot,
+                    row.Id);
+
+                usedSlots[nextSlot] = row;
+                nextSlot++;
+            }
+        }
+
+        connection.Execute("CREATE UNIQUE INDEX IF NOT EXISTS ux_recorded_clips_slot ON recorded_clips(category, COALESCE(score, 0), COALESCE(penalty_type, ''), COALESCE(special_type, ''), COALESCE(custom_key, ''), slot_index);");
+        return result;
+    }
+
+    private static string BuildClipSlotGroupKey(RecordedClipRow row)
+    {
+        return (row.Category ?? string.Empty) + "\u001f" +
+               row.Score + "\u001f" +
+               (row.PenaltyType ?? string.Empty) + "\u001f" +
+               (row.SpecialType ?? string.Empty) + "\u001f" +
+               (row.CustomKey ?? string.Empty);
     }
 
     public static bool DeleteRecordedClipById(long id)
@@ -2481,17 +2570,4 @@ public static class SqliteDatabaseRepository
         }
     }
 
-    private static string ConvertToString(object value)
-    {
-        if (value is Guid guid)
-            return guid.ToString();
-
-        if (value is DateTime date)
-            return date.ToString("o");
-
-        if (value is Enum enumValue)
-            return enumValue.ToString();
-
-        return Convert.ToString(value);
-    }
 }

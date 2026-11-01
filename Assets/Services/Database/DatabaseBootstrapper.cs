@@ -66,7 +66,10 @@ public static class DatabaseBootstrapper
             }
 
             if (result.Success)
+            {
                 SqliteDatabaseService.MarkSchemaEnsured();
+                RunQuickIntegrityCheck();
+            }
 
             return result;
         }
@@ -224,6 +227,22 @@ public static class DatabaseBootstrapper
         finally
         {
             DatabasePaths.TryDeleteDirectory(stagingDirectory);
+        }
+    }
+
+    private static void RunQuickIntegrityCheck()
+    {
+        try
+        {
+            var report = RecordedClipIntegrityService.Scan(false);
+            if (report.IsHealthy)
+                return;
+
+            Debug.LogWarning("[DatabaseBootstrap] Clip quick check: " + report.ToSummary());
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogWarning("[DatabaseBootstrap] Clip quick check failed: " + e.Message);
         }
     }
 

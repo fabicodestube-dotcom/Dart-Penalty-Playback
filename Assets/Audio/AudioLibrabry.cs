@@ -470,6 +470,7 @@ public class AudioLibrary : MonoBehaviour
             File.Delete(path);
 
         SaveWav(path, newClip);
+        SqliteDatabaseRepository.RefreshRecordedClipMetadata(target.Id);
 
         // =====================================
         // UPDATE RUNTIME LIST

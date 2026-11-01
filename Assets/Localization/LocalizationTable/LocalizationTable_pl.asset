@@ -215,7 +215,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 48
-    m_Localized: "Z\u0142oto"
+    m_Localized: "Pomara\u0144czowy"
     m_Metadata:
       m_Items: []
   - m_Id: 49
@@ -1287,6 +1287,14 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 33806894813368320
     m_Localized: "Edytuj wydarzenie d\u017Awi\u0119kowe"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368321
+    m_Localized: "R\u00F3\u017Cowy"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368322
+    m_Localized: Limonkowy
     m_Metadata:
       m_Items: []
   references:

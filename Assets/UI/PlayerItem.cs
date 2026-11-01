@@ -15,7 +15,6 @@ public class PlayerItem : MonoBehaviour, IPointerClickHandler
 {
     [Header("UI")]
     public TMP_Text playerName;
-    public Image backgroundImage;
     public GameObject playerImage;
 
     [Header("Buttons (optional, auto-find fallback)")]
@@ -83,22 +82,12 @@ public class PlayerItem : MonoBehaviour, IPointerClickHandler
         if (playerImage != null)
             playerImage.SetActive(true);
 
-        ApplyBackgroundColor();
-
         // Rename/Delete nur in PlayerList (IPlayerItemOwner), nicht in Setup.
         bool isEditable = list is IPlayerItemOwner;
         if (renameButton != null)
             renameButton.interactable = isEditable;
         if (deleteButton != null)
             deleteButton.gameObject.SetActive(isEditable);
-    }
-
-    private void ApplyBackgroundColor()
-    {
-        if (backgroundImage == null || ThemeManager.Instance == null)
-            return;
-
-        backgroundImage.color = ThemeManager.Instance.GetColor(ThemeColorRole.Accent1);
     }
 
     public void Rename()

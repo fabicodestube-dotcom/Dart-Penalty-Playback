@@ -3,7 +3,9 @@ public enum ThemeColorScheme
     Red,
     Green,
     Blue,
-    Gold,
+    Orange,
     Purple,
-    Cyan
+    Cyan,
+    Pink,
+    Lime
 }

@@ -213,7 +213,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 48
-    m_Localized: Oro
+    m_Localized: Arancione
     m_Metadata:
       m_Items: []
   - m_Id: 49
@@ -1284,6 +1284,14 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 33806894813368320
     m_Localized: Modifica evento audio
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368321
+    m_Localized: Rosa
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368322
+    m_Localized: Lime
     m_Metadata:
       m_Items: []
   references:

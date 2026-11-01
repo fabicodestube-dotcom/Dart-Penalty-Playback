@@ -212,7 +212,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 48
-    m_Localized: "Alt\u0131n"
+    m_Localized: Turuncu
     m_Metadata:
       m_Items: []
   - m_Id: 49
@@ -1283,6 +1283,14 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 33806894813368320
     m_Localized: "Ses olay\u0131n\u0131 d\xFCzenle"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368321
+    m_Localized: Pembe
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368322
+    m_Localized: "Misket limonu"
     m_Metadata:
       m_Items: []
   references:

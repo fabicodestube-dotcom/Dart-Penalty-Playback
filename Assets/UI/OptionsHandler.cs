@@ -192,9 +192,19 @@ public class OptionsHandler : MonoBehaviour
         SetColorScheme(ThemeColorScheme.Cyan);
     }
 
-    public void SetGold()
+    public void SetOrange()
     {
-        SetColorScheme(ThemeColorScheme.Gold);
+        SetColorScheme(ThemeColorScheme.Orange);
+    }
+
+    public void SetPink()
+    {
+        SetColorScheme(ThemeColorScheme.Pink);
+    }
+
+    public void SetLime()
+    {
+        SetColorScheme(ThemeColorScheme.Lime);
     }
 
     public void SetThemeMode(bool dark)
