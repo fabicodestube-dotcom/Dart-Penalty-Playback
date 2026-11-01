@@ -938,7 +938,7 @@ public class GameDetail : UIScreen, IUIScreen
 
         appHandler.DeleteGame(gameSummary.Id);
 
-        windowHandler.HidePopup();
+        windowHandler.HidePopup(0f);
         windowHandler.GoBack();
     }
 
@@ -976,7 +976,7 @@ public class GameDetail : UIScreen, IUIScreen
                     Debug.LogError("GameDetail: x01GameEngine/windowHandler not wired");
                     return;
                 }
-                windowHandler.GoTo(ScreenId.X01Game);
+                windowHandler.StartGameplay(ScreenId.X01Game);
                 x01GameEngine.LoadGame((X01Game)game);
                 break;
 
@@ -986,7 +986,7 @@ public class GameDetail : UIScreen, IUIScreen
                     Debug.LogError("GameDetail: atcGameEngine/windowHandler not wired");
                     return;
                 }
-                windowHandler.GoTo(ScreenId.ATCGame);
+                windowHandler.StartGameplay(ScreenId.ATCGame);
                 atcGameEngine.LoadGame((ATCGame)game);
                 break;
 
@@ -996,7 +996,7 @@ public class GameDetail : UIScreen, IUIScreen
                     Debug.LogError("GameDetail: cricketGameEngine/windowHandler not wired");
                     return;
                 }
-                windowHandler.GoTo(ScreenId.CricketGame);
+                windowHandler.StartGameplay(ScreenId.CricketGame);
                 cricketGameEngine.LoadGame((CricketGame)game);
                 break;
         }

@@ -84,8 +84,8 @@ public abstract class GameEngine : MonoBehaviour
 
         CleanupGame();
 
-        windowHandler.GoTo(ScreenId.Zoggen);
-        windowHandler.HidePopup();
+        windowHandler.HidePopup(0f);
+        windowHandler.ResetTo(ScreenId.Zoggen);
     }
 
     public virtual void OnClickAbortQuitGame()
@@ -94,8 +94,8 @@ public abstract class GameEngine : MonoBehaviour
 
         CleanupGame();
 
-        windowHandler.GoTo(ScreenId.Zoggen);
-        windowHandler.HidePopup();
+        windowHandler.HidePopup(0f);
+        windowHandler.ResetTo(ScreenId.Zoggen);
     }
 
     public virtual void OnClickAbortCancel()
@@ -158,7 +158,7 @@ public abstract class GameEngine : MonoBehaviour
         var summaryObj = CreateGameSummaryFromGame(game);
         appHandler.SaveGame(game);
         summary.ShowSummary(summaryObj);
-        windowHandler.GoTo(ScreenId.Summary);
+        windowHandler.Replace(ScreenId.Summary);
     }
 
     protected GameSummary CreateGameSummaryFromGame(Game game)

@@ -203,8 +203,8 @@ public class ATCGameEngine : GameEngine
 
             windowHandler.ShowPopup(popupAbortGame);
         }
-        else
-            windowHandler.GoTo(ScreenId.Zoggen);
+        else if (windowHandler != null)
+            windowHandler.ResetTo(ScreenId.Zoggen);
     }
 
     protected override void UnsubscribeFromGameEvents()

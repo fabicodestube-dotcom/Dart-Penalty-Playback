@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -19,66 +20,240 @@ public class WindowHandler : MonoBehaviour
 
     [Header("Popup")]
     public UIScreen activePopup;
-    private bool isPopupActive = false;
-
 
     [Header("Quick Menu")]
     [SerializeField] private RectTransform quickMenuPanel;
     [SerializeField] private CanvasGroup quickMenuCanvas;
 
-    private bool isQuickMenuOpen = false;
+    [Header("Back")]
+    [SerializeField] private float doubleBackExitWindow = 2f;
 
-    private Dictionary<ScreenId, UIScreen> screenMap = new();
-    private Dictionary<(ScreenId, ScreenId), (TransitionType type, SlideDirection dir)> transitions = new();
+    private const float CrossFadeDuration = 0.22f;
+    private const float SharedAxisDuration = 0.24f;
+    private const float SharedAxisOffset = 64f;
+    private const float QuickMenuOpenDuration = 0.18f;
+    private const float QuickMenuCloseDuration = 0.15f;
+    private const float PopupDuration = 0.14f;
 
-    private Stack<ScreenId> history = new();
+    private enum ScreenKind
+    {
+        RootTab,
+        Detail,
+        Gameplay,
+        Summary,
+        QuickMenu,
+        Overlay
+    }
+
+    private enum NavIntent
+    {
+        Push,
+        Replace,
+        SwitchTab,
+        ResetTo,
+        Back
+    }
+
+    private enum MotionKind
+    {
+        CrossFade,
+        SharedAxisX,
+        SharedAxisY
+    }
+
+    private readonly struct MotionSpec
+    {
+        public readonly MotionKind Kind;
+        public readonly bool Forward;
+
+        public MotionSpec(MotionKind kind, bool forward)
+        {
+            Kind = kind;
+            Forward = forward;
+        }
+    }
+
+    private readonly Dictionary<ScreenId, UIScreen> screenMap = new();
+    private readonly List<ScreenId> backStack = new();
 
     private UIScreen current;
     private ScreenId currentId;
     private ScreenId? previousId;
 
+    private bool isTransitioning;
+    private bool isPopupActive;
+    private bool isPopupClosing;
+    private bool isQuickMenuOpen;
 
-    private bool isTransitioning = false;
+    private Coroutine quickMenuRoutine;
+    private Coroutine popupRoutine;
 
+    private float lastBackPressedAt = -100f;
 
-    // =========================================================
-    // LIFECYCLE
-    // =========================================================
-
-    void Awake()
+    private void Awake()
     {
-        // Screen-Lookup für schnellen Zugriff bauen
-        foreach (var s in screens)
-            screenMap[s.id] = s;
-
-        InitTransitions();
-
+        BuildScreenMap();
         InitQuickMenu();
 
-        // Startscreen setzen
+        if (!screenMap.ContainsKey(ScreenId.Zoggen))
+        {
+            Debug.LogError("Startscreen Zoggen ist nicht in der screens-Liste registriert.");
+            return;
+        }
+
         SetInitial(ScreenId.Zoggen);
     }
 
-    void Update()
+    private void Update()
     {
-        // ESC Handling:
-        // - Popup offen → schließen
-        // - sonst → Navigation zurück
         if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
+            HandleBack();
+    }
+
+    private void BuildScreenMap()
+    {
+        screenMap.Clear();
+
+        foreach (var screen in screens)
         {
-            if (isPopupActive)
-                HidePopup();
-            else
-                GoBack();
+            if (screen == null)
+                continue;
+
+            if (screenMap.ContainsKey(screen.id))
+            {
+                Debug.LogError($"ScreenId doppelt registriert: {screen.id}");
+                continue;
+            }
+
+            screenMap[screen.id] = screen;
+        }
+
+        foreach (ScreenId id in Enum.GetValues(typeof(ScreenId)))
+        {
+            if (id == ScreenId.Popup || id == ScreenId.CustomClipHandler)
+                continue;
+
+            if (!screenMap.ContainsKey(id))
+                Debug.LogError($"ScreenId nicht registriert: {id}");
         }
     }
 
-
-    // =========================================================
-    // NAVIGATION
-    // =========================================================
-
     public void GoTo(ScreenId target)
+    {
+        if (KindOf(target) == ScreenKind.RootTab)
+        {
+            SwitchTab(target);
+            return;
+        }
+
+        Navigate(target, NavIntent.Push);
+    }
+
+    public void Replace(ScreenId target)
+    {
+        Navigate(target, NavIntent.Replace);
+    }
+
+    public void ResetTo(ScreenId target)
+    {
+        Navigate(target, NavIntent.ResetTo);
+    }
+
+    public void SwitchTab(ScreenId target)
+    {
+        if (KindOf(target) != ScreenKind.RootTab)
+        {
+            Navigate(target, NavIntent.Push);
+            return;
+        }
+
+        if (currentId == target)
+            return;
+
+        if (KindOf(currentId) == ScreenKind.Gameplay || currentId == ScreenId.Summary)
+            return;
+
+        Navigate(target, NavIntent.SwitchTab);
+    }
+
+    public void StartGameplay(ScreenId target)
+    {
+        if (KindOf(target) != ScreenKind.Gameplay || isTransitioning || currentId == target)
+            return;
+
+        if (!screenMap.TryGetValue(target, out var targetScreen))
+        {
+            Debug.LogError($"Screen nicht registriert (screens-Liste/UIScreen.id prüfen): {target}");
+            return;
+        }
+
+        backStack.Clear();
+        backStack.Add(ScreenId.Zoggen);
+
+        previousId = currentId;
+        lastBackPressedAt = -100f;
+
+        StartCoroutine(Transition(current, targetScreen, target, ResolveMotion(currentId, target, NavIntent.Push)));
+    }
+
+    public void GoBack()
+    {
+        HandleBack();
+    }
+
+    public bool HandleBack()
+    {
+        if (isTransitioning)
+            return true;
+
+        if (isPopupActive || isPopupClosing)
+        {
+            if (KindOf(currentId) == ScreenKind.Gameplay)
+                InvokeGameplayPopupCancel();
+            else
+                HidePopup();
+
+            return true;
+        }
+
+        if (isQuickMenuOpen)
+        {
+            SetQuickMenuOpen(false);
+            return true;
+        }
+
+        if (TryCloseScreenOverlay())
+            return true;
+
+        if (KindOf(currentId) == ScreenKind.Gameplay)
+        {
+            InvokeGameplayBack();
+            return true;
+        }
+
+        if (currentId == ScreenId.Summary)
+        {
+            InvokeSummaryBack();
+            return true;
+        }
+
+        if (backStack.Count > 0)
+        {
+            NavigateBack();
+            return true;
+        }
+
+        if (currentId != ScreenId.Zoggen)
+        {
+            SwitchTab(ScreenId.Zoggen);
+            return true;
+        }
+
+        HandleRootBack();
+        return true;
+    }
+
+    private void Navigate(ScreenId target, NavIntent intent)
     {
         if (isTransitioning || currentId == target)
             return;
@@ -89,113 +264,155 @@ public class WindowHandler : MonoBehaviour
             return;
         }
 
-        // Transition bevorzugt explizit definiert; sonst Fallback (verhindert "dead end" Navigation)
-        if (!transitions.TryGetValue((currentId, target), out var transition))
+        if (intent == NavIntent.SwitchTab && KindOf(currentId) == ScreenKind.Gameplay)
+            return;
+
+        switch (intent)
         {
-            Debug.LogWarning($"Kein Übergang definiert: {currentId} → {target}. Verwende Fallback Fade.");
-            transition = (TransitionType.Fade, SlideDirection.Left);
+            case NavIntent.Push:
+                backStack.Add(currentId);
+                break;
+
+            case NavIntent.SwitchTab:
+            case NavIntent.ResetTo:
+                backStack.Clear();
+                break;
+
+            case NavIntent.Replace:
+            case NavIntent.Back:
+            default:
+                break;
         }
 
-        history.Push(currentId);
         previousId = currentId;
+        lastBackPressedAt = -100f;
 
-        StartCoroutine(
-            Transition(current, targetScreen, target, transition.type, transition.dir)
-        );
+        StartCoroutine(Transition(current, targetScreen, target, ResolveMotion(currentId, target, intent)));
     }
 
-    public void GoBack()
+    private void NavigateBack()
     {
-        if (isTransitioning || history.Count == 0)
+        int lastIndex = backStack.Count - 1;
+        ScreenId target = backStack[lastIndex];
+        backStack.RemoveAt(lastIndex);
+
+        if (!screenMap.TryGetValue(target, out var targetScreen))
+        {
+            Debug.LogError($"Screen nicht registriert (screens-Liste/UIScreen.id prüfen): {target}");
             return;
+        }
+
+        previousId = currentId;
+        lastBackPressedAt = -100f;
+
+        StartCoroutine(Transition(current, targetScreen, target, ResolveMotion(currentId, target, NavIntent.Back)));
+    }
+
+    private void HandleRootBack()
+    {
+        if (Time.unscaledTime - lastBackPressedAt <= doubleBackExitWindow)
+        {
+            lastBackPressedAt = -100f;
+            Application.Quit();
+            return;
+        }
+
+        lastBackPressedAt = Time.unscaledTime;
+    }
+
+    private bool TryCloseScreenOverlay()
+    {
+        if (current == null)
+            return false;
+
+        InputHandler inputHandler = current.GetComponentInChildren<InputHandler>(true);
+        return inputHandler != null && inputHandler.TryHandleBack();
+    }
+
+    private void InvokeGameplayBack()
+    {
+        EnsureEngineReferences();
 
         switch (currentId)
         {
             case ScreenId.X01Game:
                 if (x01Engine == null)
                 {
-                    Debug.LogWarning("X01GameEngine nicht zugewiesen. Suche in Children.");
-                    x01Engine = GetComponentInChildren<X01GameEngine>();
+                    Debug.LogError("X01GameEngine nicht gefunden.");
+                    return;
                 }
 
-                if (x01Engine == null)
-                {
-                    Debug.LogError("X01GameEngine nicht gefunden. OnClickReturnFromX01 wird nicht aufgerufen.");
-                    break;
-                }
                 x01Engine.OnClickReturnFromX01();
                 break;
 
             case ScreenId.CricketGame:
                 if (cricketEngine == null)
                 {
-                    Debug.LogWarning("CricketGameEngine nicht zugewiesen. Suche in Children.");
-                    cricketEngine = GetComponentInChildren<CricketGameEngine>();
+                    Debug.LogError("CricketGameEngine nicht gefunden.");
+                    return;
                 }
 
-                if (cricketEngine == null)
-                {
-                    Debug.LogError("CricketGameEngine nicht gefunden. OnClickReturnFromCricket wird nicht aufgerufen.");
-                    break;
-                }
                 cricketEngine.OnClickReturnFromCricket();
                 break;
 
             case ScreenId.ATCGame:
                 if (atcEngine == null)
                 {
-                    Debug.LogWarning("ATCGameEngine nicht zugewiesen. Suche in Children.");
-                    atcEngine = GetComponentInChildren<ATCGameEngine>();
-                }
-
-                if (atcEngine == null)
-                {
-                    Debug.LogError("ATCGameEngine nicht gefunden. OnClickReturnFromATC wird nicht aufgerufen.");
-                    break;
-                }
-                atcEngine.OnClickReturnFromATC();
-                break;
-            case ScreenId.Summary:
-                if (summaryScreen == null)
-                {
-                    Debug.LogWarning("Summary Screen nicht zugewiesen. Suche in Children.");
-                    summaryScreen = GetComponentInChildren<Summary>();
-                }
-
-                if (summaryScreen == null)
-                {
-                    Debug.LogError("Summary Screen nicht gefunden. OnClickReturnFromSummary wird nicht aufgerufen.");
-                    break;
-                }
-                summaryScreen.OnClickBackButton();
-                break;
-            default:
-                bool wasQuickMenuScreen =
-                currentId == ScreenId.Optionen ||
-                currentId == ScreenId.About ||
-                currentId == ScreenId.CustomClipHandler;
-
-                ScreenId target = history.Pop();
-
-                if (!screenMap.TryGetValue(target, out var targetScreen))
-                {
-                    Debug.LogError($"Screen nicht registriert (screens-Liste/UIScreen.id prüfen): {target}");
+                    Debug.LogError("ATCGameEngine nicht gefunden.");
                     return;
                 }
 
-                if (!transitions.TryGetValue((currentId, target), out var transition))
-                {
-                    Debug.LogWarning($"Kein Übergang zurück definiert: {currentId} → {target}. Verwende Fallback Fade.");
-                    transition = (TransitionType.Fade, SlideDirection.Right);
-                }
-
-                previousId = currentId;
-
-                StartCoroutine(
-                    Transition(current, targetScreen, target, transition.type, transition.dir)
-                );
+                atcEngine.OnClickReturnFromATC();
                 break;
         }
+    }
+
+    private void InvokeGameplayPopupCancel()
+    {
+        EnsureEngineReferences();
+
+        switch (currentId)
+        {
+            case ScreenId.X01Game when x01Engine != null:
+                x01Engine.OnClickAbortCancle();
+                return;
+
+            case ScreenId.CricketGame when cricketEngine != null:
+                cricketEngine.OnClickAbortCancle();
+                return;
+
+            case ScreenId.ATCGame when atcEngine != null:
+                atcEngine.OnClickAbortCancel();
+                return;
+        }
+
+        HidePopup();
+    }
+
+    private void InvokeSummaryBack()
+    {
+        if (summaryScreen == null)
+            summaryScreen = GetComponentInChildren<Summary>(true);
+
+        if (summaryScreen == null)
+        {
+            Debug.LogError("Summary Screen nicht gefunden.");
+            return;
+        }
+
+        summaryScreen.OnClickBackButton();
+    }
+
+    private void EnsureEngineReferences()
+    {
+        if (x01Engine == null)
+            x01Engine = GetComponentInChildren<X01GameEngine>(true);
+
+        if (cricketEngine == null)
+            cricketEngine = GetComponentInChildren<CricketGameEngine>(true);
+
+        if (atcEngine == null)
+            atcEngine = GetComponentInChildren<ATCGameEngine>(true);
     }
 
     public void OpenOptions()
@@ -208,15 +425,12 @@ public class WindowHandler : MonoBehaviour
         OpenFromQuickMenu(ScreenId.About);
     }
 
-    public void OpenCustomClipHandler()
-    {
-        OpenFromQuickMenu(ScreenId.CustomClipHandler);
-    }
-
     private void OpenFromQuickMenu(ScreenId target)
     {
-        StartCoroutine(CloseQuickMenu());
+        if (isTransitioning)
+            return;
 
+        SetQuickMenuOpen(false);
         GoTo(target);
     }
 
@@ -225,265 +439,168 @@ public class WindowHandler : MonoBehaviour
         if (isTransitioning)
             return;
 
-        if (isQuickMenuOpen)
-            StartCoroutine(CloseQuickMenu());
-        else
-            StartCoroutine(OpenQuickMenu());
+        SetQuickMenuOpen(!isQuickMenuOpen);
     }
 
-    private IEnumerator OpenQuickMenu()
+    private void SetQuickMenuOpen(bool open)
     {
-        isQuickMenuOpen = true;
+        if (quickMenuPanel == null || quickMenuCanvas == null)
+            return;
 
-        float duration = 0.18f;
-        float t = 0;
+        if (isQuickMenuOpen == open && quickMenuRoutine == null)
+            return;
 
-        quickMenuCanvas.interactable = true;
-        quickMenuCanvas.blocksRaycasts = true;
+        if (quickMenuRoutine != null)
+            StopCoroutine(quickMenuRoutine);
+
+        isQuickMenuOpen = open;
+        quickMenuRoutine = StartCoroutine(AnimateQuickMenu(open));
+    }
+
+    private IEnumerator AnimateQuickMenu(bool open)
+    {
+        float duration = open ? QuickMenuOpenDuration : QuickMenuCloseDuration;
+        float startAlpha = quickMenuCanvas.alpha;
+        Vector3 startScale = quickMenuPanel.localScale;
+        float targetAlpha = open ? 1f : 0f;
+        Vector3 targetScale = open ? Vector3.one : new Vector3(0.9f, 0.9f, 1f);
+
+        if (open)
+        {
+            quickMenuCanvas.interactable = true;
+            quickMenuCanvas.blocksRaycasts = true;
+        }
+
+        float t = 0f;
 
         while (t < duration)
         {
-            float p = t / duration;
+            float p = Mathf.SmoothStep(0f, 1f, t / duration);
 
-            p = Mathf.SmoothStep(0, 1, p);
-
-            quickMenuCanvas.alpha = p;
-
-            quickMenuPanel.localScale = Vector3.Lerp(
-                new Vector3(0.8f, 0.8f, 1),
-                Vector3.one,
-                p
-            );
+            quickMenuCanvas.alpha = Mathf.Lerp(startAlpha, targetAlpha, p);
+            quickMenuPanel.localScale = Vector3.Lerp(startScale, targetScale, p);
 
             t += Time.deltaTime;
             yield return null;
         }
 
-        quickMenuCanvas.alpha = 1;
-        quickMenuPanel.localScale = Vector3.one;
+        quickMenuCanvas.alpha = targetAlpha;
+        quickMenuPanel.localScale = targetScale;
 
+        if (!open)
+        {
+            quickMenuCanvas.interactable = false;
+            quickMenuCanvas.blocksRaycasts = false;
+        }
+
+        quickMenuRoutine = null;
     }
 
-    private IEnumerator CloseQuickMenu()
+    private void InitQuickMenu()
     {
+        if (quickMenuPanel == null || quickMenuCanvas == null)
+        {
+            Debug.LogWarning("Quick Menu Komponenten nicht zugewiesen. Quick Menu wird deaktiviert.");
+            return;
+        }
+
         isQuickMenuOpen = false;
-
-        float duration = 0.15f;
-        float t = 0;
-
-        while (t < duration)
-        {
-            float p = t / duration;
-
-            p = Mathf.SmoothStep(0, 1, p);
-
-            quickMenuCanvas.alpha = 1 - p;
-
-            quickMenuPanel.localScale = Vector3.Lerp(
-                Vector3.one,
-                new Vector3(0.8f, 0.8f, 1),
-                p
-            );
-
-            t += Time.deltaTime;
-            yield return null;
-        }
-
-        quickMenuCanvas.alpha = 0;
-
+        quickMenuPanel.localScale = Vector3.zero;
+        quickMenuCanvas.alpha = 0f;
         quickMenuCanvas.interactable = false;
         quickMenuCanvas.blocksRaycasts = false;
-
-        quickMenuPanel.localScale = new Vector3(0.8f, 0.8f, 1);
     }
 
-
-    // =========================================================
-    // TRANSITIONS DEFINITION
-    // =========================================================
-
-    private void InitTransitions()
+    private static ScreenKind KindOf(ScreenId id)
     {
-        // =========================
-        // ZOGGEN (Hauptmenü / Hub)
-        // =========================
-
-        // Bidirektionale Standard-Fades
-        AddBidirectional(ScreenId.Zoggen, ScreenId.Players, TransitionType.Fade);
-        AddBidirectional(ScreenId.Zoggen, ScreenId.History, TransitionType.Fade);
-        AddBidirectional(ScreenId.Zoggen, ScreenId.Statistic, TransitionType.Fade);
-        AddBidirectional(ScreenId.Zoggen, ScreenId.Customization, TransitionType.Fade);
-
-        // Slide Navigation zu Games
-        Add(ScreenId.Zoggen, ScreenId.X01Game, TransitionType.Slide, SlideDirection.Left);
-        Add(ScreenId.X01Game, ScreenId.Zoggen, TransitionType.Slide, SlideDirection.Right);
-
-        Add(ScreenId.Zoggen, ScreenId.ATCGame, TransitionType.Slide, SlideDirection.Left);
-        Add(ScreenId.ATCGame, ScreenId.Zoggen, TransitionType.Slide, SlideDirection.Right);
-
-        Add(ScreenId.Zoggen, ScreenId.CricketGame, TransitionType.Slide, SlideDirection.Left);
-        Add(ScreenId.CricketGame, ScreenId.Zoggen, TransitionType.Slide, SlideDirection.Right);
-
-        // Summary
-        Add(ScreenId.Zoggen, ScreenId.Summary, TransitionType.Fade, SlideDirection.Left);
-        Add(ScreenId.Summary, ScreenId.Zoggen, TransitionType.Fade, SlideDirection.Left);
-
-
-        // =========================
-        // HISTORY
-        // =========================
-
-        AddBidirectional(ScreenId.History, ScreenId.Players, TransitionType.Fade);
-        AddBidirectional(ScreenId.History, ScreenId.Statistic, TransitionType.Fade);
-        AddBidirectional(ScreenId.History, ScreenId.Customization, TransitionType.Fade);
-
-        Add(ScreenId.History, ScreenId.GameDetail, TransitionType.Fade, SlideDirection.Left);
-        Add(ScreenId.GameDetail, ScreenId.History, TransitionType.Fade, SlideDirection.Right);
-
-
-        // =========================
-        // STATISTIC
-        // =========================
-
-        AddBidirectional(ScreenId.Statistic, ScreenId.Players, TransitionType.Fade);
-        AddBidirectional(ScreenId.Statistic, ScreenId.Customization, TransitionType.Fade);
-        AddBidirectional(ScreenId.Players, ScreenId.Customization, TransitionType.Fade);
-
-
-        // =========================
-        // SUMMARY
-        // =========================
-
-        Add(ScreenId.Summary, ScreenId.GameDetail, TransitionType.Fade, SlideDirection.Left);
-        Add(ScreenId.GameDetail, ScreenId.Summary, TransitionType.Fade, SlideDirection.Right);
-
-        Add(ScreenId.Summary, ScreenId.X01Game, TransitionType.Fade, SlideDirection.Right);
-        Add(ScreenId.X01Game, ScreenId.Summary, TransitionType.Fade, SlideDirection.Left);
-
-        Add(ScreenId.Summary, ScreenId.CricketGame, TransitionType.Fade, SlideDirection.Right);
-        Add(ScreenId.CricketGame, ScreenId.Summary, TransitionType.Fade, SlideDirection.Left);
-
-        Add(ScreenId.Summary, ScreenId.ATCGame, TransitionType.Fade, SlideDirection.Left);
-        Add(ScreenId.ATCGame, ScreenId.Summary, TransitionType.Fade, SlideDirection.Right);
-
-
-        // =========================
-        // GAME DETAIL
-        // =========================
-
-        Add(ScreenId.GameDetail, ScreenId.X01Game, TransitionType.Fade, SlideDirection.Left);
-        Add(ScreenId.X01Game, ScreenId.GameDetail, TransitionType.Fade, SlideDirection.Right);
-
-        Add(ScreenId.GameDetail, ScreenId.CricketGame, TransitionType.Fade, SlideDirection.Left);
-        Add(ScreenId.CricketGame, ScreenId.GameDetail, TransitionType.Fade, SlideDirection.Right);
-
-        Add(ScreenId.GameDetail, ScreenId.ATCGame, TransitionType.Fade, SlideDirection.Left);
-        Add(ScreenId.ATCGame, ScreenId.GameDetail, TransitionType.Fade, SlideDirection.Right);
-
-
-        // ==================================================
-        // QUICK MENU SCREENS (global erreichbar)
-        // ==================================================
-
-        // ---------- OPTIONEN ----------
-
-        AddBidirectional(ScreenId.Zoggen, ScreenId.Optionen, TransitionType.Slide);
-        AddBidirectional(ScreenId.History, ScreenId.Optionen, TransitionType.Slide);
-        AddBidirectional(ScreenId.Statistic, ScreenId.Optionen, TransitionType.Slide);
-        AddBidirectional(ScreenId.Players, ScreenId.Optionen, TransitionType.Slide);
-
-        AddBidirectional(ScreenId.X01Game, ScreenId.Optionen, TransitionType.Slide);
-        AddBidirectional(ScreenId.CricketGame, ScreenId.Optionen, TransitionType.Slide);
-        AddBidirectional(ScreenId.ATCGame, ScreenId.Optionen, TransitionType.Slide);
-
-        AddBidirectional(ScreenId.Summary, ScreenId.Optionen, TransitionType.Slide);
-        AddBidirectional(ScreenId.GameDetail, ScreenId.Optionen, TransitionType.Slide);
-
-
-        // ---------- ABOUT ----------
-
-        AddBidirectional(ScreenId.Zoggen, ScreenId.About, TransitionType.Slide);
-        AddBidirectional(ScreenId.History, ScreenId.About, TransitionType.Slide);
-        AddBidirectional(ScreenId.Statistic, ScreenId.About, TransitionType.Slide);
-        AddBidirectional(ScreenId.Players, ScreenId.About, TransitionType.Slide);
-
-        AddBidirectional(ScreenId.X01Game, ScreenId.About, TransitionType.Slide);
-        AddBidirectional(ScreenId.CricketGame, ScreenId.About, TransitionType.Slide);
-        AddBidirectional(ScreenId.ATCGame, ScreenId.About, TransitionType.Slide);
-
-        AddBidirectional(ScreenId.Summary, ScreenId.About, TransitionType.Slide);
-        AddBidirectional(ScreenId.GameDetail, ScreenId.About, TransitionType.Slide);
-
-
-        // ---------- CustomClipHandler (legacy, removal together with old screens) ----------
-
-        AddBidirectional(ScreenId.Zoggen, ScreenId.CustomClipHandler, TransitionType.Slide);
-        AddBidirectional(ScreenId.History, ScreenId.CustomClipHandler, TransitionType.Slide);
-        AddBidirectional(ScreenId.Statistic, ScreenId.CustomClipHandler, TransitionType.Slide);
-        AddBidirectional(ScreenId.Players, ScreenId.CustomClipHandler, TransitionType.Slide);
-
-        AddBidirectional(ScreenId.X01Game, ScreenId.CustomClipHandler, TransitionType.Slide);
-        AddBidirectional(ScreenId.CricketGame, ScreenId.CustomClipHandler, TransitionType.Slide);
-        AddBidirectional(ScreenId.ATCGame, ScreenId.CustomClipHandler, TransitionType.Slide);
-
-        AddBidirectional(ScreenId.Summary, ScreenId.CustomClipHandler, TransitionType.Slide);
-        AddBidirectional(ScreenId.GameDetail, ScreenId.CustomClipHandler, TransitionType.Slide);
-
-
-        // =========================
-        // CUSTOM CLIP FLOW
-        // =========================
-
-        // CustomClipHandler <-> CustomClipBrowser
-        AddBidirectional(ScreenId.CustomClipHandler, ScreenId.CustomClipBrowser, TransitionType.Slide);
+        return id switch
+        {
+            ScreenId.Zoggen => ScreenKind.RootTab,
+            ScreenId.Players => ScreenKind.RootTab,
+            ScreenId.History => ScreenKind.RootTab,
+            ScreenId.Statistic => ScreenKind.RootTab,
+            ScreenId.Customization => ScreenKind.RootTab,
+            ScreenId.Optionen => ScreenKind.QuickMenu,
+            ScreenId.About => ScreenKind.QuickMenu,
+            ScreenId.X01Game => ScreenKind.Gameplay,
+            ScreenId.CricketGame => ScreenKind.Gameplay,
+            ScreenId.ATCGame => ScreenKind.Gameplay,
+            ScreenId.Summary => ScreenKind.Summary,
+            ScreenId.GameDetail => ScreenKind.Detail,
+            ScreenId.CustomClipBrowser => ScreenKind.Detail,
+            _ => ScreenKind.Overlay
+        };
     }
 
-    private void Add(ScreenId from, ScreenId to, TransitionType type, SlideDirection dir)
+    private static MotionSpec ResolveMotion(ScreenId from, ScreenId to, NavIntent intent)
     {
-        transitions[(from, to)] = (type, dir);
+        if (intent == NavIntent.SwitchTab)
+            return new MotionSpec(MotionKind.CrossFade, true);
+
+        if (intent == NavIntent.ResetTo)
+        {
+            if (from == ScreenId.Summary && KindOf(to) == ScreenKind.RootTab)
+                return new MotionSpec(MotionKind.SharedAxisY, false);
+
+            return new MotionSpec(MotionKind.CrossFade, true);
+        }
+
+        if (from == ScreenId.Summary && to == ScreenId.GameDetail)
+            return new MotionSpec(MotionKind.SharedAxisX, true);
+
+        if (from == ScreenId.GameDetail && to == ScreenId.Summary)
+            return new MotionSpec(MotionKind.SharedAxisX, false);
+
+        if (to == ScreenId.Summary)
+            return new MotionSpec(MotionKind.SharedAxisY, true);
+
+        if (from == ScreenId.Summary)
+            return new MotionSpec(MotionKind.SharedAxisY, intent != NavIntent.Back);
+
+        if (KindOf(to) == ScreenKind.Detail || KindOf(from) == ScreenKind.Detail)
+            return new MotionSpec(MotionKind.SharedAxisX, intent != NavIntent.Back);
+
+        if (KindOf(to) == ScreenKind.Gameplay)
+            return new MotionSpec(MotionKind.SharedAxisX, true);
+
+        if (KindOf(to) == ScreenKind.QuickMenu)
+            return new MotionSpec(MotionKind.SharedAxisX, true);
+
+        if (KindOf(from) == ScreenKind.QuickMenu)
+            return new MotionSpec(MotionKind.SharedAxisX, intent != NavIntent.Back);
+
+        return new MotionSpec(MotionKind.CrossFade, true);
     }
 
-    private void AddBidirectional(ScreenId a, ScreenId b, TransitionType type)
-    {
-        // Links/Rechts wird automatisch gespiegelt
-        Add(a, b, type, SlideDirection.Left);
-        Add(b, a, type, SlideDirection.Right);
-    }
-
-
-    // =========================================================
-    // TRANSITION RUNTIME
-    // =========================================================
-
-    private IEnumerator Transition(
-        UIScreen from,
-        UIScreen to,
-        ScreenId targetId,
-        TransitionType type,
-        SlideDirection dir)
+    private IEnumerator Transition(UIScreen from, UIScreen to, ScreenId targetId, MotionSpec motion)
     {
         isTransitioning = true;
 
-        // BottomBar-Highlight sofort beim Tap umschalten, nicht erst nach
-        // der Animation (Fade 0.25s / Slide 0.3s). Nur BottomBar-Screens
-        // werden gemappt, alle anderen behalten die aktuelle Auswahl.
-        if (menuSwitcher != null)
+        if (menuSwitcher != null && KindOf(targetId) == ScreenKind.RootTab)
             menuSwitcher.SetActiveByScreen(targetId);
 
-        Prepare(to, type);
+        Prepare(to, from);
 
-        // Lifecycle Hooks (falls Screen Logik hat)
         if (to.TryGetComponent<IUIScreen>(out var toScreen))
             toScreen.OnShow();
 
-        if (from.TryGetComponent<IUIScreen>(out var fromScreen))
+        if (from != null && from.TryGetComponent<IUIScreen>(out var fromScreen))
             fromScreen.OnHide();
 
-        // Animation abhängig vom Transition-Type
-        if (type == TransitionType.Fade)
-            yield return Fade(from, to);
-        else
-            yield return Slide(from, to, dir);
+        switch (motion.Kind)
+        {
+            case MotionKind.SharedAxisX:
+                yield return SharedAxis(from, to, false, motion.Forward);
+                break;
+
+            case MotionKind.SharedAxisY:
+                yield return SharedAxis(from, to, true, motion.Forward);
+                break;
+
+            default:
+                yield return CrossFade(from, to);
+                break;
+        }
 
         Finish(from);
 
@@ -495,248 +612,259 @@ public class WindowHandler : MonoBehaviour
         isTransitioning = false;
     }
 
-
-    // =========================================================
-    // ANIMATIONEN
-    // =========================================================
-
-    private IEnumerator Fade(UIScreen from, UIScreen to)
+    private void Prepare(UIScreen to, UIScreen from)
     {
-        float duration = 0.22f;
-        float t = 0;
-        bool fromFinished = false;
+        if (!to.gameObject.activeSelf)
+            to.gameObject.SetActive(true);
 
-        while (t < duration)
+        to.canvasGroup.alpha = 0f;
+        to.canvasGroup.interactable = true;
+        to.canvasGroup.blocksRaycasts = true;
+        to.rect.anchoredPosition = Vector2.zero;
+        to.rect.localScale = Vector3.one;
+
+        if (from == null)
+            return;
+
+        from.canvasGroup.alpha = 1f;
+        from.canvasGroup.interactable = false;
+        from.canvasGroup.blocksRaycasts = false;
+        from.rect.anchoredPosition = Vector2.zero;
+        from.rect.localScale = Vector3.one;
+    }
+
+    private IEnumerator CrossFade(UIScreen from, UIScreen to)
+    {
+        float t = 0f;
+
+        while (t < CrossFadeDuration)
         {
-            // SmoothStep statt linear: weicher Ein-/Ausstieg, fühlt sich
-            // schneller an (Konsistent mit QuickMenu-Animationen).
-            float p = Mathf.SmoothStep(0f, 1f, t / duration);
+            float p = Mathf.SmoothStep(0f, 1f, t / CrossFadeDuration);
 
-            // Nach Early-Finish 'from' nicht mehr anfassen (würde den
-            // finalisierten Screen sonst wieder sichtbar machen).
-            if (!fromFinished)
-                from.canvasGroup.alpha = 1 - p;
+            from.canvasGroup.alpha = 1f - p;
             to.canvasGroup.alpha = p;
 
-            // from-Screen trägt ab ~90% nichts mehr bei: früh finalisieren
-            // (Overdraw der zweiten Vollbild-Ebene sparen). Finish() ist
-            // idempotent, Transition() ruft es danach erneut auf.
-            if (!fromFinished && p >= 0.9f)
-            {
-                fromFinished = true;
-                Finish(from);
-            }
-
             t += Time.deltaTime;
             yield return null;
         }
 
-        from.canvasGroup.alpha = 0;
-        to.canvasGroup.alpha = 1;
+        Finish(from);
+        to.canvasGroup.alpha = 1f;
     }
 
-    private IEnumerator Slide(UIScreen from, UIScreen to, SlideDirection dir)
+    private IEnumerator SharedAxis(UIScreen from, UIScreen to, bool vertical, bool forward)
     {
-        float duration = 0.28f;
-        float t = 0;
-        bool fromFinished = false;
+        float size = vertical
+            ? to.rect.rect.height
+            : to.rect.rect.width;
 
-        float width = ((RectTransform)transform).rect.width;
+        float offset = Mathf.Min(SharedAxisOffset, size * 0.08f);
 
-        Vector2 fromStart = Vector2.zero;
         Vector2 fromEnd;
         Vector2 toStart;
-        Vector2 toEnd = Vector2.zero;
 
-        // Richtung bestimmt Startpositionen
-        if (dir == SlideDirection.Left)
+        if (vertical)
         {
-            fromEnd = new Vector2(-width, 0);
-            toStart = new Vector2(width, 0);
+            fromEnd = forward ? new Vector2(0f, offset) : new Vector2(0f, -offset);
+            toStart = forward ? new Vector2(0f, -offset) : new Vector2(0f, offset);
         }
         else
         {
-            fromEnd = new Vector2(width, 0);
-            toStart = new Vector2(-width, 0);
+            fromEnd = forward ? new Vector2(-offset, 0f) : new Vector2(offset, 0f);
+            toStart = forward ? new Vector2(offset, 0f) : new Vector2(-offset, 0f);
         }
 
+        from.rect.anchoredPosition = Vector2.zero;
         to.rect.anchoredPosition = toStart;
 
-        while (t < duration)
+        float t = 0f;
+        bool fromFinished = false;
+
+        while (t < SharedAxisDuration)
         {
-            float p = Mathf.SmoothStep(0f, 1f, t / duration);
+            float p = Mathf.SmoothStep(0f, 1f, t / SharedAxisDuration);
 
-            // Nach Early-Finish 'from' nicht mehr anfassen.
             if (!fromFinished)
-                from.rect.anchoredPosition = Vector2.Lerp(fromStart, fromEnd, p);
-            to.rect.anchoredPosition = Vector2.Lerp(toStart, toEnd, p);
-
-            // Fast draußen: from-Ebene abschalten statt weiter zu zeichnen.
-            if (!fromFinished && p >= 0.95f)
             {
-                fromFinished = true;
-                Finish(from);
+                from.canvasGroup.alpha = 1f - p;
+                from.rect.anchoredPosition = Vector2.Lerp(Vector2.zero, fromEnd, p);
+
+                if (p >= 0.92f)
+                {
+                    Finish(from);
+                    fromFinished = true;
+                }
             }
+
+            to.canvasGroup.alpha = p;
+            to.rect.anchoredPosition = Vector2.Lerp(toStart, Vector2.zero, p);
 
             t += Time.deltaTime;
             yield return null;
         }
 
-        from.rect.anchoredPosition = fromEnd;
-        to.rect.anchoredPosition = toEnd;
+        if (!fromFinished)
+            Finish(from);
+
+        from.canvasGroup.alpha = 0f;
+        from.rect.anchoredPosition = Vector2.zero;
+        to.canvasGroup.alpha = 1f;
+        to.rect.anchoredPosition = Vector2.zero;
     }
 
-
-    // =========================================================
-    // HELPERS
-    // =========================================================
-
-    private void Prepare(UIScreen s, TransitionType type)
+    private void Finish(UIScreen screen)
     {
-        if (!s.gameObject.activeSelf)
-            s.gameObject.SetActive(true);
+        if (screen == null)
+            return;
 
-        if (type == TransitionType.Fade)
-            s.canvasGroup.alpha = 0;
-        else
-            s.canvasGroup.alpha = 1;
+        screen.canvasGroup.alpha = 0f;
+        screen.canvasGroup.interactable = false;
+        screen.canvasGroup.blocksRaycasts = false;
+        screen.rect.anchoredPosition = Vector2.zero;
+        screen.rect.localScale = Vector3.one;
 
-        s.canvasGroup.interactable = true;
-        s.canvasGroup.blocksRaycasts = true;
-    }
-
-    private void Finish(UIScreen s)
-    {
-        s.canvasGroup.alpha = 0;
-        s.canvasGroup.interactable = false;
-        s.canvasGroup.blocksRaycasts = false;
-        s.rect.anchoredPosition = Vector2.zero;
-
-        if (s.deactivateWhenHidden)
-            s.gameObject.SetActive(false);
+        if (screen.deactivateWhenHidden)
+            screen.gameObject.SetActive(false);
     }
 
     private void SetInitial(ScreenId id)
     {
         currentId = id;
         previousId = null;
+        backStack.Clear();
+        lastBackPressedAt = -100f;
 
         current = screenMap[id];
 
-        foreach (var s in screens)
+        foreach (var screen in screens)
         {
-            bool activeScreen = s.id == id;
+            if (screen == null)
+                continue;
 
-            s.canvasGroup.alpha = activeScreen ? 1 : 0;
-            s.canvasGroup.interactable = activeScreen;
-            s.canvasGroup.blocksRaycasts = activeScreen;
+            bool activeScreen = screen.id == id;
 
-            s.rect.anchoredPosition = Vector2.zero;
+            screen.canvasGroup.alpha = activeScreen ? 1f : 0f;
+            screen.canvasGroup.interactable = activeScreen;
+            screen.canvasGroup.blocksRaycasts = activeScreen;
+            screen.rect.anchoredPosition = Vector2.zero;
+            screen.rect.localScale = Vector3.one;
 
-            if (!activeScreen && s.deactivateWhenHidden)
-                s.gameObject.SetActive(false);
+            if (!activeScreen && screen.deactivateWhenHidden)
+                screen.gameObject.SetActive(false);
         }
     }
 
-
-    // =========================================================
-    // POPUPS
-    // =========================================================
-
-    public void ShowPopup(UIScreen popup, float duration = 0.1f)
+    public void ShowPopup(UIScreen popup, float duration = PopupDuration)
     {
-        if (isTransitioning || isPopupActive) return;
+        if (isTransitioning || isPopupActive || isPopupClosing || popup == null)
+            return;
 
-        activePopup = popup;
         isPopupActive = true;
+        activePopup = popup;
 
         popup.gameObject.SetActive(true);
 
         if (popup.TryGetComponent<IUIScreen>(out var popupScreen))
             popupScreen.OnShow();
 
-        popup.canvasGroup.alpha = 0;
+        popup.canvasGroup.alpha = 0f;
         popup.canvasGroup.interactable = true;
         popup.canvasGroup.blocksRaycasts = true;
+        popup.rect.localScale = new Vector3(0.94f, 0.94f, 1f);
 
-        StartCoroutine(FadeInPopup(activePopup, duration));
+        if (popupRoutine != null)
+            StopCoroutine(popupRoutine);
+
+        popupRoutine = StartCoroutine(FadeInPopup(popup, duration));
     }
 
     private IEnumerator FadeInPopup(UIScreen popup, float duration)
     {
+        if (duration <= 0f)
+        {
+            popup.canvasGroup.alpha = 1f;
+            popup.rect.localScale = Vector3.one;
+            popupRoutine = null;
+            yield break;
+        }
+
         float t = 0f;
 
         while (t < duration)
         {
-            popup.canvasGroup.alpha = Mathf.Lerp(0, 1, t / duration);
+            float p = Mathf.SmoothStep(0f, 1f, t / duration);
+            popup.canvasGroup.alpha = p;
+            popup.rect.localScale = Vector3.Lerp(new Vector3(0.94f, 0.94f, 1f), Vector3.one, p);
             t += Time.deltaTime;
             yield return null;
         }
 
-        popup.canvasGroup.alpha = 1;
+        popup.canvasGroup.alpha = 1f;
+        popup.rect.localScale = Vector3.one;
+        popupRoutine = null;
     }
 
-    public void HidePopup(float duration = 0.1f)
+    public void HidePopup(float duration = PopupDuration)
     {
-        if (!isPopupActive || activePopup == null) return;
+        if (!isPopupActive || activePopup == null || isPopupClosing)
+            return;
 
-        if (activePopup.TryGetComponent<IUIScreen>(out var popupScreen))
+        UIScreen popup = activePopup;
+        isPopupClosing = true;
+
+        if (popup.TryGetComponent<IUIScreen>(out var popupScreen))
             popupScreen.OnHide();
 
-        StartCoroutine(FadeOutPopup(activePopup, duration));
+        if (popupRoutine != null)
+            StopCoroutine(popupRoutine);
+
+        if (duration <= 0f)
+        {
+            CompletePopupHide(popup);
+            return;
+        }
+
+        popupRoutine = StartCoroutine(FadeOutPopup(popup, duration));
     }
 
     private IEnumerator FadeOutPopup(UIScreen popup, float duration)
     {
-        float t = 0f;
         float startAlpha = popup.canvasGroup.alpha;
+        Vector3 startScale = popup.rect.localScale;
+        float t = 0f;
 
         while (t < duration)
         {
-            popup.canvasGroup.alpha = Mathf.Lerp(startAlpha, 0, t / duration);
+            float p = Mathf.SmoothStep(0f, 1f, t / duration);
+            popup.canvasGroup.alpha = Mathf.Lerp(startAlpha, 0f, p);
+            popup.rect.localScale = Vector3.Lerp(startScale, new Vector3(0.94f, 0.94f, 1f), p);
             t += Time.deltaTime;
             yield return null;
         }
 
-        popup.canvasGroup.alpha = 0;
+        CompletePopupHide(popup);
+    }
 
-        popup.canvasGroup.interactable = false;
-        popup.canvasGroup.blocksRaycasts = false;
-
-        popup.gameObject.SetActive(false);
+    private void CompletePopupHide(UIScreen popup)
+    {
+        if (popup != null)
+        {
+            popup.canvasGroup.alpha = 0f;
+            popup.canvasGroup.interactable = false;
+            popup.canvasGroup.blocksRaycasts = false;
+            popup.rect.localScale = Vector3.one;
+            popup.gameObject.SetActive(false);
+        }
 
         activePopup = null;
         isPopupActive = false;
+        isPopupClosing = false;
+        popupRoutine = null;
     }
-
-
-    // =========================================================
-    // GETTERS / UTIL
-    // =========================================================
 
     public ScreenId GetCurrentScreen() => currentId;
     public ScreenId? GetPreviousScreen() => previousId;
-
-    private void InitQuickMenu()
-    {
-        if (quickMenuPanel == null || quickMenuCanvas == null)
-        {
-            Debug.LogWarning("Quick Menu Komponenten nicht zugewiesen. Quick Menu wird deaktiviert.");
-            return;
-        }
-
-        quickMenuPanel.localScale = Vector3.zero;
-
-        quickMenuCanvas.alpha = 0;
-        quickMenuCanvas.interactable = false;
-        quickMenuCanvas.blocksRaycasts = false;
-    }
 }
-
-
-// =========================================================
-// ENUMS
-// =========================================================
 
 public enum ScreenId
 {
@@ -755,16 +883,4 @@ public enum ScreenId
     CustomClipHandler,
     CustomClipBrowser,
     Customization
-}
-
-public enum TransitionType
-{
-    Fade,
-    Slide
-}
-
-public enum SlideDirection
-{
-    Left,
-    Right
 }

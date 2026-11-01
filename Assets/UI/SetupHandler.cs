@@ -468,7 +468,7 @@ public class SetupHandler : MonoBehaviour, IUIScreen
                 settingsCopy.legCount = legCount;
                 X01Game game = appHandler.PrepareX01Game(settingsCopy);
                 //settingsCopy.Print();
-                windowHandler.GoTo(ScreenId.X01Game);
+                windowHandler.StartGameplay(ScreenId.X01Game);
                 x01GameEngine.StartGame(game);
             }
 
@@ -480,7 +480,7 @@ public class SetupHandler : MonoBehaviour, IUIScreen
                 settingsCopy.legCount = legCount;
                 CricketGame game = appHandler.PrepareCricketGame(settingsCopy);
                 //settingsCopy.Print();
-                windowHandler.GoTo(ScreenId.CricketGame);
+                windowHandler.StartGameplay(ScreenId.CricketGame);
                 cricketGameEngine.StartGame(game);
             }
 
@@ -492,7 +492,7 @@ public class SetupHandler : MonoBehaviour, IUIScreen
                 settingsCopy.legCount = legCount;
                 ATCGame game = appHandler.PrepareATCGame(settingsCopy);
                 //settingsCopy.Print();
-                windowHandler.GoTo(ScreenId.ATCGame);
+                windowHandler.StartGameplay(ScreenId.ATCGame);
                 atcGameEngine.StartGame(game);
             }
             else
@@ -503,7 +503,7 @@ public class SetupHandler : MonoBehaviour, IUIScreen
                 settingsCopy.setCount = setCount;
                 settingsCopy.legCount = legCount;
                 X01Game game = appHandler.PrepareX01Game(settingsCopy);
-                windowHandler.GoTo(ScreenId.X01Game);
+                windowHandler.StartGameplay(ScreenId.X01Game);
                 x01GameEngine.StartGame(game);
             }
         }

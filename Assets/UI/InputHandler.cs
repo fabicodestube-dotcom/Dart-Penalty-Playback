@@ -347,16 +347,13 @@ public abstract class InputHandler : MonoBehaviour
         bg.color = c;
     }
 
-    protected virtual void Update()
+    public bool TryHandleBack()
     {
         if (!isSectorPanelOpen)
-            return;
+            return false;
 
-        if (UnityEngine.InputSystem.Keyboard.current != null
-            && UnityEngine.InputSystem.Keyboard.current.escapeKey.wasPressedThisFrame)
-        {
-            CloseSectorPanel();
-        }
+        CloseSectorPanel();
+        return true;
     }
 
     public virtual void Undo()

@@ -46,19 +46,19 @@ public class Summary : MonoBehaviour
 
         if (gameSummary.GameMode == GameMode.X01)
         {
-            windowHandler.GoTo(ScreenId.X01Game);
+            windowHandler.Replace(ScreenId.X01Game);
             x01GameEngine.LoadGame((X01Game)loadedGame);
             x01GameEngine.Undo();
         }
         else if (gameSummary.GameMode == GameMode.Cricket)
         {
-            windowHandler.GoTo(ScreenId.CricketGame);
+            windowHandler.Replace(ScreenId.CricketGame);
             cricketGameEngine.LoadGame((CricketGame)loadedGame);
             cricketGameEngine.Undo();
         }
         else if (gameSummary.GameMode == GameMode.ATC)
         {
-            windowHandler.GoTo(ScreenId.ATCGame);
+            windowHandler.Replace(ScreenId.ATCGame);
             atcGameEngine.LoadGame((ATCGame)loadedGame);
             atcGameEngine.Undo();
         }
@@ -73,7 +73,8 @@ public class Summary : MonoBehaviour
         {
             appHandler.SaveGame(loadedGame);
         }
-        windowHandler.GoTo(ScreenId.Zoggen);
+        windowHandler.HidePopup(0f);
+        windowHandler.ResetTo(ScreenId.Zoggen);
     }
 
     public void OnClickDeleteGame()
@@ -81,7 +82,8 @@ public class Summary : MonoBehaviour
         if (gameSummary == null) return;
 
         appHandler.DeleteGame(gameSummary.Id);
-        windowHandler.GoTo(ScreenId.Zoggen);
+        windowHandler.HidePopup(0f);
+        windowHandler.ResetTo(ScreenId.Zoggen);
     }
 
     public void OnClickBackButton()

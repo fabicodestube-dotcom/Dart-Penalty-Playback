@@ -82,7 +82,7 @@ public class CricketGameEngine : GameEngine
             windowHandler.ShowPopup(popupAbortGame);
         }
         else
-            windowHandler.GoTo(ScreenId.Zoggen);
+            windowHandler.ResetTo(ScreenId.Zoggen);
     }
 
     public void OnClickOptions()
