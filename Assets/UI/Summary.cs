@@ -69,10 +69,12 @@ public class Summary : MonoBehaviour
         if (gameSummary == null) return;
 
         var loadedGame = appHandler.LoadGameById(gameSummary.Id);
-        if (loadedGame != null)
+        if (loadedGame == null || !appHandler.SaveGame(loadedGame))
         {
-            appHandler.SaveGame(loadedGame);
+            Debug.LogError("Summary: Spiel konnte nicht gespeichert werden.");
+            return;
         }
+
         windowHandler.HidePopup(0f);
         windowHandler.ResetTo(ScreenId.Zoggen);
     }
@@ -81,7 +83,12 @@ public class Summary : MonoBehaviour
     {
         if (gameSummary == null) return;
 
-        appHandler.DeleteGame(gameSummary.Id);
+        if (!appHandler.DeleteGame(gameSummary.Id))
+        {
+            Debug.LogError("Summary: Spiel konnte nicht gelöscht werden.");
+            return;
+        }
+
         windowHandler.HidePopup(0f);
         windowHandler.ResetTo(ScreenId.Zoggen);
     }

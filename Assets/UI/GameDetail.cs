@@ -245,7 +245,7 @@ public class GameDetail : UIScreen, IUIScreen
             playerTable.AddOrUpdateRow(key, GetPlayerName(pid), new TableCellData[]
             {
                 stats?.totalSetsWon.ToString() ?? "0",
-                stats?.currentLegCount.ToString() ?? "0",
+                stats?.totalLegsWon.ToString() ?? "0",
                 GetScoreForPlayer(pid).ToString()
             }, false);
 
@@ -423,7 +423,7 @@ public class GameDetail : UIScreen, IUIScreen
             playerTable.AddOrUpdateRow(key, GetPlayerName(pid), new TableCellData[]
             {
                 stats?.totalSetsWon.ToString() ?? "0",
-                stats?.currentLegCount.ToString() ?? "0",
+                stats?.totalLegsWon.ToString() ?? "0",
                 GetScoreForPlayer(pid).ToString()
             }, false);
 
@@ -597,7 +597,7 @@ public class GameDetail : UIScreen, IUIScreen
             playerTable.AddOrUpdateRow(key, GetPlayerName(pid), new TableCellData[]
             {
                 stats?.totalSetsWon.ToString() ?? "0",
-                stats?.currentLegCount.ToString() ?? "0",
+                stats?.totalLegsWon.ToString() ?? "0",
                 (stats?.targetsHit ?? 0) + "/" + (stats?.totalTargets ?? 0)
             }, false);
 
@@ -936,10 +936,14 @@ public class GameDetail : UIScreen, IUIScreen
             return;
         }
 
-        appHandler.DeleteGame(gameSummary.Id);
+        if (!appHandler.DeleteGame(gameSummary.Id))
+        {
+            Debug.LogError("GameDetail: Spiel konnte nicht gelöscht werden.");
+            return;
+        }
 
         windowHandler.HidePopup(0f);
-        windowHandler.GoBack();
+        windowHandler.ResetTo(ScreenId.History);
     }
 
     public void CancleDeleteGame()
@@ -968,36 +972,43 @@ public class GameDetail : UIScreen, IUIScreen
             return;
         }
 
+        appHandler.SetActiveRuntimeGame(game);
+
         switch (gameSummary.GameMode)
         {
-            case GameMode.X01:
+            case GameMode.X01 when game is X01Game x01:
                 if (x01GameEngine == null || windowHandler == null)
                 {
                     Debug.LogError("GameDetail: x01GameEngine/windowHandler not wired");
                     return;
                 }
                 windowHandler.StartGameplay(ScreenId.X01Game);
-                x01GameEngine.LoadGame((X01Game)game);
+                x01GameEngine.LoadGame(x01);
                 break;
 
-            case GameMode.ATC:
+            case GameMode.ATC when game is ATCGame atc:
                 if (atcGameEngine == null || windowHandler == null)
                 {
                     Debug.LogError("GameDetail: atcGameEngine/windowHandler not wired");
                     return;
                 }
                 windowHandler.StartGameplay(ScreenId.ATCGame);
-                atcGameEngine.LoadGame((ATCGame)game);
+                atcGameEngine.LoadGame(atc);
                 break;
 
-            case GameMode.Cricket:
+            case GameMode.Cricket when game is CricketGame cricket:
                 if (cricketGameEngine == null || windowHandler == null)
                 {
                     Debug.LogError("GameDetail: cricketGameEngine/windowHandler not wired");
                     return;
                 }
                 windowHandler.StartGameplay(ScreenId.CricketGame);
-                cricketGameEngine.LoadGame((CricketGame)game);
+                cricketGameEngine.LoadGame(cricket);
+                break;
+
+            default:
+                appHandler.SetActiveRuntimeGame(null);
+                Debug.LogError("GameDetail: loaded game type does not match its mode");
                 break;
         }
     }

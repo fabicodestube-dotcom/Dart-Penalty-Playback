@@ -193,7 +193,7 @@ public class HistoryItem : MonoBehaviour
                     metricLabel: LocalizationText.Get("Points", "Points") + ": " + entry.Score.ToString(),
                     stats: BuildPenaltyStats(entry, summary),
                     setsWonOverride: entry.SetsWon,
-                    legsWonOverride: summary.IsFinished ? 0 : entry.LegsWon
+                    legsWonOverride: entry.LegsWon
                 );
 
                 items.Add(item.gameObject);
@@ -220,7 +220,7 @@ public class HistoryItem : MonoBehaviour
                     metricLabel: LocalizationText.Get("Points", "Points") + ": " + entry.Score.ToString(),
                     stats: BuildPenaltyStats(entry, summary),
                     setsWonOverride: entry.SetsWon,
-                    legsWonOverride: summary.IsFinished ? 0 : entry.LegsWon
+                    legsWonOverride: entry.LegsWon
                 );
 
                 items.Add(item.gameObject);
@@ -246,7 +246,7 @@ public class HistoryItem : MonoBehaviour
                     metricLabel: LocalizationText.Get("Targets", "Targets") + ": " + $"{entry.TargetsHit} / {entry.TotalTargets}",
                     stats: BuildPenaltyStats(entry, summary),
                     setsWonOverride: entry.SetsWon,
-                    legsWonOverride: summary.IsFinished ? 0 : entry.LegsWon
+                    legsWonOverride: entry.LegsWon
                 );
 
                 items.Add(item.gameObject);

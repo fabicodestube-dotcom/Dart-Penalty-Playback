@@ -78,9 +78,16 @@ public abstract class GameEngine : MonoBehaviour
 
     public virtual void OnClickAbortSaveGame()
     {
+        if (game == null)
+            return;
+
         game.CalculatePlayerStatsOnSave();
 
-        appHandler.SaveGame(game);
+        if (!appHandler.SaveGame(game))
+        {
+            Debug.LogError("Spiel konnte beim Abbruch nicht gespeichert werden.");
+            return;
+        }
 
         CleanupGame();
 
@@ -90,7 +97,14 @@ public abstract class GameEngine : MonoBehaviour
 
     public virtual void OnClickAbortQuitGame()
     {
-        appHandler.DeleteGame(game.GetID());
+        if (game == null)
+            return;
+
+        if (!appHandler.DeleteGame(game.GetID()))
+        {
+            Debug.LogError("Spiel konnte beim Abbruch nicht gelöscht werden.");
+            return;
+        }
 
         CleanupGame();
 
@@ -102,6 +116,9 @@ public abstract class GameEngine : MonoBehaviour
     {
         isPaused = false;
         windowHandler.HidePopup();
+
+        if (game != null)
+            HandleBotCheck(game.GetCurrentPlayerId());
     }
 
     public void ResumeBotTurn()
@@ -156,7 +173,12 @@ public abstract class GameEngine : MonoBehaviour
         game.CalculatePlayerStatsOnSave();
 
         var summaryObj = CreateGameSummaryFromGame(game);
-        appHandler.SaveGame(game);
+        if (!appHandler.SaveGame(game))
+        {
+            Debug.LogError("Beendetes Spiel konnte nicht gespeichert werden.");
+            return;
+        }
+
         summary.ShowSummary(summaryObj);
         windowHandler.Replace(ScreenId.Summary);
     }
@@ -186,7 +208,7 @@ public abstract class GameEngine : MonoBehaviour
                 PlayerId = pid,
                 Score = GetScoreForPlayer(game, pid),
                 SetsWon = game.GetWonSets(pid),
-                LegsWon = game.IsFinished() ? 0 : game.GetWonLegs(pid),
+                LegsWon = game.GetWonLegsTotal(pid),
                 TargetsHit = game is ATCGame atc ? atc.GetTargetsHit(pid) : 0,
                 TotalTargets = game is ATCGame atc2 ? atc2.GetTotalTargets() : 0,
                 WallCount = ps?.wallCount ?? 0,

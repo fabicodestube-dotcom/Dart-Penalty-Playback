@@ -1,10 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEditor;
 using Newtonsoft.Json;
 using UnityEngine;
-using System.Linq.Expressions;
 
 [Serializable]
 public abstract class Game
@@ -799,6 +797,13 @@ public abstract class Game
                 count++;
 
         return count;
+    }
+
+    public int GetWonLegsTotal(Guid playerId)
+    {
+        return sets
+            .SelectMany(set => set.GetLegs())
+            .Count(leg => leg.WinnerPlayerId == playerId);
     }
 
     private Guid? GetLegWinner(Leg leg) => leg.WinnerPlayerId;

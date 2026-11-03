@@ -39,7 +39,7 @@ public class HistoryItemPlayerPrefab : MonoBehaviour
         if (stats != null)
         {
             setsText.text = LocalizationText.Get("Sets", "Sets") + ": " + (setsWonOverride ?? stats.totalSetsWon).ToString();
-            legsText.text = LocalizationText.Get("Legs", "Legs") + ": " + (legsWonOverride ?? stats.currentLegCount).ToString();
+            legsText.text = LocalizationText.Get("Legs", "Legs") + ": " + (legsWonOverride ?? stats.totalLegsWon).ToString();
             textMetricLabel.text = metricLabel;
 
             if (textTotalPenaltyCostSum != null)

@@ -8,10 +8,10 @@ using UnityEngine;
 
 public static class SqliteDatabaseRepository
 {
-    public static void SaveDatabase(Database database)
+    public static bool SaveDatabase(Database database)
     {
         if (database == null)
-            return;
+            return false;
 
         SqliteDatabaseService.EnsureSchema();
 
@@ -32,11 +32,13 @@ public static class SqliteDatabaseRepository
 
                 connection.Commit();
                 Debug.Log("<color=green>SQLite repository saved game data.</color>");
+                return true;
             }
             catch (Exception e)
             {
                 connection.Rollback();
                 Debug.LogError("SqliteDatabaseRepository.SaveDatabase failed: " + e.Message);
+                return false;
             }
         }
     }
@@ -170,10 +172,10 @@ public static class SqliteDatabaseRepository
         }
     }
 
-    public static void SaveGame(Game game)
+    public static bool SaveGame(Game game)
     {
         if (game == null)
-            return;
+            return false;
 
         SqliteDatabaseService.EnsureSchema();
 
@@ -240,11 +242,13 @@ public static class SqliteDatabaseRepository
                 SavePlayerGameStats(connection, game);
 
                 connection.Commit();
+                return true;
             }
             catch (Exception e)
             {
                 connection.Rollback();
                 Debug.LogError("SqliteDatabaseRepository.SaveGame failed: " + e.Message);
+                return false;
             }
         }
     }
@@ -257,49 +261,91 @@ public static class SqliteDatabaseRepository
         connection.Execute("DELETE FROM sets WHERE game_id = ?;", gameId);
     }
 
-    public static void DeleteGame(Guid id)
+    public static bool DeleteGame(Guid id)
     {
         SqliteDatabaseService.EnsureSchema();
 
         using (var connection = SqliteDatabaseService.Open())
         {
-            DeleteGameStructure(connection, id.ToString());
-            connection.Execute("DELETE FROM game_players WHERE game_id = ?;", id.ToString());
-            connection.Execute("DELETE FROM player_game_stats WHERE game_id = ?;", id.ToString());
-            connection.Execute("DELETE FROM games WHERE id = ?;", id.ToString());
-        }
-    }
-
-    public static void DeleteGamesByMode(GameMode mode)
-    {
-        SqliteDatabaseService.EnsureSchema();
-
-        using (var connection = SqliteDatabaseService.Open())
-        {
-            var rows = connection.Query<GameRow>("SELECT id AS Id FROM games WHERE game_mode = ?;", mode.ToString());
-            foreach (var row in rows)
+            try
             {
-                DeleteGameStructure(connection, row.Id);
-                connection.Execute("DELETE FROM game_players WHERE game_id = ?;", row.Id);
-                connection.Execute("DELETE FROM player_game_stats WHERE game_id = ?;", row.Id);
+                connection.BeginTransaction();
+
+                DeleteGameStructure(connection, id.ToString());
+                connection.Execute("DELETE FROM game_players WHERE game_id = ?;", id.ToString());
+                connection.Execute("DELETE FROM player_game_stats WHERE game_id = ?;", id.ToString());
+                connection.Execute("DELETE FROM games WHERE id = ?;", id.ToString());
+
+                connection.Commit();
+                return true;
             }
-            connection.Execute("DELETE FROM games WHERE game_mode = ?;", mode.ToString());
+            catch (Exception e)
+            {
+                connection.Rollback();
+                Debug.LogError("SqliteDatabaseRepository.DeleteGame failed: " + e.Message);
+                return false;
+            }
         }
     }
 
-    public static void DeleteAllGames()
+    public static bool DeleteGamesByMode(GameMode mode)
     {
         SqliteDatabaseService.EnsureSchema();
 
         using (var connection = SqliteDatabaseService.Open())
         {
-            connection.Execute("DELETE FROM throws;");
-            connection.Execute("DELETE FROM turns;");
-            connection.Execute("DELETE FROM legs;");
-            connection.Execute("DELETE FROM sets;");
-            connection.Execute("DELETE FROM game_players;");
-            connection.Execute("DELETE FROM player_game_stats;");
-            connection.Execute("DELETE FROM games;");
+            try
+            {
+                connection.BeginTransaction();
+
+                var rows = connection.Query<GameRow>("SELECT id AS Id FROM games WHERE game_mode = ?;", mode.ToString());
+                foreach (var row in rows)
+                {
+                    DeleteGameStructure(connection, row.Id);
+                    connection.Execute("DELETE FROM game_players WHERE game_id = ?;", row.Id);
+                    connection.Execute("DELETE FROM player_game_stats WHERE game_id = ?;", row.Id);
+                }
+                connection.Execute("DELETE FROM games WHERE game_mode = ?;", mode.ToString());
+
+                connection.Commit();
+                return true;
+            }
+            catch (Exception e)
+            {
+                connection.Rollback();
+                Debug.LogError("SqliteDatabaseRepository.DeleteGamesByMode failed: " + e.Message);
+                return false;
+            }
+        }
+    }
+
+    public static bool DeleteAllGames()
+    {
+        SqliteDatabaseService.EnsureSchema();
+
+        using (var connection = SqliteDatabaseService.Open())
+        {
+            try
+            {
+                connection.BeginTransaction();
+
+                connection.Execute("DELETE FROM throws;");
+                connection.Execute("DELETE FROM turns;");
+                connection.Execute("DELETE FROM legs;");
+                connection.Execute("DELETE FROM sets;");
+                connection.Execute("DELETE FROM game_players;");
+                connection.Execute("DELETE FROM player_game_stats;");
+                connection.Execute("DELETE FROM games;");
+
+                connection.Commit();
+                return true;
+            }
+            catch (Exception e)
+            {
+                connection.Rollback();
+                Debug.LogError("SqliteDatabaseRepository.DeleteAllGames failed: " + e.Message);
+                return false;
+            }
         }
     }
 
@@ -899,9 +945,7 @@ public static class SqliteDatabaseRepository
 
         var playerStats = ReadPlayerGameStatsForGame(connection, row.Id);
         var setsWonByPlayer = ReadWonSetsCounts(connection, row.Id);
-        Dictionary<Guid, int> legsWonByPlayer = null;
-        if (!summary.IsFinished)
-            legsWonByPlayer = ReadWonLegsCounts(connection, row.Id);
+        var legsWonByPlayer = ReadWonLegsCounts(connection, row.Id);
 
         if (penaltySnapshots != null && penaltySnapshots.TryGetValue(row.Id, out var snapshot) && snapshot != null)
             summary.CustomPenaltySnapshot = snapshot;
@@ -910,15 +954,13 @@ public static class SqliteDatabaseRepository
         {
             playerStats.TryGetValue(pid, out var gs);
             setsWonByPlayer.TryGetValue(pid, out var setsWon);
-            int legsWon = 0;
-            if (legsWonByPlayer != null)
-                legsWonByPlayer.TryGetValue(pid, out legsWon);
+            legsWonByPlayer.TryGetValue(pid, out var legsWon);
             var entry = new PlayerSummaryEntry
             {
                 PlayerId = pid,
                 Score = GetScoreFromStats(playerStats, pid, row.GameMode),
                 SetsWon = setsWon,
-                LegsWon = summary.IsFinished ? 0 : legsWon,
+                LegsWon = legsWon,
                 TargetsHit = GetTargetsHitFromStats(playerStats, pid),
                 TotalTargets = GetTotalTargetsFromStats(playerStats, pid),
                 WallCount = gs?.wallCount ?? 0,
@@ -1076,15 +1118,8 @@ public static class SqliteDatabaseRepository
     {
         var counts = new Dictionary<Guid, int>();
 
-        // Nur Legs des letzten (laufenden) Sets zählen – wie Game.GetWonLegs.
-        var setRows = connection.Query<SetRow>(
-            "SELECT id AS Id, order_index AS OrderIndex FROM sets WHERE game_id = ? ORDER BY order_index DESC LIMIT 1;", gameId);
-        var lastSet = setRows.FirstOrDefault();
-        if (lastSet == null)
-            return counts;
-
         var legRows = connection.Query<LegRow>(
-            "SELECT set_id AS SetId, winner_player_id AS WinnerPlayerId FROM legs WHERE game_id = ? AND set_id = ?;", gameId, lastSet.Id);
+            "SELECT set_id AS SetId, winner_player_id AS WinnerPlayerId FROM legs WHERE game_id = ?;", gameId);
 
         foreach (var legRow in legRows)
         {

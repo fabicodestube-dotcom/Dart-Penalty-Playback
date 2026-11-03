@@ -473,12 +473,6 @@ public class CricketGame : Game
         return Guid.Empty;
     }
 
-    public int GetWonLegsTotal(Guid playerId)
-    {
-        return sets.SelectMany(s => s.GetLegs())
-            .Count(l => l.WinnerPlayerId == playerId);
-    }
-
     private bool DidPlayerWin(Guid playerId)
     {
         bool pointsEnabled = GetSettingsAsCricket() == null ||

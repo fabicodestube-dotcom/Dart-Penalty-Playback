@@ -462,25 +462,34 @@ public class HistoryHandler : MonoBehaviour, IUIScreen
 
     public void ConfirmDelete()
     {
+        bool deleted;
+
         if (deleteIndex == 0)
         {
-            appHandler.DeleteAllGames();
+            deleted = appHandler.DeleteAllGames();
         }
         else if (deleteIndex == 1)
         {
-            appHandler.DeleteGamesOfMode(GameMode.X01);
+            deleted = appHandler.DeleteGamesOfMode(GameMode.X01);
         }
         else if (deleteIndex == 2)
         {
-            appHandler.DeleteGamesOfMode(GameMode.Cricket);
+            deleted = appHandler.DeleteGamesOfMode(GameMode.Cricket);
         }
         else if (deleteIndex == 3)
         {
-            appHandler.DeleteGamesOfMode(GameMode.ATC);
+            deleted = appHandler.DeleteGamesOfMode(GameMode.ATC);
         }
         else
         {
             Debug.Log("[HistoryHandler] Unbekannter Index beim Löschen!");
+            return;
+        }
+
+        if (!deleted)
+        {
+            Debug.LogError("[HistoryHandler] Löschen fehlgeschlagen.");
+            return;
         }
 
         windowHandler.HidePopup();

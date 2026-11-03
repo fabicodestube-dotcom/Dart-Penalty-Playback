@@ -153,26 +153,31 @@ public class ClipBrowser : MonoBehaviour
 
         trimmed.SetData(data, 0);
 
+        bool replaced = false;
+
         switch (currentCategory)
         {
             case AudioCategory.Score:
-                AudioLibrary.Instance.ReplaceScoreClip(currentScore, currentIndex, trimmed);
-                //Debug.Log("Fehlt noch: Speichern des zugeschnittenen Clips in der AudioLibrary.");
+                replaced = AudioLibrary.Instance.ReplaceScoreClip(currentScore, currentIndex, trimmed);
                 break;
 
             case AudioCategory.Penalty:
-                AudioLibrary.Instance.ReplacePenaltyClip(currentPenaltyType, currentIndex, trimmed);
-                //Debug.Log("Fehlt noch: Speichern des zugeschnittenen Clips in der AudioLibrary.");
+                replaced = AudioLibrary.Instance.ReplacePenaltyClip(currentPenaltyType, currentIndex, trimmed);
                 break;
 
             case AudioCategory.Special:
-                AudioLibrary.Instance.ReplaceSpecialClip(currentSpecialType, currentIndex, trimmed);
-                //Debug.Log("Fehlt noch: Speichern des zugeschnittenen Clips in der AudioLibrary.");
+                replaced = AudioLibrary.Instance.ReplaceSpecialClip(currentSpecialType, currentIndex, trimmed);
                 break;
 
             case AudioCategory.Custom:
-                AudioLibrary.Instance.ReplaceCustomClip(currentCustomKey, currentIndex, trimmed);
+                replaced = AudioLibrary.Instance.ReplaceCustomClip(currentCustomKey, currentIndex, trimmed);
                 break;
+        }
+
+        if (!replaced)
+        {
+            Debug.LogError("[AUDIO] Zuschneiden konnte nicht gespeichert werden.");
+            return;
         }
 
         CancelCut();
@@ -498,23 +503,31 @@ public class ClipBrowser : MonoBehaviour
         if (clip == null)
             return;
 
+        string savedPath = null;
+
         switch (currentCategory)
         {
             case AudioCategory.Score:
-                AudioLibrary.Instance.AddScoreClip(currentScore, clip);
+                savedPath = AudioLibrary.Instance.AddScoreClip(currentScore, clip);
                 break;
 
             case AudioCategory.Penalty:
-                AudioLibrary.Instance.AddPenaltyClip(currentPenaltyType, clip);
+                savedPath = AudioLibrary.Instance.AddPenaltyClip(currentPenaltyType, clip);
                 break;
 
             case AudioCategory.Special:
-                AudioLibrary.Instance.AddSpecialClip(currentSpecialType, clip);
+                savedPath = AudioLibrary.Instance.AddSpecialClip(currentSpecialType, clip);
                 break;
 
             case AudioCategory.Custom:
-                AudioLibrary.Instance.AddCustomClip(currentCustomKey, clip);
+                savedPath = AudioLibrary.Instance.AddCustomClip(currentCustomKey, clip);
                 break;
+        }
+
+        if (string.IsNullOrEmpty(savedPath))
+        {
+            Debug.LogError("[AUDIO] Aufnahme konnte nicht gespeichert werden.");
+            return;
         }
 
         ReloadCurrentList();

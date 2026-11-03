@@ -98,6 +98,12 @@ public class AudioLibrary : MonoBehaviour
 
     private Dictionary<string, AudioClip> lastPlayedClips = new();
 
+    // Stabile SQLite-ID + Dateipfad pro Runtime-Clip. Replace/Delete arbeiten
+    // dadurch über die ID statt über die Listenposition (die sich z.B. nach
+    // Reparaturen verschieben kann).
+    private readonly Dictionary<AudioClip, long> runtimeClipRowIds = new();
+    private readonly Dictionary<AudioClip, string> runtimeClipPaths = new();
+
     // =========================================================
     // COUNTERS (FILE NAMING)
     // =========================================================
@@ -192,6 +198,18 @@ public class AudioLibrary : MonoBehaviour
         Directory.CreateDirectory(SpecialFolder);
     }
 
+    /// <summary>
+    /// Erneuter Ladeversuch nach einem fehlgeschlagenen Library-Load.
+    /// Räumt die Runtime-Listen vorher, damit keine Duplikate entstehen.
+    /// </summary>
+    public void RetryLoad()
+    {
+        StopAllCoroutines();
+        _loadedOnce = false;
+        IsReady = false;
+        StartCoroutine(LoadLibrary());
+    }
+
     // =========================================================
     // FILE NAME BUILDERS
     // =========================================================
@@ -206,7 +224,22 @@ public class AudioLibrary : MonoBehaviour
         => $"special_{type.ToString().ToLower()}_{index}.wav";
 
     private string BuildCustomFileName(string customKey, int index)
-        => $"custom_{SanitizeKey(customKey)}_{index}.wav";
+        => $"custom_{SanitizeKey(customKey)}_{StableKeyHash(customKey)}_{index}.wav";
+
+    private static string StableKeyHash(string value)
+    {
+        uint hash = 2166136261;
+        if (value != null)
+        {
+            foreach (char c in value)
+            {
+                hash ^= c;
+                hash *= 16777619;
+            }
+        }
+
+        return hash.ToString("x8");
+    }
 
     /// <summary>Dateisystem-sicherer Anteil aus beliebiger String-ID.</summary>
     private static string SanitizeKey(string customKey)
@@ -238,22 +271,25 @@ public class AudioLibrary : MonoBehaviour
     {
         if (clip == null) return null;
 
-        if (!scoreCounters.ContainsKey(score))
-            scoreCounters[score] = 0;
-
-        int index = ++scoreCounters[score];
+        scoreCounters.TryGetValue(score, out int index);
+        do index++; while (File.Exists(GetFullPath(ScoresFolder, BuildScoreFileName(score, index))));
+        scoreCounters[score] = index;
 
         string fileName = BuildScoreFileName(score, index);
         string path = GetFullPath(ScoresFolder, fileName);
+
+        if (!SaveWav(path, clip))
+            return null;
+
+        if (!TryInsertClipIndex(AudioCategory.Score, score, default, default, null, fileName, index, path, out long rowId))
+            return null;
 
         if (!runtimeScoreClips.ContainsKey(score))
             runtimeScoreClips[score] = new List<AudioClip>();
 
         runtimeScoreClips[score].Add(clip);
-
-        SaveWav(path, clip);
-        
-        InsertClipIndex(AudioCategory.Score, score, default, default, null, fileName, index);
+        runtimeClipRowIds[clip] = rowId;
+        runtimeClipPaths[clip] = path;
 
         NotifyLibraryChanged(AudioCategory.Score);
         return path;
@@ -263,24 +299,25 @@ public class AudioLibrary : MonoBehaviour
     {
         if (clip == null) return null;
 
-        Debug.Log("Lib speichert Clip");
-
-        if (!penaltyCounters.ContainsKey(type))
-            penaltyCounters[type] = 0;
-
-        int index = ++penaltyCounters[type];
+        penaltyCounters.TryGetValue(type, out int index);
+        do index++; while (File.Exists(GetFullPath(PenaltiesFolder, BuildPenaltyFileName(type, index))));
+        penaltyCounters[type] = index;
 
         string fileName = BuildPenaltyFileName(type, index);
         string path = GetFullPath(PenaltiesFolder, fileName);
+
+        if (!SaveWav(path, clip))
+            return null;
+
+        if (!TryInsertClipIndex(AudioCategory.Penalty, 0, type, default, null, fileName, index, path, out long rowId))
+            return null;
 
         if (!runtimePenaltyClips.ContainsKey(type))
             runtimePenaltyClips[type] = new List<AudioClip>();
 
         runtimePenaltyClips[type].Add(clip);
-
-        SaveWav(path, clip);
-        
-        InsertClipIndex(AudioCategory.Penalty, 0, type, default, null, fileName, index);
+        runtimeClipRowIds[clip] = rowId;
+        runtimeClipPaths[clip] = path;
 
         NotifyLibraryChanged(AudioCategory.Penalty);
         return path;
@@ -290,22 +327,25 @@ public class AudioLibrary : MonoBehaviour
     {
         if (clip == null) return null;
 
-        if (!specialCounters.ContainsKey(type))
-            specialCounters[type] = 0;
-
-        int index = ++specialCounters[type];
+        specialCounters.TryGetValue(type, out int index);
+        do index++; while (File.Exists(GetFullPath(SpecialFolder, BuildSpecialFileName(type, index))));
+        specialCounters[type] = index;
 
         string fileName = BuildSpecialFileName(type, index);
         string path = GetFullPath(SpecialFolder, fileName);
+
+        if (!SaveWav(path, clip))
+            return null;
+
+        if (!TryInsertClipIndex(AudioCategory.Special, 0, default, type, null, fileName, index, path, out long rowId))
+            return null;
 
         if (!runtimeSpecialClips.ContainsKey(type))
             runtimeSpecialClips[type] = new List<AudioClip>();
 
         runtimeSpecialClips[type].Add(clip);
-
-        SaveWav(path, clip);
-
-        InsertClipIndex(AudioCategory.Special, 0, default, type, null, fileName, index);
+        runtimeClipRowIds[clip] = rowId;
+        runtimeClipPaths[clip] = path;
 
         NotifyLibraryChanged(AudioCategory.Special);
         return path;
@@ -318,22 +358,25 @@ public class AudioLibrary : MonoBehaviour
     {
         if (clip == null || string.IsNullOrEmpty(customKey)) return null;
 
-        if (!customCounters.ContainsKey(customKey))
-            customCounters[customKey] = 0;
-
-        int index = ++customCounters[customKey];
+        customCounters.TryGetValue(customKey, out int index);
+        do index++; while (File.Exists(GetFullPath(SpecialFolder, BuildCustomFileName(customKey, index))));
+        customCounters[customKey] = index;
 
         string fileName = BuildCustomFileName(customKey, index);
         string path = GetFullPath(SpecialFolder, fileName);
+
+        if (!SaveWav(path, clip))
+            return null;
+
+        if (!TryInsertClipIndex(AudioCategory.Custom, 0, default, default, customKey, fileName, index, path, out long rowId))
+            return null;
 
         if (!runtimeCustomClips.ContainsKey(customKey))
             runtimeCustomClips[customKey] = new List<AudioClip>();
 
         runtimeCustomClips[customKey].Add(clip);
-
-        SaveWav(path, clip);
-
-        InsertClipIndex(AudioCategory.Custom, 0, default, default, customKey, fileName, index);
+        runtimeClipRowIds[clip] = rowId;
+        runtimeClipPaths[clip] = path;
 
         NotifyLibraryChanged(AudioCategory.Custom);
         return path;
@@ -375,7 +418,7 @@ public class AudioLibrary : MonoBehaviour
         if (!runtimeCustomClips.TryGetValue(customKey, out var list))
             return false;
 
-        return DeleteRecordedClip(list, index, AudioCategory.Custom, 0, default, default, customKey);
+        return DeleteRecordedClip(list, index, AudioCategory.Custom);
     }
 
     public bool ReplaceCustomClip(string customKey, int index, AudioClip newClip)
@@ -385,7 +428,7 @@ public class AudioLibrary : MonoBehaviour
         if (!runtimeCustomClips.TryGetValue(customKey, out var list))
             return false;
 
-        return ReplaceRecordedClip(list, index, AudioCategory.Custom, 0, default, default, newClip, customKey);
+        return ReplaceRecordedClip(list, index, AudioCategory.Custom, newClip);
     }
 
 
@@ -399,7 +442,7 @@ public class AudioLibrary : MonoBehaviour
         if (!runtimeScoreClips.TryGetValue(score, out var list))
             return false;
 
-        return ReplaceRecordedClip(list, index, AudioCategory.Score, score, default, default, newClip);
+        return ReplaceRecordedClip(list, index, AudioCategory.Score, newClip);
     }
 
     public bool ReplacePenaltyClip(PenaltyType type, int index, AudioClip newClip)
@@ -409,7 +452,7 @@ public class AudioLibrary : MonoBehaviour
         if (!runtimePenaltyClips.TryGetValue(type, out var list))
             return false;
 
-        return ReplaceRecordedClip(list, index, AudioCategory.Penalty, default, type, default, newClip);
+        return ReplaceRecordedClip(list, index, AudioCategory.Penalty, newClip);
     }
 
     public bool ReplaceSpecialClip(SpecialAudioType type, int index, AudioClip newClip)
@@ -419,64 +462,35 @@ public class AudioLibrary : MonoBehaviour
         if (!runtimeSpecialClips.TryGetValue(type, out var list))
             return false;
 
-        return ReplaceRecordedClip(list, index, AudioCategory.Special, default, default, type, newClip);
+        return ReplaceRecordedClip(list, index, AudioCategory.Special, newClip);
     }
 
     private bool ReplaceRecordedClip(
-    List<AudioClip> list,
-    int index,
-    AudioCategory category,
-    int score,
-    PenaltyType penaltyType,
-    SpecialAudioType specialType,
-    AudioClip newClip,
-    string customKey = null)
+        List<AudioClip> list,
+        int index,
+        AudioCategory category,
+        AudioClip newClip)
     {
         if (list == null || index < 0 || index >= list.Count)
             return false;
 
-        var rows = SqliteDatabaseRepository.LoadAllRecordedClips();
-
-        int matchCount = 0;
-        SqliteDatabaseRepository.RecordedClipRow target = null;
-
-        foreach (var row in rows)
-        {
-            if (!RowMatches(row, category, score, penaltyType, specialType, customKey))
-                continue;
-
-            if (matchCount == index)
-            {
-                target = row;
-                break;
-            }
-
-            matchCount++;
-        }
-
-        if (target == null)
+        AudioClip oldClip = list[index];
+        if (!runtimeClipRowIds.TryGetValue(oldClip, out long rowId)
+            || !runtimeClipPaths.TryGetValue(oldClip, out string path))
             return false;
 
-        if (!Enum.TryParse<AudioCategory>(target.Category, out var targetCategory))
+        // Atomarer Datei-Ersatz: bei einem Schreibfehler bleibt der alte Clip
+        // intakt, statt gelöscht und anschließend halb geschrieben zu sein.
+        if (!SaveWav(path, newClip))
             return false;
 
-        string path = GetFullPath(FolderForCategory(targetCategory), target.FileName);
+        SqliteDatabaseRepository.RefreshRecordedClipMetadata(rowId);
 
-        // =====================================
-        // FILE REPLACEMENT (Index bleibt gleich)
-        // =====================================
-
-        if (File.Exists(path))
-            File.Delete(path);
-
-        SaveWav(path, newClip);
-        SqliteDatabaseRepository.RefreshRecordedClipMetadata(target.Id);
-
-        // =====================================
-        // UPDATE RUNTIME LIST
-        // =====================================
-
+        runtimeClipRowIds.Remove(oldClip);
+        runtimeClipPaths.Remove(oldClip);
         list[index] = newClip;
+        runtimeClipRowIds[newClip] = rowId;
+        runtimeClipPaths[newClip] = path;
 
         NotifyLibraryChanged(category);
 
@@ -494,7 +508,7 @@ public class AudioLibrary : MonoBehaviour
         if (!runtimeScoreClips.TryGetValue(score, out var list))
             return false;
 
-        return DeleteRecordedClip(list, index, AudioCategory.Score, score, default, default);
+        return DeleteRecordedClip(list, index, AudioCategory.Score);
     }
 
     public bool DeletePenaltyClip(PenaltyType type, int index)
@@ -502,7 +516,7 @@ public class AudioLibrary : MonoBehaviour
         if (!runtimePenaltyClips.TryGetValue(type, out var list))
             return false;
 
-        return DeleteRecordedClip(list, index, AudioCategory.Penalty, default, type, default);
+        return DeleteRecordedClip(list, index, AudioCategory.Penalty);
     }
 
     public bool DeleteSpecialClip(SpecialAudioType type, int index)
@@ -510,46 +524,26 @@ public class AudioLibrary : MonoBehaviour
         if (!runtimeSpecialClips.TryGetValue(type, out var list))
             return false;
 
-        return DeleteRecordedClip(list, index, AudioCategory.Special, default, default, type);
+        return DeleteRecordedClip(list, index, AudioCategory.Special);
     }
 
-    private bool DeleteRecordedClip(List<AudioClip> list, int index, AudioCategory category, int score, PenaltyType penaltyType, SpecialAudioType specialType, string customKey = null)
+    private bool DeleteRecordedClip(List<AudioClip> list, int index, AudioCategory category)
     {
         if (list == null || index < 0 || index >= list.Count)
             return false;
 
-        var rows = SqliteDatabaseRepository.LoadAllRecordedClips();
-
-        int matchCount = 0;
-        SqliteDatabaseRepository.RecordedClipRow target = null;
-
-        foreach (var row in rows)
-        {
-            if (!RowMatches(row, category, score, penaltyType, specialType, customKey))
-                continue;
-
-            if (matchCount == index)
-            {
-                target = row;
-                break;
-            }
-
-            matchCount++;
-        }
-
-        if (target == null)
+        AudioClip clip = list[index];
+        if (!runtimeClipRowIds.TryGetValue(clip, out long rowId))
             return false;
 
-        SqliteDatabaseRepository.DeleteRecordedClipById(target.Id);
+        if (!SqliteDatabaseRepository.DeleteRecordedClipById(rowId))
+            return false;
 
-        if (Enum.TryParse<AudioCategory>(target.Category, out var targetCategory)
-            && !string.IsNullOrEmpty(target.FileName))
-        {
-            string path = GetFullPath(FolderForCategory(targetCategory), target.FileName);
-            if (File.Exists(path))
-                File.Delete(path);
-        }
+        if (runtimeClipPaths.TryGetValue(clip, out string path))
+            TryDeleteFile(path);
 
+        runtimeClipRowIds.Remove(clip);
+        runtimeClipPaths.Remove(clip);
         list.RemoveAt(index);
         NotifyLibraryChanged(category);
         return true;
@@ -902,10 +896,10 @@ public class AudioLibrary : MonoBehaviour
     /// Full-File-Rewrite). Nur der Dateiname wird gespeichert, der Ordner
     /// wird pro Kategorie abgeleitet — keine absoluten Pfade mehr.
     /// </summary>
-    private void InsertClipIndex(AudioCategory category, int score, PenaltyType penaltyType,
+    private long InsertClipIndex(AudioCategory category, int score, PenaltyType penaltyType,
         SpecialAudioType specialType, string customKey, string fileName, int slotIndex)
     {
-        SqliteDatabaseRepository.InsertRecordedClip(
+        return SqliteDatabaseRepository.InsertRecordedClip(
             category.ToString(),
             score,
             category == AudioCategory.Penalty ? penaltyType.ToString() : null,
@@ -915,6 +909,26 @@ public class AudioLibrary : MonoBehaviour
             slotIndex);
     }
 
+    private bool TryInsertClipIndex(AudioCategory category, int score, PenaltyType penaltyType,
+        SpecialAudioType specialType, string customKey, string fileName, int slotIndex, string path, out long rowId)
+    {
+        rowId = 0;
+
+        try
+        {
+            rowId = InsertClipIndex(category, score, penaltyType, specialType, customKey, fileName, slotIndex);
+            if (rowId > 0)
+                return true;
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"[AUDIO] Clip-Index konnte nicht gespeichert werden ({fileName}): {e.Message}");
+        }
+
+        TryDeleteFile(path);
+        return false;
+    }
+
     private string FolderForCategory(AudioCategory category)
     {
         return category switch
@@ -922,23 +936,6 @@ public class AudioLibrary : MonoBehaviour
             AudioCategory.Score => ScoresFolder,
             AudioCategory.Penalty => PenaltiesFolder,
             _ => SpecialFolder
-        };
-    }
-
-    private static bool RowMatches(SqliteDatabaseRepository.RecordedClipRow row,
-        AudioCategory category, int score, PenaltyType penaltyType,
-        SpecialAudioType specialType, string customKey)
-    {
-        if (row == null || row.Category != category.ToString())
-            return false;
-
-        return category switch
-        {
-            AudioCategory.Score => row.Score == score,
-            AudioCategory.Penalty => row.PenaltyType == penaltyType.ToString(),
-            AudioCategory.Special => row.SpecialType == specialType.ToString(),
-            AudioCategory.Custom => row.CustomKey == customKey,
-            _ => false
         };
     }
 
@@ -954,22 +951,17 @@ public class AudioLibrary : MonoBehaviour
 
         _loadedOnce = true;
 
-        // TEMP-Diagnose (Race Library-Load vs. UI): fliegt nach Verifikation raus.
-        float loadStart = Time.realtimeSinceStartup;
-        int loadOk = 0;
-        int loadFailed = 0;
-
         runtimeScoreClips.Clear();
         runtimePenaltyClips.Clear();
         runtimeSpecialClips.Clear();
         runtimeCustomClips.Clear();
+        runtimeClipRowIds.Clear();
+        runtimeClipPaths.Clear();
 
         try
         {
             var rows = SqliteDatabaseRepository.LoadAllRecordedClips();
             rows ??= new List<SqliteDatabaseRepository.RecordedClipRow>();
-
-            Debug.Log($"[AUDIO] TEMP LoadLibrary Start: {rows?.Count ?? 0} DB-Zeilen");
 
             foreach (var row in rows)
             {
@@ -981,7 +973,10 @@ public class AudioLibrary : MonoBehaviour
 
                 string path = GetFullPath(FolderForCategory(category), row.FileName);
                 if (!File.Exists(path))
+                {
+                    Debug.LogWarning($"[AUDIO] Clip-Datei fehlt, Index bleibt erhalten ({row.FileName}).");
                     continue;
+                }
 
                 // LoadClip wirft nie (härtet intern): Yield ohne try/catch
                 // außenrum (CS1626 verbietet yield in try+catch).
@@ -992,10 +987,8 @@ public class AudioLibrary : MonoBehaviour
                 var fileResult = new ClipLoadResult();
                 yield return LoadClip(dto, fileResult);
 
-                if (fileResult.Ok)
-                    loadOk++;
-                else
-                    loadFailed++;
+                if (!fileResult.Ok)
+                    Debug.LogWarning($"[AUDIO] Clip konnte nicht geladen werden: {row.FileName}");
             }
 
             try
@@ -1010,10 +1003,6 @@ public class AudioLibrary : MonoBehaviour
         finally
         {
             IsReady = true;
-
-            // TEMP-Diagnose (s.o.).
-            Debug.Log($"[AUDIO] TEMP LoadLibrary Ende: ok={loadOk} fehler={loadFailed} " +
-                $"dauer={(Time.realtimeSinceStartup - loadStart):F1}s — feuere Refresh-Events");
 
             // Nachlade-Refresh: Subscriber (Customization-Rows, Score-Grid)
             // wurden ggf. mit leeren Counts aufgebaut, bevor Clips geladen
@@ -1031,6 +1020,7 @@ public class AudioLibrary : MonoBehaviour
     {
         var dto = new RecordedAudioClipDto
         {
+            id = row.Id,
             category = category,
             filePath = path,
             score = row.Score,
@@ -1124,7 +1114,7 @@ public class AudioLibrary : MonoBehaviour
 
         if (req.result != UnityWebRequest.Result.Success)
         {
-            Debug.LogWarning($"[AUDIO] TEMP Clip-Request fehlgeschlagen ({dto.filePath}): {req.error}");
+            Debug.LogWarning($"[AUDIO] Clip-Request fehlgeschlagen ({dto.filePath}): {req.error}");
             yield break;
         }
 
@@ -1135,7 +1125,7 @@ public class AudioLibrary : MonoBehaviour
         }
         catch (System.Exception e)
         {
-            Debug.LogWarning($"[AUDIO] TEMP Clip-Decode fehlgeschlagen ({dto.filePath}): {e.Message}");
+            Debug.LogWarning($"[AUDIO] Clip-Decode fehlgeschlagen ({dto.filePath}): {e.Message}");
             yield break;
         }
 
@@ -1172,9 +1162,12 @@ public class AudioLibrary : MonoBehaviour
         }
         catch (System.Exception e)
         {
-            Debug.LogWarning($"[AUDIO] TEMP Clip-Registrierung fehlgeschlagen ({dto.filePath}): {e.Message}");
+            Debug.LogWarning($"[AUDIO] Clip-Registrierung fehlgeschlagen ({dto.filePath}): {e.Message}");
             yield break;
         }
+
+        runtimeClipRowIds[clip] = dto.id;
+        runtimeClipPaths[clip] = dto.filePath;
 
         result.Ok = true;
     }
@@ -1185,15 +1178,59 @@ public class AudioLibrary : MonoBehaviour
         return settings != null && settings.Enabled;
     }
 
-    private void SaveWav(string path, AudioClip clip)
+    private bool SaveWav(string path, AudioClip clip)
     {
-        if (clip == null) return;
+        if (clip == null || string.IsNullOrEmpty(path))
+            return false;
 
-        var samples = new float[clip.samples * clip.channels];
-        clip.GetData(samples, 0);
+        string tempPath = path + ".tmp";
 
-        byte[] wav = WavUtility.FromAudioClip(clip); 
-        File.WriteAllBytes(path, wav);
+        try
+        {
+            byte[] wav = WavUtility.FromAudioClip(clip);
+            File.WriteAllBytes(tempPath, wav);
+
+            if (!File.Exists(path))
+            {
+                File.Move(tempPath, path);
+                return true;
+            }
+
+            try
+            {
+                File.Replace(tempPath, path, null);
+            }
+            catch (PlatformNotSupportedException)
+            {
+                // Fallback für Plattformen ohne atomaren Replace.
+                File.Copy(tempPath, path, true);
+                TryDeleteFile(tempPath);
+            }
+
+            return true;
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"[AUDIO] WAV konnte nicht gespeichert werden ({path}): {e.Message}");
+            TryDeleteFile(tempPath);
+            return false;
+        }
+    }
+
+    private static void TryDeleteFile(string path)
+    {
+        if (string.IsNullOrEmpty(path))
+            return;
+
+        try
+        {
+            if (File.Exists(path))
+                File.Delete(path);
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogWarning($"[AUDIO] Datei konnte nicht gelöscht werden ({path}): {e.Message}");
+        }
     }
 }
 
@@ -1204,6 +1241,7 @@ public class AudioLibrary : MonoBehaviour
 [Serializable]
 public class RecordedAudioClipDto
 {
+    public long id;
     public AudioCategory category;
     public int score;
     public PenaltyType penaltyType;

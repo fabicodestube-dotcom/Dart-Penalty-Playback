@@ -95,6 +95,23 @@ public static class SqliteDatabaseService
             catch (Exception e)
             {
                 Debug.LogWarning("[SQLiteSettings] Failed to parse saved settings: " + e.Message);
+
+                // Defekten Rohwert quarantänen, statt ihn beim nächsten Save
+                // stillschweigend zu überschreiben.
+                try
+                {
+                    string quarantineKey = "app_settings_corrupt_" + DateTime.UtcNow.ToString("yyyyMMddHHmmss");
+                    connection.Execute(
+                        "INSERT OR REPLACE INTO settings (key_name, value_text) VALUES (?, ?);",
+                        quarantineKey,
+                        row.ValueText);
+                    connection.Execute("DELETE FROM settings WHERE key_name = ?;", "app_settings");
+                }
+                catch (Exception quarantineError)
+                {
+                    Debug.LogWarning("[SQLiteSettings] Failed to quarantine corrupt settings: " + quarantineError.Message);
+                }
+
                 return new AppSettings();
             }
         }

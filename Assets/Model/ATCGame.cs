@@ -337,13 +337,6 @@ public class ATCGame : Game
     /// <summary>Kopien für die Persistenz (game_meta): Zielfortschritt pro Spieler.</summary>
     public Dictionary<Guid, int> GetTargetIndices() => new Dictionary<Guid, int>(playerCurrentIndex);
 
-    public int GetWonLegsTotal(Guid playerId)
-    {
-        return sets
-            .SelectMany(s => s.GetLegs())
-            .Count(l => l.WinnerPlayerId == playerId);
-    }
-
     public int GetWonSetsTotal(Guid playerId)
     {
         return sets.Count(s => s.WinnerPlayerId == playerId);

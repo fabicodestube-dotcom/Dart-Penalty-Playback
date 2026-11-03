@@ -98,6 +98,8 @@ public class CricketGameEngine : GameEngine
         if (windowHandler != null){
             isPaused = false;
             windowHandler.HidePopup();
+            if (game != null)
+                HandleBotCheck(game.GetCurrentPlayerId());
         }
     }
 

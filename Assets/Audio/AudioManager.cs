@@ -9,6 +9,7 @@ public class AudioManager : MonoBehaviour
     public AudioLibrary library;
 
     [Header("Private Helpers")]
+    private const int MaxQueuedClips = 32;
     private Queue<AudioClip> audioQueue = new Queue<AudioClip>();
     private bool isPlaying = false;
 
@@ -34,7 +35,7 @@ private void Start()
         if (!IsSoundAllowed() || !AreScoreAnnouncementsEnabled())
             return;
 
-        var clip = library.GetScoreClip(score);
+        var clip = Lib?.GetScoreClip(score);
 
         if (clip == null)
         {
@@ -49,7 +50,7 @@ public void PlayPenalty(PenaltyType type)
         if (!IsSoundAllowed())
             return;
 
-        var clip = library.GetPenaltyClip(type);
+        var clip = Lib?.GetPenaltyClip(type);
 
         if (clip == null)
         {
@@ -65,7 +66,7 @@ public void PlayPenalty(PenaltyType type)
         if (!IsSoundAllowed())
             return;
 
-        var clip = library.GetSpecialClip(type);
+        var clip = Lib?.GetSpecialClip(type);
 
         if (clip == null)
         {
@@ -86,7 +87,7 @@ public void PlayPenalty(PenaltyType type)
         if (!IsSoundAllowed() || string.IsNullOrEmpty(penaltyId))
             return;
 
-        var clip = library.GetCustomClip(penaltyId);
+        var clip = Lib?.GetCustomClip(penaltyId);
 
         if (clip == null)
         {
@@ -107,7 +108,7 @@ public void PlayPenalty(PenaltyType type)
         if (!IsSoundAllowed() || string.IsNullOrEmpty(eventId))
             return;
 
-        var clip = library.GetCustomClip(eventId);
+        var clip = Lib?.GetCustomClip(eventId);
 
         if (clip == null)
         {
@@ -128,10 +129,7 @@ public void PlayPenalty(PenaltyType type)
         if (!IsSoundAllowed() || string.IsNullOrEmpty(sectorId))
             return;
 
-        if (library == null)
-            library = FindAnyObjectByType<AudioLibrary>();
-
-        var clip = library != null ? library.GetCustomClip(sectorId) : null;
+        var clip = Lib != null ? Lib.GetCustomClip(sectorId) : null;
         if (clip == null)
             return;
 
@@ -140,9 +138,20 @@ public void PlayPenalty(PenaltyType type)
 
 // ================= PRIVATE HELPERS =================
 
+    private AudioLibrary Lib
+    {
+        get
+        {
+            if (library == null)
+                library = FindAnyObjectByType<AudioLibrary>();
+
+            return library;
+        }
+    }
+
     private bool IsSoundAllowed()
     {
-        var settings = AppSettingsManager.Instance.Settings;
+        var settings = AppSettingsManager.Instance?.Settings;
 
         // Defensive Checks → falls Settings unvollständig sind
         if (settings == null || settings.Sound == null)
@@ -157,7 +166,7 @@ public void PlayPenalty(PenaltyType type)
     /// </summary>
     private bool AreScoreAnnouncementsEnabled()
     {
-        var settings = AppSettingsManager.Instance.Settings;
+        var settings = AppSettingsManager.Instance?.Settings;
 
         if (settings == null || settings.Sound == null)
             return true;
@@ -172,7 +181,7 @@ public void PlayPenalty(PenaltyType type)
     /// </summary>
     private void LogMissingClip(string message)
     {
-        if (library != null && !library.UseBuiltInFallbackEnabled)
+        if (Lib != null && !Lib.UseBuiltInFallbackEnabled)
             Debug.Log($"[AUDIO] {message} (eingebauter Fallback deaktiviert)");
         else
             Debug.LogWarning($"[AUDIO] {message}");
@@ -180,8 +189,14 @@ public void PlayPenalty(PenaltyType type)
 
     private void Enqueue(AudioClip clip)
     {
-        if (clip == null)
+        if (clip == null || source == null)
             return;
+
+        if (audioQueue.Count >= MaxQueuedClips)
+        {
+            Debug.LogWarning("[AUDIO] Warteschlange voll, ältester Clip wird verworfen.");
+            audioQueue.Dequeue();
+        }
 
         audioQueue.Enqueue(clip);
 
@@ -197,6 +212,12 @@ private IEnumerator PlayQueue()
         // Arbeitet die Queue strikt FIFO ab
         while (audioQueue.Count > 0)
         {
+            if (source == null)
+            {
+                audioQueue.Clear();
+                break;
+            }
+
             var clip = audioQueue.Dequeue();
 
             if (clip == null)
@@ -205,7 +226,7 @@ private IEnumerator PlayQueue()
             source.PlayOneShot(clip, GetVolume());
 
             // Wartet exakt die Länge des Clips → sequentielle Wiedergabe garantiert
-            yield return new WaitForSeconds(clip.length);
+            yield return new WaitForSeconds(Mathf.Max(0f, clip.length));
         }
 
         isPlaying = false;
@@ -246,12 +267,12 @@ private IEnumerator PlayQueue()
 
 private float GetVolume()
     {
-        var settings = AppSettingsManager.Instance.Settings;
+        var settings = AppSettingsManager.Instance?.Settings;
 
         if (settings?.Sound == null)
             return 1f;
 
-        return settings.Sound.Volume;
+        return Mathf.Clamp01(settings.Sound.Volume);
     }
 
 

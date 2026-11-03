@@ -208,9 +208,9 @@ public class AppHandler : MonoBehaviour
         return database.GetLegCount();
     }
 
-    public void SaveDatabase()
+    public bool SaveDatabase()
     {
-        SaveSystem.SaveDatabase(database);
+        return SaveSystem.SaveDatabase(database);
     }
 
     public void SetPlayers(List<Guid> active, List<Guid> reserve)
@@ -268,10 +268,10 @@ public class AppHandler : MonoBehaviour
         return SaveSystem.LoadGameById(id);
     }
 
-    public void SaveGame(Game g)
+    public bool SaveGame(Game g)
     {
         if (g == null)
-            return;
+            return false;
 
         SetSelectedGame(g);
 
@@ -284,15 +284,19 @@ public class AppHandler : MonoBehaviour
         // Cricket/ATC haben eigene Overrides für modus-spezifische Felder.
         g.CalculatePlayerStatsOnSave();
 
+        if (!SaveSystem.SaveGame(g))
+        {
+            Debug.LogError("Spiel konnte nicht gespeichert werden: " + g.GetID());
+            return false;
+        }
+
         if (g.IsFinished())
         {
             ApplyGameStatsToPlayers(g);
-            SaveSystem.SaveGame(g);
-            SaveSystem.SaveAggregatedPlayerStats(g);
-        }
-        else
-        {
-            SaveSystem.SaveGame(g);
+            if (!SaveSystem.SaveAggregatedPlayerStats(g))
+            {
+                Debug.LogError("Spiel gespeichert, aber Aggregate konnten nicht aktualisiert werden: " + g.GetID());
+            }
         }
 
         g.MarkSavedNow();
@@ -301,44 +305,63 @@ public class AppHandler : MonoBehaviour
         database.AddGameSummary(summary);
 
         OnAddGame?.Invoke(g);
+        return true;
     }
 
-    public void DeleteGame(Guid id)
+    public bool DeleteGame(Guid id)
     {
         GameSummary summary = database.GetGameSummary(id);
-        GameMode? mode = database.DeleteGame(id);
-
-        if (mode == null)
-        {
-            Debug.LogWarning($"DeleteGame: Kein Game mit ID {id} gefunden.");
-            return;
-        }
 
         // Stats VOR dem SQLite-Delete laden (danach sind die Zeilen weg).
         // Ein gezielter Single-Game-Read statt Full-Table-Read.
-        var playerStats = SqliteDatabaseRepository.LoadPlayerGameStatsForGame(id);
+        var playerStats = summary != null && summary.IsFinished
+            ? SqliteDatabaseRepository.LoadPlayerGameStatsForGame(id)
+            : null;
 
-        SaveSystem.DeleteGame(id);
-
-        // Aggregate inkrementell abziehen statt alle Tabellen aus allen
-        // Spielen neu aufzubauen (O(1) statt O(Historie)).
-        SubtractAggregatedPlayerStats(summary, playerStats);
-
-        if (summary != null && playerStats != null)
+        if (!SaveSystem.DeleteGame(id))
         {
-            foreach (var playerStat in playerStats)
+            Debug.LogError("Spiel konnte nicht gelöscht werden: " + id);
+            return false;
+        }
+
+        database.DeleteGame(id);
+
+        if (summary != null && summary.IsFinished)
+        {
+            // Aggregate inkrementell abziehen statt alle Tabellen aus allen
+            // Spielen neu aufzubauen (O(1) statt O(Historie)).
+            SubtractAggregatedPlayerStats(summary, playerStats);
+
+            if (playerStats != null)
             {
-                var player = GetPlayerByID(playerStat.Key);
-                player?.RemoveGameStatsFromSummary(summary, playerStat.Value);
+                foreach (var playerStat in playerStats)
+                {
+                    var player = GetPlayerByID(playerStat.Key);
+                    player?.RemoveGameStatsFromSummary(summary, playerStat.Value);
+                }
             }
         }
 
-        var affectedPlayerIds = playerStats != null
-            ? new List<Guid>(playerStats.Keys)
-            : (summary?.PlayerIds != null
-                ? new List<Guid>(summary.PlayerIds)
-                : new List<Guid>());
-        OnDeleteGame?.Invoke(mode.Value, id, affectedPlayerIds);
+        if (selectedGame != null && selectedGame.GetID() == id)
+            selectedGame = null;
+        if (activeRuntimeGame != null && activeRuntimeGame.GetID() == id)
+            activeRuntimeGame = null;
+        if (lastClickedGameId == id)
+            lastClickedGameId = Guid.Empty;
+
+        if (summary != null)
+        {
+            var affectedPlayerIds = playerStats != null
+                ? new List<Guid>(playerStats.Keys)
+                : (summary.PlayerIds != null ? new List<Guid>(summary.PlayerIds) : new List<Guid>());
+            OnDeleteGame?.Invoke(summary.GameMode, id, affectedPlayerIds);
+        }
+        else
+        {
+            Debug.Log($"DeleteGame: Kein Summary für {id}; nur persistente Reste entfernt.");
+        }
+
+        return true;
     }
 
     /// <summary>
@@ -371,7 +394,7 @@ public class AppHandler : MonoBehaviour
         }
     }
 
-    public void DeleteGamesOfMode(GameMode mode)
+    public bool DeleteGamesOfMode(GameMode mode)
     {
         var summaries = database.GetGameSummaries()
             .Where(s => s.GameMode == mode)
@@ -380,8 +403,13 @@ public class AppHandler : MonoBehaviour
         // Stats EINMAL vor dem Delete laden (ein Full-Read statt N).
         var allStats = SqliteDatabaseRepository.LoadAllPlayerGameStats();
 
+        if (!SaveSystem.DeleteGamesByMode(mode))
+        {
+            Debug.LogError("Spiele des Modus konnten nicht gelöscht werden: " + mode);
+            return false;
+        }
+
         database.DeleteGames(mode);
-        SaveSystem.DeleteGamesByMode(mode);
 
         foreach (var summary in summaries)
         {
@@ -414,16 +442,31 @@ public class AppHandler : MonoBehaviour
                     affectedPlayerIds.Add(pid);
             }
         }
+
+        if (selectedGame != null && selectedGame.GetGameMode() == mode)
+            selectedGame = null;
+        if (activeRuntimeGame != null && activeRuntimeGame.GetGameMode() == mode)
+            activeRuntimeGame = null;
+        if (lastClickedGameId != Guid.Empty && database.GetGameSummary(lastClickedGameId) == null)
+            lastClickedGameId = Guid.Empty;
+
         OnDeleteGamesOfMode?.Invoke(mode, affectedPlayerIds);
+        return true;
     }
 
-    public void DeleteAllGames()
+    public bool DeleteAllGames()
     {
+        if (!SaveSystem.DeleteAllGames())
+        {
+            Debug.LogError("Spiele konnten nicht gelöscht werden.");
+            return false;
+        }
+
         database.DeleteGames(null);
-        SaveSystem.DeleteAllGames();
         // Aggregate sind damit leer: Full-Rebuild findet keine Spiele mehr
         // und räumt nur die Aggregat-Tabellen ab (billig, keine toten Loops).
-        SaveSystem.RebuildAggregatedPlayerStats();
+        if (!SaveSystem.RebuildAggregatedPlayerStats())
+            Debug.LogError("Spieler-Aggregate konnten nach dem Löschen nicht neu aufgebaut werden.");
 
         foreach (var player in database.GetPlayers())
         {
@@ -431,14 +474,18 @@ public class AppHandler : MonoBehaviour
                 player.ResetAllStats();
         }
 
+        selectedGame = null;
+        activeRuntimeGame = null;
+        lastClickedGameId = Guid.Empty;
+
         OnAllGamesDeleted?.Invoke();
+        return true;
     }
 
     public void SetSelectedGame(Game game)
     {
         selectedGame = game;
-        if (game != null)
-            activeRuntimeGame = game;
+        activeRuntimeGame = game;
     }
 
     public void SetLastClickedGameId(Guid id)
@@ -454,8 +501,7 @@ public class AppHandler : MonoBehaviour
     public void SetActiveRuntimeGame(Game game)
     {
         activeRuntimeGame = game;
-        if (game != null)
-            selectedGame = game;
+        selectedGame = game;
     }
 
     public X01Game PrepareX01Game(X01GameSettings data)
@@ -482,18 +528,24 @@ public class AppHandler : MonoBehaviour
     public void SetActivePlayerOrder(List<Guid> newOrder)
     {
         database.SetActivePlayerOrder(newOrder);
-        databaseDirty = true;
+        MarkDatabaseDirty();
     }
 
     public void SetPlayerOrder(List<Guid> newOrder)
     {
         database.SetPlayerOrder(newOrder);
-        databaseDirty = true;
+        MarkDatabaseDirty();
     }
 
-    public void SaveSettings()
+    public bool SaveSettings()
     {
-        SaveSystem.SaveDatabase(database);
+        if (!SaveSystem.SaveDatabase(database))
+        {
+            Debug.LogError("Einstellungen konnten nicht gespeichert werden.");
+            return false;
+        }
+
+        return true;
     }
 
     public void SetLastGameMode(GameMode mode)
@@ -552,26 +604,32 @@ public class AppHandler : MonoBehaviour
     /// Schreibt ausstehende Spieler-/Setup-Änderungen. No-Op wenn clean.
     /// Einzige Stellen mit sofortigem Write: Spielstart, Lifecycle, explizit.
     /// </summary>
-    private void FlushDatabase()
+    private bool FlushDatabase()
     {
         if (!databaseDirty || database == null)
-            return;
+            return database != null;
 
         if (isShuttingDown)
         {
             Debug.Log("<color=orange>Save blockiert: Domain wird entladen.</color>");
-            return;
+            return false;
         }
 
         #if UNITY_EDITOR
         if (UnityEditor.EditorApplication.isCompiling || UnityEditor.EditorApplication.isUpdating)
         {
-            return;
+            return false;
         }
         #endif
 
-        SaveSystem.SaveDatabase(database);
+        if (!SaveSystem.SaveDatabase(database))
+        {
+            Debug.LogError("Ausstehende Datenbankänderungen konnten nicht gespeichert werden.");
+            return false;
+        }
+
         databaseDirty = false;
+        return true;
     }
 
     private void HandleDomainUnload(object sender, EventArgs e)
@@ -621,7 +679,7 @@ public class AppHandler : MonoBehaviour
 
     private void PersistOpenRuntimeGames()
     {
-        if (database == null)
+        if (database == null || database.GetGameSummaries() == null)
             return;
 
         var runtimeGames = new List<Game>();
@@ -633,14 +691,15 @@ public class AppHandler : MonoBehaviour
         var seenGameIds = new HashSet<Guid>();
         foreach (var game in runtimeGames)
         {
-            if (game == null || seenGameIds.Contains(game.GetID()))
+            if (game == null || game.GetID() == Guid.Empty || seenGameIds.Contains(game.GetID()))
                 continue;
 
             seenGameIds.Add(game.GetID());
             if (!game.IsFinished())
                 game.CalculatePlayerStatsOnSave();
 
-            SaveSystem.SaveGame(game);
+            if (!SaveSystem.SaveGame(game))
+                Debug.LogError("Laufendes Spiel konnte beim Lifecycle-Save nicht gespeichert werden: " + game.GetID());
         }
     }
 
@@ -703,7 +762,7 @@ public class AppHandler : MonoBehaviour
                 PlayerId = pid,
                 Score = GetScoreForPlayer(game, pid),
                 SetsWon = game.GetWonSets(pid),
-                LegsWon = game.IsFinished() ? 0 : game.GetWonLegs(pid),
+                LegsWon = game.GetWonLegsTotal(pid),
                 TargetsHit = game is ATCGame atc ? atc.GetTargetsHit(pid) : 0,
                 TotalTargets = game is ATCGame atc2 ? atc2.GetTotalTargets() : 0,
                 WallCount = ps?.wallCount ?? 0,

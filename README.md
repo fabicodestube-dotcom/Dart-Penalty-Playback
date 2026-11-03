@@ -14,7 +14,7 @@ Get the latest ready-to-install Android APK here:
 
 👉 **[Download Latest APK from GitHub](https://github.com/fabicodestube-dotcom/Dart-Penalty-Playback/releases)**
 
-👉 **[Download Latest APK from F-Droid](Link pending)**
+👉 **F-Droid:** planned, not yet available.
 
 ---
 
@@ -34,10 +34,10 @@ Configure matches exactly how you like them, including:
 
 - Adjustable **Sets & Legs**
 - Various mode-specific settings
-- Single-player, local multiplayer, or matches against AI bots
+- Single-player, local multiplayer, or matches against bot opponents
 
 
-### 🤖 AI Opponents
+### 🤖 Bot Opponents
 
 Practice anytime against computer-controlled players.
 
@@ -124,10 +124,10 @@ Customize the look of the app to match your setup.
 
 Features include:
 
-- **6 integrated color themes**
+- **8 integrated color themes**
 - Easy switching between themes
 - Consistent styling across the entire app
-- Optimized for dark mode
+- Optimized for dark and light mode
 
 
 ### 🔒 Privacy First
@@ -140,10 +140,20 @@ Dart Penalty Playback:
 - Contains no advertisements
 - Uses no analytics services
 - Includes no trackers
-- Stores all data locally in JSON files
+- Stores all data locally in a SQLite database
 - Keeps audio recordings exclusively on your phone
 
 No accounts, no cloud, no hidden data collection.
+
+---
+
+## 📸 Screenshots
+
+| Home | X01 | Statistics |
+| --- | --- | --- |
+| ![Home](docs/screenshots/home.png) | ![X01](docs/screenshots/x01.png) | ![Statistics](docs/screenshots/statistics.png) |
+
+More screenshots are available in [`docs/screenshots`](docs/screenshots).
 
 ---
 

@@ -104,12 +104,23 @@ public class ClipRecorder : MonoBehaviour
 
     private void OnEnable()
     {
-        rippleAnimation.StartRipples();
+        if (rippleAnimation != null)
+            rippleAnimation.StartRipples();
     }
 
     private void OnDisable()
     {
-        rippleAnimation.StopRipples();
+        if (isRecording)
+        {
+            Microphone.End(microphoneDevice);
+            isRecording = false;
+            recordedClip = null;
+        }
+
+        ReleaseRecordingLock();
+
+        if (rippleAnimation != null)
+            rippleAnimation.StopRipples();
     }
 
     // ====================================================
@@ -156,14 +167,10 @@ public class ClipRecorder : MonoBehaviour
         }
         #endif
 
-        if (clipBrowser != null)
-        {
-            clipBrowser.SetLocked(true);
-        }
-
         if (Microphone.devices.Length <= 0)
         {
             Debug.LogWarning("Kein Mikrofon gefunden.");
+            ReleaseRecordingLock();
             return;
         }
 
@@ -186,12 +193,23 @@ public class ClipRecorder : MonoBehaviour
 
         recordedClip = null;
 
+        if (clipBrowser != null)
+            clipBrowser.SetLocked(true);
+
         recordedClip = Microphone.Start(
             microphoneDevice,
             false,
             maxRecordingLength,
             recordingSampleRate
         );
+
+        if (recordedClip == null)
+        {
+            Debug.LogWarning("Aufnahme konnte nicht gestartet werden.");
+            ReleaseRecordingLock();
+            UpdateRecorderVisuals();
+            return;
+        }
 
         isRecording = true;
 
@@ -202,10 +220,9 @@ public class ClipRecorder : MonoBehaviour
     {
         if (!isRecording)
         {
-            clipBrowser?.SetLocked(false);
+            ReleaseRecordingLock();
             return;
         }
-            
 
         int position = Microphone.GetPosition(microphoneDevice);
 
@@ -214,10 +231,7 @@ public class ClipRecorder : MonoBehaviour
         isRecording = false;
 
         UpdateRecorderVisuals();
-        if (clipBrowser != null)
-        {
-            clipBrowser.SetLocked(false);
-        }
+        ReleaseRecordingLock();
 
         if (recordedClip == null)
         {
@@ -231,7 +245,7 @@ public class ClipRecorder : MonoBehaviour
         if (position <= 0 || recordedChannels <= 0)
         {
             recordedClip = null;
-            clipBrowser?.SetLocked(false);
+            ReleaseRecordingLock();
 
             Debug.LogWarning("Keine Aufnahme erkannt.");
             return;
@@ -245,7 +259,7 @@ public class ClipRecorder : MonoBehaviour
         if (!recordedClip.GetData(samples, 0))
         {
             recordedClip = null;
-            clipBrowser?.SetLocked(false);
+            ReleaseRecordingLock();
 
             Debug.LogWarning("Aufnahmedaten konnten nicht gelesen werden.");
             return;
@@ -266,7 +280,7 @@ public class ClipRecorder : MonoBehaviour
                 recordedChannels,
                 recordedFrequency);
 
-        if (trimSilenceToggle.IsActive())
+        if (trimSilenceToggle != null && trimSilenceToggle.IsActive())
         {
             AudioClip trimmed =
                 TrimSilence(
@@ -282,7 +296,7 @@ public class ClipRecorder : MonoBehaviour
         if (recordedClip == null)
         {
             Debug.LogWarning("Aufnahme bestand nur aus Stille.");
-            clipBrowser?.SetLocked(false);
+            ReleaseRecordingLock();
             return;
         }
 
@@ -335,6 +349,11 @@ public class ClipRecorder : MonoBehaviour
     private void ResetRecorder()
     {
         recordedClip = null;
+    }
+
+    private void ReleaseRecordingLock()
+    {
+        clipBrowser?.SetLocked(false);
     }
 
     private void UpdateRecorderVisuals()

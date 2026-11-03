@@ -305,13 +305,27 @@ public class AppSettingsManager : MonoBehaviour
     // =========================================================
     private void EnsureDefaults()
     {
+        Settings ??= new AppSettings();
         Settings.Language ??= new LanguageSaveData();
+        Settings.Sound ??= new SoundSettings();
+        Settings.Vibration ??= new VibrationSettings();
+        Settings.Penalties ??= new PenaltySettings();
+        Settings.Penalties.Settings ??= new System.Collections.Generic.List<PenaltySetting>();
 
         if (string.IsNullOrWhiteSpace(Settings.Language.lastLocaleCode))
         {
             Debug.Log("[Settings] Missing language code -> defaulting to 'en'");
             Settings.Language.lastLocaleCode = "en";
         }
+
+        if (Settings.SchemaVersion <= 0)
+            Settings.SchemaVersion = AppSettings.CurrentSchemaVersion;
+        else if (Settings.SchemaVersion > AppSettings.CurrentSchemaVersion)
+            Debug.LogWarning("[Settings] Settings stammen aus einer neueren App-Version: v" + Settings.SchemaVersion);
+
+        if (float.IsNaN(Settings.Sound.Volume) || float.IsInfinity(Settings.Sound.Volume))
+            Settings.Sound.Volume = 1f;
+        Settings.Sound.Volume = UnityEngine.Mathf.Clamp01(Settings.Sound.Volume);
 
         foreach (PenaltyType type in System.Enum.GetValues(typeof(PenaltyType)))
         {

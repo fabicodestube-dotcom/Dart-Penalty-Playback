@@ -104,3 +104,24 @@ InitTestScene*.unity*
 
 # Auto-generated cache in Assets folder
 /[Aa]ssets/[Ss]ceneDependencyCache*
+
+# Local tooling and editor state
+/node_modules/
+/.vscode/settings.json
+/.vscode/launch.json
+.idea/
+.DS_Store
+Thumbs.db
+
+# Local build/profiling artifacts
+/ProfilerCaptures/
+/Assets/_Recovery/
+/Assets/_Recovery.meta
+*_BurstDebugInformation_DoNotShip/
+*.lscache
+
+# Imported screenshots are kept in docs/screenshots instead
+/Assets/Screenshot/
+/Assets/Screenshot.meta
+/Assets/Screenshots/
+/Assets/Screenshots.meta

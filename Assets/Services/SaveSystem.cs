@@ -25,53 +25,71 @@ public static class SaveSystem
     }
 #endif
 
-    public static void SaveDatabase(Database db)
+    public static bool SaveDatabase(Database db)
     {
-        if (db == null || IsWriteBlocked()) return;
+        if (db == null || IsWriteBlocked()) return false;
 
-        SqliteDatabaseRepository.SaveDatabase(db);
+        return SqliteDatabaseRepository.SaveDatabase(db);
     }
 
-    public static void SaveGame(Game game)
+    public static bool SaveGame(Game game)
     {
-        if (game == null || IsWriteBlocked()) return;
+        if (game == null || IsWriteBlocked()) return false;
 
-        SqliteDatabaseRepository.SaveGame(game);
+        return SqliteDatabaseRepository.SaveGame(game);
     }
 
-    public static void SaveAggregatedPlayerStats(Game game)
+    public static bool SaveAggregatedPlayerStats(Game game)
     {
-        if (game == null || IsWriteBlocked()) return;
+        if (game == null || IsWriteBlocked()) return false;
 
-        SqliteDatabaseRepository.SaveAggregatedPlayerStats(game);
+        try
+        {
+            SqliteDatabaseRepository.SaveAggregatedPlayerStats(game);
+            return true;
+        }
+        catch (Exception e)
+        {
+            Debug.LogError("Speichern der Spieler-Aggregate fehlgeschlagen: " + e);
+            return false;
+        }
     }
 
-    public static void RebuildAggregatedPlayerStats()
+    public static bool RebuildAggregatedPlayerStats()
     {
-        if (IsWriteBlocked()) return;
+        if (IsWriteBlocked()) return false;
 
-        SqliteDatabaseRepository.RebuildAggregatedPlayerStats();
+        try
+        {
+            SqliteDatabaseRepository.RebuildAggregatedPlayerStats();
+            return true;
+        }
+        catch (Exception e)
+        {
+            Debug.LogError("Neuaufbau der Spieler-Aggregate fehlgeschlagen: " + e);
+            return false;
+        }
     }
 
-    public static void DeleteGame(Guid id)
+    public static bool DeleteGame(Guid id)
     {
-        if (IsWriteBlocked()) return;
+        if (IsWriteBlocked()) return false;
 
-        SqliteDatabaseRepository.DeleteGame(id);
+        return SqliteDatabaseRepository.DeleteGame(id);
     }
 
-    public static void DeleteGamesByMode(GameMode mode)
+    public static bool DeleteGamesByMode(GameMode mode)
     {
-        if (IsWriteBlocked()) return;
+        if (IsWriteBlocked()) return false;
 
-        SqliteDatabaseRepository.DeleteGamesByMode(mode);
+        return SqliteDatabaseRepository.DeleteGamesByMode(mode);
     }
 
-    public static void DeleteAllGames()
+    public static bool DeleteAllGames()
     {
-        if (IsWriteBlocked()) return;
+        if (IsWriteBlocked()) return false;
 
-        SqliteDatabaseRepository.DeleteAllGames();
+        return SqliteDatabaseRepository.DeleteAllGames();
     }
 
     public static Game LoadGameById(Guid id)

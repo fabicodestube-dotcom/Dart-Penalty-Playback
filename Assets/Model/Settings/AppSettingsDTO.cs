@@ -7,6 +7,9 @@ using UnityEngine;
 [System.Serializable]
 public class AppSettings
 {
+    public const int CurrentSchemaVersion = 1;
+
+    [JsonProperty] public int SchemaVersion = CurrentSchemaVersion;
     [JsonProperty] public LanguageSaveData Language = new LanguageSaveData();
     [JsonProperty] public ThemeColorScheme Theme = ThemeColorScheme.Green;
     [JsonProperty] public ThemeMode ThemeMode = ThemeMode.Dark;

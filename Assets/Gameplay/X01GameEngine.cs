@@ -105,6 +105,8 @@ public class X01GameEngine : GameEngine
     {
         isPaused = false;
         windowHandler.HidePopup();
+        if (game != null)
+            HandleBotCheck(game.GetCurrentPlayerId());
     }
 
     // =========================================================
