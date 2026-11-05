@@ -218,12 +218,15 @@ public abstract class Game
     /// enabled-Stand als Deep-Copy). Die Auswertung nutzt ausschließlich
     /// diesen Snapshot: Mid-Game-Toggles beeinflussen laufende Spiele
     /// nicht, und die History kann rückverfolgen, was aktiv war.
-    /// Persistenz: game_meta (siehe Save/RestoreRuntimeGameMeta).
+    /// Persistenz: game_runtime_state (siehe Save/RestoreRuntimeGameState).
     /// </summary>
     protected List<CustomPenaltyDef> penaltySnapshot;
 
     /// <summary>Audio-Event-Defs zum Spielstart (analog, inkl. enabled).</summary>
     protected List<AudioEventDef> audioEventSnapshot;
+
+    /// <summary>Hit-Sector-Defs zum Spielstart (analog, inkl. enabled/builtIn).</summary>
+    protected List<CustomHitDef> hitSectorSnapshot;
 
     /// <summary>
     /// Friert die Customization zum Spielstart ein. Aus den Konstruktoren
@@ -233,6 +236,7 @@ public abstract class Game
     {
         penaltySnapshot = ClonePenaltyDefs(CustomizationStore.GetPenalties());
         audioEventSnapshot = CloneAudioEventDefs(CustomizationStore.GetAudioEvents());
+        hitSectorSnapshot = CloneHitDefs(CustomizationStore.GetHitSectors());
     }
 
     private static List<CustomPenaltyDef> ClonePenaltyDefs(List<CustomPenaltyDef> source)
@@ -289,6 +293,33 @@ public abstract class Game
         return result;
     }
 
+    private static List<CustomHitDef> CloneHitDefs(List<CustomHitDef> source)
+    {
+        var result = new List<CustomHitDef>();
+        if (source == null)
+            return result;
+
+        foreach (var def in source)
+        {
+            if (def == null)
+                continue;
+
+            try
+            {
+                var clone = JsonConvert.DeserializeObject<CustomHitDef>(
+                    JsonConvert.SerializeObject(def, Formatting.None));
+                if (clone != null && !string.IsNullOrEmpty(clone.id))
+                    result.Add(clone);
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogWarning("[Game] HitSector-Snapshot fehlerhaft: " + e.Message);
+            }
+        }
+
+        return result;
+    }
+
     /// <summary>
     /// Snapshot-Defs für die Auswertung (Lazy-Fallback für alte Saves ohne
     /// Snapshot: einmalig aus dem Live-Store aufbauen).
@@ -310,11 +341,23 @@ public abstract class Game
         return audioEventSnapshot;
     }
 
+    /// <summary>Analog für Hit-Sectors (Lazy-Fallback für alte Saves).</summary>
+    protected List<CustomHitDef> GetSnapshotHitSectors()
+    {
+        if (hitSectorSnapshot == null)
+            hitSectorSnapshot = CloneHitDefs(CustomizationStore.GetHitSectors());
+
+        return hitSectorSnapshot;
+    }
+
     /// <summary>Öffentlicher Snapshot-Zugriff (Summary/History/Statistik).</summary>
     public List<CustomPenaltyDef> GetPenaltySnapshot() => new List<CustomPenaltyDef>(GetSnapshotPenalties());
 
     /// <summary>Öffentlicher AudioEvent-Snapshot (Persistenz/Summary).</summary>
     public List<AudioEventDef> GetAudioEventSnapshot() => new List<AudioEventDef>(GetSnapshotAudioEvents());
+
+    /// <summary>Öffentlicher Hit-Sector-Snapshot (Persistenz/Gameplay).</summary>
+    public List<CustomHitDef> GetHitSectorSnapshot() => new List<CustomHitDef>(GetSnapshotHitSectors());
 
     /// <summary>Stellt den Penalty-Snapshot wieder her (Load-Pfad).</summary>
     public void RestorePenaltySnapshot(List<CustomPenaltyDef> snapshot)
@@ -332,13 +375,21 @@ public abstract class Game
             : null;
     }
 
+    /// <summary>Stellt den Hit-Sector-Snapshot wieder her (Load-Pfad).</summary>
+    public void RestoreHitSectorSnapshot(List<CustomHitDef> snapshot)
+    {
+        hitSectorSnapshot = snapshot != null
+            ? CloneHitDefs(snapshot)
+            : null;
+    }
+
     /// <summary>
     /// Zentraler Aktiv-Guard für Custom-Penalties: enabled + mit Bedingung
     /// werden je ausgewertet/gebucht. builtIn heißt nur „nicht löschbar“.
     /// </summary>
     protected static bool IsPenaltyDefActive(CustomPenaltyDef def)
     {
-        return def != null && def.enabled && def.condition != null;
+        return def != null && def.enabled && def.conditions != null && def.conditions.Count > 0;
     }
 
     /// <summary>
@@ -347,7 +398,7 @@ public abstract class Game
     /// </summary>
     protected static bool IsAudioEventActive(AudioEventDef def)
     {
-        return def != null && def.enabled && def.trigger != null;
+        return def != null && def.enabled && def.triggers != null && def.triggers.Count > 0;
     }
 
     /// <summary>
@@ -376,7 +427,7 @@ public abstract class Game
         }
 
         if (!IsAudioEventActive(def)
-            || def.trigger.kind != AudioEventTriggerKind.Manual
+            || def.triggers.FirstOrDefault()?.kind != AudioEventTriggerKind.Manual
             || !IsEventCategoryApplicable(def.category))
         {
             return false;
@@ -455,10 +506,10 @@ public abstract class Game
             if (!IsPenaltyDefActive(def))
                 continue;
 
-            if (CustomPenaltyDef.IsGameEventKind(def.condition.kind))
+            if (CustomPenaltyDef.IsGameEventKind(def.conditions.FirstOrDefault()?.kind ?? PenaltyConditionKind.HitTypeMiss))
                 continue;
 
-            if (PenaltyEvaluator.MatchesTurn(def.condition, throws, turnScore))
+            if (PenaltyEvaluator.MatchesAnyTurn(def.conditions, throws, turnScore))
                 AddCustomPenalty(playerId, def, turn, false, silent);
         }
     }
@@ -489,12 +540,12 @@ public abstract class Game
             if (!IsPenaltyDefActive(def))
                 continue;
 
-            if (def.condition.kind != PenaltyConditionKind.RemainingExactScore)
+            if (def.conditions.All(c => c.kind != PenaltyConditionKind.RemainingExactScore))
                 continue;
 
             foreach (var kvp in totals)
             {
-                if (PenaltyEvaluator.MatchesRemaining(def.condition, kvp.Value.before, kvp.Value.after))
+                if (PenaltyEvaluator.MatchesAnyRemaining(def.conditions, kvp.Value.before, kvp.Value.after))
                     AddCustomPenalty(kvp.Key, def, turn, false, silent);
             }
         }
@@ -521,10 +572,10 @@ public abstract class Game
             if (!IsPenaltyDefActive(def))
                 continue;
 
-            if (def.condition.kind != PenaltyConditionKind.HitTypeMiss)
+            if (def.conditions.All(c => c.kind != PenaltyConditionKind.HitTypeMiss))
                 continue;
 
-            if (PenaltyEvaluator.MatchesInstant(def.condition, throwItem))
+            if (PenaltyEvaluator.MatchesAnyInstant(def.conditions, throwItem))
                 AddCustomPenalty(playerId, def, turn, true, silent);
         }
     }
@@ -609,7 +660,7 @@ public abstract class Game
     /// Wertet Custom-Audio-Events (Auto-Trigger, je Modus-Kategorie) aus.
     /// Manuelle Events (Undo, ...) feuern weiter direkt im Code.
     /// </summary>
-    protected void EvaluateCustomAudioEvents(Guid playerId, Turn turn)
+    protected void EvaluateCustomAudioEvents(Guid playerId, Turn turn, Predicate<AudioEventDef> filter = null)
     {
         var allEvents = GetSnapshotAudioEvents();
         if (allEvents == null || turn == null)
@@ -626,7 +677,10 @@ public abstract class Game
             if (!IsEventCategoryApplicable(def.category))
                 continue;
 
-            if (AudioEventEngine.Matches(def.trigger, values))
+            if (filter != null && !filter(def))
+                continue;
+
+            if (AudioEventEngine.MatchesAny(def.triggers, values))
                 OnCustomAudioEvent?.Invoke(def.id);
         }
     }
@@ -709,7 +763,7 @@ public abstract class Game
             if (!IsPenaltyDefActive(def))
                 continue;
 
-            if (def.condition.kind != kind)
+            if (def.conditions.All(c => c.kind != kind))
                 continue;
 
             foreach (var pid in playerIDs)
@@ -732,10 +786,10 @@ public abstract class Game
 
         foreach (var def in defs)
         {
-            if (def == null || def.condition == null)
+            if (def == null || def.conditions == null || def.conditions.Count == 0)
                 continue;
 
-            if (def.condition.kind != kind)
+            if (def.conditions.All(c => c.kind != kind))
                 continue;
 
             foreach (var pid in playerIDs)
@@ -748,27 +802,24 @@ public abstract class Game
     }
     protected bool IsMatchFinished(Guid? playerId)
     {
-        int setsWon = GetWonSets(playerId);
+        return GetWonSets(playerId) >= GetRequiredSetsToWin();
+    }
 
+    /// <summary>Sets, die zum Matchgewinn nötig sind (FirstTo bzw. BestOf).</summary>
+    protected int GetRequiredSetsToWin()
+    {
         GameSettings settings = GetSettings();
-
-        int setsRequiredToWin;
 
         switch (settings.setsAndLegsMode)
         {
             case SetsAndLegs.FirstTo:
-                setsRequiredToWin = settings.setCount;
-                break;
+                return settings.setCount;
 
             case SetsAndLegs.BestOf:
             default:
-                setsRequiredToWin = (settings.setCount / 2) + 1;
-                break;
+                return (settings.setCount / 2) + 1;
         }
-
-        return setsWon >= setsRequiredToWin;
     }
-
 
     // =========================================================
     // MATCH / SET / LEG EVALUATION

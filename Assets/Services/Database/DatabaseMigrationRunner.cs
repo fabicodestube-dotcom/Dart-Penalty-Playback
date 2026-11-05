@@ -125,7 +125,9 @@ public static class DatabaseMigrations
         new Migration001InitialSchema(),
         new Migration002NormalizeTimestamps(),
         new Migration003RecordedClipMetadata(),
-        new Migration004NormalizeSchema()
+        new Migration004NormalizeSchema(),
+        new Migration005HitSectorSnapshot(),
+        new Migration006MultiTriggers()
     };
 }
 

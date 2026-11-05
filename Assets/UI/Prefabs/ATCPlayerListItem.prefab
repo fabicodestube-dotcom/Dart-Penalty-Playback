@@ -742,6 +742,7 @@ GameObject:
   - component: {fileID: 4696744200636608428}
   - component: {fileID: 1278305958685893609}
   - component: {fileID: 7694177129186403236}
+  - component: {fileID: 4558809377934454652}
   m_Layer: 0
   m_Name: Dart2
   m_TagString: Untagged
@@ -810,6 +811,19 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &4558809377934454652
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1569102393830147781}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7a0368f7840987e639f0bdecbc803891, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ThemeColorBinding
+  role: 2
 --- !u!1 &1691293382764316154
 GameObject:
   m_ObjectHideFlags: 0
@@ -2741,6 +2755,7 @@ GameObject:
   - component: {fileID: 5032813942223752557}
   - component: {fileID: 3806873239494267804}
   - component: {fileID: 6022768146006046152}
+  - component: {fileID: 1752767861855386102}
   m_Layer: 0
   m_Name: Dart1
   m_TagString: Untagged
@@ -2809,6 +2824,19 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &1752767861855386102
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4891139306925068097}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7a0368f7840987e639f0bdecbc803891, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ThemeColorBinding
+  role: 2
 --- !u!1 &5156500548235482021
 GameObject:
   m_ObjectHideFlags: 0
@@ -2982,6 +3010,7 @@ GameObject:
   - component: {fileID: 1578429530300460990}
   - component: {fileID: 8329733354721359917}
   - component: {fileID: 2782101814514177188}
+  - component: {fileID: 4790688179264451572}
   m_Layer: 0
   m_Name: Dart3
   m_TagString: Untagged
@@ -3050,6 +3079,19 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &4790688179264451572
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5402296012101146662}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7a0368f7840987e639f0bdecbc803891, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ThemeColorBinding
+  role: 2
 --- !u!1 &5448776818989243108
 GameObject:
   m_ObjectHideFlags: 0

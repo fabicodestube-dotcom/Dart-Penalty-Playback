@@ -836,20 +836,19 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 33805706080505886
-    m_Localized: "\u201C{0}\u201D cezas\u0131 silinsin mi?"
+    m_Localized: "{0} cezas\u0131 silinsin mi?"
     m_Metadata:
       m_Items: []
   - m_Id: 33805706080505887
-    m_Localized: "\u201C{0}\u201D ses olay\u0131 silinsin mi?"
+    m_Localized: "{0} ses olay\u0131 silinsin mi?"
     m_Metadata:
       m_Items: []
   - m_Id: 33805706080505888
-    m_Localized: "\u201C{0}\u201D hedef alan\u0131 silinsin mi?"
+    m_Localized: "{0} hedef alan\u0131 silinsin mi?"
     m_Metadata:
       m_Items: []
   - m_Id: 33805706080505889
-    m_Localized: "\u201C{0}\u201D hedef alan\u0131 silinsin mi? Cezalar taraf\u0131ndan
-      kullan\u0131l\u0131yor: {1}. Bunlar da silinecek."
+    m_Localized: "{0} hedef alanı silinsin mi? Cezalar tarafından kullanılıyor: {1}. Bunlar ve ses klipleri de silinecek."
     m_Metadata:
       m_Items: []
   - m_Id: 33805706080505890
@@ -1291,6 +1290,42 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 33806894813368322
     m_Localized: "Misket limonu"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368323
+    m_Localized: Ad gerekli.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368324
+    m_Localized: Lütfen geçerli bir sayı girin.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368325
+    m_Localized: Lütfen bir hedef alan seçin.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368326
+    m_Localized: Kaydedilemedi. Lütfen girişlerinizi kontrol edin.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368327
+    m_Localized: Uygulamadan çıkmak istiyor musunuz?
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368328
+    m_Localized: "Silinmiş hedef alanı ({0})"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368329
+    m_Localized: "Schnapszahl"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368330
+    m_Localized: "Tetikleyici yok"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368331
+    m_Localized: "Elle"
     m_Metadata:
       m_Items: []
   references:

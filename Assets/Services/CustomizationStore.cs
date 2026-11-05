@@ -1,13 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 /// <summary>
 /// SQLite-gestützter Speicher für Custom-Penalties und Audio-Events
 /// (Customization-Screens). Cached im RAM, Write-Through bei Save/Delete,
 /// Changed-Event für UI-Refresh. Seeds werden beim ersten Start angelegt:
-/// Penalties/Sektoren löschbar (builtIn=false), Audio-Events nicht löschbar
-/// (builtIn=true, aber enabled-/trigger-editierbar und evaluiert).
+/// Penalties und freie Sektoren sind löschbar (builtIn=false). Wall/Ceiling
+/// sowie die meisten Audio-Seeds sind nicht löschbar (builtIn=true),
+/// einzelne user-ähnliche Seeds werden einmalig im Custom-Paket angelegt.
 /// </summary>
 /// <summary>
 /// Was sich geändert hat (für gezielte UI-Refreshes statt Komplett-Rebuild).
@@ -51,6 +53,26 @@ public static class CustomizationStore
         return hitSectors;
     }
 
+    /// <summary>True, wenn die Sektor-ID eingebaut oder im Store vorhanden ist.</summary>
+    public static bool IsKnownHitSector(string sectorId)
+    {
+        if (string.IsNullOrEmpty(sectorId))
+            return false;
+
+        if (CustomHitDef.IsBuiltInSector(sectorId))
+            return true;
+
+        EnsureLoaded();
+
+        foreach (var def in hitSectors)
+        {
+            if (def != null && string.Equals(def.id, sectorId, StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+
+        return false;
+    }
+
     /// <summary>Zählt, wie viele (Custom-)Penalties den Sektor referenzieren.</summary>
     public static int GetPenaltyUsageCount(string sectorId)
     {
@@ -71,27 +93,33 @@ public static class CustomizationStore
 
     private static bool PenaltyReferencesSector(CustomPenaltyDef def, string sectorId)
     {
-        if (def?.condition == null || string.IsNullOrEmpty(sectorId))
+        if (def?.conditions == null || def.conditions.Count == 0 || string.IsNullOrEmpty(sectorId))
             return false;
 
         // Instant-Penalty (HitTypeMiss) auf genau diesen Custom-Sektor.
-        if (def.condition.kind == PenaltyConditionKind.HitTypeMiss
-            && def.condition.hitType == HitType.Custom
-            && string.Equals(def.condition.customHitId, sectorId, StringComparison.OrdinalIgnoreCase))
+        foreach (var c in def.conditions)
         {
-            return true;
-        }
+            if (c == null)
+                continue;
 
-        if (def.condition.pattern == null)
-            return false;
-
-        foreach (var slot in def.condition.pattern)
-        {
-            if (slot != null && !slot.anyHitType
-                && slot.hitType == HitType.Custom
-                && string.Equals(slot.customHitId, sectorId, StringComparison.OrdinalIgnoreCase))
+            if (c.kind == PenaltyConditionKind.HitTypeMiss
+                && c.hitType == HitType.Custom
+                && string.Equals(c.customHitId, sectorId, StringComparison.OrdinalIgnoreCase))
             {
                 return true;
+            }
+
+            if (c.pattern == null)
+                continue;
+
+            foreach (var slot in c.pattern)
+            {
+                if (slot != null && !slot.anyHitType
+                    && slot.hitType == HitType.Custom
+                    && string.Equals(slot.customHitId, sectorId, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
             }
         }
 
@@ -126,6 +154,41 @@ public static class CustomizationStore
         }
 
         return ids;
+    }
+
+    /// <summary>Alle Penalties, die den Sektor referenzieren.</summary>
+    public static List<CustomPenaltyDef> GetPenaltiesUsingSector(string sectorId)
+    {
+        var result = new List<CustomPenaltyDef>();
+
+        if (string.IsNullOrEmpty(sectorId))
+            return result;
+
+        EnsureLoaded();
+
+        foreach (var def in penalties)
+        {
+            if (def != null && PenaltyReferencesSector(def, sectorId))
+                result.Add(def);
+        }
+
+        return result;
+    }
+
+    /// <summary>Anzeigenamen aller Penalties, die den Sektor referenzieren.</summary>
+    public static List<string> GetPenaltyNamesUsingSector(string sectorId)
+    {
+        var names = new List<string>();
+
+        foreach (var def in GetPenaltiesUsingSector(sectorId))
+        {
+            if (def == null)
+                continue;
+
+            names.Add(!string.IsNullOrWhiteSpace(def.name) ? def.name.Trim() : def.id);
+        }
+
+        return names;
     }
 
     /// <summary>
@@ -174,6 +237,27 @@ public static class CustomizationStore
         return false;
     }
 
+    /// <summary>Analog für Audio-Events (Tab 3).</summary>
+    public static bool IsAudioEventNameTaken(string name, string excludeId)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            return false;
+
+        EnsureLoaded();
+
+        string cleaned = name.Trim();
+        foreach (var def in audioEvents)
+        {
+            if (def == null || string.Equals(def.id, excludeId, StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            if (string.Equals(def.name?.Trim(), cleaned, StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+
+        return false;
+    }
+
     /// <summary>False, wenn der Name bereits vergeben ist (kein Speichern).</summary>
     public static bool SavePenalty(CustomPenaltyDef def)
     {
@@ -205,6 +289,8 @@ public static class CustomizationStore
         bool removed = SqliteDatabaseRepository.DeleteCustomPenalty(id);
         if (removed)
         {
+            AudioLibrary.Instance?.DeleteAllCustomClips(id);
+
             EnsureLoaded();
             penalties.RemoveAll(x => x.id == id);
             Changed?.Invoke(CustomizationChangeKind.Penalties);
@@ -218,6 +304,9 @@ public static class CustomizationStore
     {
         if (def == null || string.IsNullOrEmpty(def.id))
             return false;
+
+        if (CustomHitDef.IsBuiltInSector(def.id))
+            def.builtIn = true;
 
         if (IsHitSectorNameTaken(def.name, def.id))
             return false;
@@ -238,7 +327,12 @@ public static class CustomizationStore
 
     public static bool DeleteHitSector(string id)
     {
-        if (string.IsNullOrEmpty(id))
+        if (string.IsNullOrEmpty(id) || CustomHitDef.IsBuiltInSector(id))
+            return false;
+
+        EnsureLoaded();
+        var existing = hitSectors.Find(x => x != null && x.id == id);
+        if (existing != null && existing.builtIn)
             return false;
 
         bool removed = SqliteDatabaseRepository.DeleteCustomHitSector(id);
@@ -252,10 +346,38 @@ public static class CustomizationStore
         return removed;
     }
 
-    public static void SaveAudioEvent(AudioEventDef def)
+    /// <summary>
+    /// Löscht einen Custom-Sektor zusammen mit allen Penalties, die ihn
+    /// referenzieren, und deren aufgenommenen Audio-Clips.
+    /// </summary>
+    public static bool DeleteHitSectorWithPenalties(string id)
+    {
+        if (string.IsNullOrEmpty(id) || CustomHitDef.IsBuiltInSector(id))
+            return false;
+
+        EnsureLoaded();
+
+        var existing = hitSectors.Find(x => x != null && x.id == id);
+        if (existing == null || existing.builtIn)
+            return false;
+
+        foreach (var penaltyId in GetPenaltyIdsUsingSector(id))
+            DeletePenalty(penaltyId);
+
+        // Clips der Area selbst (Recorder in der Sektor-Zeile).
+        AudioLibrary.Instance?.DeleteAllCustomClips(id);
+
+        return DeleteHitSector(id);
+    }
+
+    /// <summary>False, wenn der Name bereits vergeben ist (kein Speichern).</summary>
+    public static bool SaveAudioEvent(AudioEventDef def)
     {
         if (def == null || string.IsNullOrEmpty(def.id))
-            return;
+            return false;
+
+        if (IsAudioEventNameTaken(def.name, def.id))
+            return false;
 
         def.info = CustomizationInfo.BuildAudioEvent(def);
         SqliteDatabaseRepository.SaveAudioEvent(def);
@@ -268,6 +390,7 @@ public static class CustomizationStore
             audioEvents.Add(def);
 
         Changed?.Invoke(CustomizationChangeKind.AudioEvents);
+        return true;
     }
 
     public static bool DeleteAudioEvent(string id)
@@ -278,6 +401,8 @@ public static class CustomizationStore
         bool removed = SqliteDatabaseRepository.DeleteAudioEvent(id);
         if (removed)
         {
+            AudioLibrary.Instance?.DeleteAllCustomClips(id);
+
             EnsureLoaded();
             audioEvents.RemoveAll(x => x.id == id);
             Changed?.Invoke(CustomizationChangeKind.AudioEvents);
@@ -317,6 +442,7 @@ public static class CustomizationStore
         Migrate420ToGlobal();
         MigrateScoreSeedsToRemaining();
         BackfillMissingInfo();
+        MigrateBuiltInHitSectors();
     }
 
     /// <summary>
@@ -351,11 +477,11 @@ public static class CustomizationStore
     }
 
     /// <summary>
-    /// Legt fehlende Audio-Event-Seeds an (nicht löschbar, builtIn=true,
-    /// aber enabled-/trigger-editierbar und von der Engine ausgewertet).
-    /// Nur fehlende IDs — daneben werden Alt-Seeds (builtIn=false) auf
-    /// nicht-löschbar hochgestuft. Ein Changed pro Seed wäre Rebuild-Spam
-    /// beim ersten Start, daher ein Sammel-Event am Ende.
+    /// Legt fehlende Audio-Event-Seeds an. Built-in-Seeds sind nicht löschbar
+    /// (builtIn=true); user-ähnliche Seeds sind löschbar, werden nur im
+    /// Custom-Paket einmalig angelegt und über einen app_meta-Marker vor
+    /// Wiederanlage geschützt. Ein Changed pro Seed wäre Rebuild-Spam beim
+    /// ersten Start, daher ein Sammel-Event am Ende.
     /// </summary>
     private static void SeedMissingAudioEvents()
     {
@@ -366,12 +492,34 @@ public static class CustomizationStore
             if (seed == null || string.IsNullOrEmpty(seed.Id))
                 continue;
 
-            var existing = audioEvents.Find(x => x != null &&
-                string.Equals(x.id, seed.Id, System.StringComparison.OrdinalIgnoreCase));
+            if (seed.OnlyCustomAudioSet)
+            {
+                if (!AudioLibrary.IsCustomSetActive)
+                    continue;
+
+                string markerKey = SeededAudioEvents.SeedMarkerKey(seed.Id);
+                if (!string.IsNullOrEmpty(SqliteDatabaseRepository.GetAppMeta(markerKey)))
+                    continue;
+
+                var existingUserSeed = FindAudioEvent(seed.Id);
+                if (existingUserSeed == null)
+                {
+                    var def = seed.ToDef();
+                    def.info = CustomizationInfo.BuildAudioEvent(def);
+                    SqliteDatabaseRepository.SaveAudioEvent(def);
+                    audioEvents.Add(def);
+                    added = true;
+                }
+
+                SqliteDatabaseRepository.SetAppMeta(markerKey, "1");
+                continue;
+            }
+
+            var existing = FindAudioEvent(seed.Id);
             if (existing != null)
             {
                 bool changed = false;
-                if (!existing.builtIn)
+                if (seed.BuiltIn && !existing.builtIn)
                 {
                     existing.builtIn = true;
                     changed = true;
@@ -389,15 +537,21 @@ public static class CustomizationStore
                 continue;
             }
 
-            var def = seed.ToDef();
-            def.info = CustomizationInfo.BuildAudioEvent(def);
-            SqliteDatabaseRepository.SaveAudioEvent(def);
-            audioEvents.Add(def);
+            var newDef = seed.ToDef();
+            newDef.info = CustomizationInfo.BuildAudioEvent(newDef);
+            SqliteDatabaseRepository.SaveAudioEvent(newDef);
+            audioEvents.Add(newDef);
             added = true;
         }
 
         if (added)
             Changed?.Invoke(CustomizationChangeKind.AudioEvents);
+    }
+
+    private static AudioEventDef FindAudioEvent(string id)
+    {
+        return audioEvents.Find(x => x != null &&
+            string.Equals(x.id, id, System.StringComparison.OrdinalIgnoreCase));
     }
 
     private static void Migrate420ToGlobal()
@@ -415,9 +569,9 @@ public static class CustomizationStore
             if (def.category != AudioEventCategory.X01)
                 continue;
 
-            if (def.trigger == null
-                || def.trigger.kind != AudioEventTriggerKind.ScoreReached
-                || def.trigger.score != 420)
+            if (def.triggers == null || def.triggers.Count == 0
+                || def.triggers.FirstOrDefault().kind != AudioEventTriggerKind.ScoreReached
+                || def.triggers.FirstOrDefault().score != 420)
                 continue;
 
             def.category = AudioEventCategory.Global;
@@ -431,12 +585,13 @@ public static class CustomizationStore
 
     private static void SeedBuiltInPenalties()
     {
-        // Starter-Set (Tab 2): Turn-Patterns (3x1, No board hit), exakte
-        // Rest-Scores (Schnapszahlen 111–999, Kosten je 50), LegLost
-        // (Kosten 50) sowie die Sofort-Typen Wall (10) / Ceiling (20), die
-        // die Sektor-Kosten tragen. Alle Seeds sind evaluierbar und
-        // löschbar (builtIn=false); gelöschte Seeds werden nie
-        // wiederhergestellt (Seeding nur bei leerer Tabelle, Erststart).
+        // Starter-Set (Tab 2): Turn-Patterns (3x1, No board hit), Schnapszahl
+        // (Alle Repdigit-Rest-Scores 111–999 als einzelne Seed mit mehreren
+        // Bedingungen, Kosten 50), LegLost (Kosten 50) sowie die
+        // Sofort-Typen Wall (10) / Ceiling (20), die die Sektor-Kosten tragen.
+        // Alle Seeds sind evaluierbar und löschbar (builtIn=false); gelöschte
+        // Seeds werden nie wiederhergestellt (Seeding nur bei leerer Tabelle,
+        // Erststart).
         var seeds = new List<CustomPenaltyDef>
         {
             SeedPenalty("builtin:threeones", "Three Ones", 100, PenaltyConditionKind.TurnPattern,
@@ -457,24 +612,11 @@ public static class CustomizationStore
                         MissSlot(), MissSlot(), MissSlot()
                     };
                 }),
-            SeedPenalty("builtin:score111", "111", 50, PenaltyConditionKind.RemainingExactScore,
-                c => c.score = 111),
-            SeedPenalty("builtin:score222", "222", 50, PenaltyConditionKind.RemainingExactScore,
-                c => c.score = 222),
-            SeedPenalty("builtin:score333", "333", 50, PenaltyConditionKind.RemainingExactScore,
-                c => c.score = 333),
-            SeedPenalty("builtin:score444", "444", 50, PenaltyConditionKind.RemainingExactScore,
-                c => c.score = 444),
-            SeedPenalty("builtin:score555", "555", 50, PenaltyConditionKind.RemainingExactScore,
-                c => c.score = 555),
-            SeedPenalty("builtin:score666", "666", 50, PenaltyConditionKind.RemainingExactScore,
-                c => c.score = 666),
-            SeedPenalty("builtin:score777", "777", 50, PenaltyConditionKind.RemainingExactScore,
-                c => c.score = 777),
-            SeedPenalty("builtin:score888", "888", 50, PenaltyConditionKind.RemainingExactScore,
-                c => c.score = 888),
-            SeedPenalty("builtin:score999", "999", 50, PenaltyConditionKind.RemainingExactScore,
-                c => c.score = 999),
+            SeedPenalty("builtin:schnapszahl", "Schnapszahl", 50, PenaltyConditionKind.RemainingExactScore,
+                c => { }, multiple: new[]
+                {
+                    111, 222, 333, 444, 555, 666, 777, 888, 999
+                }),
             SeedPenalty("builtin:leglost", "Leg lost", 50, PenaltyConditionKind.LegLost,
                 c => { }),
             SeedPenalty("custom_wall", "Wall", 10, PenaltyConditionKind.HitTypeMiss,
@@ -503,18 +645,18 @@ public static class CustomizationStore
 
         foreach (var def in penalties)
         {
-            if (def?.condition == null)
+            if (def?.conditions == null || def.conditions.Count == 0)
                 continue;
-            if (def.condition.kind != PenaltyConditionKind.ExactScore)
+            if (def.conditions[0].kind != PenaltyConditionKind.ExactScore)
                 continue;
             if (string.IsNullOrEmpty(def.id)
                 || !def.id.StartsWith("builtin:score", StringComparison.OrdinalIgnoreCase))
                 continue;
 
-            def.condition = new PenaltyCondition
+            def.conditions[0] = new PenaltyCondition
             {
                 kind = PenaltyConditionKind.RemainingExactScore,
-                score = def.condition.score
+                score = def.conditions[0].score
             };
 
             SqliteDatabaseRepository.SaveCustomPenalty(def);
@@ -539,11 +681,11 @@ public static class CustomizationStore
 
         foreach (var def in penalties)
         {
-            if (def == null || !def.enabled || def.condition == null)
+            if (def == null || !def.enabled || def.conditions == null || def.conditions.Count == 0)
                 continue;
-            if (def.condition.kind != PenaltyConditionKind.HitTypeMiss)
+            if (def.conditions.All(c => c.kind != PenaltyConditionKind.HitTypeMiss))
                 continue;
-            if (def.condition.hitType == hitType)
+            if (def.conditions.Any(c => c.hitType == hitType))
                 return true;
         }
 
@@ -565,18 +707,21 @@ public static class CustomizationStore
 
         foreach (var def in penalties)
         {
-            if (def == null || !def.enabled || def.condition == null)
+            if (def == null || !def.enabled || def.conditions == null || def.conditions.Count == 0)
                 continue;
-            if (def.condition.kind != PenaltyConditionKind.HitTypeMiss)
+            if (def.conditions.All(c => c.kind != PenaltyConditionKind.HitTypeMiss))
                 continue;
-            if (def.condition.hitType != hitType)
-                continue;
-
-            if (hitType != HitType.Custom
-                || string.IsNullOrEmpty(def.condition.customHitId)
-                || string.Equals(def.condition.customHitId, sectorId, StringComparison.OrdinalIgnoreCase))
+            foreach (var c in def.conditions)
             {
-                return true;
+                if (c == null || c.hitType != hitType)
+                    continue;
+
+                if (hitType != HitType.Custom
+                    || string.IsNullOrEmpty(c.customHitId)
+                    || string.Equals(c.customHitId, sectorId, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
             }
         }
 
@@ -584,10 +729,25 @@ public static class CustomizationStore
     }
 
     private static CustomPenaltyDef SeedPenalty(string id, string name, int cost,
-        PenaltyConditionKind kind, Action<PenaltyCondition> fill)
+        PenaltyConditionKind kind, Action<PenaltyCondition> fill, int[] multiple = null)
     {
-        var condition = new PenaltyCondition { kind = kind };
-        fill?.Invoke(condition);
+        var conditions = new List<PenaltyCondition>();
+
+        if (multiple != null)
+        {
+            foreach (var score in multiple)
+            {
+                var c = new PenaltyCondition { kind = kind, score = score };
+                fill?.Invoke(c);
+                conditions.Add(c);
+            }
+        }
+        else
+        {
+            var condition = new PenaltyCondition { kind = kind };
+            fill?.Invoke(condition);
+            conditions.Add(condition);
+        }
 
         var def = new CustomPenaltyDef
         {
@@ -596,19 +756,19 @@ public static class CustomizationStore
             enabled = true,
             cost = cost,
             builtIn = false,
-            condition = condition
+            conditions = conditions
         };
         def.info = CustomizationInfo.BuildPenalty(def);
         return def;
     }
 
-    /// <summary>Seed-Bereiche Wand/Decke (löschbar, Enabled editierbar).</summary>
+    /// <summary>Seed-Bereiche Wand/Decke (built-in, nicht löschbar).</summary>
     private static void SeedBuiltInHitSectors()
     {
         var seeds = new List<CustomHitDef>
         {
-            new CustomHitDef { id = "builtin:wall", name = "Wall", enabled = true, builtIn = false },
-            new CustomHitDef { id = "builtin:ceiling", name = "Ceiling", enabled = true, builtIn = false }
+            new CustomHitDef { id = CustomHitDef.WallId, name = "Wall", enabled = true, builtIn = true },
+            new CustomHitDef { id = CustomHitDef.CeilingId, name = "Ceiling", enabled = true, builtIn = true }
         };
 
         foreach (var seed in seeds)
@@ -617,6 +777,24 @@ public static class CustomizationStore
             SqliteDatabaseRepository.SaveCustomHitSector(seed);
             hitSectors.Add(seed);
         }
+    }
+
+    private static void MigrateBuiltInHitSectors()
+    {
+        bool changed = false;
+
+        foreach (var def in hitSectors)
+        {
+            if (def == null || def.builtIn || !CustomHitDef.IsBuiltInSector(def.id))
+                continue;
+
+            def.builtIn = true;
+            SqliteDatabaseRepository.SaveCustomHitSector(def);
+            changed = true;
+        }
+
+        if (changed)
+            Changed?.Invoke(CustomizationChangeKind.Sectors);
     }
 
     private static TurnPatternEntry MissSlot()

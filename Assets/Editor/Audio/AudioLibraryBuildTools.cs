@@ -74,6 +74,9 @@ public class AudioLibraryBuildTools : IProcessSceneWithReport
             removed += ClearList(ref lib.customCricketMarksClip);
             removed += ClearList(ref lib.customAtcHitsClip);
             removed += ClearList(ref lib.customAtcStreakClip);
+            removed += ClearList(ref lib.customBahClip);
+            removed += ClearList(ref lib.customThreeTwentiesClip);
+            removed += ClearList(ref lib.customThreeNineteensClip);
         }
         else
         {
@@ -218,6 +221,9 @@ public class AudioLibraryBuildTools : IProcessSceneWithReport
         n += lib.customCricketMarksClip?.Count ?? 0;
         n += lib.customAtcHitsClip?.Count ?? 0;
         n += lib.customAtcStreakClip?.Count ?? 0;
+        n += lib.customBahClip?.Count ?? 0;
+        n += lib.customThreeTwentiesClip?.Count ?? 0;
+        n += lib.customThreeNineteensClip?.Count ?? 0;
         return n;
     }
 

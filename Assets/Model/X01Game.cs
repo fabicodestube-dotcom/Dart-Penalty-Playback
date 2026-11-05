@@ -342,7 +342,9 @@ public class X01Game : Game
     private void StartNewLeg()
     {
         var currentSet = sets[^1];
+        Guid legWinner = GetCurrentLeg().WinnerPlayerId;
         Guid setWinner = GetSetWinner(currentSet);
+        bool createNewSet = false;
 
         if (setWinner != Guid.Empty)
         {
@@ -354,7 +356,21 @@ public class X01Game : Game
                 return;
             }
 
-            // Falls das Match nicht vorbei ist: Neues Set erstellen und als aktuelles Set setzen
+            createNewSet = true;
+        }
+
+        // Leg-Wechsel ansagen, aber nicht am Match-Ende. Läuft nach
+        // Set-/Penalty-Events und vor dem neuen Leg.
+        if (legWinner != Guid.Empty)
+        {
+            OnTurnCompleted?.Invoke(legWinner, currentTurn);
+            TryTriggerManualAudioEvent(SeededAudioEvents.LegEndId);
+            if (setWinner != Guid.Empty)
+                TryTriggerManualAudioEvent(SeededAudioEvents.SetEndId);
+        }
+
+        if (createNewSet)
+        {
             currentSet = new Set();
             sets.Add(currentSet);
         }

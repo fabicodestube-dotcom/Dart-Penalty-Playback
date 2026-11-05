@@ -58,7 +58,19 @@ public class CustomizationPenaltiesPage : MonoBehaviour, ICustomizationRowOwner
         if (editor == null)
             editor = FindAnyObjectByType<PenaltyEditorPopup>();
 
+        CustomizationStore.Changed += HandleStoreChanged;
         Refresh();
+    }
+
+    private void OnDisable()
+    {
+        CustomizationStore.Changed -= HandleStoreChanged;
+    }
+
+    private void HandleStoreChanged(CustomizationChangeKind kind)
+    {
+        if (kind == CustomizationChangeKind.Penalties || kind == CustomizationChangeKind.Sectors)
+            Refresh();
     }
 
     public void Refresh()
@@ -109,7 +121,7 @@ public class CustomizationPenaltiesPage : MonoBehaviour, ICustomizationRowOwner
 
         wanted.Add(def.id);
 
-        Transform parent = ParentFor(def.condition != null ? def.condition.kind : PenaltyConditionKind.TurnPattern);
+        Transform parent = ParentFor(def.conditions != null && def.conditions.Count > 0 ? def.conditions.FirstOrDefault().kind : PenaltyConditionKind.TurnPattern);
         if (parent == null)
             parent = listParent;
         if (parent == null || rowPrefab == null)
@@ -214,6 +226,14 @@ public class CustomizationPenaltiesPage : MonoBehaviour, ICustomizationRowOwner
         if (def == null)
             return "";
 
+        if (def.conditions != null && def.conditions.Count > 0
+            && def.conditions.FirstOrDefault().kind == PenaltyConditionKind.HitTypeMiss
+            && def.conditions.FirstOrDefault().hitType == HitType.Custom
+            && !string.IsNullOrEmpty(def.conditions.FirstOrDefault().customHitId))
+        {
+            return PenaltyDisplay.SummarizeCondition(def.conditions.FirstOrDefault());
+        }
+
         return CustomizationInfo.LocalizeInfo(string.IsNullOrEmpty(def.info) ? CustomizationInfo.BuildPenalty(def) : def.info);
     }
 
@@ -288,11 +308,8 @@ public class CustomizationPenaltiesPage : MonoBehaviour, ICustomizationRowOwner
 
     public void ConfirmDeletePenalty()
     {
-        if (!string.IsNullOrEmpty(pendingDeleteId)
-            && AppSettingsManager.Instance != null)
-        {
+        if (!string.IsNullOrEmpty(pendingDeleteId))
             CustomizationStore.DeletePenalty(pendingDeleteId);
-        }
 
         pendingDeleteId = null;
 

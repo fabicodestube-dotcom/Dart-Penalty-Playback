@@ -51,8 +51,10 @@ public class AudioEventTrigger
 
 /// <summary>
 /// Audio-Event: auslösbarer Sound-Anlass, Clip direkt über die Row.
-/// Seeds (Undo, Bust, Marks, ...) sind nicht löschbar (builtIn), aber
-/// enabled-/trigger-editierbar und werden von der Engine ausgewertet.
+/// Built-in-Seeds (Undo, Bust, Marks, ...) sind nicht löschbar (builtIn),
+/// aber enabled-/trigger-editierbar und werden von der Engine ausgewertet.
+/// User-ähnliche Seeds sind löschbar (builtIn=false) und haben keinen
+/// eingebauten Clip-Fallback.
 /// </summary>
 [System.Serializable]
 public class AudioEventDef
@@ -70,7 +72,7 @@ public class AudioEventDef
     [JsonProperty] public bool builtIn;
     [JsonProperty] public bool enabled = true;
     [JsonProperty] public AudioEventCategory category = AudioEventCategory.Global;
-    [JsonProperty] public AudioEventTrigger trigger = new AudioEventTrigger();
+    [JsonProperty] public List<AudioEventTrigger> triggers = new List<AudioEventTrigger>();
 
     public static AudioEventDef CreateNew(AudioEventCategory category)
     {
@@ -81,7 +83,7 @@ public class AudioEventDef
             builtIn = false,
             enabled = true,
             category = category,
-            trigger = new AudioEventTrigger { kind = AudioEventTriggerKind.ScoreReached }
+            triggers = new List<AudioEventTrigger> { new AudioEventTrigger { kind = AudioEventTriggerKind.ScoreReached } }
         };
     }
 }
@@ -118,6 +120,8 @@ public static class AudioEventCatalog
         list.Add(BuiltIn("menu_undo", "Undo", AudioEventCategory.Global, AudioEventTriggerKind.Manual));
         list.Add(BuiltIn("menu_matchwon", "Game Over", AudioEventCategory.Global, AudioEventTriggerKind.Manual));
         list.Add(BuiltIn("menu_startgame", "Game Start", AudioEventCategory.Global, AudioEventTriggerKind.Manual));
+        list.Add(BuiltIn("menu_leg_end", "Leg End", AudioEventCategory.Global, AudioEventTriggerKind.Manual));
+        list.Add(BuiltIn("menu_set_end", "Set End", AudioEventCategory.Global, AudioEventTriggerKind.Manual));
         list.Add(BuiltIn("x01_bust", "Bust", AudioEventCategory.X01, AudioEventTriggerKind.Manual));
         list.Add(BuiltIn("x01_suddendeath", "Sudden Death", AudioEventCategory.X01, AudioEventTriggerKind.Manual));
         list.Add(BuiltIn("x01_420", "420", AudioEventCategory.Global, AudioEventTriggerKind.ScoreReached, score: 420));
@@ -138,7 +142,7 @@ public static class AudioEventCatalog
             name = name,
             builtIn = true,
             category = category,
-            trigger = new AudioEventTrigger { kind = kind, score = score }
+            triggers = new List<AudioEventTrigger> { new AudioEventTrigger { kind = kind, score = score } }
         };
         def.info = CustomizationInfo.BuildAudioEvent(def);
         return def;

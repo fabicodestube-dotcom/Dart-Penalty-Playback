@@ -839,20 +839,19 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 33805706080505886
-    m_Localized: "Usun\u0105\u0107 kar\u0119 \u201E{0}\u201D?"
+    m_Localized: "Usun\u0105\u0107 kar\u0119 {0}?"
     m_Metadata:
       m_Items: []
   - m_Id: 33805706080505887
-    m_Localized: "Usun\u0105\u0107 zdarzenie audio \u201E{0}\u201D?"
+    m_Localized: "Usun\u0105\u0107 zdarzenie audio {0}?"
     m_Metadata:
       m_Items: []
   - m_Id: 33805706080505888
-    m_Localized: "Usun\u0105\u0107 obszar docelowy \u201E{0}\u201D?"
+    m_Localized: "Usun\u0105\u0107 obszar docelowy {0}?"
     m_Metadata:
       m_Items: []
   - m_Id: 33805706080505889
-    m_Localized: "Usun\u0105\u0107 obszar docelowy \u201E{0}\u201D? U\u017Cywany
-      przez kary: {1}. Zostan\u0105 one r\xF3wnie\u017C usuni\u0119te."
+    m_Localized: "Usunąć obszar docelowy {0}? Używany przez kary: {1}. Zostaną one usunięte wraz z powiązanymi klipami audio."
     m_Metadata:
       m_Items: []
   - m_Id: 33805706080505890
@@ -1295,6 +1294,42 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 33806894813368322
     m_Localized: Limonkowy
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368323
+    m_Localized: Nazwa jest wymagana.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368324
+    m_Localized: Wprowadź prawidłową liczbę.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368325
+    m_Localized: Wybierz obszar docelowy.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368326
+    m_Localized: Nie udało się zapisać. Sprawdź dane.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368327
+    m_Localized: Czy chcesz zamknąć aplikację?
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368328
+    m_Localized: "Usunięty obszar docelowy ({0})"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368329
+    m_Localized: "Sznapszahl"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368330
+    m_Localized: "Brak wyzwalaczy"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368331
+    m_Localized: "Ręcznie"
     m_Metadata:
       m_Items: []
   references:

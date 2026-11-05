@@ -12,10 +12,10 @@ using UnityEngine;
 ///   Multiplier bedeutungslos (dimmen via Interactable + CanvasGroup).
 /// - Triple 25 gibt es nicht: Value 25 blendet Triple aus der Mult-Liste aus
 ///   und umgekehrt (Options-Rebuild, Auswahl bleibt logisch erhalten).
-/// - Der Reihenfolge-Toggle steuert matchOrder: true = Slot i muss Wurf i
-///   entsprechen, false = Reihenfolge egal. Anzahl der Würfe muss immer der
-///   Slot-Anzahl entsprechen. Penalty- und AudioEvent-Popup teilen sich
-///   Toggle und Semantik.
+/// - Der Reihenfolge-Toggle steuert matchOrder: true = Slots müssen in dieser
+///   Reihenfolge vorkommen, false = Reihenfolge egal. Zusätzliche Würfe im
+///   Turn sind erlaubt. Penalty- und AudioEvent-Popup teilen sich Toggle und
+///   Semantik.
 /// Index-Mapping Value: [Any,0..25], Mult: [Any,Single,Double,Triple],
 /// Hit: [Any,Board,Wall,Ceiling,Miss,Custom...].
 /// </summary>
@@ -35,8 +35,12 @@ public class TurnPatternEditor : MonoBehaviour
     public CustomToggle matchOrderToggle;
 
     private readonly List<string> customSectorIds = new List<string>();
+    private readonly List<string> unresolvedSectorIds = new List<string>();
     private bool updating;
     private bool initialized;
+
+    /// <summary>Feuert, wenn der Nutzer eine Slot-Auswahl ändert.</summary>
+    public event System.Action SelectionChanged;
 
     private List<string> valueOptionsFull;
     private List<string> valueOptionsNoBull;
@@ -90,7 +94,11 @@ public class TurnPatternEditor : MonoBehaviour
             if (multDropdowns != null && i < multDropdowns.Length && multDropdowns[i] != null)
                 multDropdowns[i].onValueChanged.AddListener(_ => OnSlotMultChanged(slot));
             if (hitDropdowns != null && i < hitDropdowns.Length && hitDropdowns[i] != null)
-                hitDropdowns[i].onValueChanged.AddListener(_ => ApplySlotDimming(slot));
+                hitDropdowns[i].onValueChanged.AddListener(_ =>
+                {
+                    ApplySlotDimming(slot);
+                    SelectionChanged?.Invoke();
+                });
         }
 
         if (slotCountDropdown != null)
@@ -124,6 +132,7 @@ public class TurnPatternEditor : MonoBehaviour
             slotCountDropdown.SetValueWithoutNotify(slotCount - 1);
 
         ApplySlotVisibility();
+        SelectionChanged?.Invoke();
     }
 
     private void ApplySlotVisibility()
@@ -153,7 +162,8 @@ public class TurnPatternEditor : MonoBehaviour
         EnsureInitialized();
 
         // Hit-Optionen neu aufbauen (Custom-Sektoren können sich geändert haben).
-        FillHitDropdowns();
+        // Geladene, inzwischen gelöschte Sektor-IDs bleiben als Orphan wählbar.
+        FillHitDropdowns(entries);
 
         for (int i = 0; i < 3; i++)
         {
@@ -231,6 +241,46 @@ public class TurnPatternEditor : MonoBehaviour
     public bool LoadMatchOrder()
     {
         return matchOrderToggle == null || matchOrderToggle.IsActive();
+    }
+
+    /// <summary>
+    /// True, wenn ein sichtbarer Slot auf eine inzwischen gelöschte
+    /// Custom-Target-Area zeigt. Speichern wird dann blockiert.
+    /// </summary>
+    public bool HasUnresolvedSector()
+    {
+        for (int i = 0; i < slotCount; i++)
+        {
+            if (hitDropdowns == null || i >= hitDropdowns.Length || hitDropdowns[i] == null)
+                continue;
+
+            int h = hitDropdowns[i].value;
+            if (h < 5)
+                continue;
+
+            int index = h - 5;
+            if (index < 0 || index >= customSectorIds.Count)
+                continue;
+
+            if (IsUnresolvedSector(customSectorIds[index]))
+                return true;
+        }
+
+        return false;
+    }
+
+    private bool IsUnresolvedSector(string sectorId)
+    {
+        if (string.IsNullOrEmpty(sectorId))
+            return false;
+
+        foreach (var id in unresolvedSectorIds)
+        {
+            if (string.Equals(id, sectorId, System.StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+
+        return false;
     }
 
     private int HitIndexForSlot(TurnPatternEntry slot)
@@ -358,9 +408,10 @@ public class TurnPatternEditor : MonoBehaviour
         SetOptions(multDropdowns, multOptionsFull);
     }
 
-    private void FillHitDropdowns()
+    private void FillHitDropdowns(List<TurnPatternEntry> entries = null)
     {
         customSectorIds.Clear();
+        unresolvedSectorIds.Clear();
 
         var options = new List<string>
         {
@@ -384,7 +435,38 @@ public class TurnPatternEditor : MonoBehaviour
             customSectorIds.Add(def.id);
         }
 
+        if (entries != null)
+        {
+            foreach (var slot in entries)
+            {
+                if (slot == null || slot.anyHitType || slot.anyMissHitType
+                    || slot.hitType != HitType.Custom
+                    || string.IsNullOrEmpty(slot.customHitId))
+                {
+                    continue;
+                }
+
+                if (ContainsSector(customSectorIds, slot.customHitId))
+                    continue;
+
+                customSectorIds.Add(slot.customHitId);
+                unresolvedSectorIds.Add(slot.customHitId);
+                options.Add(PenaltyDisplay.SectorName(slot.customHitId));
+            }
+        }
+
         SetOptions(hitDropdowns, options);
+    }
+
+    private static bool ContainsSector(List<string> ids, string sectorId)
+    {
+        foreach (var id in ids)
+        {
+            if (string.Equals(id, sectorId, System.StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+
+        return false;
     }
 
     private static void SetOptions(TMP_Dropdown[] dropdowns, List<string> options)

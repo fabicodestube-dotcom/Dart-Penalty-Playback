@@ -53,14 +53,67 @@ public static class PenaltyEvaluator
         }
     }
 
+    /// <summary>Gibt true zurück, wenn JEDE der Bedingungen zutrifft (OR-Logik).</summary>
+    public static bool MatchesAnyTurn(List<PenaltyCondition> conditions, List<Throw> throws, int turnScore)
+    {
+        if (conditions == null || throws == null)
+            return false;
+
+        foreach (var c in conditions)
+        {
+            if (c == null)
+                continue;
+            if (MatchesTurn(c, throws, turnScore))
+                return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>Gibt true zurück, wenn JEDE der Rest-Bedingungen zutrifft (OR-Logik).</summary>
+    public static bool MatchesAnyRemaining(List<PenaltyCondition> conditions, int beforeTotal, int afterTotal)
+    {
+        if (conditions == null)
+            return false;
+
+        foreach (var c in conditions)
+        {
+            if (c == null)
+                continue;
+            if (MatchesRemaining(c, beforeTotal, afterTotal))
+                return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>Gibt true zurück, wenn JEDE der Instant-Bedingungen zutrifft (OR-Logik).</summary>
+    public static bool MatchesAnyInstant(List<PenaltyCondition> conditions, Throw throwItem)
+    {
+        if (conditions == null || throwItem == null)
+            return false;
+
+        foreach (var c in conditions)
+        {
+            if (c == null)
+                continue;
+            if (MatchesInstant(c, throwItem))
+                return true;
+        }
+
+        return false;
+    }
+
     /// <summary>
     /// Pattern-Match über die Würfe eines Turns.
     ///
-    /// matchOrder = true  → geordnet + exakt: Slot i entspricht Wurf i und die
-    ///                      Anzahl der Würfe muss der Slot-Anzahl entsprechen.
-    /// matchOrder = false → ungeordnet + exakt: der Turn besteht genau aus den
-    ///                      Pattern-Slots (Multimenge, Reihenfolge egal).
+    /// matchOrder = true  → geordnet: die Slots müssen in dieser Reihenfolge
+    ///                      im Turn vorkommen.
+    /// matchOrder = false → ungeordnet: die Slots müssen im Turn vorkommen,
+    ///                      die Reihenfolge ist egal.
     ///
+    /// In beiden Fällen sind zusätzliche Würfe im Turn erlaubt; das Pattern
+    /// darf nur nicht mehr Slots als der Turn Würfe haben.
     /// Einheitlich für Custom-Penalties und Custom-Audio-Events.
     /// </summary>
     public static bool MatchesPattern(List<TurnPatternEntry> pattern, List<Throw> throws, bool matchOrder)
@@ -68,34 +121,53 @@ public static class PenaltyEvaluator
         if (pattern == null || pattern.Count == 0 || throws == null)
             return false;
 
-        // Immer exakt: der Turn besteht aus genau so vielen Würfen wie das
-        // Pattern Slots hat.
-        if (throws.Count != pattern.Count)
+        if (throws.Count < pattern.Count)
             return false;
 
         if (matchOrder)
         {
-            for (int i = 0; i < pattern.Count; i++)
+            int throwIndex = 0;
+
+            foreach (var slot in pattern)
             {
-                if (!SlotMatchesThrow(pattern[i], throws[i]))
+                while (throwIndex < throws.Count
+                    && !SlotMatchesThrow(slot, throws[throwIndex]))
+                {
+                    throwIndex++;
+                }
+
+                if (throwIndex >= throws.Count)
                     return false;
+
+                throwIndex++;
             }
 
             return true;
         }
 
-        var remaining = new List<Throw>(throws);
+        return MatchesPatternUnordered(pattern, 0, throws, new bool[throws.Count]);
+    }
 
-        foreach (var slot in pattern)
+    private static bool MatchesPatternUnordered(List<TurnPatternEntry> pattern, int slotIndex,
+        List<Throw> throws, bool[] used)
+    {
+        if (slotIndex >= pattern.Count)
+            return true;
+
+        for (int i = 0; i < throws.Count; i++)
         {
-            int hit = remaining.FindIndex(t => SlotMatchesThrow(slot, t));
-            if (hit < 0)
-                return false;
+            if (used[i] || !SlotMatchesThrow(pattern[slotIndex], throws[i]))
+                continue;
 
-            remaining.RemoveAt(hit);
+            used[i] = true;
+
+            if (MatchesPatternUnordered(pattern, slotIndex + 1, throws, used))
+                return true;
+
+            used[i] = false;
         }
 
-        return true;
+        return false;
     }
 
     public static bool SlotMatchesThrow(TurnPatternEntry slot, Throw throwItem)

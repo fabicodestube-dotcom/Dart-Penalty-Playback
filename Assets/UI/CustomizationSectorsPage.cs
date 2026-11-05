@@ -1,5 +1,4 @@
 using System.Linq;
-using TMPro;
 using UnityEngine;
 
 /// <summary>
@@ -7,14 +6,11 @@ using UnityEngine;
 /// (Seed-Bereiche Wand/Decke + Customs). Einheitliche Rows
 /// (CustomizationListItem): Name, Clip-Anzahl/-Icon, Recorder, Edit,
 /// Delete, Toggle direkt in der Zeile. Löschen nur wenn nicht builtIn.
-/// Löschen ist zweistufig: Stufe 1 warnt vor betroffenen Penalties (Kaskade),
-/// Stufe 2 weist auf noch vorhandene Audio-Clips hin und verlangt erneut OK.
+/// Die Ja/Nein-Bestätigung inklusive verknüpfter Penalties läuft über das
+/// DeletePanel des SectorEditorPopup (kein separates Szenen-Popup nötig).
 /// </summary>
 public class CustomizationSectorsPage : MonoBehaviour, ICustomizationRowOwner
 {
-    [Header("Control")]
-    public WindowHandler windowHandler;
-
     [Header("Liste")]
     public Transform listParent;
     public GameObject rowPrefab;
@@ -24,13 +20,6 @@ public class CustomizationSectorsPage : MonoBehaviour, ICustomizationRowOwner
 
     [Header("Clips (Szene-Umbau, optional)")]
     public ClipNavigationHelper clipNav;
-
-    [Header("Delete-Popup (Ja/Nein, zweistufig)")]
-    public UIScreen deletePopup;
-    public TMP_Text deletePopupText;
-
-    private string pendingDeleteId;
-    private int deleteStage = 1;
 
     /// <summary>
     /// Lebende Rows pro Sektor-ID (Abgleich statt Neuaufbau, siehe Penalties).
@@ -42,9 +31,6 @@ public class CustomizationSectorsPage : MonoBehaviour, ICustomizationRowOwner
     {
         if (editor == null)
             editor = FindAnyObjectByType<SectorEditorPopup>();
-
-        if (windowHandler == null)
-            windowHandler = FindAnyObjectByType<WindowHandler>();
 
         if (clipNav == null)
             clipNav = FindAnyObjectByType<ClipNavigationHelper>();
@@ -120,7 +106,7 @@ public class CustomizationSectorsPage : MonoBehaviour, ICustomizationRowOwner
     public void OnClickNewSector()
     {
         // Der Editor ist ein UIScreen (id Popup) und zeigt sich selbst
-        // über den WindowHandler an (analog zu deletePopup).
+        // über den WindowHandler an.
         if (editor == null)
             editor = FindAnyObjectByType<SectorEditorPopup>();
 
@@ -226,99 +212,12 @@ public class CustomizationSectorsPage : MonoBehaviour, ICustomizationRowOwner
             return;
 
         var def = CustomizationStore.GetHitSectors().Find(x => x != null && x.id == id);
-        if (def == null || def.builtIn)
+        if (def == null || def.builtIn || CustomHitDef.IsBuiltInSector(id))
             return;
 
-        pendingDeleteId = id;
-        deleteStage = 1;
+        if (editor == null)
+            editor = FindAnyObjectByType<SectorEditorPopup>();
 
-        int usage = CustomizationStore.GetPenaltyIdsUsingSector(id).Count;
-
-        if (deletePopupText != null)
-        {
-            deletePopupText.text = usage > 0
-                ? LocalizationText.Format("Delete_sector_usage", "Delete target area? Used by penalties: {0}. These will also be deleted.", usage)
-                : LocalizationText.Get("Delete_sector_confirm", "Delete this target area?");
-        }
-
-        if (windowHandler != null && deletePopup != null)
-            windowHandler.ShowPopup(deletePopup);
-        else
-            ConfirmDeleteSector();
-    }
-
-    /// <summary>
-    /// Bestätigen im Delete-Popup. Stufe 1: ohne Verwendung direkt löschen,
-    /// sonst Stufe 2 (Clip-Hinweis + erneutes OK im selben Popup).
-    /// </summary>
-    public void ConfirmDeleteSector()
-    {
-        if (string.IsNullOrEmpty(pendingDeleteId))
-            return;
-
-        if (deleteStage == 1)
-        {
-            var affected = CustomizationStore.GetPenaltyIdsUsingSector(pendingDeleteId);
-
-            if (affected.Count == 0)
-            {
-                ExecuteDeleteSector();
-                return;
-            }
-
-            deleteStage = 2;
-
-            int clipCount = 0;
-            if (AudioLibrary.Instance != null)
-            {
-                foreach (var penaltyId in affected)
-                    clipCount += AudioLibrary.Instance.GetCustomClipCount(penaltyId);
-            }
-
-            if (deletePopupText != null)
-            {
-                deletePopupText.text = clipCount > 0
-                    ? LocalizationText.Format("Delete_sector_stage2_clips", "Delete anyway? Linked audio clips: {0}", clipCount)
-                    : LocalizationText.Get("Delete_sector_stage2", "Delete anyway? The affected penalties will also be deleted.");
-            }
-
-            // Popup bleibt offen (WindowHandler meldet „bereits aktiv“),
-            // der nächste Klick landet in Stufe 2.
-            if (windowHandler != null && deletePopup != null)
-                windowHandler.ShowPopup(deletePopup);
-            else
-                ExecuteDeleteSector();
-
-            return;
-        }
-
-        ExecuteDeleteSector();
-    }
-
-    private void ExecuteDeleteSector()
-    {
-        if (!string.IsNullOrEmpty(pendingDeleteId))
-        {
-            CustomizationStore.DeletePenaltiesUsingSector(pendingDeleteId);
-            CustomizationStore.DeleteHitSector(pendingDeleteId);
-        }
-
-        pendingDeleteId = null;
-        deleteStage = 1;
-
-        if (windowHandler != null)
-            windowHandler.HidePopup();
-
-        // Direkt-Refresh (sofort sichtbar; siehe PenaltiesPage).
-        Refresh();
-    }
-
-    public void CancelDeleteSector()
-    {
-        pendingDeleteId = null;
-        deleteStage = 1;
-
-        if (windowHandler != null)
-            windowHandler.HidePopup();
+        editor?.ShowDeleteConfirm(this, id);
     }
 }

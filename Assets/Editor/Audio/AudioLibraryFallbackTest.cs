@@ -90,6 +90,11 @@ public static class AudioLibraryFallbackTest
             // ---------- WillBePublished == false → Custom-Set ----------
             lib.WillBePublished = false;
 
+            // Die drei user-ähnlichen X01-Events haben reine Custom-Set-Listen.
+            lib.customBahClip = new List<AudioClip> { lib.numberClips[0] };
+            lib.customThreeTwentiesClip = new List<AudioClip> { lib.numberClips[0] };
+            lib.customThreeNineteensClip = new List<AudioClip> { lib.numberClips[0] };
+
             Check(lib.GetBuiltInScoreClip(42) == lib.customNumberClips[42], "custom-set-score-42");
             Check(lib.GetBuiltInScoreClip(0) == lib.customNumberClips[0], "custom-set-score-0");
             Check(lib.GetBuiltInScoreClip(180) == lib.customNumberClips[180], "custom-set-score-180");
@@ -109,6 +114,9 @@ public static class AudioLibraryFallbackTest
             Check(InList(lib.GetBuiltInClipForKey("cricket_marks"), lib.customCricketMarksClip), "custom-set-marks");
             Check(InList(lib.GetBuiltInClipForKey("atc_hits"), lib.customAtcHitsClip), "custom-set-hits");
             Check(InList(lib.GetBuiltInClipForKey("atc_streak"), lib.customAtcStreakClip), "custom-set-atcstreak");
+            Check(InList(lib.GetBuiltInClipForKey(SeededAudioEvents.BahId), lib.customBahClip), "custom-set-bah");
+            Check(InList(lib.GetBuiltInClipForKey(SeededAudioEvents.ThreeTwentiesId), lib.customThreeTwentiesClip), "custom-set-3x20");
+            Check(InList(lib.GetBuiltInClipForKey(SeededAudioEvents.ThreeNineteensId), lib.customThreeNineteensClip), "custom-set-3x19");
 
             // Ohne eingebauten Clip: eigene Events/Sektoren bleiben stumm.
             Check(lib.GetBuiltInClipForKey("eigene-event-id") == null, "custom-set-unknown-id-null");
@@ -135,6 +143,9 @@ public static class AudioLibraryFallbackTest
             Check(lib.GetBuiltInClipForKey("cricket_marks") == lib.cricketMarksClip, "default-set-marks");
             Check(lib.GetBuiltInClipForKey("atc_hits") == lib.atcHitsClip, "default-set-hits");
             Check(lib.GetBuiltInClipForKey("atc_streak") == lib.atcStreakClip, "default-set-atcstreak");
+            Check(lib.GetBuiltInClipForKey(SeededAudioEvents.BahId) == null, "default-set-bah-null");
+            Check(lib.GetBuiltInClipForKey(SeededAudioEvents.ThreeTwentiesId) == null, "default-set-3x20-null");
+            Check(lib.GetBuiltInClipForKey(SeededAudioEvents.ThreeNineteensId) == null, "default-set-3x19-null");
 
             // ---------- Eingebaute Clips erscheinen NICHT in den Counts ----------
             Check(lib.GetCustomClipCount("custom_wall") == 0, "count-wall-0");
@@ -235,6 +246,9 @@ public static class AudioLibraryFallbackTest
         dst.customCricketMarksClip = src.customCricketMarksClip;
         dst.customAtcHitsClip = src.customAtcHitsClip;
         dst.customAtcStreakClip = src.customAtcStreakClip;
+        dst.customBahClip = src.customBahClip;
+        dst.customThreeTwentiesClip = src.customThreeTwentiesClip;
+        dst.customThreeNineteensClip = src.customThreeNineteensClip;
     }
 
     private static int Count(List<AudioClip> list) => list?.Count ?? 0;

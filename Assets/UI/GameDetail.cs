@@ -144,10 +144,8 @@ public class GameDetail : UIScreen, IUIScreen
 
     private Dictionary<Guid, GameStats> LoadPlayerStatsForGame(Guid gameId)
     {
-        var allStats = SqliteDatabaseRepository.LoadAllPlayerGameStats();
-        if (allStats.TryGetValue(gameId, out var stats))
-            return stats;
-        return new Dictionary<Guid, GameStats>();
+        return SqliteDatabaseRepository.LoadPlayerGameStatsForGame(gameId)
+            ?? new Dictionary<Guid, GameStats>();
     }
 
     private void ClearContent()

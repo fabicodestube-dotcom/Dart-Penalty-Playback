@@ -312,14 +312,14 @@ public class CricketGame : Game
         if (!turnFinished && !legFinished)
             return;
 
-        FinalizeTurn(playerId);
+        var result = FinalizeTurn(playerId, announce: !legFinished);
 
         if (legFinished)
         {
             Debug.Log($"Cricket: Spieler {playerId} gewinnt!");
 
             HandleLegWon(playerId);
-            StartNewLeg();
+            StartNewLeg(result);
             return;
         }
 
@@ -511,7 +511,7 @@ public class CricketGame : Game
         }
     }
 
-    private void FinalizeTurn(Guid playerId)
+    private CricketTurnResult FinalizeTurn(Guid playerId, bool announce = true)
     {
         CheckTurnPenalties(playerId, currentTurn);
 
@@ -523,15 +523,18 @@ public class CricketGame : Game
 
         stats?.RegisterTurn();
 
-        OnTurnCompleted?.Invoke(result);
+        if (announce)
+            OnTurnCompleted?.Invoke(result);
 
         currentTurnHitEvents = new List<CricketHitEvent>();
+        return result;
     }
 
-    private void StartNewLeg()
+    private void StartNewLeg(CricketTurnResult legResult)
     {
         var currentSet = sets[^1];
         Guid setWinner = GetSetWinner(currentSet);
+        bool createNewSet = false;
 
         if (setWinner != Guid.Empty)
         {
@@ -544,7 +547,21 @@ public class CricketGame : Game
                 return;
             }
 
-            // Falls das Match nicht vorbei ist: Neues Set erstellen und als aktuelles Set setzen
+            createNewSet = true;
+        }
+
+        // Leg-Wechsel ansagen, aber nicht am Match-Ende. Läuft nach
+        // Set-/Penalty-Events und vor dem neuen Leg.
+        if (legResult != null)
+        {
+            OnTurnCompleted?.Invoke(legResult);
+            TryTriggerManualAudioEvent(SeededAudioEvents.LegEndId);
+            if (setWinner != Guid.Empty)
+                TryTriggerManualAudioEvent(SeededAudioEvents.SetEndId);
+        }
+
+        if (createNewSet)
+        {
             currentSet = new Set();
             sets.Add(currentSet);
         }

@@ -15,6 +15,9 @@ public static class PenaltyDisplay
         switch (condition.kind)
         {
             case PenaltyConditionKind.HitTypeMiss:
+                if (condition.hitType == HitType.Custom && !string.IsNullOrEmpty(condition.customHitId))
+                    return LocalizationText.Format("Penalty_on_type", "Penalty on {0}", SectorName(condition.customHitId));
+
                 return condition.hitType == HitType.Wall ? LocalizationText.Get("Board_miss_wall", "Off board: wall")
                     : condition.hitType == HitType.Ceiling ? LocalizationText.Get("Board_miss_ceiling", "Off board: ceiling")
                     : LocalizationText.Format("Miss_throw_type", "Miss: {0}", condition.hitType);
@@ -47,6 +50,58 @@ public static class PenaltyDisplay
         }
     }
 
+    /// <summary>Fasst alle Bedingungen eines Penalties zu einer Anzeige zusammen.</summary>
+    public static string SummarizeConditions(List<PenaltyCondition> conditions)
+    {
+        if (conditions == null || conditions.Count == 0)
+            return LocalizationText.Get("No_triggers", "Keine Trigger");
+
+        var parts = new List<string>(conditions.Count);
+        foreach (var c in conditions)
+            parts.Add(SummarizeCondition(c));
+
+        return string.Join("; ", parts);
+    }
+
+    /// <summary>Fasst alle Trigger eines Audio-Events zu einer Anzeige zusammen.</summary>
+    public static string SummarizeTriggers(List<AudioEventTrigger> triggers)
+    {
+        if (triggers == null || triggers.Count == 0)
+            return LocalizationText.Get("No_triggers", "Keine Trigger");
+
+        var parts = new List<string>(triggers.Count);
+        foreach (var t in triggers)
+        {
+            switch (t.kind)
+            {
+                case AudioEventTriggerKind.ScoreReached:
+                    parts.Add(LocalizationText.Format("Reach_exact_score_value", "Reach exact score: {0}", t.score));
+                    break;
+                case AudioEventTriggerKind.TurnPattern:
+                    parts.Add(LocalizationText.Format("Turn_pattern_any_order", "Turn [{0}] (any order)", DescribePattern(t.pattern)));
+                    break;
+                case AudioEventTriggerKind.MarksThreshold:
+                    parts.Add(LocalizationText.Format("Marks_at_least", "Marks ≥ {0}", t.threshold));
+                    break;
+                case AudioEventTriggerKind.PointsReached:
+                    parts.Add(LocalizationText.Format("Points_at_least", "Points ≥ {0}", t.threshold));
+                    break;
+                case AudioEventTriggerKind.HitsInTurnThreshold:
+                    parts.Add(LocalizationText.Format("Hits_per_turn_at_least", "Hits/Turn ≥ {0}", t.threshold));
+                    break;
+                case AudioEventTriggerKind.StreakReached:
+                    parts.Add(LocalizationText.Format("Streak_at_least", "Streak ≥ {0}", t.threshold));
+                    break;
+                case AudioEventTriggerKind.Manual:
+                default:
+                    parts.Add(LocalizationText.Get("Manual", "Manual"));
+                    break;
+            }
+        }
+
+        return string.Join("; ", parts);
+    }
+
     /// <summary>Sektor-Name aus Tab 1 (Fallback: Kurz-ID).</summary>
     public static string SectorName(string sectorId)
     {
@@ -69,7 +124,8 @@ public static class PenaltyDisplay
             // Store/DB nicht bereit -> Fallback unten
         }
 
-        return sectorId.Length > 6 ? sectorId.Substring(0, 6) : sectorId;
+        string shortId = sectorId.Length > 6 ? sectorId.Substring(0, 6) : sectorId;
+        return LocalizationText.Format("Deleted_target_area", "Deleted target area ({0})", shortId);
     }
 
     public static string DescribePattern(List<TurnPatternEntry> pattern)
@@ -139,10 +195,10 @@ public static class PenaltyDisplay
 
     public static string SummarizeTrigger(AudioEventDef def)
     {
-        if (def == null || def.trigger == null)
+        if (def == null || def.triggers == null || def.triggers.Count == 0)
             return "-";
 
-        var t = def.trigger;
+        var t = def.triggers.FirstOrDefault();
         return t.kind switch
         {
             AudioEventTriggerKind.Manual => LocalizationText.Get("Manual", "Manual"),
@@ -364,10 +420,10 @@ public static class PenaltyDisplay
 
         foreach (var def in snapshot)
         {
-            if (def == null || !def.enabled || def.condition == null)
+            if (def == null || !def.enabled || def.conditions == null || def.conditions.Count == 0)
                 continue;
-            if (def.condition.kind == PenaltyConditionKind.HitTypeMiss
-                && def.condition.hitType == hitType)
+            if (def.conditions.Any(c => c.kind == PenaltyConditionKind.HitTypeMiss
+                && c.hitType == hitType))
                 return true;
         }
 
@@ -458,7 +514,7 @@ public static class PenaltyDisplay
                 Name = def?.name ?? kvp.Key,
                 Cost = def?.cost ?? 0,
                 Count = kvp.Value,
-                TriggerText = def?.condition != null ? SummarizeCondition(def.condition) : "-",
+                TriggerText = def?.conditions != null && def.conditions.Count > 0 ? SummarizeCondition(def.conditions.FirstOrDefault()) : "-",
                 EnabledAtSave = def?.enabled ?? false
             });
         }
@@ -487,7 +543,7 @@ public static class PenaltyDisplay
                 Name = def.name,
                 Cost = def.cost,
                 Count = 0,
-                TriggerText = def.condition != null ? SummarizeCondition(def.condition) : "-",
+                TriggerText = def.conditions != null && def.conditions.Count > 0 ? SummarizeCondition(def.conditions.FirstOrDefault()) : "-",
                 EnabledAtSave = def.enabled
             });
         }

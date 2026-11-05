@@ -7,8 +7,8 @@ public class MenuSwitcher : MonoBehaviour
     [System.Serializable]
     private class MenuItem
     {
-        public Image image;
-        public TMP_Text text;
+        public Image image = null;
+        public TMP_Text text = null;
     }
 
     [SerializeField] private MenuItem game;

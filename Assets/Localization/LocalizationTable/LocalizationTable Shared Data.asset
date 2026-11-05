@@ -1267,6 +1267,42 @@ MonoBehaviour:
     m_Key: Lime
     m_Metadata:
       m_Items: []
+  - m_Id: 33806894813368323
+    m_Key: Name_required
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368324
+    m_Key: Invalid_number
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368325
+    m_Key: Select_target_area
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368326
+    m_Key: Save_failed
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368327
+    m_Key: Leave_app
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368328
+    m_Key: Deleted_target_area
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368331
+    m_Key: Manual
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368330
+    m_Key: No_triggers
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368329
+    m_Key: Schnapszahl
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

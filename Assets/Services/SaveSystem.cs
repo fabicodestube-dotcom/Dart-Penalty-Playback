@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 public static class SaveSystem
@@ -37,6 +38,13 @@ public static class SaveSystem
         if (game == null || IsWriteBlocked()) return false;
 
         return SqliteDatabaseRepository.SaveGame(game);
+    }
+
+    public static bool SaveGames(IReadOnlyList<Game> games)
+    {
+        if (games == null || games.Count == 0 || IsWriteBlocked()) return false;
+
+        return SqliteDatabaseRepository.SaveGames(games);
     }
 
     public static bool SaveAggregatedPlayerStats(Game game)

@@ -837,20 +837,19 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 33805706080505886
-    m_Localized: "Eliminare la penalit\xE0 \u201C{0}\u201D?"
+    m_Localized: "Eliminare la penalit\xE0 {0}?"
     m_Metadata:
       m_Items: []
   - m_Id: 33805706080505887
-    m_Localized: "Eliminare l\u2019evento audio \u201C{0}\u201D?"
+    m_Localized: "Eliminare l\u2019evento audio {0}?"
     m_Metadata:
       m_Items: []
   - m_Id: 33805706080505888
-    m_Localized: "Eliminare l\u2019area bersaglio \u201C{0}\u201D?"
+    m_Localized: "Eliminare l\u2019area bersaglio {0}?"
     m_Metadata:
       m_Items: []
   - m_Id: 33805706080505889
-    m_Localized: "Eliminare l\u2019area bersaglio \u201C{0}\u201D? Usata dalle penalit\xE0:
-      {1}. Verranno eliminate anche queste."
+    m_Localized: "Eliminare l’area bersaglio {0}? Usata dalle penalità: {1}. Verranno eliminate anche queste e i relativi clip audio."
     m_Metadata:
       m_Items: []
   - m_Id: 33805706080505890
@@ -1292,6 +1291,42 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 33806894813368322
     m_Localized: Lime
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368323
+    m_Localized: Il nome è obbligatorio.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368324
+    m_Localized: Inserisci un numero valido.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368325
+    m_Localized: Seleziona un'area bersaglio.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368326
+    m_Localized: Impossibile salvare. Controlla i dati inseriti.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368327
+    m_Localized: Vuoi uscire dall'applicazione?
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368328
+    m_Localized: "Area bersaglio eliminata ({0})"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368329
+    m_Localized: "Schnapszahl"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368330
+    m_Localized: "Nessun trigger"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368331
+    m_Localized: "Manuale"
     m_Metadata:
       m_Items: []
   references:

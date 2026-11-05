@@ -832,20 +832,19 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 33805706080505886
-    m_Localized: "Delete penalty \u201C{0}\u201D?"
+    m_Localized: "Delete penalty {0}?"
     m_Metadata:
       m_Items: []
   - m_Id: 33805706080505887
-    m_Localized: "Delete audio event \u201C{0}\u201D?"
+    m_Localized: "Delete audio event {0}?"
     m_Metadata:
       m_Items: []
   - m_Id: 33805706080505888
-    m_Localized: "Delete target area \u201C{0}\u201D?"
+    m_Localized: "Delete target area {0}?"
     m_Metadata:
       m_Items: []
   - m_Id: 33805706080505889
-    m_Localized: "Delete target area \u201C{0}\u201D? Used by penalties: {1}. These
-      will also be deleted."
+    m_Localized: "Delete target area {0}? Used by penalties: {1}. These and their audio clips will also be deleted."
     m_Metadata:
       m_Items: []
   - m_Id: 33805706080505890
@@ -1287,6 +1286,42 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 33806894813368322
     m_Localized: Lime
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368323
+    m_Localized: Name is required.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368324
+    m_Localized: Please enter a valid number.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368325
+    m_Localized: Please select a target area.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368326
+    m_Localized: Could not save. Please check your input.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368327
+    m_Localized: Do you want to step back from the Oche and close the app?
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368328
+    m_Localized: "Deleted target area ({0})"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368329
+    m_Localized: "Schnapszahl"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368330
+    m_Localized: "No triggers"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368331
+    m_Localized: "Manual"
     m_Metadata:
       m_Items: []
   references:

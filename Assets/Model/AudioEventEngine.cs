@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 
 /// <summary>
 /// Vom Aufrufer (Engine/Game je Modus) gefüllte Kennzahlen für die Auswertung.
@@ -37,13 +38,13 @@ public static class AudioEventEngine
 
         foreach (var def in defs)
         {
-            if (def == null || !def.enabled || def.trigger == null)
+            if (def == null || !def.enabled || def.triggers == null || def.triggers.Count == 0)
                 continue;
 
-            if (def.trigger.kind == AudioEventTriggerKind.Manual)
+            if (def.triggers.All(t => t.kind == AudioEventTriggerKind.Manual))
                 continue;
 
-            if (Matches(def.trigger, values))
+            if (MatchesAny(def.triggers, values))
                 matched.Add(def.id);
         }
 
@@ -76,5 +77,23 @@ public static class AudioEventEngine
             default:
                 return false;
         }
+    }
+
+    /// <summary>Gibt true zurück, wenn JEDE Trigger-Übereinstimmung (OR-Logik, Manual übersprungen).</summary>
+    public static bool MatchesAny(List<AudioEventTrigger> triggers, AudioTriggerValues v)
+    {
+        if (triggers == null || v == null)
+            return false;
+
+        foreach (var t in triggers)
+        {
+            if (t == null || t.kind == AudioEventTriggerKind.Manual)
+                continue;
+
+            if (Matches(t, v))
+                return true;
+        }
+
+        return false;
     }
 }

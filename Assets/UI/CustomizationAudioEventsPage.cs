@@ -72,8 +72,9 @@ public class CustomizationAudioEventsPage : MonoBehaviour, ICustomizationRowOwne
         var wanted = new HashSet<string>();
         var siblingByParent = new Dictionary<Transform, int>();
 
-        // Store-Defs (Seeds + Customs): Seeds sind nicht löschbar, werden
-        // aber normal angezeigt, editiert und von der Engine ausgewertet.
+        // Store-Defs (Seeds + Customs): Built-in-Seeds sind nicht löschbar,
+        // user-ähnliche Seeds schon; beide werden normal angezeigt, editiert
+        // und von der Engine ausgewertet.
         var defs = CustomizationStore.GetAudioEvents();
         if (defs != null)
         {
@@ -413,11 +414,8 @@ public class CustomizationAudioEventsPage : MonoBehaviour, ICustomizationRowOwne
 
     public void ConfirmDeleteAudioEvent()
     {
-        if (!string.IsNullOrEmpty(pendingDeleteId)
-            && AppSettingsManager.Instance != null)
-        {
+        if (!string.IsNullOrEmpty(pendingDeleteId))
             CustomizationStore.DeleteAudioEvent(pendingDeleteId);
-        }
 
         pendingDeleteId = null;
 

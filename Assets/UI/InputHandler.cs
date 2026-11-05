@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -68,6 +69,18 @@ public abstract class InputHandler : MonoBehaviour
         CloseSectorPanel();
     }
 
+    public void RefreshSectorUiFromGame()
+    {
+        RefreshSectorButtons();
+        RefreshQuickSelect();
+    }
+
+    private List<CustomHitDef> GetGameplayHitSectors()
+    {
+        var snapshot = gameEngine != null ? gameEngine.GetHitSectorSnapshot() : null;
+        return snapshot ?? CustomizationStore.GetHitSectors();
+    }
+
     private void HandleCustomizationChanged(CustomizationChangeKind kind)
     {
         if (!gameObject.activeInHierarchy)
@@ -120,7 +133,7 @@ public abstract class InputHandler : MonoBehaviour
         if (!inputEnabled || string.IsNullOrEmpty(sectorId))
             return;
 
-        var def = CustomizationStore.GetHitSectors()
+        var def = GetGameplayHitSectors()
             .Find(x => x != null && x.id == sectorId);
 
         int value = def != null ? def.value : 0;
@@ -182,12 +195,12 @@ public abstract class InputHandler : MonoBehaviour
 
     private string ResolveQuickSelectSectorId(out string displayName)
     {
+        var sectors = GetGameplayHitSectors();
         string storedId = AppSettingsManager.Instance?.GetLastSelectedSectorId();
 
         if (!string.IsNullOrEmpty(storedId))
         {
-            var stored = CustomizationStore.GetHitSectors()
-                .Find(x => x != null && x.enabled && x.id == storedId);
+            var stored = sectors.Find(x => x != null && x.enabled && x.id == storedId);
 
             if (stored != null)
             {
@@ -197,8 +210,7 @@ public abstract class InputHandler : MonoBehaviour
         }
 
         // Fallback: Wall (auch wenn noch nie ein Sektor gewählt wurde).
-        var wall = CustomizationStore.GetHitSectors()
-            .Find(x => x != null && x.id == CustomHitDef.WallId);
+        var wall = sectors.Find(x => x != null && x.id == CustomHitDef.WallId);
 
         displayName = wall != null && !string.IsNullOrWhiteSpace(wall.name)
             ? wall.name
@@ -420,10 +432,10 @@ public abstract class InputHandler : MonoBehaviour
         {
             foreach (var def in CustomizationStore.GetPenalties())
             {
-                if (def == null || !def.enabled || def.condition == null)
+                if (def == null || !def.enabled || def.conditions == null || def.conditions.Count == 0)
                     continue;
-                if (def.condition.kind == PenaltyConditionKind.HitTypeMiss
-                    && def.condition.hitType == hitType)
+                if (def.conditions.Any(c => c.kind == PenaltyConditionKind.HitTypeMiss
+                    && c.hitType == hitType))
                     return true;
             }
         }
@@ -475,7 +487,7 @@ public abstract class InputHandler : MonoBehaviour
         if (container == null)
             return;
 
-        foreach (var def in CustomizationStore.GetHitSectors())
+        foreach (var def in GetGameplayHitSectors())
         {
             if (def == null || string.IsNullOrEmpty(def.id))
                 continue;

@@ -39,6 +39,9 @@ public static class DatabaseMigrationSmokeTest
             TestBackupAndRestore();
             TestClipIntegrityRepair();
             TestCustomHitSectorRoundtrip();
+            TestBuiltInHitSectors();
+            TestHitSectorDeletionCascadesPenalties();
+            TestHitSectorSnapshotSurvivesDeletion();
             TestActualDatabaseCopyIfAvailable(actualRoot);
 
             Debug.Log("[DB-SMOKE] PASS");
@@ -80,6 +83,8 @@ public static class DatabaseMigrationSmokeTest
             Check(connection.ExecuteScalar<int>("SELECT COUNT(*) FROM schema_migrations WHERE version = 2;") == 1, "Fresh database is missing migration v2.");
             Check(connection.ExecuteScalar<int>("SELECT COUNT(*) FROM schema_migrations WHERE version = 3;") == 1, "Fresh database is missing migration v3.");
             Check(connection.ExecuteScalar<int>("SELECT COUNT(*) FROM schema_migrations WHERE version = 4;") == 1, "Fresh database is missing migration v4.");
+            Check(connection.ExecuteScalar<int>("SELECT COUNT(*) FROM schema_migrations WHERE version = 5;") == 1, "Fresh database is missing migration v5.");
+            Check(DatabaseHealth.ColumnExists(connection, "game_runtime_state", "custom_hit_sectors_snapshot_json"), "custom_hit_sectors_snapshot_json is missing.");
             Check(DatabaseHealth.ColumnExists(connection, "player_game_stats", "stats_schema_version"), "stats_schema_version is missing.");
             Check(DatabaseHealth.ColumnExists(connection, "recorded_clips", "file_size"), "recorded_clips.file_size is missing.");
             Check(DatabaseHealth.ColumnExists(connection, "recorded_clips", "sha256"), "recorded_clips.sha256 is missing.");
@@ -174,6 +179,8 @@ public static class DatabaseMigrationSmokeTest
             Check(connection.ExecuteScalar<int>("SELECT COUNT(*) FROM schema_migrations WHERE version = 2;") == 1, "Migration v2 row is missing.");
             Check(connection.ExecuteScalar<int>("SELECT COUNT(*) FROM schema_migrations WHERE version = 3;") == 1, "Migration v3 row is missing.");
             Check(connection.ExecuteScalar<int>("SELECT COUNT(*) FROM schema_migrations WHERE version = 4;") == 1, "Migration v4 row is missing.");
+            Check(connection.ExecuteScalar<int>("SELECT COUNT(*) FROM schema_migrations WHERE version = 5;") == 1, "Migration v5 row is missing.");
+            Check(DatabaseHealth.ColumnExists(connection, "game_runtime_state", "custom_hit_sectors_snapshot_json"), "Legacy hit-sector snapshot column was not added.");
             Check(!DatabaseHealth.TableExists(connection, "player_meta"), "Legacy player_meta was not removed.");
             Check(!DatabaseHealth.TableExists(connection, "game_meta"), "Legacy game_meta was not removed.");
             Check(!DatabaseHealth.ColumnExists(connection, "games", "player_ids"), "Legacy games.player_ids was not removed.");
@@ -389,6 +396,276 @@ public static class DatabaseMigrationSmokeTest
         Debug.Log("[DB-SMOKE] Custom hit sector roundtrip OK");
     }
 
+    private static void TestBuiltInHitSectors()
+    {
+        string root = CreateRoot("builtin-sectors");
+        DatabaseBootstrapper.ResetForTests();
+        SaveSystem.ResetLoadFailedForTests();
+        ResetRoot(root);
+
+        var bootstrap = DatabaseBootstrapper.Prepare();
+        Check(bootstrap.Success, "Built-in sector bootstrap failed: " + bootstrap.Error);
+
+        CustomizationStore.Reload();
+
+        var sectors = CustomizationStore.GetHitSectors();
+        var wall = sectors.Find(item => item != null && item.id == CustomHitDef.WallId);
+        var ceiling = sectors.Find(item => item != null && item.id == CustomHitDef.CeilingId);
+
+        Check(wall != null && wall.builtIn, "Wall seed is not built-in.");
+        Check(ceiling != null && ceiling.builtIn, "Ceiling seed is not built-in.");
+
+        wall.builtIn = false;
+        ceiling.builtIn = false;
+        SqliteDatabaseRepository.SaveCustomHitSector(wall);
+        SqliteDatabaseRepository.SaveCustomHitSector(ceiling);
+
+        CustomizationStore.Reload();
+
+        sectors = CustomizationStore.GetHitSectors();
+        wall = sectors.Find(item => item != null && item.id == CustomHitDef.WallId);
+        ceiling = sectors.Find(item => item != null && item.id == CustomHitDef.CeilingId);
+
+        Check(wall != null && wall.builtIn, "Legacy Wall seed was not migrated to built-in.");
+        Check(ceiling != null && ceiling.builtIn, "Legacy Ceiling seed was not migrated to built-in.");
+        Check(!CustomizationStore.DeleteHitSector(CustomHitDef.WallId), "Built-in Wall sector was deletable.");
+        Check(!CustomizationStore.DeleteHitSector(CustomHitDef.CeilingId), "Built-in Ceiling sector was deletable.");
+        Check(CustomizationStore.GetHitSectors().Exists(item => item != null && item.id == CustomHitDef.WallId),
+            "Wall sector disappeared after delete attempt.");
+        Check(CustomizationStore.GetHitSectors().Exists(item => item != null && item.id == CustomHitDef.CeilingId),
+            "Ceiling sector disappeared after delete attempt.");
+
+        var custom = CustomHitDef.CreateNew();
+        custom.name = "Smoke deletable area";
+        Check(CustomizationStore.SaveHitSector(custom), "Custom sector could not be saved.");
+        Check(CustomizationStore.DeleteHitSector(custom.id), "Custom sector was not deletable.");
+
+        Directory.Delete(root, true);
+        Debug.Log("[DB-SMOKE] Built-in hit sectors OK");
+    }
+
+    private static void TestHitSectorDeletionCascadesPenalties()
+    {
+        string root = CreateRoot("hit-sector-delete");
+        DatabaseBootstrapper.ResetForTests();
+        SaveSystem.ResetLoadFailedForTests();
+        ResetRoot(root);
+
+        var bootstrap = DatabaseBootstrapper.Prepare();
+        Check(bootstrap.Success, "Hit-sector delete bootstrap failed: " + bootstrap.Error);
+
+        CustomizationStore.Reload();
+
+        var area = new CustomHitDef
+        {
+            id = "smoke:delete-area",
+            name = "Delete Area",
+            info = "smoke",
+            enabled = true,
+            builtIn = false,
+            value = 20,
+            multiplier = DartMultiplier.Triple
+        };
+        Check(CustomizationStore.SaveHitSector(area), "Delete area could not be saved.");
+
+        var instant = CustomPenaltyDef.CreateNew();
+        instant.id = "smoke:instant-penalty";
+        instant.name = "Instant Penalty";
+        instant.conditions = new List<PenaltyCondition>
+        {
+            new PenaltyCondition
+            {
+                kind = PenaltyConditionKind.HitTypeMiss,
+                hitType = HitType.Custom,
+                customHitId = area.id
+            }
+        };
+        Check(CustomizationStore.SavePenalty(instant), "Instant penalty could not be saved.");
+
+        var pattern = CustomPenaltyDef.CreateNew();
+        pattern.id = "smoke:pattern-penalty";
+        pattern.name = "Pattern Penalty";
+        pattern.conditions = new List<PenaltyCondition>
+        {
+            new PenaltyCondition
+            {
+                kind = PenaltyConditionKind.TurnPattern,
+                pattern = new List<TurnPatternEntry>
+                {
+                    new TurnPatternEntry
+                    {
+                        anyHitType = false,
+                        hitType = HitType.Custom,
+                        customHitId = area.id
+                    }
+                }
+            }
+        };
+        Check(CustomizationStore.SavePenalty(pattern), "Pattern penalty could not be saved.");
+
+        var unrelated = CustomPenaltyDef.CreateNew();
+        unrelated.id = "smoke:unrelated-penalty";
+        unrelated.name = "Unrelated Penalty";
+        unrelated.conditions = new List<PenaltyCondition>
+        {
+            new PenaltyCondition
+            {
+                kind = PenaltyConditionKind.ExactScore,
+                score = 100
+            }
+        };
+        Check(CustomizationStore.SavePenalty(unrelated), "Unrelated penalty could not be saved.");
+
+        var usedPenalties = CustomizationStore.GetPenaltiesUsingSector(area.id);
+        Check(usedPenalties.Count == 2, "Expected two penalties using the area, got " + usedPenalties.Count);
+        var usedNames = CustomizationStore.GetPenaltyNamesUsingSector(area.id);
+        Check(usedNames.Contains("Instant Penalty") && usedNames.Contains("Pattern Penalty"),
+            "Penalty names using the area are wrong: " + string.Join(", ", usedNames));
+
+        Check(CustomizationStore.DeleteHitSectorWithPenalties(area.id), "Area with penalties was not deletable.");
+        Check(!CustomizationStore.GetHitSectors().Exists(item => item != null && item.id == area.id),
+            "Deleted area is still in the live store.");
+        Check(!CustomizationStore.GetPenalties().Exists(item => item != null && item.id == instant.id),
+            "Instant penalty survived area deletion.");
+        Check(!CustomizationStore.GetPenalties().Exists(item => item != null && item.id == pattern.id),
+            "Pattern penalty survived area deletion.");
+        Check(CustomizationStore.GetPenalties().Exists(item => item != null && item.id == unrelated.id),
+            "Unrelated penalty was deleted.");
+        Check(CustomizationStore.GetPenaltiesUsingSector(area.id).Count == 0,
+            "Deleted area still has linked penalties.");
+
+        var orphanArea = new CustomHitDef
+        {
+            id = "smoke:orphan-area",
+            name = "Orphan Area",
+            info = "smoke",
+            enabled = true,
+            builtIn = false,
+            value = 5,
+            multiplier = DartMultiplier.Single
+        };
+        Check(CustomizationStore.SaveHitSector(orphanArea), "Orphan area could not be saved.");
+
+        var orphan = CustomPenaltyDef.CreateNew();
+        orphan.id = "smoke:orphan-penalty";
+        orphan.name = "Orphan Penalty";
+        orphan.conditions = new List<PenaltyCondition>
+        {
+            new PenaltyCondition
+            {
+                kind = PenaltyConditionKind.HitTypeMiss,
+                hitType = HitType.Custom,
+                customHitId = orphanArea.id
+            }
+        };
+        Check(CustomizationStore.SavePenalty(orphan), "Orphan penalty could not be saved.");
+
+        Check(CustomizationStore.DeleteHitSector(orphanArea.id), "Area without cascade was not deletable.");
+        Check(!CustomizationStore.IsKnownHitSector(orphanArea.id), "Deleted area is still known.");
+        Check(CustomizationStore.GetPenalties().Exists(item => item != null && item.id == orphan.id),
+            "Area-only delete cascaded into the penalty.");
+        Check(CustomizationStore.GetPenaltiesUsingSector(orphanArea.id).Count == 1,
+            "Orphan penalty is no longer linked to its deleted area.");
+        Check(PenaltyDisplay.SectorName(orphanArea.id).Contains("smoke:"),
+            "Deleted area fallback label is wrong: " + PenaltyDisplay.SectorName(orphanArea.id));
+        Check(CustomizationStore.DeletePenalty(orphan.id), "Orphan penalty was not deletable.");
+
+        Directory.Delete(root, true);
+        Debug.Log("[DB-SMOKE] Hit-sector delete cascade OK");
+    }
+
+    private static void TestHitSectorSnapshotSurvivesDeletion()
+    {
+        string root = CreateRoot("hit-sector-snapshot");
+        DatabaseBootstrapper.ResetForTests();
+        SaveSystem.ResetLoadFailedForTests();
+        ResetRoot(root);
+
+        var bootstrap = DatabaseBootstrapper.Prepare();
+        Check(bootstrap.Success, "Hit-sector snapshot bootstrap failed: " + bootstrap.Error);
+
+        var database = new Database();
+        Guid playerId = database.AddPlayer("Snapshot Player");
+        SqliteDatabaseRepository.SaveDatabase(database);
+
+        var definition = new CustomHitDef
+        {
+            id = "smoke:snapshot-area",
+            name = "Snapshot Area",
+            info = "smoke",
+            enabled = true,
+            builtIn = false,
+            value = 20,
+            multiplier = DartMultiplier.Triple
+        };
+        SqliteDatabaseRepository.SaveCustomHitSector(definition);
+        CustomizationStore.Reload();
+
+        var settings = new X01GameSettings
+        {
+            pointTarget = 501,
+            checkinType = CheckinType.StraightIn,
+            checkoutType = CheckoutType.Double,
+            setsAndLegsMode = SetsAndLegs.FirstTo,
+            setCount = 1,
+            legCount = 1,
+            soundEnabled = false,
+            Penalties = new PenaltySettings()
+        };
+
+        var game = new X01Game(Guid.NewGuid(), settings, new List<Guid> { playerId });
+
+        var frozen = game.GetHitSectorSnapshot()
+            .Find(item => item != null && item.id == definition.id);
+        Check(frozen != null, "Area was not captured in the game snapshot.");
+        Check(frozen.value == 20, "Snapshot area value is wrong.");
+        Check(frozen.multiplier == DartMultiplier.Triple, "Snapshot area multiplier is wrong.");
+
+        var live = CustomizationStore.GetHitSectors()
+            .Find(item => item != null && item.id == definition.id);
+        Check(live != null, "Area was not saved to the live store.");
+        live.value = 5;
+        live.multiplier = DartMultiplier.Single;
+        SqliteDatabaseRepository.SaveCustomHitSector(live);
+        CustomizationStore.Reload();
+
+        frozen = game.GetHitSectorSnapshot()
+            .Find(item => item != null && item.id == definition.id);
+        Check(frozen != null && frozen.value == 20 && frozen.multiplier == DartMultiplier.Triple,
+            "Live edit changed the game snapshot.");
+
+        SqliteDatabaseRepository.SaveGame(game);
+        Check(CustomizationStore.DeleteHitSector(definition.id), "Snapshot area was not deletable.");
+        Check(!CustomizationStore.GetHitSectors().Exists(item => item != null && item.id == definition.id),
+            "Deleted area is still in the live store.");
+
+        var loaded = SqliteDatabaseRepository.LoadGameById(game.GetID());
+        Check(loaded != null, "Game with hit-sector snapshot could not be reloaded.");
+
+        var restored = loaded.GetHitSectorSnapshot()
+            .Find(item => item != null && item.id == definition.id);
+        Check(restored != null, "Deleted area was not restored from the game snapshot.");
+        Check(restored.value == 20, "Restored snapshot area value is wrong.");
+        Check(restored.multiplier == DartMultiplier.Triple, "Restored snapshot area multiplier is wrong.");
+        Check(restored.enabled, "Restored snapshot area is disabled.");
+        Check(!CustomizationStore.GetHitSectors().Exists(item => item != null && item.id == definition.id),
+            "Deleted area reappeared in the live store.");
+
+        SqliteDatabaseRepository.SaveGame(loaded);
+        var reloaded = SqliteDatabaseRepository.LoadGameById(game.GetID());
+        Check(reloaded != null, "Resaved game with hit-sector snapshot could not be reloaded.");
+
+        var persisted = reloaded.GetHitSectorSnapshot()
+            .Find(item => item != null && item.id == definition.id);
+        Check(persisted != null && persisted.value == 20 && persisted.multiplier == DartMultiplier.Triple,
+            "Hit-sector snapshot was lost after resave.");
+        Check(!CustomizationStore.GetHitSectors().Exists(item => item != null && item.id == definition.id),
+            "Deleted area reappeared in the live store after resave.");
+
+        Directory.Delete(root, true);
+        Debug.Log("[DB-SMOKE] Hit-sector snapshot survives deletion OK");
+    }
+
     private static void TestActualDatabaseCopyIfAvailable(string actualRoot)
     {
         string actualDatabase = Path.Combine(actualRoot, DatabasePaths.DatabaseFileName);
@@ -453,6 +730,8 @@ public static class DatabaseMigrationSmokeTest
         Check(result.Success, "Real database copy migration failed: " + result.Error);
         if (result.Migrated)
             Check(File.Exists(result.BackupPath), "Real database copy migration created no backup.");
+
+        CustomizationStore.Reload();
 
         using (var connection = new SQLiteConnection(DatabasePaths.DatabasePath, SQLiteOpenFlags.ReadOnly))
         {

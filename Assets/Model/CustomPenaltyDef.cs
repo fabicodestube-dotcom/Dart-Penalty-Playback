@@ -82,10 +82,10 @@ public class PenaltyCondition
     [JsonProperty] public List<TurnPatternEntry> pattern = new List<TurnPatternEntry>();
 
     /// <summary>
-    /// Einziger Reihenfolge-Toggle (2.1): true = geordnet + exakt
-    /// (Slot i muss Wurf i entsprechen), false = ungeordnet + exakt
-    /// (Pattern als Multimenge im Turn). Ersetzt das alte matchExact
-    /// (Altdaten ohne matchOrder verhalten sich wie false).
+    /// Einziger Reihenfolge-Toggle (2.1): true = geordnet (Slots in dieser
+    /// Reihenfolge im Turn), false = ungeordnet (Pattern als Multimenge im
+    /// Turn). Zusätzliche Würfe sind in beiden Fällen erlaubt. Ersetzt das
+    /// alte matchExact (Altdaten ohne matchOrder verhalten sich wie false).
     /// </summary>
     [JsonProperty] public bool matchOrder = false;
 }
@@ -127,7 +127,7 @@ public class CustomPenaltyDef
     /// </summary>
     [JsonProperty] public int cost = 10;
 
-    [JsonProperty] public PenaltyCondition condition = new PenaltyCondition();
+    [JsonProperty] public List<PenaltyCondition> conditions = new List<PenaltyCondition>();
 
     /// <summary>"builtin:wall" → PenaltyType.Wall (für PenaltySettings-Sync und Enum-Clip-Buttons).</summary>
     public static bool TryParseBuiltInType(string id, out PenaltyType type)
@@ -158,15 +158,18 @@ public class CustomPenaltyDef
             name = "New penalty",
             enabled = true,
             cost = 10,
-            condition = new PenaltyCondition
+            conditions = new List<PenaltyCondition>
             {
-                kind = PenaltyConditionKind.TurnPattern,
-                matchOrder = false,
-                pattern = new List<TurnPatternEntry>
+                new PenaltyCondition
                 {
-                    new TurnPatternEntry { anyValue = false, value = 1, anyMultiplier = true },
-                    new TurnPatternEntry { anyValue = false, value = 1, anyMultiplier = true },
-                    new TurnPatternEntry { anyValue = false, value = 1, anyMultiplier = true }
+                    kind = PenaltyConditionKind.TurnPattern,
+                    matchOrder = false,
+                    pattern = new List<TurnPatternEntry>
+                    {
+                        new TurnPatternEntry { anyValue = false, value = 1, anyMultiplier = true },
+                        new TurnPatternEntry { anyValue = false, value = 1, anyMultiplier = true },
+                        new TurnPatternEntry { anyValue = false, value = 1, anyMultiplier = true }
+                    }
                 }
             }
         };

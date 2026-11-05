@@ -636,8 +636,8 @@ public class ATCGame : Game
 
         if (IsPlayerFinished(playerId))
         {
+            int legWinHits = validThrowsInTurn;
             FinalizeVisit(playerId, false);
-            validThrowsInTurn = 0;
             HandleLegWon(playerId);
             var currentSet = sets[^1];
             Guid setWinner = GetSetWinner(currentSet);
@@ -645,7 +645,17 @@ public class ATCGame : Game
             {
                 currentSet.SetWinner(setWinner);
                 HandleSetWon(setWinner); 
-                if (IsMatchFinished(setWinner)) { HandleMatchEnd(setWinner); return; }
+                if (IsMatchFinished(setWinner))
+                {
+                    validThrowsInTurn = 0;
+                    HandleMatchEnd(setWinner);
+                    return;
+                }
+
+                AnnounceVisitCompleted(playerId, legWinHits);
+                TryTriggerManualAudioEvent(SeededAudioEvents.LegEndId);
+                TryTriggerManualAudioEvent(SeededAudioEvents.SetEndId);
+                validThrowsInTurn = 0;
                 
                 var newSet = new Set();
                 var newLeg = new Leg();
@@ -660,7 +670,12 @@ public class ATCGame : Game
                 // Nach Set-Wechsel Bot prüfen
                 TriggerBotCheck();
             }
-            else { StartNewLeg(); }
+            else
+            {
+                AnnounceVisitCompleted(playerId, legWinHits);
+                TryTriggerManualAudioEvent(SeededAudioEvents.LegEndId);
+                StartNewLeg();
+            }
             validThrowsInTurn = 0;
             TouchActivity();
             return;
@@ -733,13 +748,12 @@ public class ATCGame : Game
         }
     }
 
-    /// <summary>Treffer des Turns + wurfübergreifender Streak für Audio-Trigger.</summary>
+    /// <summary>Treffer des Visits + wurfübergreifender Streak für Audio-Trigger.</summary>
     protected override void CollectAudioTriggerValues(System.Guid playerId, Turn turn, AudioTriggerValues values)
     {
         base.CollectAudioTriggerValues(playerId, turn, values);
 
-        if (turn != null)
-            values.hits = turn.GetThrows().Count(t => t.IsTargetHit);
+        values.hits = validThrowsInTurn;
 
         if (playerStats.TryGetValue(playerId, out var stats) && stats is GameStatsATC atc)
             values.streak = atc.currentHitStreak;
@@ -747,15 +761,31 @@ public class ATCGame : Game
 
     private void FinalizeVisit(Guid playerId, bool isPlayerSwitch)
     {
-        CheckTurnPenalties(playerId, currentTurn);
+        EvaluateCustomTurnPenalties(playerId, currentTurn);
+        EvaluateCustomRemainingPenalties(playerId, currentTurn);
+        EvaluateCustomAudioEvents(playerId, currentTurn, IsNonHitsAudioEvent);
 
         lastVisitHits[playerId] = validThrowsInTurn;
 
         if (isPlayerSwitch)
-        {
-            OnATCTurnCompleted?.Invoke(playerId, validThrowsInTurn);
-        }
+            AnnounceVisitCompleted(playerId, validThrowsInTurn);
     }
+
+    /// <summary>
+    /// Zahl → Hits-Sound. Läuft beim Spielerwechsel und beim Leg-Wechsel
+    /// (nicht am Match-Ende), damit der Hits-Sound nie vor der Zahl liegt.
+    /// </summary>
+    private void AnnounceVisitCompleted(Guid playerId, int hits)
+    {
+        OnATCTurnCompleted?.Invoke(playerId, hits);
+        EvaluateCustomAudioEvents(playerId, currentTurn, IsHitsAudioEvent);
+    }
+
+    private static bool IsHitsAudioEvent(AudioEventDef def)
+        => def?.triggers != null && def.triggers.Count > 0 && def.triggers.FirstOrDefault().kind == AudioEventTriggerKind.HitsInTurnThreshold;
+
+    private static bool IsNonHitsAudioEvent(AudioEventDef def)
+        => !IsHitsAudioEvent(def);
 
     private bool IsValidThrow(Throw thr, Guid playerId)
     {

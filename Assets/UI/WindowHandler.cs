@@ -20,6 +20,7 @@ public class WindowHandler : MonoBehaviour
 
     [Header("Popup")]
     public UIScreen activePopup;
+    [SerializeField] private LeavingPopup leavingPopup;
 
     [Header("Quick Menu")]
     [SerializeField] private RectTransform quickMenuPanel;
@@ -313,11 +314,26 @@ public class WindowHandler : MonoBehaviour
         if (Time.unscaledTime - lastBackPressedAt <= doubleBackExitWindow)
         {
             lastBackPressedAt = -100f;
-            Application.Quit();
+            ShowLeavingPopup();
             return;
         }
 
         lastBackPressedAt = Time.unscaledTime;
+    }
+
+    private void ShowLeavingPopup()
+    {
+        if (leavingPopup == null)
+            leavingPopup = GetComponentInChildren<LeavingPopup>(true);
+
+        if (leavingPopup == null)
+        {
+            Debug.LogError("LeavingPopup nicht gefunden. Anwendung wird beendet.");
+            Application.Quit();
+            return;
+        }
+
+        leavingPopup.Show(this);
     }
 
     private bool TryCloseScreenOverlay()

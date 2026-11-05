@@ -106,10 +106,9 @@ public class ATCGameEngine : GameEngine
     private void HandleTurnCompleted(Guid playerId, int validThrows)
     {
         audioManager.PlayScore(validThrows);
-        // Kein expliziter Hits-Sound mehr: Hits feuert als Custom-Event
-        // (atc_hits, Default ≥ 1) über die Turn-Auswertung und bleibt damit
-        // im Editor anpassbar. Miss-Turns (0 Hits) bleiben stumm — vorher
-        // spielte dort der Default-Sound; per Schwelle 0 rückholbar.
+        // Kein expliziter Hits-Sound hier: Hits feuert als Custom-Event
+        // (atc_hits, Default ≥ 1) in der Visit-Auswertung NACH dieser Zahl.
+        // Miss-Turns (0 Hits) bleiben stumm — per Schwelle 0 rückholbar.
     }
 
     public void OnClickContinueFromPause()

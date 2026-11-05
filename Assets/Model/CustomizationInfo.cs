@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 
 /// <summary>
 /// Builds short English "info" descriptions for customization rows from the
@@ -12,46 +13,63 @@ public static class CustomizationInfo
 {
     public static string BuildPenalty(CustomPenaltyDef def)
     {
-        if (def?.condition == null)
+        if (def?.conditions == null || def.conditions.Count == 0)
             return "Penalty";
 
-        var c = def.condition;
-        switch (c.kind)
+        var parts = new List<string>(def.conditions.Count);
+        foreach (var c in def.conditions)
         {
-            case PenaltyConditionKind.HitTypeMiss:
-                return c.hitType switch
-                {
-                    HitType.Wall => "Penalty on wall hit",
-                    HitType.Ceiling => "Penalty on ceiling hit",
-                    HitType.Custom => "Penalty on custom miss",
-                    _ => $"Penalty on {c.hitType}"
-                };
+            if (c == null)
+                continue;
 
-            case PenaltyConditionKind.ExactScore:
-                return $"Turn score: {c.score}";
+            switch (c.kind)
+            {
+                case PenaltyConditionKind.HitTypeMiss:
+                    parts.Add(c.hitType switch
+                    {
+                        HitType.Wall => "Penalty on wall hit",
+                        HitType.Ceiling => "Penalty on ceiling hit",
+                        HitType.Custom => "Penalty on custom miss",
+                        _ => $"Penalty on {c.hitType}"
+                    });
+                    break;
 
-            case PenaltyConditionKind.RemainingExactScore:
-                return $"Reach exact score: {c.score}";
+                case PenaltyConditionKind.ExactScore:
+                    parts.Add($"Turn score: {c.score}");
+                    break;
 
-            case PenaltyConditionKind.RepdigitScore:
-                return $"Repdigit turn score \u2265 {c.minScore}";
+                case PenaltyConditionKind.RemainingExactScore:
+                    parts.Add($"Reach exact score: {c.score}");
+                    break;
 
-            case PenaltyConditionKind.TurnPattern:
-                return $"Turn: {DescribePattern(c.pattern)}"
-                    + (c.matchOrder ? " (in order)" : " (any order)");
+                case PenaltyConditionKind.RepdigitScore:
+                    parts.Add($"Repdigit turn score \u2265 {c.minScore}");
+                    break;
 
-            case PenaltyConditionKind.LegLost:
-                return "When a leg is lost";
+                case PenaltyConditionKind.TurnPattern:
+                    parts.Add($"Turn: {DescribePattern(c.pattern)}"
+                        + (c.matchOrder ? " (in order)" : " (any order)"));
+                    break;
 
-            case PenaltyConditionKind.SetLost:
-                return "When a set is lost";
+                case PenaltyConditionKind.LegLost:
+                    parts.Add("When a leg is lost");
+                    break;
 
-            case PenaltyConditionKind.GameLost:
-                return "When the game is lost";
+                case PenaltyConditionKind.SetLost:
+                    parts.Add("When a set is lost");
+                    break;
 
-            default:
-                return "Penalty";
+                case PenaltyConditionKind.GameLost:
+                    parts.Add("When the game is lost");
+                    break;
+
+                default:
+                    parts.Add("Penalty");
+                    break;
+            }
         }
+
+        return parts.Count > 0 ? string.Join("; ", parts) : "Penalty";
     }
 
     public static string BuildSector(CustomHitDef def)
@@ -80,37 +98,53 @@ public static class CustomizationInfo
 
     public static string BuildAudioEvent(AudioEventDef def)
     {
-        if (def?.trigger == null)
+        if (def?.triggers == null || def.triggers.Count == 0)
             return "Manual event";
 
-        var t = def.trigger;
-        switch (t.kind)
+        var parts = new List<string>(def.triggers.Count);
+        foreach (var t in def.triggers)
         {
-            case AudioEventTriggerKind.Manual:
-                return ManualInfo(def.id);
+            if (t == null)
+                continue;
 
-            case AudioEventTriggerKind.ScoreReached:
-                return $"Reach exact score: {t.score}";
+            switch (t.kind)
+            {
+                case AudioEventTriggerKind.Manual:
+                    parts.Add(ManualInfo(def.id));
+                    break;
 
-            case AudioEventTriggerKind.TurnPattern:
-                return $"Turn: {DescribePattern(t.pattern)}"
-                    + (t.matchOrder ? " (in order)" : " (any order)");
+                case AudioEventTriggerKind.ScoreReached:
+                    parts.Add($"Reach exact score: {t.score}");
+                    break;
 
-            case AudioEventTriggerKind.MarksThreshold:
-                return $"Marks \u2265 {t.threshold}";
+                case AudioEventTriggerKind.TurnPattern:
+                    parts.Add($"Turn: {DescribePattern(t.pattern)}"
+                        + (t.matchOrder ? " (in order)" : " (any order)"));
+                    break;
 
-            case AudioEventTriggerKind.PointsReached:
-                return $"Points \u2265 {t.threshold}";
+                case AudioEventTriggerKind.MarksThreshold:
+                    parts.Add($"Marks \u2265 {t.threshold}");
+                    break;
 
-            case AudioEventTriggerKind.HitsInTurnThreshold:
-                return $"Hits per turn \u2265 {t.threshold}";
+                case AudioEventTriggerKind.PointsReached:
+                    parts.Add($"Points \u2265 {t.threshold}");
+                    break;
 
-            case AudioEventTriggerKind.StreakReached:
-                return $"Streak \u2265 {t.threshold}";
+                case AudioEventTriggerKind.HitsInTurnThreshold:
+                    parts.Add($"Hits per turn \u2265 {t.threshold}");
+                    break;
 
-            default:
-                return "Manual event";
+                case AudioEventTriggerKind.StreakReached:
+                    parts.Add($"Streak \u2265 {t.threshold}");
+                    break;
+
+                default:
+                    parts.Add("Manual event");
+                    break;
+            }
         }
+
+        return parts.Count > 0 ? string.Join("; ", parts) : "Manual event";
     }
 
     /// <summary>Fixed functional descriptions for built-in manual events.</summary>
@@ -121,6 +155,8 @@ public static class CustomizationInfo
             case "menu_undo": return "Sound on undo";
             case "menu_matchwon": return "Sound when the match is won";
             case "menu_startgame": return "Sound at match start";
+            case "menu_leg_end": return "Sound when a leg ends";
+            case "menu_set_end": return "Sound when a set ends";
             case "x01_bust": return "Sound when overthrow (bust)";
             case "x01_suddendeath": return "Sound on sudden death";
             case "cricket_marks": return "Sound after Cricket marks";

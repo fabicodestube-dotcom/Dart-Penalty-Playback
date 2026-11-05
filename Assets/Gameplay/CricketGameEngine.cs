@@ -133,16 +133,16 @@ public class CricketGameEngine : GameEngine
         // (Legacy-)Penalties sind stillgelegt; Customs feuern über
         // OnCustomPenaltyTriggered (HandleCustomPenaltyAudio), Specials
         // (z.B. White Horse) über OnCustomAudioEvent — beide vor diesem
-        // Hook. Reihenfolge hier: erst Turn-Score, dann Marks-Ansage.
+        // Hook. Reihenfolge hier: Marks-Anzahl, Punkte, dann Marks-Event.
         if (result.Hits.Count > 0)
         {
-            // Score
+            // Marks: Zahl ansagen, dann Punkte, dann Marks-Event (Custom, Seed cricket_marks).
+            int totalMarks = result.Hits.Sum(h => h.EffectiveMarks);
+            audioManager.PlayScore(totalMarks);
+
             if (result.TurnScore > 0)
                 audioManager.PlayScore(result.TurnScore);
 
-            // Marks: Zahl ansagen, dann Marks-Event (Custom, Seed cricket_marks).
-            int totalMarks = result.Hits.Sum(h => h.EffectiveMarks);
-            audioManager.PlayScore(totalMarks);
             PlayManualAudioEvent(SeededAudioEvents.MarksId);
         }
 

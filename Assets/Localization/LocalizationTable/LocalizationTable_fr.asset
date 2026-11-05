@@ -839,20 +839,19 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 33805706080505886
-    m_Localized: "Supprimer la p\xE9nalit\xE9 \xAB {0} \xBB ?"
+    m_Localized: "Supprimer la p\xE9nalit\xE9 {0} ?"
     m_Metadata:
       m_Items: []
   - m_Id: 33805706080505887
-    m_Localized: "Supprimer l\u2019\xE9v\xE9nement audio \xAB {0} \xBB ?"
+    m_Localized: "Supprimer l\u2019\xE9v\xE9nement audio {0} ?"
     m_Metadata:
       m_Items: []
   - m_Id: 33805706080505888
-    m_Localized: "Supprimer la zone cible \xAB {0} \xBB ?"
+    m_Localized: "Supprimer la zone cible {0} ?"
     m_Metadata:
       m_Items: []
   - m_Id: 33805706080505889
-    m_Localized: "Supprimer la zone cible \xAB {0} \xBB ? Utilis\xE9e par les p\xE9nalit\xE9s
-      : {1}. Celles-ci seront aussi supprim\xE9es."
+    m_Localized: "Supprimer la zone cible {0} ? Utilisée par les pénalités : {1}. Celles-ci et leurs clips audio seront aussi supprimés."
     m_Metadata:
       m_Items: []
   - m_Id: 33805706080505890
@@ -1295,6 +1294,42 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 33806894813368322
     m_Localized: Citron vert
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368323
+    m_Localized: Le nom est requis.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368324
+    m_Localized: Veuillez saisir un nombre valide.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368325
+    m_Localized: Veuillez sélectionner une zone cible.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368326
+    m_Localized: Impossible d'enregistrer. Vérifiez vos saisies.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368327
+    m_Localized: Voulez-vous quitter l'application ?
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368328
+    m_Localized: "Zone cible supprimée ({0})"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368329
+    m_Localized: "Schnapszahl"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368330
+    m_Localized: "Aucun déclencheur"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368331
+    m_Localized: "Manuel"
     m_Metadata:
       m_Items: []
   references:

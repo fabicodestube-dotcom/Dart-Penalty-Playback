@@ -1,5 +1,6 @@
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 /// <summary>
 /// Editor-Popup für Treffer-Bereiche (Tab 1): neu + custom-edit + built-in-edit
@@ -23,16 +24,30 @@ public class SectorEditorPopup : UIScreen, IUIScreen
     [Header("Basis")]
     public TMP_InputField nameInput;
     public CustomToggle enabledToggle;
+    public Button deleteButton;
 
     [Header("Wert (nur Custom-Sektoren)")]
     public TMP_Dropdown valueDropdown;
     public TMP_Dropdown multiplierDropdown;
+
+    [Header("Fehleranzeige")]
+    public GameObject errorPanel;
+    public TMP_Text errorText;
+    public Image nameOutline;
+
+    private static readonly Color ErrorOutlineColor = new Color(0.85f, 0.2f, 0.2f, 1f);
+
+    private Color nameOutlineColor = Color.white;
+
+    private bool isLoading;
+    private bool editingNew;
 
     private string editingId;
     private bool editingBuiltIn;
 
     private string pendingDeleteId;
     private string editingName;
+    private bool deleteOnlyMode;
 
     private void OnValidate()
     {
@@ -55,13 +70,19 @@ public class SectorEditorPopup : UIScreen, IUIScreen
 
         if (sectorsPage == null)
             sectorsPage = FindAnyObjectByType<CustomizationSectorsPage>();
+
+        if (nameInput != null)
+            nameInput.onValueChanged.AddListener(_ => RefreshValidation());
+
+        CaptureOutlineDefaults();
+        HideError();
     }
 
     public void OnShow()
     {
         SetConfirmView(false);
         pendingDeleteId = null;
-        editingName = null;
+        deleteOnlyMode = false;
     }
 
     public void OnHide()
@@ -75,8 +96,13 @@ public class SectorEditorPopup : UIScreen, IUIScreen
         var fresh = CustomHitDef.CreateNew();
         editingId = fresh.id;
         editingBuiltIn = false;
+        editingNew = true;
 
+        isLoading = true;
         LoadDef(fresh.name, true);
+        isLoading = false;
+        RefreshDeleteButton();
+        RefreshValidation();
         ShowViaWindowHandler();
     }
 
@@ -90,9 +116,48 @@ public class SectorEditorPopup : UIScreen, IUIScreen
 
         editingId = def.id;
         editingBuiltIn = def.builtIn;
+        editingNew = false;
 
+        isLoading = true;
         LoadDef(def.name, def.enabled);
+        isLoading = false;
+        RefreshDeleteButton();
+        RefreshValidation();
         ShowViaWindowHandler();
+    }
+
+    /// <summary>
+    /// Öffnet nur die Löschbestätigung (z. B. aus der Listen-Row), ohne den
+    /// Editor-Hauptbereich zu zeigen.
+    /// </summary>
+    public void ShowDeleteConfirm(CustomizationSectorsPage page, string id)
+    {
+        sectorsPage = page != null ? page : sectorsPage;
+
+        var def = CustomizationStore.GetHitSectors().Find(x => x != null && x.id == id);
+        if (def == null || def.builtIn || CustomHitDef.IsBuiltInSector(id))
+            return;
+
+        editingId = def.id;
+        editingBuiltIn = def.builtIn;
+        editingNew = false;
+        pendingDeleteId = def.id;
+        deleteOnlyMode = true;
+
+        isLoading = true;
+        LoadDef(def.name, def.enabled);
+        isLoading = false;
+        RefreshDeleteButton();
+        HideError();
+
+        // ShowPopup ruft OnShow() synchron auf und setzt den Zustand zurück.
+        // Deshalb Bestätigungszustand erst danach setzen.
+        ShowViaWindowHandler();
+
+        pendingDeleteId = def.id;
+        deleteOnlyMode = true;
+        SetDeleteConfirmText(string.IsNullOrWhiteSpace(def.name) ? def.id : def.name);
+        SetConfirmView(true);
     }
 
     private void ShowViaWindowHandler()
@@ -184,16 +249,105 @@ public class SectorEditorPopup : UIScreen, IUIScreen
             CloseAndRefresh();
     }
 
+    private bool ValidateForSave(out Image invalidOutline, out string error)
+    {
+        invalidOutline = null;
+        error = null;
+
+        string name = nameInput != null ? nameInput.text.Trim() : "";
+        if (string.IsNullOrEmpty(name))
+        {
+            invalidOutline = nameOutline;
+            error = LocalizationText.Get("Name_required", "Name is required.");
+            return false;
+        }
+
+        if (CustomizationStore.IsHitSectorNameTaken(name, editingId))
+        {
+            invalidOutline = nameOutline;
+            error = LocalizationText.Get("Name_taken", "Name is already taken.");
+            return false;
+        }
+
+        return true;
+    }
+
+    private void RefreshValidation()
+    {
+        if (isLoading)
+            return;
+
+        if (ValidateForSave(out Image invalidOutline, out string error))
+            HideError();
+        else
+            ShowError(error, invalidOutline);
+    }
+
+    private void ShowError(string message, Image invalidOutline)
+    {
+        if (string.IsNullOrEmpty(message))
+        {
+            HideError();
+            return;
+        }
+
+        RestoreOutline(nameOutline, nameOutlineColor);
+        if (invalidOutline != null)
+            invalidOutline.color = ErrorOutlineColor;
+        if (errorText != null)
+            errorText.text = message;
+        if (errorPanel != null)
+            errorPanel.SetActive(true);
+    }
+
+    private void HideError()
+    {
+        RestoreOutline(nameOutline, nameOutlineColor);
+        if (errorText != null)
+            errorText.text = "";
+        if (errorPanel != null)
+            errorPanel.SetActive(false);
+    }
+
+    private void CaptureOutlineDefaults()
+    {
+        if (nameOutline != null)
+            nameOutlineColor = nameOutline.color;
+    }
+
+    private static void RestoreOutline(Image outline, Color color)
+    {
+        if (outline != null)
+            outline.color = color;
+    }
+
+    private void RefreshDeleteButton()
+    {
+        bool canDelete = !editingNew
+            && !editingBuiltIn
+            && !string.IsNullOrEmpty(editingId)
+            && !CustomHitDef.IsBuiltInSector(editingId);
+
+        if (deleteButton == null)
+            return;
+
+        deleteButton.interactable = canDelete;
+        deleteButton.gameObject.SetActive(canDelete);
+    }
+
     /// <summary>
     /// Speichert den aktuellen Stand, ohne das Popup zu schließen. Wird auch
     /// vom Recorder genutzt, damit neue Einträge vor dem ClipBrowser existieren.
     /// </summary>
     private bool TrySave()
     {
-        string name = nameInput != null ? nameInput.text.Trim() : "";
-        if (string.IsNullOrEmpty(name))
+        if (!ValidateForSave(out Image invalidOutline, out string error))
+        {
+            ShowError(error, invalidOutline);
             return false;
+        }
 
+        string name = nameInput != null ? nameInput.text.Trim() : "";
         bool enabled = enabledToggle == null || enabledToggle.IsActive();
 
         // Wert/Multiplier nur für Custom-Sektoren (built-ins bleiben 0/Single).
@@ -233,11 +387,7 @@ public class SectorEditorPopup : UIScreen, IUIScreen
             }
         }
 
-        // Namen sind pro Bereich eindeutig (eigene ID ausgenommen).
-        if (CustomizationStore.IsHitSectorNameTaken(name, editingId))
-            return false;
-
-        CustomizationStore.SaveHitSector(new CustomHitDef
+        if (!CustomizationStore.SaveHitSector(new CustomHitDef
         {
             id = editingId,
             name = name,
@@ -245,8 +395,13 @@ public class SectorEditorPopup : UIScreen, IUIScreen
             builtIn = editingBuiltIn,
             value = value,
             multiplier = multiplier
-        });
+        }))
+        {
+            ShowError(LocalizationText.Get("Save_failed", "Could not save. Please check your input."), null);
+            return false;
+        }
 
+        HideError();
         editingName = name;
 
         // Direkt-Refresh der eigenen Liste (sofort sichtbar, siehe PenaltyEditorPopup).
@@ -273,21 +428,19 @@ public class SectorEditorPopup : UIScreen, IUIScreen
 
     public void OnClickDelete()
     {
-        if (editingBuiltIn)
+        if (editingNew || editingBuiltIn || CustomHitDef.IsBuiltInSector(editingId))
             return;
         if (string.IsNullOrEmpty(editingId))
             return;
 
         pendingDeleteId = editingId;
+        deleteOnlyMode = false;
 
-        var usage = CustomizationStore.GetPenaltyUsageCount(editingId);
-        if (confirmText != null)
-        {
-            confirmText.text = usage > 0
-                ? LocalizationText.Format("Delete_sector_named_usage", "Delete target area “{0}”? Used by penalties: {1}. These will also be deleted.", editingName, usage)
-                : LocalizationText.Format("Delete_sector_named", "Delete target area “{0}”?", editingName);
-        }
+        string displayName = nameInput != null && !string.IsNullOrWhiteSpace(nameInput.text)
+            ? nameInput.text.Trim()
+            : editingName;
 
+        SetDeleteConfirmText(string.IsNullOrWhiteSpace(displayName) ? editingId : displayName);
         SetConfirmView(true);
     }
 
@@ -299,14 +452,20 @@ public class SectorEditorPopup : UIScreen, IUIScreen
             return;
         }
 
-        CustomizationStore.DeletePenaltiesUsingSector(pendingDeleteId);
-        CustomizationStore.DeleteHitSector(pendingDeleteId);
+        var def = CustomizationStore.GetHitSectors().Find(x => x != null && x.id == pendingDeleteId);
+        if ((def != null && def.builtIn) || CustomHitDef.IsBuiltInSector(pendingDeleteId))
+        {
+            ResetDeleteState();
+            SetConfirmView(false);
+            return;
+        }
+
+        CustomizationStore.DeleteHitSectorWithPenalties(pendingDeleteId);
 
         sectorsPage?.Refresh();
 
         SetConfirmView(false);
-        pendingDeleteId = null;
-        editingName = null;
+        ResetDeleteState();
 
         CloseAndRefresh();
     }
@@ -314,8 +473,38 @@ public class SectorEditorPopup : UIScreen, IUIScreen
     public void CancelDelete()
     {
         SetConfirmView(false);
+
+        bool closePopup = deleteOnlyMode;
+        ResetDeleteState();
+
+        if (closePopup)
+            CloseAndRefresh();
+    }
+
+    private void SetDeleteConfirmText(string displayName)
+    {
+        var penaltyNames = CustomizationStore.GetPenaltyNamesUsingSector(pendingDeleteId);
+
+        if (confirmText == null)
+            return;
+
+        confirmText.text = penaltyNames.Count > 0
+            ? LocalizationText.Format(
+                "Delete_sector_named_usage",
+                "Delete target area {0}? Used by penalties: {1}. These and their audio clips will also be deleted.",
+                displayName,
+                string.Join(", ", penaltyNames))
+            : LocalizationText.Format(
+                "Delete_sector_named",
+                "Delete target area {0}?",
+                displayName);
+    }
+
+    private void ResetDeleteState()
+    {
         pendingDeleteId = null;
         editingName = null;
+        deleteOnlyMode = false;
     }
 
     private void SetConfirmView(bool confirm)

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Newtonsoft.Json;
 using UnityEditor;
 using UnityEngine;
@@ -120,7 +121,7 @@ public static class CustomPenaltyEnabledTest
             enabled = enabled,
             cost = 10,
             builtIn = false,
-            condition = new PenaltyCondition { kind = PenaltyConditionKind.ExactScore, score = 111 }
+            conditions = new List<PenaltyCondition> { new PenaltyCondition { kind = PenaltyConditionKind.ExactScore, score = 111 } }
         };
     }
 
@@ -133,7 +134,7 @@ public static class CustomPenaltyEnabledTest
             enabled = enabled,
             cost = 10,
             builtIn = false,
-            condition = new PenaltyCondition { kind = PenaltyConditionKind.RemainingExactScore, score = 111 }
+            conditions = new List<PenaltyCondition> { new PenaltyCondition { kind = PenaltyConditionKind.RemainingExactScore, score = 111 } }
         };
     }
 
@@ -146,7 +147,7 @@ public static class CustomPenaltyEnabledTest
             enabled = enabled,
             cost = 5,
             builtIn = false,
-            condition = new PenaltyCondition { kind = PenaltyConditionKind.HitTypeMiss, hitType = HitType.Wall }
+            conditions = new List<PenaltyCondition> { new PenaltyCondition { kind = PenaltyConditionKind.HitTypeMiss, hitType = HitType.Wall } }
         };
     }
 
@@ -160,7 +161,7 @@ public static class CustomPenaltyEnabledTest
             builtIn = false,
             enabled = enabled,
             category = category,
-            trigger = new AudioEventTrigger { kind = AudioEventTriggerKind.ScoreReached, score = score }
+            triggers = new List<AudioEventTrigger> { new AudioEventTrigger { kind = AudioEventTriggerKind.ScoreReached, score = score } }
         };
     }
 
@@ -306,7 +307,7 @@ public static class CustomPenaltyEnabledTest
                 builtIn = false,
                 enabled = enabled,
                 category = AudioEventCategory.X01,
-                trigger = new AudioEventTrigger { kind = AudioEventTriggerKind.ScoreReached, score = 90 }
+                triggers = new List<AudioEventTrigger> { new AudioEventTrigger { kind = AudioEventTriggerKind.ScoreReached, score = 90 } }
             };
         }
 
@@ -655,11 +656,14 @@ public static class CustomPenaltyEnabledTest
             enabled = enabled,
             cost = 7,
             builtIn = false,
-            condition = new PenaltyCondition
+            conditions = new List<PenaltyCondition>
             {
-                kind = PenaltyConditionKind.HitTypeMiss,
-                hitType = HitType.Custom,
-                customHitId = sectorId
+                new PenaltyCondition
+                {
+                    kind = PenaltyConditionKind.HitTypeMiss,
+                    hitType = HitType.Custom,
+                    customHitId = sectorId
+                }
             }
         };
     }
@@ -727,7 +731,7 @@ public static class CustomPenaltyEnabledTest
                 name = "Manual",
                 enabled = enabled,
                 category = category,
-                trigger = new AudioEventTrigger { kind = kind }
+                triggers = new List<AudioEventTrigger> { new AudioEventTrigger { kind = kind } }
             };
         }
 
@@ -770,8 +774,8 @@ public static class CustomPenaltyEnabledTest
         var restored = JsonConvert.DeserializeObject<List<CustomPenaltyDef>>(json);
 
         Check(restored != null && restored.Count == 1
-            && restored[0].condition != null
-            && restored[0].condition.customHitId == "sec1",
+            && restored[0].conditions != null && restored[0].conditions.Count > 0
+            && restored[0].conditions.FirstOrDefault().customHitId == "sec1",
             "custom-sector-snapshot-json", json);
 
         var p1 = new Player(Guid.NewGuid(), "T_P1");
@@ -781,7 +785,7 @@ public static class CustomPenaltyEnabledTest
         game.RestorePenaltySnapshot(restored);
 
         var snapshot = game.GetPenaltySnapshot();
-        Check(snapshot.Count == 1 && snapshot[0].condition.customHitId == "sec1",
+        Check(snapshot.Count == 1 && snapshot[0].conditions != null && snapshot[0].conditions.Count > 0 && snapshot[0].conditions.FirstOrDefault().customHitId == "sec1",
             "custom-sector-snapshot-restored", "");
     }
 

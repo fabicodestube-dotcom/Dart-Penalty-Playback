@@ -1,18 +1,15 @@
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 /// <summary>
-/// Editor-Popup für Audio-Events (Tab 3). Seeds (builtIn) sind nicht
-/// löschbar, aber enabled-/trigger-editierbar; Customs frei editierbar.
-/// Ein Kategorie-Dropdown (Global/X01/Cricket/ATC, Code füllt die Optionen)
-/// schaltet die Trigger-Art um; die Trigger-Gruppen (score/threshold/
-/// pattern) folgen der gewählten Kombination. Manual-Trigger (Seeds wie
-/// Undo/Bust/Marks) bleiben beim Editieren erhalten (kein Dropdown-Eintrag).
-/// Kategorie ist beim Anlegen UND beim Editieren änderbar (die Page hängt
-/// die Row per SetParent um). Buttons: Save → OnClickSave(),
-/// Cancel → OnClickCancel(). Ist ein UIScreen (id Popup) und zeigt sich
-/// über den WindowHandler an (analog zu PenaltyEditorPopup).
+/// Editor-Popup für Audio-Events (Tab 3). Hauptpanel zeigt eine Liste aller
+/// Triggern. Über „Neu“ und „Bearbeiten“ öffnet sich das Trigger-Panel
+/// (einzelner Trigger-Editor). Ein Event ohne Trigger wird beim Speichern
+/// automatisch deaktiviert. Built-ins haben eine feste Triggerliste.
 /// </summary>
 public class AudioEventEditorPopup : UIScreen, IUIScreen
 {
@@ -25,23 +22,46 @@ public class AudioEventEditorPopup : UIScreen, IUIScreen
     public GameObject confirmPanel;
     public TMP_Text confirmText;
 
+    [Header("Trigger-Liste (MainPanel)")]
+    public Transform triggerListContent;
+    public GameObject triggerRowPrefab;
+    public Button newTriggerButton;
+
+    [Header("Trigger-Editor (Trigger-Panel)")]
+    public GameObject triggerPanel;
+    public TMP_Dropdown triggerKindDropdown;
+    public TMP_InputField scoreInput;
+    public TMP_InputField thresholdInput;
+    public TurnPatternEditor patternEditor;
+    public GameObject scoreGroup;
+    public GameObject thresholdGroup;
+    public GameObject patternGroup;
+    public Button saveTriggerButton;
+    public Button backToListButton;
+
     [Header("Basis")]
     public TMP_InputField nameInput;
     public TMP_Dropdown categoryDropdown;
     [Tooltip("Legacy-Anzeige (wird nur noch mitbeschriftet, falls verdrahtet).")]
     public TMP_Text categoryLabel;
     public CustomToggle enabledToggle;
+    public Button deleteButton;
 
-    [Header("Trigger")]
-    public TMP_Dropdown triggerKindDropdown;
-    public TMP_InputField scoreInput;
-    public TMP_InputField thresholdInput;
-    public TurnPatternEditor patternEditor;
+    [Header("Fehleranzeige")]
+    public GameObject errorPanel;
+    public TMP_Text errorText;
+    public Image nameOutline;
+    public Image scoreOutline;
+    public Image thresholdOutline;
 
-    [Header("Gruppen (Umschalter Sichtbarkeit)")]
-    public GameObject scoreGroup;
-    public GameObject thresholdGroup;
-    public GameObject patternGroup;
+    private static readonly Color ErrorOutlineColor = new Color(0.85f, 0.2f, 0.2f, 1f);
+
+    private Color nameOutlineColor = Color.white;
+    private Color scoreOutlineColor = Color.white;
+    private Color thresholdOutlineColor = Color.white;
+
+    private bool isLoading;
+    private bool editingNew;
 
     private string editingId;
     private AudioEventCategory editingCategory;
@@ -49,6 +69,9 @@ public class AudioEventEditorPopup : UIScreen, IUIScreen
     private bool editingManual;
     private string pendingDeleteId;
     private string editingName;
+
+    private int? editingTriggerIndex;
+    private List<AudioEventTrigger> workingTriggers;
 
     // Dropdown-Reihenfolge = Enum-Reihenfolge (Global=0, X01=1, Cricket=2, ATC=3).
     private void OnValidate()
@@ -78,27 +101,130 @@ public class AudioEventEditorPopup : UIScreen, IUIScreen
             categoryDropdown.ClearOptions();
             categoryDropdown.AddOptions(new List<string>
             {
-                LocalizationText.Get("Global", "Global"), "X01", "Cricket", "ATC"
+                CategoryDisplayName(AudioEventCategory.Global),
+                CategoryDisplayName(AudioEventCategory.X01),
+                CategoryDisplayName(AudioEventCategory.Cricket),
+                CategoryDisplayName(AudioEventCategory.ATC)
             });
             categoryDropdown.onValueChanged.AddListener(_ => OnCategoryChanged());
         }
 
-        if (triggerKindDropdown != null)
-            triggerKindDropdown.onValueChanged.AddListener(_ => UpdateTriggerGroups());
+        if (newTriggerButton != null)
+            newTriggerButton.onClick.AddListener(() => OnNewTrigger());
+
+        if (saveTriggerButton != null)
+            saveTriggerButton.onClick.AddListener(OnSaveTrigger);
+
+        if (backToListButton != null)
+            backToListButton.onClick.AddListener(ShowTriggerList);
+
+        if (patternEditor != null)
+            patternEditor.SelectionChanged += RefreshValidation;
+
+        if (nameInput != null)
+            nameInput.onValueChanged.AddListener(_ => RefreshValidation());
+        if (scoreInput != null)
+            scoreInput.onValueChanged.AddListener(_ => RefreshValidation());
+        if (thresholdInput != null)
+            thresholdInput.onValueChanged.AddListener(_ => RefreshValidation());
+
+        CaptureOutlineDefaults();
+        HideError();
+    }
+
+    private void CaptureOutlineDefaults()
+    {
+        if (nameOutline != null)
+            nameOutlineColor = nameOutline.color;
+        if (scoreOutline != null)
+            scoreOutlineColor = scoreOutline.color;
+        if (thresholdOutline != null)
+            thresholdOutlineColor = thresholdOutline.color;
+    }
+
+    private void ClearOutlines()
+    {
+        RestoreOutline(nameOutline, nameOutlineColor);
+        RestoreOutline(scoreOutline, scoreOutlineColor);
+        RestoreOutline(thresholdOutline, thresholdOutlineColor);
+    }
+
+    private static void RestoreOutline(Image outline, Color color)
+    {
+        if (outline != null)
+            outline.color = color;
+    }
+
+    private void ShowError(string message, Image invalidOutline)
+    {
+        if (string.IsNullOrEmpty(message))
+        {
+            HideError();
+            return;
+        }
+
+        ClearOutlines();
+        if (invalidOutline != null)
+            invalidOutline.color = ErrorOutlineColor;
+        if (errorText != null)
+            errorText.text = message;
+        if (errorPanel != null)
+            errorPanel.SetActive(true);
+    }
+
+    private void HideError()
+    {
+        ClearOutlines();
+        if (errorText != null)
+            errorText.text = "";
+        if (errorPanel != null)
+            errorPanel.SetActive(false);
+    }
+
+    private void ShowViaWindowHandler()
+    {
+        if (windowHandler != null)
+            windowHandler.ShowPopup(this);
+        else
+            gameObject.SetActive(true);
+    }
+
+    private void RefreshDeleteButton()
+    {
+        bool canDelete = !editingNew && !editingBuiltIn && !string.IsNullOrEmpty(editingId);
+
+        if (deleteButton == null)
+            return;
+
+        deleteButton.interactable = canDelete;
+        deleteButton.gameObject.SetActive(canDelete);
     }
 
     public void OnShow()
     {
         SetConfirmView(false);
         pendingDeleteId = null;
-        editingName = null;
+
+        if (editingNew)
+        {
+            ShowTriggerEditor();
+        }
+        else
+        {
+            ShowTriggerList();
+        }
     }
 
     public void OnHide()
     {
     }
 
-    /// <summary>Single-Button-Einstieg (Szene): Kategorie wählt man im Popup.</summary>
+    private void OnDestroy()
+    {
+        if (patternEditor != null)
+            patternEditor.SelectionChanged -= RefreshValidation;
+    }
+
     public void ShowNew(CustomizationAudioEventsPage page)
     {
         ShowNew(page, AudioEventCategory.Global);
@@ -111,8 +237,15 @@ public class AudioEventEditorPopup : UIScreen, IUIScreen
         editingId = System.Guid.NewGuid().ToString("N");
         editingBuiltIn = false;
         editingManual = false;
+        editingNew = true;
+        workingTriggers = new List<AudioEventTrigger> { new AudioEventTrigger { kind = AudioEventTriggerKind.ScoreReached } };
+        editingTriggerIndex = null;
 
-        LoadDef("New event", true, TriggerForCategory(category, 0), new AudioEventTrigger());
+        isLoading = true;
+        ShowTriggerList();
+        isLoading = false;
+        RefreshDeleteButton();
+        RefreshValidation();
         ShowViaWindowHandler();
     }
 
@@ -126,18 +259,26 @@ public class AudioEventEditorPopup : UIScreen, IUIScreen
         editingCategory = def.category;
         editingId = def.id;
         editingBuiltIn = def.builtIn;
-        editingManual = def.trigger != null && def.trigger.kind == AudioEventTriggerKind.Manual;
+        editingManual = def.triggers != null && def.triggers.Count > 0 && def.triggers.FirstOrDefault().kind == AudioEventTriggerKind.Manual;
+        editingNew = false;
+        workingTriggers = def.triggers != null
+            ? def.triggers.Select(t => new AudioEventTrigger
+            {
+                kind = t.kind,
+                score = t.score,
+                threshold = t.threshold,
+                matchOrder = t.matchOrder,
+                pattern = t.pattern != null ? new List<TurnPatternEntry>(t.pattern) : new List<TurnPatternEntry>()
+            }).ToList()
+            : new List<AudioEventTrigger> { new AudioEventTrigger() };
+        editingTriggerIndex = null;
 
-        LoadDef(def.name, def.enabled, def.trigger.kind, def.trigger);
+        isLoading = true;
+        ShowTriggerList();
+        isLoading = false;
+        RefreshDeleteButton();
+        RefreshValidation();
         ShowViaWindowHandler();
-    }
-
-    private void ShowViaWindowHandler()
-    {
-        if (windowHandler != null)
-            windowHandler.ShowPopup(this);
-        else
-            gameObject.SetActive(true);
     }
 
     /// <summary>Aktuelle Kategorie (Dropdown gewinnt, sonst Edit-Stand).</summary>
@@ -149,28 +290,30 @@ public class AudioEventEditorPopup : UIScreen, IUIScreen
     }
 
     /// <summary>
-    /// Kategorie-Wechsel im Popup: Trigger-Optionen neu aufbauen, gleiche
-    /// Trigger-Art übernehmen wenn die neue Kategorie sie anbietet.
-    /// Eingetippte Werte (Score/Threshold/Pattern) bleiben erhalten.
+    /// Kategorie-Wechsel im Popup: Trigger-Optionen neu aufbauen.
     /// </summary>
     public void OnCategoryChanged()
     {
         var newCategory = CurrentCategory();
-        var oldKind = TriggerForCategory(editingCategory,
-            triggerKindDropdown != null ? triggerKindDropdown.value : 0);
         editingCategory = newCategory;
 
         if (triggerKindDropdown != null)
         {
             triggerKindDropdown.ClearOptions();
             triggerKindDropdown.AddOptions(TriggerOptions(newCategory));
-            triggerKindDropdown.SetValueWithoutNotify((int)TriggerIndex(newCategory, oldKind));
         }
 
         if (categoryLabel != null)
-            categoryLabel.text = LocalizationText.Get(newCategory.ToString(), newCategory.ToString());
+            categoryLabel.text = CategoryDisplayName(newCategory);
 
-        UpdateTriggerGroups();
+        RefreshValidation();
+    }
+
+    private static string CategoryDisplayName(AudioEventCategory category)
+    {
+        return category == AudioEventCategory.Global
+            ? LocalizationText.Get("Global", "Global")
+            : category.ToString();
     }
 
     /// <summary>Trigger-Optionen je Kategorie (Dropdown-Reihenfolge = Index).</summary>
@@ -202,43 +345,9 @@ public class AudioEventEditorPopup : UIScreen, IUIScreen
                 2 => AudioEventTriggerKind.TurnPattern,
                 _ => AudioEventTriggerKind.HitsInTurnThreshold
             },
-            // Global/X01: ScoreReached=0, TurnPattern=1.
             _ => index == 1
                 ? AudioEventTriggerKind.TurnPattern : AudioEventTriggerKind.ScoreReached
         };
-    }
-
-    private void LoadDef(string name, bool enabled, AudioEventTriggerKind kind, AudioEventTrigger trigger)
-    {
-        editingName = name;
-
-        if (nameInput != null)
-            nameInput.text = name;
-
-        enabledToggle?.Initialize(enabled);
-
-        if (categoryDropdown != null)
-            categoryDropdown.SetValueWithoutNotify((int)editingCategory);
-
-        if (categoryLabel != null)
-            categoryLabel.text = LocalizationText.Get(editingCategory.ToString(), editingCategory.ToString());
-
-        if (triggerKindDropdown != null)
-        {
-            triggerKindDropdown.ClearOptions();
-            triggerKindDropdown.AddOptions(TriggerOptions(editingCategory));
-            triggerKindDropdown.SetValueWithoutNotify((int)TriggerIndex(editingCategory, kind));
-        }
-
-        if (scoreInput != null)
-            scoreInput.text = trigger.score.ToString();
-
-        if (thresholdInput != null)
-            thresholdInput.text = trigger.threshold.ToString();
-
-        patternEditor?.LoadEntries(trigger.pattern, trigger.matchOrder);
-
-        UpdateTriggerGroups();
     }
 
     private static int TriggerIndex(AudioEventCategory category, AudioEventTriggerKind kind)
@@ -258,14 +367,13 @@ public class AudioEventEditorPopup : UIScreen, IUIScreen
                 AudioEventTriggerKind.TurnPattern => 2,
                 _ => 0
             },
-            // Global/X01: ScoreReached=0, TurnPattern=1 (Rest fällt auf Score zurück).
             _ => kind == AudioEventTriggerKind.TurnPattern ? 1 : 0
         };
     }
 
     public void OnTriggerKindChanged()
     {
-        UpdateTriggerGroups();
+        RefreshValidation();
     }
 
     public void ToggleEnabled()
@@ -273,61 +381,231 @@ public class AudioEventEditorPopup : UIScreen, IUIScreen
         enabledToggle?.Toggle();
     }
 
-    private void UpdateTriggerGroups()
+    private void ShowTriggerList()
+    {
+        if (mainPanel != null)
+            mainPanel.SetActive(true);
+        if (triggerPanel != null)
+            triggerPanel.SetActive(false);
+        if (confirmPanel != null)
+            confirmPanel.SetActive(false);
+
+        RefreshTriggerListUI();
+        RefreshValidation();
+        RefreshDeleteButton();
+    }
+
+    private void ShowTriggerEditor()
+    {
+        if (mainPanel != null)
+            mainPanel.SetActive(false);
+        if (triggerPanel != null)
+            triggerPanel.SetActive(true);
+        if (confirmPanel != null)
+            confirmPanel.SetActive(false);
+
+        var trigger = editingTriggerIndex.HasValue
+            ? workingTriggers[editingTriggerIndex.Value]
+            : new AudioEventTrigger { kind = AudioEventTriggerKind.ScoreReached };
+
+        isLoading = true;
+        LoadTriggerEditor(trigger);
+        isLoading = false;
+        RefreshValidation();
+    }
+
+    private void RefreshTriggerListUI()
+    {
+        if (triggerListContent == null || triggerRowPrefab == null)
+            return;
+
+        foreach (Transform child in triggerListContent)
+            Destroy(child.gameObject);
+
+        if (workingTriggers == null || workingTriggers.Count == 0)
+        {
+            var go = new GameObject("EmptyHint", typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI));
+            go.transform.SetParent(triggerListContent, false);
+            var rt = go.GetComponent<RectTransform>();
+            rt.anchorMin = Vector2.zero;
+            rt.anchorMax = Vector2.one;
+            rt.sizeDelta = Vector2.zero;
+            var text = go.GetComponent<TextMeshProUGUI>();
+            text.text = LocalizationText.Get("No_triggers", "Keine Trigger");
+            text.alignment = TextAlignmentOptions.Center;
+            text.fontSize = 16;
+            return;
+        }
+
+        for (int i = 0; i < workingTriggers.Count; i++)
+        {
+            var trigger = workingTriggers[i];
+            var go = Instantiate(triggerRowPrefab, triggerListContent);
+            var rowRect = go.GetComponent<RectTransform>();
+            if (rowRect != null)
+            {
+                rowRect.anchorMin = new Vector2(0f, 1f);
+                rowRect.anchorMax = new Vector2(1f, 1f);
+                rowRect.pivot = new Vector2(0.5f, 0.5f);
+                rowRect.sizeDelta = new Vector2(0f, 60f);
+            }
+
+            var summaryText = go.GetComponentInChildren<TextMeshProUGUI>();
+            if (summaryText == null)
+            {
+                var textGo = new GameObject("Summary", typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI));
+                textGo.transform.SetParent(go.transform, false);
+                var textRt = textGo.GetComponent<RectTransform>();
+                textRt.anchorMin = new Vector2(0f, 0f);
+                textRt.anchorMax = new Vector2(1f, 1f);
+                textRt.offsetMin = new Vector2(20f, 0f);
+                textRt.offsetMax = new Vector2(-120f, 0f);
+                summaryText = textGo.GetComponent<TextMeshProUGUI>();
+                summaryText.alignment = TextAlignmentOptions.Left;
+                summaryText.fontSize = 14;
+            }
+            summaryText.text = SummarizeTrigger(trigger);
+
+            int index = i;
+
+            var editBtn = go.GetComponentInChildren<Button>(true);
+            if (editBtn == null)
+            {
+                var btnGo = new GameObject("EditButton", typeof(RectTransform), typeof(CanvasRenderer), typeof(Button), typeof(Image));
+                btnGo.transform.SetParent(go.transform, false);
+                var btnRt = btnGo.GetComponent<RectTransform>();
+                btnRt.anchorMin = new Vector2(1f, 0.5f);
+                btnRt.anchorMax = new Vector2(1f, 0.5f);
+                btnRt.pivot = new Vector2(1f, 0.5f);
+                btnRt.anchoredPosition = new Vector2(-70f, 0f);
+                btnRt.sizeDelta = new Vector2(60f, 40f);
+                editBtn = btnGo.GetComponent<Button>();
+                var btnImage = btnGo.GetComponent<Image>();
+                btnImage.color = new Color(0.2f, 0.6f, 1f, 1f);
+                var btnTextGo = new GameObject("Text", typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI));
+                btnTextGo.transform.SetParent(btnGo.transform, false);
+                var btnTextRt = btnTextGo.GetComponent<RectTransform>();
+                btnTextRt.anchorMin = Vector2.zero;
+                btnTextRt.anchorMax = Vector2.one;
+                btnTextRt.sizeDelta = Vector2.zero;
+                var btnText = btnTextGo.GetComponent<TextMeshProUGUI>();
+                btnText.text = "Bearbeiten";
+                btnText.fontSize = 12;
+                btnText.alignment = TextAlignmentOptions.Center;
+            }
+            editBtn.onClick.RemoveAllListeners();
+            editBtn.onClick.AddListener(() => OnEditTrigger(index));
+
+            var delBtn = go.GetComponentsInChildren<Button>(true).LastOrDefault();
+            if (delBtn == null || delBtn == editBtn)
+            {
+                var btnGo = new GameObject("DeleteButton", typeof(RectTransform), typeof(CanvasRenderer), typeof(Button), typeof(Image));
+                btnGo.transform.SetParent(go.transform, false);
+                var btnRt = btnGo.GetComponent<RectTransform>();
+                btnRt.anchorMin = new Vector2(1f, 0.5f);
+                btnRt.anchorMax = new Vector2(1f, 0.5f);
+                btnRt.pivot = new Vector2(1f, 0.5f);
+                btnRt.anchoredPosition = new Vector2(-10f, 0f);
+                btnRt.sizeDelta = new Vector2(60f, 40f);
+                delBtn = btnGo.GetComponent<Button>();
+                var btnImage = btnGo.GetComponent<Image>();
+                btnImage.color = new Color(0.85f, 0.2f, 0.2f, 1f);
+                var btnTextGo = new GameObject("Text", typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI));
+                btnTextGo.transform.SetParent(btnGo.transform, false);
+                var btnTextRt = btnTextGo.GetComponent<RectTransform>();
+                btnTextRt.anchorMin = Vector2.zero;
+                btnTextRt.anchorMax = Vector2.one;
+                btnTextRt.sizeDelta = Vector2.zero;
+                var btnText = btnTextGo.GetComponent<TextMeshProUGUI>();
+                btnText.text = "Löschen";
+                btnText.fontSize = 12;
+                btnText.alignment = TextAlignmentOptions.Center;
+            }
+            delBtn.onClick.RemoveAllListeners();
+            delBtn.onClick.AddListener(() => OnDeleteTrigger(index));
+        }
+    }
+
+    private static string SummarizeTrigger(AudioEventTrigger t)
+    {
+        switch (t.kind)
+        {
+            case AudioEventTriggerKind.ScoreReached:
+                return LocalizationText.Format("Reach_exact_score_value", "Reach exact score: {0}", t.score);
+            case AudioEventTriggerKind.TurnPattern:
+                return LocalizationText.Format("Turn_pattern_any_order", "Turn [{0}] (any order)", CustomizationInfo.DescribePattern(t.pattern));
+            case AudioEventTriggerKind.MarksThreshold:
+                return LocalizationText.Format("Marks_at_least", "Marks ≥ {0}", t.threshold);
+            case AudioEventTriggerKind.PointsReached:
+                return LocalizationText.Format("Points_at_least", "Points ≥ {0}", t.threshold);
+            case AudioEventTriggerKind.HitsInTurnThreshold:
+                return LocalizationText.Format("Hits_per_turn_at_least", "Hits/Turn ≥ {0}", t.threshold);
+            case AudioEventTriggerKind.StreakReached:
+                return LocalizationText.Format("Streak_at_least", "Streak ≥ {0}", t.threshold);
+            case AudioEventTriggerKind.Manual:
+            default:
+                return LocalizationText.Get("Manual", "Manual");
+        }
+    }
+
+    private void LoadTriggerEditor(AudioEventTrigger trigger)
+    {
+        if (triggerKindDropdown != null)
+        {
+            // Kategorie bestimmt welche Trigger möglich sind; der erste Eintrag
+            // der Kategorie passt zum Trigger-Typ (falls vorhanden).
+            var kind = trigger.kind;
+            var category = CurrentCategory();
+            int idx = TriggerIndex(category, kind);
+            triggerKindDropdown.SetValueWithoutNotify(idx);
+        }
+
+        if (scoreInput != null)
+            scoreInput.text = trigger.score.ToString();
+
+        if (thresholdInput != null)
+            thresholdInput.text = trigger.threshold.ToString();
+
+        patternEditor?.LoadEntries(trigger.pattern, trigger.matchOrder);
+    }
+
+    private void OnNewTrigger()
+    {
+        editingTriggerIndex = null;
+        ShowTriggerEditor();
+    }
+
+    private void OnEditTrigger(int index)
+    {
+        editingTriggerIndex = index;
+        ShowTriggerEditor();
+    }
+
+    private void OnDeleteTrigger(int index)
+    {
+        workingTriggers.RemoveAt(index);
+        if (editingTriggerIndex == index)
+            editingTriggerIndex = null;
+        else if (editingTriggerIndex.HasValue && editingTriggerIndex > index)
+            editingTriggerIndex--;
+        ShowTriggerList();
+    }
+
+    private void OnSaveTrigger()
     {
         var kind = TriggerForCategory(CurrentCategory(),
             triggerKindDropdown != null ? triggerKindDropdown.value : 0);
 
-        if (scoreGroup != null)
-            scoreGroup.SetActive(kind == AudioEventTriggerKind.ScoreReached);
-        if (thresholdGroup != null)
-            thresholdGroup.SetActive(kind == AudioEventTriggerKind.MarksThreshold
-                || kind == AudioEventTriggerKind.PointsReached
-                || kind == AudioEventTriggerKind.HitsInTurnThreshold
-                || kind == AudioEventTriggerKind.StreakReached);
-        if (patternGroup != null)
-            patternGroup.SetActive(kind == AudioEventTriggerKind.TurnPattern);
-    }
-
-    public void OnClickSave()
-    {
-        if (TrySave())
-            CloseAndRefresh();
-    }
-
-    /// <summary>
-    /// Speichert den aktuellen Stand, ohne das Popup zu schließen. Wird auch
-    /// vom Recorder genutzt, damit neue Einträge vor dem ClipBrowser existieren.
-    /// </summary>
-    private bool TrySave()
-    {
-        string name = nameInput != null ? nameInput.text.Trim() : "";
-        if (string.IsNullOrEmpty(name))
-            return false;
-
-        var category = CurrentCategory();
-        editingCategory = category;
-
-        // Manual-Seeds (Undo/Bust/Marks/...): Trigger bleibt Manual
-        // (kein Dropdown-Eintrag, kein versehentliches Umschreiben).
-        AudioEventTriggerKind kind;
-        var trigger = new AudioEventTrigger();
-        if (editingManual)
-        {
-            kind = AudioEventTriggerKind.Manual;
-        }
-        else
-        {
-            kind = TriggerForCategory(category,
-                triggerKindDropdown != null ? triggerKindDropdown.value : 0);
-            trigger.kind = kind;
-        }
+        var trigger = new AudioEventTrigger { kind = kind };
 
         switch (kind)
         {
             case AudioEventTriggerKind.ScoreReached:
                 if (!int.TryParse(scoreInput != null ? scoreInput.text : "", out int score) || score < 0)
-                    return false;
+                {
+                    ShowError(LocalizationText.Get("Invalid_number", "Please enter a valid number."), null);
+                    return;
+                }
                 trigger.score = score;
                 break;
 
@@ -336,7 +614,10 @@ public class AudioEventEditorPopup : UIScreen, IUIScreen
             case AudioEventTriggerKind.HitsInTurnThreshold:
             case AudioEventTriggerKind.StreakReached:
                 if (!int.TryParse(thresholdInput != null ? thresholdInput.text : "", out int threshold) || threshold < 0)
-                    return false;
+                {
+                    ShowError(LocalizationText.Get("Invalid_number", "Please enter a valid number."), null);
+                    return;
+                }
                 trigger.threshold = threshold;
                 break;
 
@@ -348,43 +629,122 @@ public class AudioEventEditorPopup : UIScreen, IUIScreen
                 break;
 
             case AudioEventTriggerKind.Manual:
-                // Manual-Seeds: Trigger bleibt leer (direkter Engine-Aufruf).
                 break;
 
             default:
-                return false;
+                ShowError(LocalizationText.Get("Save_failed", "Could not save. Please check your input."), null);
+                return;
         }
 
-        // Toggle nicht verdrahtet (Szene): bestehenden enabled-Stand behalten,
-        // sonst ungewolltes Re-Aktivieren beim Editieren.
-        bool enabled;
-        if (enabledToggle != null)
-            enabled = enabledToggle.IsActive();
+        if (editingTriggerIndex.HasValue)
+            workingTriggers[editingTriggerIndex.Value] = trigger;
         else
-            enabled = CustomizationStore.GetAudioEvents()
-                .Find(x => x != null && x.id == editingId)?.enabled ?? true;
+            workingTriggers.Add(trigger);
 
-        CustomizationStore.SaveAudioEvent(new AudioEventDef
+        ShowTriggerList();
+    }
+
+    private void RefreshValidation()
+    {
+        if (isLoading)
+            return;
+
+        bool triggerPanelActive = triggerPanel != null && triggerPanel.activeInHierarchy;
+        if (triggerPanelActive)
+        {
+            var kind = TriggerForCategory(CurrentCategory(),
+                triggerKindDropdown != null ? triggerKindDropdown.value : 0);
+
+            if (kind == AudioEventTriggerKind.ScoreReached
+                && (!int.TryParse(scoreInput != null ? scoreInput.text : "", out int score) || score < 0))
+            {
+                ShowError(LocalizationText.Get("Invalid_number", "Please enter a valid number."), null);
+                return;
+            }
+
+            if ((kind == AudioEventTriggerKind.MarksThreshold
+                    || kind == AudioEventTriggerKind.PointsReached
+                    || kind == AudioEventTriggerKind.HitsInTurnThreshold
+                    || kind == AudioEventTriggerKind.StreakReached)
+                && (!int.TryParse(thresholdInput != null ? thresholdInput.text : "", out int threshold) || threshold < 0))
+            {
+                ShowError(LocalizationText.Get("Invalid_number", "Please enter a valid number."), null);
+                return;
+            }
+
+            if (kind == AudioEventTriggerKind.TurnPattern
+                && patternEditor != null
+                && patternEditor.HasUnresolvedSector())
+            {
+                ShowError(LocalizationText.Get("Select_target_area", "Please select a target area."), null);
+                return;
+            }
+
+            HideError();
+        }
+        else
+        {
+            HideError();
+        }
+    }
+
+    public void OnClickSave()
+    {
+        if (workingTriggers == null || workingTriggers.Count == 0)
+        {
+            if (enabledToggle != null)
+                enabledToggle.Initialize(false);
+        }
+
+        if (!TrySave())
+            return;
+
+        CloseAndRefresh();
+    }
+
+    private bool TrySave()
+    {
+        string name = nameInput != null ? nameInput.text.Trim() : "";
+        if (string.IsNullOrEmpty(name))
+        {
+            ShowError(LocalizationText.Get("Name_required", "Name is required."), null);
+            return false;
+        }
+
+        if (CustomizationStore.IsAudioEventNameTaken(name, editingId))
+        {
+            ShowError(LocalizationText.Get("Name_taken", "Name is already taken."), null);
+            return false;
+        }
+
+        var category = CurrentCategory();
+        editingCategory = category;
+
+        bool enabled = enabledToggle == null || enabledToggle.IsActive();
+        if (workingTriggers == null || workingTriggers.Count == 0)
+            enabled = false;
+
+        if (!CustomizationStore.SaveAudioEvent(new AudioEventDef
         {
             id = editingId,
             name = name,
             builtIn = editingBuiltIn,
             enabled = enabled,
             category = editingCategory,
-            trigger = trigger
-        });
+            triggers = workingTriggers
+        }))
+        {
+            ShowError(LocalizationText.Get("Save_failed", "Could not save. Please check your input."), null);
+            return false;
+        }
 
+        HideError();
         editingName = name;
 
-        // Direkt-Refresh der eigenen Liste (sofort sichtbar, siehe PenaltyEditorPopup).
         eventsPage?.Refresh();
         return true;
     }
 
-    /// <summary>
-    /// Recorder-Button: speichert zunächst den aktuellen Stand (neue Einträge
-    /// inklusive), schließt das Popup und öffnet den ClipBrowser für diese ID.
-    /// </summary>
     public void OnClickOpenClips()
     {
         if (string.IsNullOrEmpty(editingId) || !TrySave())
@@ -400,15 +760,19 @@ public class AudioEventEditorPopup : UIScreen, IUIScreen
 
     public void OnClickDelete()
     {
-        if (editingBuiltIn)
+        if (editingNew || editingBuiltIn)
             return;
         if (string.IsNullOrEmpty(editingId))
             return;
 
         pendingDeleteId = editingId;
 
+        string displayName = nameInput != null && !string.IsNullOrWhiteSpace(nameInput.text)
+            ? nameInput.text.Trim()
+            : editingName;
+
         if (confirmText != null)
-            confirmText.text = LocalizationText.Format("Delete_audio_event_named", "Delete audio event “{0}”?", editingName);
+            confirmText.text = LocalizationText.Format("Delete_audio_event_named", "Delete audio event {0}?", displayName);
 
         SetConfirmView(true);
     }
@@ -443,6 +807,8 @@ public class AudioEventEditorPopup : UIScreen, IUIScreen
     {
         if (mainPanel != null)
             mainPanel.SetActive(!confirm);
+        if (triggerPanel != null)
+            triggerPanel.SetActive(false);
         if (confirmPanel != null)
             confirmPanel.SetActive(confirm);
     }
@@ -457,11 +823,10 @@ public class AudioEventEditorPopup : UIScreen, IUIScreen
         editingId = null;
         editingBuiltIn = false;
         editingManual = false;
+        workingTriggers = null;
+        editingTriggerIndex = null;
 
         if (windowHandler != null)
             windowHandler.HidePopup();
-
-        // Kein explizites Refresh: Save feuert CustomizationStore.Changed,
-        // das die Event-Liste bereits aktualisiert (Cancel ändert nichts).
     }
 }

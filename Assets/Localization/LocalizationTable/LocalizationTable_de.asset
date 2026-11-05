@@ -836,20 +836,19 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 33805706080505886
-    m_Localized: "Strafe \u201E{0}\u201C l\xF6schen?"
+    m_Localized: "Strafe {0} l\xF6schen?"
     m_Metadata:
       m_Items: []
   - m_Id: 33805706080505887
-    m_Localized: "Audioereignis \u201E{0}\u201C l\xF6schen?"
+    m_Localized: "Audioereignis {0} l\xF6schen?"
     m_Metadata:
       m_Items: []
   - m_Id: 33805706080505888
-    m_Localized: "Zielbereich \u201E{0}\u201C l\xF6schen?"
+    m_Localized: "Zielbereich {0} l\xF6schen?"
     m_Metadata:
       m_Items: []
   - m_Id: 33805706080505889
-    m_Localized: "Zielbereich \u201E{0}\u201C l\xF6schen? Verwendet von Strafen:
-      {1}. Diese werden ebenfalls gel\xF6scht."
+    m_Localized: "Zielbereich {0} löschen? Verwendet von Strafen: {1}. Diese und ihre Audioclips werden ebenfalls gelöscht."
     m_Metadata:
       m_Items: []
   - m_Id: 33805706080505890
@@ -1291,6 +1290,42 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 33806894813368322
     m_Localized: Limette
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368323
+    m_Localized: Name ist erforderlich.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368324
+    m_Localized: Bitte eine gültige Zahl eingeben.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368325
+    m_Localized: Bitte einen Zielbereich auswählen.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368326
+    m_Localized: Speichern fehlgeschlagen. Bitte Eingaben prüfen.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368327
+    m_Localized: Möchtest du die App verlassen?
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368328
+    m_Localized: "Gelöschter Zielbereich ({0})"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368329
+    m_Localized: "Schnapszahl"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368330
+    m_Localized: "Keine Trigger"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368331
+    m_Localized: "Manuell"
     m_Metadata:
       m_Items: []
   references:

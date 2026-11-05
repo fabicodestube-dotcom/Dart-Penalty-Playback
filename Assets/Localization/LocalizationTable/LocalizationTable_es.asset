@@ -837,20 +837,19 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 33805706080505886
-    m_Localized: "\xBFEliminar la penalizaci\xF3n \xAB{0}\xBB?"
+    m_Localized: "\xBFEliminar la penalizaci\xF3n {0}?"
     m_Metadata:
       m_Items: []
   - m_Id: 33805706080505887
-    m_Localized: "\xBFEliminar el evento de audio \xAB{0}\xBB?"
+    m_Localized: "\xBFEliminar el evento de audio {0}?"
     m_Metadata:
       m_Items: []
   - m_Id: 33805706080505888
-    m_Localized: "\xBFEliminar la zona objetivo \xAB{0}\xBB?"
+    m_Localized: "\xBFEliminar la zona objetivo {0}?"
     m_Metadata:
       m_Items: []
   - m_Id: 33805706080505889
-    m_Localized: "\xBFEliminar la zona objetivo \xAB{0}\xBB? Usada por penalizaciones:
-      {1}. Tambi\xE9n se eliminar\xE1n."
+    m_Localized: "¿Eliminar la zona objetivo {0}? Usada por penalizaciones: {1}. También se eliminarán estas y sus clips de audio."
     m_Metadata:
       m_Items: []
   - m_Id: 33805706080505890
@@ -1293,6 +1292,42 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 33806894813368322
     m_Localized: Lima
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368323
+    m_Localized: El nombre es obligatorio.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368324
+    m_Localized: Introduce un número válido.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368325
+    m_Localized: Selecciona una zona objetivo.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368326
+    m_Localized: No se pudo guardar. Comprueba los datos.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368327
+    m_Localized: ¿Quieres salir de la aplicación?
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368328
+    m_Localized: "Zona objetivo eliminada ({0})"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368329
+    m_Localized: "Schnapszahl"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368330
+    m_Localized: "Sin disparadores"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368331
+    m_Localized: "Manual"
     m_Metadata:
       m_Items: []
   references:

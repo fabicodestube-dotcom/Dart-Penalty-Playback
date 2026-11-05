@@ -677,10 +677,47 @@ public class AppHandler : MonoBehaviour
         FlushDatabase();
     }
 
-    private void PersistOpenRuntimeGames()
+    public bool SaveBeforeExit()
+    {
+        if (isShuttingDown)
+        {
+            Debug.Log("<color=orange>Save blockiert: Domain wird entladen.</color>");
+            return false;
+        }
+
+        #if UNITY_EDITOR
+        if (UnityEditor.EditorApplication.isCompiling || UnityEditor.EditorApplication.isUpdating)
+            return false;
+        #endif
+
+        if (database == null || database.GetGameSummaries() == null)
+        {
+            Debug.LogWarning("Save blockiert: Datenbank-Referenz ist bereits null.");
+            return false;
+        }
+
+        if (dirtySaveRoutine != null)
+        {
+            StopCoroutine(dirtySaveRoutine);
+            dirtySaveRoutine = null;
+        }
+
+        bool gamesSaved = PersistOpenRuntimeGames();
+        bool databaseSaved = FlushDatabase();
+        bool saved = gamesSaved && databaseSaved;
+
+        if (saved)
+            lastLifecycleSaveTime = Time.realtimeSinceStartup;
+        else
+            lastLifecycleSaveTime = -1000f;
+
+        return saved;
+    }
+
+    private bool PersistOpenRuntimeGames()
     {
         if (database == null || database.GetGameSummaries() == null)
-            return;
+            return false;
 
         var runtimeGames = new List<Game>();
         if (selectedGame != null)
@@ -689,6 +726,8 @@ public class AppHandler : MonoBehaviour
             runtimeGames.Add(activeRuntimeGame);
 
         var seenGameIds = new HashSet<Guid>();
+        var gamesToSave = new List<Game>();
+
         foreach (var game in runtimeGames)
         {
             if (game == null || game.GetID() == Guid.Empty || seenGameIds.Contains(game.GetID()))
@@ -698,9 +737,19 @@ public class AppHandler : MonoBehaviour
             if (!game.IsFinished())
                 game.CalculatePlayerStatsOnSave();
 
-            if (!SaveSystem.SaveGame(game))
-                Debug.LogError("Laufendes Spiel konnte beim Lifecycle-Save nicht gespeichert werden: " + game.GetID());
+            gamesToSave.Add(game);
         }
+
+        if (gamesToSave.Count == 0)
+            return true;
+
+        if (!SaveSystem.SaveGames(gamesToSave))
+        {
+            Debug.LogError($"Lifecycle-Save für {gamesToSave.Count} offene Spiele fehlgeschlagen.");
+            return false;
+        }
+
+        return true;
     }
 
     private void LoadDatabase()

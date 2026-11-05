@@ -931,24 +931,21 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 33805706080505886
     m_Localized: "\u0423\u0434\u0430\u043B\u0438\u0442\u044C \u0448\u0442\u0440\u0430\u0444
-      \xAB{0}\xBB?"
+      {0}?"
     m_Metadata:
       m_Items: []
   - m_Id: 33805706080505887
     m_Localized: "\u0423\u0434\u0430\u043B\u0438\u0442\u044C \u0430\u0443\u0434\u0438\u043E\u0441\u043E\u0431\u044B\u0442\u0438\u0435
-      \xAB{0}\xBB?"
+      {0}?"
     m_Metadata:
       m_Items: []
   - m_Id: 33805706080505888
     m_Localized: "\u0423\u0434\u0430\u043B\u0438\u0442\u044C \u0446\u0435\u043B\u0435\u0432\u0443\u044E
-      \u0437\u043E\u043D\u0443 \xAB{0}\xBB?"
+      \u0437\u043E\u043D\u0443 {0}?"
     m_Metadata:
       m_Items: []
   - m_Id: 33805706080505889
-    m_Localized: "\u0423\u0434\u0430\u043B\u0438\u0442\u044C \u0446\u0435\u043B\u0435\u0432\u0443\u044E
-      \u0437\u043E\u043D\u0443 \xAB{0}\xBB? \u0418\u0441\u043F\u043E\u043B\u044C\u0437\u0443\u0435\u0442\u0441\u044F
-      \u0448\u0442\u0440\u0430\u0444\u0430\u043C\u0438: {1}. \u041E\u043D\u0438 \u0442\u0430\u043A\u0436\u0435
-      \u0431\u0443\u0434\u0443\u0442 \u0443\u0434\u0430\u043B\u0435\u043D\u044B."
+    m_Localized: "Удалить целевую зону {0}? Используется штрафами: {1}. Они и их аудиоклипы также будут удалены."
     m_Metadata:
       m_Items: []
   - m_Id: 33805706080505890
@@ -1425,6 +1422,42 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 33806894813368322
     m_Localized: "\u041B\u0430\u0439\u043C\u043E\u0432\u044B\u0439"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368323
+    m_Localized: "\u0422\u0440\u0435\u0431\u0443\u0435\u0442\u0441\u044F \u0438\u043C\u044F."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368324
+    m_Localized: "\u0412\u0432\u0435\u0434\u0438\u0442\u0435 \u043A\u043E\u0440\u0440\u0435\u043A\u0442\u043D\u043E\u0435 \u0447\u0438\u0441\u043B\u043E."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368325
+    m_Localized: "\u0412\u044B\u0431\u0435\u0440\u0438\u0442\u0435 \u0446\u0435\u043B\u0435\u0432\u0443\u044E \u0437\u043E\u043D\u0443."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368326
+    m_Localized: "\u041D\u0435 \u0443\u0434\u0430\u043B\u043E\u0441\u044C \u0441\u043E\u0445\u0440\u0430\u043D\u0438\u0442\u044C. \u041F\u0440\u043E\u0432\u0435\u0440\u044C\u0442\u0435 \u0432\u0432\u0435\u0434\u0451\u043D\u043D\u044B\u0435 \u0434\u0430\u043D\u043D\u044B\u0435."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368327
+    m_Localized: "\u0412\u044B \u0445\u043E\u0442\u0438\u0442\u0435 \u0437\u0430\u043A\u0440\u044B\u0442\u044C \u043F\u0440\u0438\u043B\u043E\u0436\u0435\u043D\u0438\u0435?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368328
+    m_Localized: "Удалённая целевая зона ({0})"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368329
+    m_Localized: "Шнапсцahl"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368330
+    m_Localized: "Нет триггеров"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368331
+    m_Localized: "Вручную"
     m_Metadata:
       m_Items: []
   references:

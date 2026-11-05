@@ -32,6 +32,21 @@ public class AudioLibrary : MonoBehaviour
 
     public static AudioLibrary Instance;
 
+    /// <summary>
+    /// True, wenn aktuell das Custom-Set aktiv ist. Wird u. a. beim Seeding
+    /// user-ähnlicher Audio-Events benötigt, die es nur dort geben soll.
+    /// </summary>
+    public static bool IsCustomSetActive
+    {
+        get
+        {
+            var lib = Instance != null
+                ? Instance
+                : UnityEngine.Object.FindAnyObjectByType<AudioLibrary>();
+            return lib != null && !lib.WillBePublished;
+        }
+    }
+
     // =========================================================
     // DEFAULT CLIPS
     // =========================================================
@@ -82,6 +97,12 @@ public class AudioLibrary : MonoBehaviour
     public List<AudioClip>  customCricketMarksClip;
     public List<AudioClip>  customAtcHitsClip;
     public List<AudioClip>  customAtcStreakClip;
+
+    [Header("Custom X01 Event Clips (Inspector)")]
+    public List<AudioClip>  customBahClip;
+    public List<AudioClip>  customThreeTwentiesClip;
+    public List<AudioClip>  customThreeNineteensClip;
+
     // =========================================================
     // RUNTIME RECORDED CLIPS
     // =========================================================
@@ -151,14 +172,12 @@ public class AudioLibrary : MonoBehaviour
     /// </summary>
     private void NotifyLibraryChanged(AudioCategory category)
     {
-        Debug.Log("Notify Library Changed: " + category);
         var handler = OnLibraryChanged;
         if (handler == null)
             return;
 
         foreach (Action<AudioCategory> subscriber in handler.GetInvocationList())
         {
-            Debug.Log("Notifying subscriber: " + subscriber.Method.Name);
             try
             {
                 subscriber?.Invoke(category);
@@ -186,6 +205,7 @@ public class AudioLibrary : MonoBehaviour
         DontDestroyOnLoad(gameObject);
 
         EnsureFolders();
+        CleanupTemporaryFiles();
 
         if (!_loadedOnce)
             StartCoroutine(LoadLibrary());
@@ -196,6 +216,29 @@ public class AudioLibrary : MonoBehaviour
         Directory.CreateDirectory(ScoresFolder);
         Directory.CreateDirectory(PenaltiesFolder);
         Directory.CreateDirectory(SpecialFolder);
+    }
+
+    private void CleanupTemporaryFiles()
+    {
+        CleanupTemporaryFiles(ScoresFolder);
+        CleanupTemporaryFiles(PenaltiesFolder);
+        CleanupTemporaryFiles(SpecialFolder);
+    }
+
+    private static void CleanupTemporaryFiles(string folder)
+    {
+        if (string.IsNullOrEmpty(folder) || !Directory.Exists(folder))
+            return;
+
+        try
+        {
+            foreach (string path in Directory.EnumerateFiles(folder, "*.tmp", SearchOption.TopDirectoryOnly))
+                TryDeleteFile(path);
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogWarning($"[AUDIO] Temporäre Dateien konnten nicht bereinigt werden ({folder}): {e.Message}");
+        }
     }
 
     /// <summary>
@@ -419,6 +462,35 @@ public class AudioLibrary : MonoBehaviour
             return false;
 
         return DeleteRecordedClip(list, index, AudioCategory.Custom);
+    }
+
+    /// <summary>
+    /// Löscht alle aufgenommenen Clips einer Custom-ID (Penalty/Audio-Event/
+    /// Target Area) inklusive DB-Einträgen und Dateien.
+    /// </summary>
+    public int DeleteAllCustomClips(string customKey)
+    {
+        if (string.IsNullOrEmpty(customKey)) return 0;
+
+        if (!runtimeCustomClips.TryGetValue(customKey, out var list) || list == null)
+            return 0;
+
+        int deleted = 0;
+        while (list.Count > 0)
+        {
+            if (!DeleteRecordedClip(list, 0, AudioCategory.Custom))
+                break;
+
+            deleted++;
+        }
+
+        if (list.Count == 0)
+        {
+            runtimeCustomClips.Remove(customKey);
+            customCounters.Remove(customKey);
+        }
+
+        return deleted;
     }
 
     public bool ReplaceCustomClip(string customKey, int index, AudioClip newClip)
@@ -688,7 +760,8 @@ public class AudioLibrary : MonoBehaviour
     /// <summary>
     /// Eingebauter Fallback für eine Custom-ID (Penalty- oder Audio-Event-ID).
     /// Penalty-IDs kommen aus dem Mapping unten, Event-IDs aus den Seeds
-    /// (SeededAudioEvents: FallbackScore vor FallbackSpecial).
+    /// (SeededAudioEvents: FallbackScore vor FallbackSpecial). Die drei
+    /// user-ähnlichen X01-Events nutzen direkte Custom-Set-Listen.
     /// Unbekannte IDs (z. B. Sektor-IDs, eigene Events) haben keinen
     /// eingebauten Clip → null (bleiben stumm, bis der User aufnimmt).
     /// </summary>
@@ -699,6 +772,19 @@ public class AudioLibrary : MonoBehaviour
 
         if (TryGetPenaltyTypeForKey(customKey, out var penaltyType))
             return GetBuiltInPenaltyClip(penaltyType);
+
+        // User-ähnliche X01-Events: Clips liegen ausschließlich im Custom-Set.
+        if (!UsesDefaultSet)
+        {
+            if (string.Equals(customKey, SeededAudioEvents.BahId, StringComparison.OrdinalIgnoreCase))
+                return GetRandomFromList(customBahClip, "builtin_x01_bah");
+
+            if (string.Equals(customKey, SeededAudioEvents.ThreeTwentiesId, StringComparison.OrdinalIgnoreCase))
+                return GetRandomFromList(customThreeTwentiesClip, "builtin_x01_3x20");
+
+            if (string.Equals(customKey, SeededAudioEvents.ThreeNineteensId, StringComparison.OrdinalIgnoreCase))
+                return GetRandomFromList(customThreeNineteensClip, "builtin_x01_3x19");
+        }
 
         var seed = SeededAudioEvents.Find(customKey);
         if (seed != null)

@@ -8,10 +8,11 @@ using UnityEngine;
 /// (AudioEventEngine.Matches).
 ///
 /// Semantik:
-/// - matchOrder = true  → geordnet + exakt: Slot i entspricht Wurf i.
-/// - matchOrder = false → ungeordnet + exakt: der Turn besteht genau aus den
-///   Pattern-Slots (Multimenge, Reihenfolge egal).
-/// In beiden Fällen muss die Anzahl der Würfe der Slot-Anzahl entsprechen.
+/// - matchOrder = true  → geordnet: die Slots kommen in dieser Reihenfolge im
+///   Turn vor.
+/// - matchOrder = false → ungeordnet: die Slots kommen im Turn vor, die
+///   Reihenfolge ist egal.
+/// In beiden Fällen sind zusätzliche Würfe im Turn erlaubt.
 ///
 /// Menü: Darts/Tests/Turn Pattern.
 /// Batchmode: -executeMethod TurnPatternMatchTest.Run
@@ -53,8 +54,8 @@ public static class TurnPatternMatchTest
             "ordered-1-5-20-rejects-20-5-1");
         Check(!PenaltyEvaluator.MatchesPattern(ordered, Throws(1, 20, 5), true),
             "ordered-1-5-20-rejects-1-20-5");
-        Check(!PenaltyEvaluator.MatchesPattern(ordered, Throws(1, 5, 20, 20), true),
-            "ordered-1-5-20-rejects-4-darts");
+        Check(PenaltyEvaluator.MatchesPattern(ordered, Throws(1, 5, 20, 20), true),
+            "ordered-1-5-20-accepts-extra-dart");
         Check(!PenaltyEvaluator.MatchesPattern(ordered, Throws(1, 5), true),
             "ordered-1-5-20-rejects-2-darts");
 
@@ -76,8 +77,8 @@ public static class TurnPatternMatchTest
             "unordered-accepts-20-1-5");
         Check(!PenaltyEvaluator.MatchesPattern(ordered, Throws(1, 5), false),
             "unordered-rejects-2-darts");
-        Check(!PenaltyEvaluator.MatchesPattern(ordered, Throws(1, 5, 20, 20), false),
-            "unordered-rejects-4-darts");
+        Check(PenaltyEvaluator.MatchesPattern(ordered, Throws(1, 5, 20, 20), false),
+            "unordered-accepts-extra-dart");
         Check(!PenaltyEvaluator.MatchesPattern(ordered, Throws(1, 5, 19), false),
             "unordered-rejects-other-value");
 
@@ -108,15 +109,41 @@ public static class TurnPatternMatchTest
             T(20), T(0, HitType.Wall), T(0, HitType.Ceiling)
         }, false), "miss-slots-reject-board");
 
-        // ---------- E) 1 Slot (Turn mit genau einem Wurf) ----------
+        // ---------- E) 1 Slot (Treffer irgendwo im Turn) ----------
         var single = new List<TurnPatternEntry> { Slot(20) };
 
         Check(PenaltyEvaluator.MatchesPattern(single, Throws(20), false),
             "single-slot-1-dart-unordered");
         Check(PenaltyEvaluator.MatchesPattern(single, Throws(20), true),
             "single-slot-1-dart-ordered");
-        Check(!PenaltyEvaluator.MatchesPattern(single, Throws(20, 5, 1), false),
-            "single-slot-rejects-3-darts");
+        Check(PenaltyEvaluator.MatchesPattern(single, Throws(20, 5, 1), false),
+            "single-slot-accepts-3-darts");
+        Check(PenaltyEvaluator.MatchesPattern(single, Throws(5, 20, 1), true),
+            "single-slot-accepts-middle-dart");
+        Check(!PenaltyEvaluator.MatchesPattern(single, Throws(5, 1, 3), false),
+            "single-slot-rejects-3-darts-without-match");
+
+        // ---------- E2) Mehrere Slots in längeren Turns ----------
+        var doubleTwenty = new List<TurnPatternEntry> { Slot(20), Slot(20) };
+
+        Check(PenaltyEvaluator.MatchesPattern(doubleTwenty, Throws(20, 5, 20), true),
+            "two-slots-ordered-subsequence");
+        Check(PenaltyEvaluator.MatchesPattern(doubleTwenty, Throws(5, 20, 20), true),
+            "two-slots-ordered-accepts-leading-extra-dart");
+
+        var twentyThenFive = new List<TurnPatternEntry> { Slot(20), Slot(5) };
+
+        Check(!PenaltyEvaluator.MatchesPattern(twentyThenFive, Throws(5, 20), true),
+            "two-slots-ordered-rejects-wrong-order");
+        Check(PenaltyEvaluator.MatchesPattern(twentyThenFive, Throws(5, 20), false),
+            "two-slots-unordered-accepts-wrong-order");
+        Check(PenaltyEvaluator.MatchesPattern(doubleTwenty, Throws(5, 20, 20), false),
+            "two-slots-unordered-in-3-dart-turn");
+
+        var wildcardThenOne = new List<TurnPatternEntry> { AnySlot(), Slot(1) };
+
+        Check(PenaltyEvaluator.MatchesPattern(wildcardThenOne, Throws(1, 2), false),
+            "unordered-backtracks-wildcard");
 
         // ---------- F) Custom-Sektor-Slot ----------
         var sector = new List<TurnPatternEntry> { SectorSlot("sec1") };
@@ -127,6 +154,10 @@ public static class TurnPatternMatchTest
             "sector-slot-rejects-other-sector");
         Check(!PenaltyEvaluator.MatchesPattern(sector, new List<Throw> { T(20) }, false),
             "sector-slot-rejects-board");
+        Check(PenaltyEvaluator.MatchesPattern(sector, new List<Throw>
+        {
+            T(0, HitType.Custom, "sec1"), T(0), T(0)
+        }, false), "sector-slot-matches-in-3-dart-turn");
 
         // ---------- G) Leeres Pattern ----------
         Check(!PenaltyEvaluator.MatchesPattern(new List<TurnPatternEntry>(), Throws(20), true),

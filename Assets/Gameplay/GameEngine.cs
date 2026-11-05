@@ -45,6 +45,8 @@ public abstract class GameEngine : MonoBehaviour
         Debug.Log("[GameEngine] Settings: " + game.GetSettings().GetString());
     }
 
+    public List<CustomHitDef> GetHitSectorSnapshot() => game?.GetHitSectorSnapshot();
+
     protected virtual void InitializeGame(Game game)
     {
         // Absicherung
@@ -74,6 +76,9 @@ public abstract class GameEngine : MonoBehaviour
         SetHeadline();
 
         HidePausePanel();
+
+        if (inputHandler != null)
+            inputHandler.RefreshSectorUiFromGame();
     }
 
     public virtual void OnClickAbortSaveGame()

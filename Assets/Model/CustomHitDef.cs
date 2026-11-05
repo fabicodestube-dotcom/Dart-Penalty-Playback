@@ -33,7 +33,7 @@ public class CustomHitDef
 
     /// <summary>
     /// True = Seed (nicht löschbar, aber normal editierbar). Die
-    /// Wall-/Ceiling-Seeds sind löschbar (false).
+    /// Wall-/Ceiling-Seeds sind built-in und damit nicht löschbar.
     /// </summary>
     [JsonProperty] public bool builtIn;
 
