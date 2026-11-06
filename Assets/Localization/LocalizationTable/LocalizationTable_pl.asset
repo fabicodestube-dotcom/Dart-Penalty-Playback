@@ -1332,6 +1332,14 @@ MonoBehaviour:
     m_Localized: "Ręcznie"
     m_Metadata:
       m_Items: []
+  - m_Id: 33806894813368332
+    m_Localized: Dodaj wyzwalacz
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368333
+    m_Localized: Edytuj wyzwalacz
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

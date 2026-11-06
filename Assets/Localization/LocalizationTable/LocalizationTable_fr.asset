@@ -1332,6 +1332,14 @@ MonoBehaviour:
     m_Localized: "Manuel"
     m_Metadata:
       m_Items: []
+  - m_Id: 33806894813368332
+    m_Localized: Ajouter un déclencheur
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368333
+    m_Localized: Modifier le déclencheur
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

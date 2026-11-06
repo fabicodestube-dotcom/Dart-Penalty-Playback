@@ -544,6 +544,8 @@ public class WindowHandler : MonoBehaviour
             ScreenId.Summary => ScreenKind.Summary,
             ScreenId.GameDetail => ScreenKind.Detail,
             ScreenId.CustomClipBrowser => ScreenKind.Detail,
+            ScreenId.PenaltyEditor => ScreenKind.Detail,
+            ScreenId.AudioEventEditor => ScreenKind.Detail,
             _ => ScreenKind.Overlay
         };
     }
@@ -898,5 +900,7 @@ public enum ScreenId
     About,
     CustomClipHandler,
     CustomClipBrowser,
-    Customization
+    Customization,
+    PenaltyEditor,
+    AudioEventEditor
 }

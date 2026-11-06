@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Localization;
+using UnityEngine.Localization.Components;
 using UnityEngine.UI;
 
 /// <summary>
@@ -15,6 +17,7 @@ public class AudioEventEditorPopup : UIScreen, IUIScreen
 {
     [Header("Control")]
     public WindowHandler windowHandler;
+    public LocalizeStringEvent topBarHeadlineLocalize;
     public CustomizationAudioEventsPage eventsPage;
 
     [Header("Bestätigung")]
@@ -29,6 +32,7 @@ public class AudioEventEditorPopup : UIScreen, IUIScreen
 
     [Header("Trigger-Editor (Trigger-Panel)")]
     public GameObject triggerPanel;
+    public LocalizeStringEvent triggerHeadlineLocalize;
     public TMP_Dropdown triggerKindDropdown;
     public TMP_InputField scoreInput;
     public TMP_InputField thresholdInput;
@@ -72,11 +76,21 @@ public class AudioEventEditorPopup : UIScreen, IUIScreen
 
     private int? editingTriggerIndex;
     private List<AudioEventTrigger> workingTriggers;
+    private bool fallbackControlsCreated;
 
     // Dropdown-Reihenfolge = Enum-Reihenfolge (Global=0, X01=1, Cricket=2, ATC=3).
+    private static void SetHeadline(LocalizeStringEvent localize, string key)
+    {
+        if (localize == null)
+            return;
+
+        localize.StringReference = new LocalizedString("LocalizationTable", key);
+        localize.RefreshString();
+    }
+
     private void OnValidate()
     {
-        id = ScreenId.Popup;
+        id = ScreenId.AudioEventEditor;
 
         if (rect == null)
             rect = GetComponent<RectTransform>();
@@ -88,7 +102,7 @@ public class AudioEventEditorPopup : UIScreen, IUIScreen
     {
         base.Awake();
 
-        id = ScreenId.Popup;
+        id = ScreenId.AudioEventEditor;
 
         if (eventsPage == null)
             eventsPage = FindAnyObjectByType<CustomizationAudioEventsPage>();
@@ -110,13 +124,24 @@ public class AudioEventEditorPopup : UIScreen, IUIScreen
         }
 
         if (newTriggerButton != null)
-            newTriggerButton.onClick.AddListener(() => OnNewTrigger());
+        {
+            newTriggerButton.onClick.RemoveAllListeners();
+            newTriggerButton.onClick.AddListener(OnNewTrigger);
+        }
 
         if (saveTriggerButton != null)
+        {
+            saveTriggerButton.onClick.RemoveAllListeners();
             saveTriggerButton.onClick.AddListener(OnSaveTrigger);
+        }
 
         if (backToListButton != null)
+        {
+            backToListButton.onClick.RemoveAllListeners();
             backToListButton.onClick.AddListener(ShowTriggerList);
+        }
+
+        EnsureFallbackControls();
 
         if (patternEditor != null)
             patternEditor.SelectionChanged += RefreshValidation;
@@ -130,6 +155,80 @@ public class AudioEventEditorPopup : UIScreen, IUIScreen
 
         CaptureOutlineDefaults();
         HideError();
+    }
+
+    private void EnsureFallbackControls()
+    {
+        if (fallbackControlsCreated)
+            return;
+
+        fallbackControlsCreated = true;
+
+        if (newTriggerButton == null)
+        {
+            Transform newParent = mainPanel != null ? mainPanel.transform : triggerListContent;
+            newTriggerButton = CreateFallbackButton(newParent, "New", new Color(0.2f, 0.6f, 1f, 1f), OnNewTrigger);
+        }
+
+        if (triggerPanel == null)
+            return;
+
+        if (saveTriggerButton != null && backToListButton != null)
+            return;
+
+        Transform editorContent = triggerPanel.transform.Find("Content");
+        Transform buttonParent = editorContent != null ? editorContent : triggerPanel.transform;
+
+        var rowGo = new GameObject("TriggerButtons", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(LayoutElement));
+        rowGo.transform.SetParent(buttonParent, false);
+        var row = rowGo.GetComponent<HorizontalLayoutGroup>();
+        row.childAlignment = TextAnchor.MiddleCenter;
+        row.spacing = 20f;
+        row.childForceExpandWidth = true;
+        row.childForceExpandHeight = false;
+        row.childControlWidth = true;
+        row.childControlHeight = true;
+        rowGo.GetComponent<LayoutElement>().minHeight = 60f;
+
+        if (saveTriggerButton == null)
+            saveTriggerButton = CreateFallbackButton(rowGo.transform, "Save", new Color(0.2f, 0.6f, 0.2f, 1f), OnSaveTrigger);
+
+        if (backToListButton == null)
+            backToListButton = CreateFallbackButton(rowGo.transform, "Back", new Color(0.4f, 0.4f, 0.4f, 1f), ShowTriggerList);
+    }
+
+    private static Button CreateFallbackButton(Transform parent, string label, Color color, Action onClick)
+    {
+        if (parent == null)
+            return null;
+
+        var go = new GameObject(label + "Button", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(Button), typeof(LayoutElement));
+        go.transform.SetParent(parent, false);
+
+        var image = go.GetComponent<Image>();
+        image.color = color;
+
+        var layout = go.GetComponent<LayoutElement>();
+        layout.preferredWidth = 160f;
+        layout.preferredHeight = 50f;
+
+        var button = go.GetComponent<Button>();
+        button.onClick.AddListener(() => onClick());
+
+        var textGo = new GameObject("Text", typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI));
+        textGo.transform.SetParent(go.transform, false);
+
+        var textRect = textGo.GetComponent<RectTransform>();
+        textRect.anchorMin = Vector2.zero;
+        textRect.anchorMax = Vector2.one;
+        textRect.sizeDelta = Vector2.zero;
+
+        var text = textGo.GetComponent<TextMeshProUGUI>();
+        text.text = label;
+        text.fontSize = 16;
+        text.alignment = TextAlignmentOptions.Center;
+
+        return button;
     }
 
     private void CaptureOutlineDefaults()
@@ -181,10 +280,10 @@ public class AudioEventEditorPopup : UIScreen, IUIScreen
             errorPanel.SetActive(false);
     }
 
-    private void ShowViaWindowHandler()
+    private void ShowScreen()
     {
         if (windowHandler != null)
-            windowHandler.ShowPopup(this);
+            windowHandler.GoTo(ScreenId.AudioEventEditor);
         else
             gameObject.SetActive(true);
     }
@@ -202,6 +301,8 @@ public class AudioEventEditorPopup : UIScreen, IUIScreen
 
     public void OnShow()
     {
+        SetHeadline(topBarHeadlineLocalize, editingNew ? "New_audio_event" : "Edit_audio_event");
+        EnsureFallbackControls();
         SetConfirmView(false);
         pendingDeleteId = null;
 
@@ -238,15 +339,19 @@ public class AudioEventEditorPopup : UIScreen, IUIScreen
         editingBuiltIn = false;
         editingManual = false;
         editingNew = true;
-        workingTriggers = new List<AudioEventTrigger> { new AudioEventTrigger { kind = AudioEventTriggerKind.ScoreReached } };
+        SetHeadline(topBarHeadlineLocalize, "New_audio_event");
+        workingTriggers = new List<AudioEventTrigger>();
         editingTriggerIndex = null;
 
+        ApplyCategoryToUI(category);
+
         isLoading = true;
-        ShowTriggerList();
+        ResetNewAudioUI();
+        ShowTriggerEditor();
         isLoading = false;
         RefreshDeleteButton();
         RefreshValidation();
-        ShowViaWindowHandler();
+        ShowScreen();
     }
 
     public void ShowEdit(CustomizationAudioEventsPage page, string id)
@@ -261,6 +366,7 @@ public class AudioEventEditorPopup : UIScreen, IUIScreen
         editingBuiltIn = def.builtIn;
         editingManual = def.triggers != null && def.triggers.Count > 0 && def.triggers.FirstOrDefault().kind == AudioEventTriggerKind.Manual;
         editingNew = false;
+        SetHeadline(topBarHeadlineLocalize, "Edit_audio_event");
         workingTriggers = def.triggers != null
             ? def.triggers.Select(t => new AudioEventTrigger
             {
@@ -270,15 +376,41 @@ public class AudioEventEditorPopup : UIScreen, IUIScreen
                 matchOrder = t.matchOrder,
                 pattern = t.pattern != null ? new List<TurnPatternEntry>(t.pattern) : new List<TurnPatternEntry>()
             }).ToList()
-            : new List<AudioEventTrigger> { new AudioEventTrigger() };
+            : new List<AudioEventTrigger>();
         editingTriggerIndex = null;
 
+        ApplyCategoryToUI(def.category);
+
         isLoading = true;
+        ApplyAudioToUI(def);
         ShowTriggerList();
         isLoading = false;
         RefreshDeleteButton();
         RefreshValidation();
-        ShowViaWindowHandler();
+        ShowScreen();
+    }
+
+    private void ApplyAudioToUI(AudioEventDef def)
+    {
+        if (def == null)
+            return;
+
+        editingName = def.name;
+
+        if (nameInput != null)
+            nameInput.text = def.name ?? "";
+        if (enabledToggle != null)
+            enabledToggle.Initialize(def.enabled);
+    }
+
+    private void ResetNewAudioUI()
+    {
+        editingName = "New event";
+
+        if (nameInput != null)
+            nameInput.text = editingName;
+        if (enabledToggle != null)
+            enabledToggle.Initialize(true);
     }
 
     /// <summary>Aktuelle Kategorie (Dropdown gewinnt, sonst Edit-Stand).</summary>
@@ -287,6 +419,23 @@ public class AudioEventEditorPopup : UIScreen, IUIScreen
         if (categoryDropdown != null)
             return (AudioEventCategory)Mathf.Clamp(categoryDropdown.value, 0, 3);
         return editingCategory;
+    }
+
+    private void ApplyCategoryToUI(AudioEventCategory category)
+    {
+        editingCategory = category;
+
+        if (categoryDropdown != null)
+            categoryDropdown.SetValueWithoutNotify((int)category);
+
+        if (triggerKindDropdown != null)
+        {
+            triggerKindDropdown.ClearOptions();
+            triggerKindDropdown.AddOptions(TriggerOptions(category));
+        }
+
+        if (categoryLabel != null)
+            categoryLabel.text = CategoryDisplayName(category);
     }
 
     /// <summary>
@@ -383,8 +532,6 @@ public class AudioEventEditorPopup : UIScreen, IUIScreen
 
     private void ShowTriggerList()
     {
-        if (mainPanel != null)
-            mainPanel.SetActive(true);
         if (triggerPanel != null)
             triggerPanel.SetActive(false);
         if (confirmPanel != null)
@@ -397,16 +544,16 @@ public class AudioEventEditorPopup : UIScreen, IUIScreen
 
     private void ShowTriggerEditor()
     {
-        if (mainPanel != null)
-            mainPanel.SetActive(false);
         if (triggerPanel != null)
             triggerPanel.SetActive(true);
         if (confirmPanel != null)
             confirmPanel.SetActive(false);
 
+        SetHeadline(triggerHeadlineLocalize, editingTriggerIndex.HasValue ? "Edit_trigger" : "Add_trigger");
+
         var trigger = editingTriggerIndex.HasValue
             ? workingTriggers[editingTriggerIndex.Value]
-            : new AudioEventTrigger { kind = AudioEventTriggerKind.ScoreReached };
+            : new AudioEventTrigger { kind = TriggerForCategory(CurrentCategory(), 0) };
 
         isLoading = true;
         LoadTriggerEditor(trigger);
@@ -416,7 +563,7 @@ public class AudioEventEditorPopup : UIScreen, IUIScreen
 
     private void RefreshTriggerListUI()
     {
-        if (triggerListContent == null || triggerRowPrefab == null)
+        if (triggerListContent == null)
             return;
 
         foreach (Transform child in triggerListContent)
@@ -424,30 +571,43 @@ public class AudioEventEditorPopup : UIScreen, IUIScreen
 
         if (workingTriggers == null || workingTriggers.Count == 0)
         {
-            var go = new GameObject("EmptyHint", typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI));
+            var go = new GameObject("EmptyHint", typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI), typeof(LayoutElement));
             go.transform.SetParent(triggerListContent, false);
             var rt = go.GetComponent<RectTransform>();
             rt.anchorMin = Vector2.zero;
             rt.anchorMax = Vector2.one;
             rt.sizeDelta = Vector2.zero;
+            go.GetComponent<LayoutElement>().preferredHeight = 130f;
             var text = go.GetComponent<TextMeshProUGUI>();
             text.text = LocalizationText.Get("No_triggers", "Keine Trigger");
-            text.alignment = TextAlignmentOptions.Center;
-            text.fontSize = 16;
+            text.alignment = TextAlignmentOptions.Left;
+            text.fontSize = 45;
             return;
         }
 
         for (int i = 0; i < workingTriggers.Count; i++)
         {
             var trigger = workingTriggers[i];
-            var go = Instantiate(triggerRowPrefab, triggerListContent);
+            GameObject go;
+            if (triggerRowPrefab != null)
+            {
+                go = Instantiate(triggerRowPrefab, triggerListContent);
+            }
+            else
+            {
+                go = new GameObject("TriggerRow", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(LayoutElement));
+                go.transform.SetParent(triggerListContent, false);
+                go.GetComponent<Image>().color = new Color(0.15f, 0.15f, 0.15f, 0.6f);
+                go.GetComponent<LayoutElement>().preferredHeight = 130f;
+            }
+
             var rowRect = go.GetComponent<RectTransform>();
             if (rowRect != null)
             {
                 rowRect.anchorMin = new Vector2(0f, 1f);
                 rowRect.anchorMax = new Vector2(1f, 1f);
                 rowRect.pivot = new Vector2(0.5f, 0.5f);
-                rowRect.sizeDelta = new Vector2(0f, 60f);
+                rowRect.sizeDelta = new Vector2(0f, 130f);
             }
 
             var summaryText = go.GetComponentInChildren<TextMeshProUGUI>();
@@ -754,7 +914,7 @@ public class AudioEventEditorPopup : UIScreen, IUIScreen
             ? nameInput.text.Trim()
             : editingName;
 
-        windowHandler?.HidePopup(0f);
+        windowHandler?.Replace(ScreenId.CustomClipBrowser);
         eventsPage?.OnClickOpenClips(editingId, label);
     }
 
@@ -770,6 +930,8 @@ public class AudioEventEditorPopup : UIScreen, IUIScreen
         string displayName = nameInput != null && !string.IsNullOrWhiteSpace(nameInput.text)
             ? nameInput.text.Trim()
             : editingName;
+
+        HideError();
 
         if (confirmText != null)
             confirmText.text = LocalizationText.Format("Delete_audio_event_named", "Delete audio event {0}?", displayName);
@@ -805,8 +967,6 @@ public class AudioEventEditorPopup : UIScreen, IUIScreen
 
     private void SetConfirmView(bool confirm)
     {
-        if (mainPanel != null)
-            mainPanel.SetActive(!confirm);
         if (triggerPanel != null)
             triggerPanel.SetActive(false);
         if (confirmPanel != null)
@@ -827,6 +987,6 @@ public class AudioEventEditorPopup : UIScreen, IUIScreen
         editingTriggerIndex = null;
 
         if (windowHandler != null)
-            windowHandler.HidePopup();
+            windowHandler.GoTo(ScreenId.Customization);
     }
 }

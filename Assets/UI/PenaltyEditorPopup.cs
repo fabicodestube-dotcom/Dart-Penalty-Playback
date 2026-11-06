@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Localization;
+using UnityEngine.Localization.Components;
 using UnityEngine.UI;
 
 /// <summary>
@@ -16,6 +18,7 @@ public class PenaltyEditorPopup : UIScreen, IUIScreen
 {
     [Header("Control")]
     public WindowHandler windowHandler;
+    public LocalizeStringEvent topBarHeadlineLocalize;
     public CustomizationPenaltiesPage penaltiesPage;
 
     [Header("Bestätigung")]
@@ -30,6 +33,7 @@ public class PenaltyEditorPopup : UIScreen, IUIScreen
 
     [Header("Trigger-Editor (Trigger-Panel)")]
     public GameObject triggerPanel;
+    public LocalizeStringEvent triggerHeadlineLocalize;
     public TMP_Dropdown conditionTypeDropdown;
     public GameObject patternBody;
     public GameObject scoreBody;
@@ -64,7 +68,6 @@ public class PenaltyEditorPopup : UIScreen, IUIScreen
 
     private bool isLoading;
     private bool editingNew;
-    private bool triggerPanelDirty;
 
     private string editingId;
     private bool editingBuiltIn;
@@ -74,13 +77,23 @@ public class PenaltyEditorPopup : UIScreen, IUIScreen
     private bool editingRemainingScore;
     private int? editingTriggerIndex;
     private PenaltyCondition editingCondition;
+    private PenaltyConditionKind pendingConditionKind = PenaltyConditionKind.TurnPattern;
 
     private readonly List<string> instantSectorIds = new List<string>();
     private List<PenaltyCondition> workingConditions;
 
+    private static void SetHeadline(LocalizeStringEvent localize, string key)
+    {
+        if (localize == null)
+            return;
+
+        localize.StringReference = new LocalizedString("LocalizationTable", key);
+        localize.RefreshString();
+    }
+
     private void OnValidate()
     {
-        id = ScreenId.Popup;
+        id = ScreenId.PenaltyEditor;
 
         if (rect == null)
             rect = GetComponent<RectTransform>();
@@ -92,7 +105,7 @@ public class PenaltyEditorPopup : UIScreen, IUIScreen
     {
         base.Awake();
 
-        id = ScreenId.Popup;
+        id = ScreenId.PenaltyEditor;
 
         if (windowHandler == null)
             windowHandler = FindAnyObjectByType<WindowHandler>();
@@ -137,13 +150,22 @@ public class PenaltyEditorPopup : UIScreen, IUIScreen
             scoreInput.onValueChanged.AddListener(_ => RefreshValidation());
 
         if (newTriggerButton != null)
-            newTriggerButton.onClick.AddListener(() => OnNewTrigger());
+        {
+            newTriggerButton.onClick.RemoveAllListeners();
+            newTriggerButton.onClick.AddListener(OnNewTrigger);
+        }
 
         if (saveTriggerButton != null)
+        {
+            saveTriggerButton.onClick.RemoveAllListeners();
             saveTriggerButton.onClick.AddListener(OnSaveTrigger);
+        }
 
         if (backToListButton != null)
+        {
+            backToListButton.onClick.RemoveAllListeners();
             backToListButton.onClick.AddListener(ShowTriggerList);
+        }
 
         CaptureOutlineDefaults();
         HideError();
@@ -198,10 +220,10 @@ public class PenaltyEditorPopup : UIScreen, IUIScreen
             errorPanel.SetActive(false);
     }
 
-    private void ShowViaWindowHandler()
+    private void ShowScreen()
     {
         if (windowHandler != null)
-            windowHandler.ShowPopup(this);
+            windowHandler.GoTo(ScreenId.PenaltyEditor);
         else
             gameObject.SetActive(true);
     }
@@ -219,17 +241,10 @@ public class PenaltyEditorPopup : UIScreen, IUIScreen
 
     public void OnShow()
     {
+        SetHeadline(topBarHeadlineLocalize, editingNew ? "New_penalty" : "Edit_penalty");
         SetConfirmView(false);
         pendingDeleteId = null;
-
-        if (editingNew)
-        {
-            ShowTriggerEditor();
-        }
-        else
-        {
-            ShowTriggerList();
-        }
+        ShowTriggerList();
     }
 
     public void OnHide()
@@ -253,16 +268,19 @@ public class PenaltyEditorPopup : UIScreen, IUIScreen
         editingId = System.Guid.NewGuid().ToString("N");
         editingBuiltIn = false;
         editingNew = true;
+        SetHeadline(topBarHeadlineLocalize, "New_penalty");
         editingRemainingScore = kind == PenaltyConditionKind.RemainingExactScore;
-        workingConditions = new List<PenaltyCondition> { FreshCondition(kind) };
+        pendingConditionKind = kind;
+        workingConditions = new List<PenaltyCondition>();
         editingTriggerIndex = null;
-        triggerPanelDirty = false;
 
         isLoading = true;
-        LoadTriggerEditor(workingConditions[0]);
+        ResetNewPenaltyUI(kind);
+        ShowTriggerList();
         isLoading = false;
+        RefreshDeleteButton();
         RefreshValidation();
-        ShowViaWindowHandler();
+        ShowScreen();
     }
 
     public void ShowEdit(CustomizationPenaltiesPage page, string id)
@@ -270,41 +288,75 @@ public class PenaltyEditorPopup : UIScreen, IUIScreen
         penaltiesPage = page != null ? page : penaltiesPage;
 
         var def = CustomizationStore.GetPenalties().Find(x => x != null && x.id == id);
-        if (def == null || def.conditions == null || def.conditions.Count == 0)
+        if (def == null)
             return;
 
         editingId = def.id;
         editingBuiltIn = def.builtIn;
         editingNew = false;
-        editingRemainingScore = def.conditions.FirstOrDefault()?.kind == PenaltyConditionKind.RemainingExactScore;
-        workingConditions = def.conditions.Select(c =>
-        {
-            var clone = new PenaltyCondition
+        SetHeadline(topBarHeadlineLocalize, "Edit_penalty");
+        pendingConditionKind = PenaltyConditionKind.TurnPattern;
+        editingRemainingScore = def.conditions != null
+            && def.conditions.FirstOrDefault()?.kind == PenaltyConditionKind.RemainingExactScore;
+        workingConditions = def.conditions != null
+            ? def.conditions.Select(c =>
             {
-                kind = c.kind,
-                hitType = c.hitType,
-                customHitId = c.customHitId,
-                score = c.score,
-                minScore = c.minScore,
-                matchOrder = c.matchOrder,
-                pattern = c.pattern != null ? new List<TurnPatternEntry>(c.pattern) : new List<TurnPatternEntry>()
-            };
-            return clone;
-        }).ToList();
+                var clone = new PenaltyCondition
+                {
+                    kind = c.kind,
+                    hitType = c.hitType,
+                    customHitId = c.customHitId,
+                    score = c.score,
+                    minScore = c.minScore,
+                    matchOrder = c.matchOrder,
+                    pattern = c.pattern != null ? new List<TurnPatternEntry>(c.pattern) : new List<TurnPatternEntry>()
+                };
+                return clone;
+            }).ToList()
+            : new List<PenaltyCondition>();
         editingTriggerIndex = null;
-        triggerPanelDirty = false;
 
         isLoading = true;
+        ApplyPenaltyToUI(def);
         ShowTriggerList();
         isLoading = false;
         RefreshValidation();
-        ShowViaWindowHandler();
+        ShowScreen();
+    }
+
+    private void ApplyPenaltyToUI(CustomPenaltyDef def)
+    {
+        if (def == null)
+            return;
+
+        editingName = def.name;
+
+        if (nameInput != null)
+            nameInput.text = def.name ?? "";
+        if (costInput != null)
+            costInput.text = def.cost.ToString();
+        if (shortNameInput != null)
+            shortNameInput.text = def.shortName ?? "";
+        if (enabledToggle != null)
+            enabledToggle.Initialize(def.enabled);
+    }
+
+    private void ResetNewPenaltyUI(PenaltyConditionKind kind)
+    {
+        editingName = "New penalty";
+
+        if (nameInput != null)
+            nameInput.text = editingName;
+        if (costInput != null)
+            costInput.text = DefaultCost(kind).ToString();
+        if (shortNameInput != null)
+            shortNameInput.text = "";
+        if (enabledToggle != null)
+            enabledToggle.Initialize(true);
     }
 
     private void ShowTriggerList()
     {
-        if (mainPanel != null)
-            mainPanel.SetActive(true);
         if (triggerPanel != null)
             triggerPanel.SetActive(false);
         if (confirmPanel != null)
@@ -317,16 +369,16 @@ public class PenaltyEditorPopup : UIScreen, IUIScreen
 
     private void ShowTriggerEditor()
     {
-        if (mainPanel != null)
-            mainPanel.SetActive(false);
         if (triggerPanel != null)
             triggerPanel.SetActive(true);
         if (confirmPanel != null)
             confirmPanel.SetActive(false);
 
+        SetHeadline(triggerHeadlineLocalize, editingTriggerIndex.HasValue ? "Edit_trigger" : "Add_trigger");
+
         var condition = editingTriggerIndex.HasValue
             ? workingConditions[editingTriggerIndex.Value]
-            : FreshCondition(editingRemainingScore ? PenaltyConditionKind.RemainingExactScore : PenaltyConditionKind.TurnPattern);
+            : FreshCondition(pendingConditionKind);
 
         isLoading = true;
         LoadTriggerEditor(condition);
@@ -336,7 +388,7 @@ public class PenaltyEditorPopup : UIScreen, IUIScreen
 
     private void RefreshTriggerListUI()
     {
-        if (triggerListContent == null || triggerRowPrefab == null)
+        if (triggerListContent == null)
             return;
 
         foreach (Transform child in triggerListContent)
@@ -344,23 +396,35 @@ public class PenaltyEditorPopup : UIScreen, IUIScreen
 
         if (workingConditions == null || workingConditions.Count == 0)
         {
-            var go = new GameObject("EmptyHint", typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI));
+            var go = new GameObject("EmptyHint", typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI), typeof(LayoutElement));
             go.transform.SetParent(triggerListContent, false);
             var rt = go.GetComponent<RectTransform>();
             rt.anchorMin = Vector2.zero;
             rt.anchorMax = Vector2.one;
             rt.sizeDelta = Vector2.zero;
+            go.GetComponent<LayoutElement>().preferredHeight = 130f;
             var text = go.GetComponent<TextMeshProUGUI>();
             text.text = LocalizationText.Get("No_triggers", "Keine Trigger");
-            text.alignment = TextAlignmentOptions.Center;
-            text.fontSize = 16;
+            text.alignment = TextAlignmentOptions.Left;
+            text.fontSize = 45;
             return;
         }
 
         for (int i = 0; i < workingConditions.Count; i++)
         {
             var condition = workingConditions[i];
-            var go = Instantiate(triggerRowPrefab, triggerListContent);
+            GameObject go;
+            if (triggerRowPrefab != null)
+            {
+                go = Instantiate(triggerRowPrefab, triggerListContent);
+            }
+            else
+            {
+                go = new GameObject("TriggerRow", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+                go.transform.SetParent(triggerListContent, false);
+                go.GetComponent<Image>().color = new Color(0.15f, 0.15f, 0.15f, 0.6f);
+            }
+
             var rowRect = go.GetComponent<RectTransform>();
             if (rowRect != null)
             {
@@ -486,14 +550,14 @@ public class PenaltyEditorPopup : UIScreen, IUIScreen
     private void OnNewTrigger()
     {
         editingTriggerIndex = null;
-        triggerPanelDirty = false;
+        if (workingConditions != null && workingConditions.Count > 0)
+            pendingConditionKind = PenaltyConditionKind.TurnPattern;
         ShowTriggerEditor();
     }
 
     private void OnEditTrigger(int index)
     {
         editingTriggerIndex = index;
-        triggerPanelDirty = false;
         ShowTriggerEditor();
     }
 
@@ -715,7 +779,7 @@ public class PenaltyEditorPopup : UIScreen, IUIScreen
             ? nameInput.text.Trim()
             : editingName;
 
-        windowHandler?.HidePopup(0f);
+        windowHandler?.Replace(ScreenId.CustomClipBrowser);
         penaltiesPage?.OnClickOpenClips(editingId, label);
     }
 
@@ -781,6 +845,8 @@ public class PenaltyEditorPopup : UIScreen, IUIScreen
             ? nameInput.text.Trim()
             : editingName;
 
+        HideError();
+
         if (confirmText != null)
             confirmText.text = LocalizationText.Format("Delete_penalty_named", "Delete penalty {0}?", displayName);
 
@@ -815,8 +881,6 @@ public class PenaltyEditorPopup : UIScreen, IUIScreen
 
     private void SetConfirmView(bool confirm)
     {
-        if (mainPanel != null)
-            mainPanel.SetActive(!confirm);
         if (triggerPanel != null)
             triggerPanel.SetActive(false);
         if (confirmPanel != null)
@@ -835,7 +899,7 @@ public class PenaltyEditorPopup : UIScreen, IUIScreen
         editingTriggerIndex = null;
 
         if (windowHandler != null)
-            windowHandler.HidePopup();
+            windowHandler.GoTo(ScreenId.Customization);
     }
 
     private static int TypeToIndex(PenaltyConditionKind kind)

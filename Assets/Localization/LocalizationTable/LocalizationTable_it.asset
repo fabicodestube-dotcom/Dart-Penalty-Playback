@@ -1329,6 +1329,14 @@ MonoBehaviour:
     m_Localized: "Manuale"
     m_Metadata:
       m_Items: []
+  - m_Id: 33806894813368332
+    m_Localized: Aggiungi trigger
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368333
+    m_Localized: Modifica trigger
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

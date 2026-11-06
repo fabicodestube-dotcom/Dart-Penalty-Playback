@@ -1303,6 +1303,14 @@ MonoBehaviour:
     m_Key: Schnapszahl
     m_Metadata:
       m_Items: []
+  - m_Id: 33806894813368332
+    m_Key: Add_trigger
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368333
+    m_Key: Edit_trigger
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

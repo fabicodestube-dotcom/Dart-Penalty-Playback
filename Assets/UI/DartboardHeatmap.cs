@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
@@ -6,14 +7,14 @@ using UnityEngine.Localization.Components;
 using UnityEngine.UI;
 
 /// <summary>
-/// Dartscheiben-Heatmap als EIN UGUI-Mesh (ein Draw Call pro Scheibe).
-/// Das Board wird einmal aus Dreiecken aufgebaut (Bull als Fächer,
-/// Ringe als Quad-Strips); SetData() schreibt nur Vertex-Farben neu.
-/// Jede Zone ist schwarz umrandet (schwarze Basis-Scheibe unter den Zonen,
-/// Lücken lassen das Schwarz durchscheinen). Die Felder sind nach
-/// Trefferhäufigkeit eingefärbt: weiß (nie) → grün → gelb → orange → rot.
-/// Inneres + äußeres Single teilen sich einen Key ("n") und zeigen
-/// bewusst dieselbe Farbe. Key "0" (daneben) wird als Text gezählt.
+/// Dartscheiben-Heatmap als anti-aliased Textur auf einem UGUI-Quad.
+/// Eine statische Zonen-Map (Supersampling) wird einmal pro Parameter-Set
+/// erzeugt und von allen Heatmap-Instanzen geteilt. SetData() färbt nur
+/// noch die Pixel neu, sodass Kanten glatt und Trennlinien überall gleich
+/// breit sind (Breite in Board-Einheiten statt Winkel).
+/// Die Felder sind nach Trefferhäufigkeit eingefärbt: weiß (nie) → grün →
+/// gelb → orange → rot. Inneres + äußeres Single teilen sich einen Key ("n")
+/// und zeigen bewusst dieselbe Farbe. Key "0" (daneben) wird als Text gezählt.
 /// Farbskala ist relativ pro Spieler: max Count = rot.
 /// </summary>
 [RequireComponent(typeof(RectTransform))]
@@ -24,20 +25,29 @@ public class DartboardHeatmap : MaskableGraphic
     public Gradient heatGradient = CreateDefaultHeatGradient();
 
     [Header("Umrandung")]
-    public Color borderColor = new Color(21f /255f, 21f /255f,21f /255f);
+    public Color borderColor = new Color(21f / 255f, 21f / 255f, 21f / 255f);
     [Tooltip("Breite des schwarzen Außenrings in Board-Einheiten (Double außen = 1).")]
     [Range(0f, 0.1f)]
     public float rimWidth = 0.035f;
+    [Tooltip("Konstante Breite der Trennlinien in Board-Einheiten (nicht Winkel!).")]
+    [Range(0.001f, 0.03f)]
+    public float borderWidth = 0.008f;
 
-    [Header("Board")]
-    [Range(0f, 2f)]
-    public float angularGapDeg = 0.8f;
-    [Range(0f, 0.03f)]
-    public float radialGap = 0.008f;
-    [Range(8, 64)]
-    public int bullSegments = 40;
-    [Range(2, 12)]
-    public int ringSteps = 5;
+    [Header("Felder")]
+    [Tooltip("Radiale Dicke der Triple-Felder relativ zur offiziellen Geometrie.")]
+    [Range(1f, 1.5f)]
+    public float tripleThicknessScale = 1.1f;
+    [Tooltip("Radiale Dicke der Double-Felder relativ zur offiziellen Geometrie.")]
+    [Range(1f, 1.5f)]
+    public float doubleThicknessScale = 1.1f;
+
+    [Header("Textur")]
+    [Tooltip("Auflösung der Zonen-Map. Höher = schärfer, aber teurer beim ersten Aufbau.")]
+    [Range(128, 1024)]
+    public int textureResolution = 512;
+    [Tooltip("Subsamples pro Achse für Kantenglättung (2 = 2x2).")]
+    [Range(1, 4)]
+    public int edgeSupersampling = 2;
 
     [Header("Labels")]
     public bool showNumberLabels = true;
@@ -45,7 +55,6 @@ public class DartboardHeatmap : MaskableGraphic
     [Tooltip("Font der Scheiben-Labels. Leer = wird vom Headline-Label des Charts übernommen (Roboto).")]
     public TMP_FontAsset labelFont;
 
-    private readonly List<BuiltZone> builtZones = new List<BuiltZone>(82);
     private readonly Dictionary<string, int> counts = new Dictionary<string, int>();
     private int maxCount;
     private int missCount;
@@ -53,12 +62,88 @@ public class DartboardHeatmap : MaskableGraphic
     private bool labelsBuilt;
     private bool missLabelAutoCreated;
     private string missBaseText = "Miss";
-    private readonly List<Vector2> scratchTris = new List<Vector2>(256);
 
-    private struct BuiltZone
+    private Texture2D heatTexture;
+    private Color32[] pixelBuffer;
+    private bool colorDirty = true;
+
+    private static string[] s_ZoneKeys;
+    private static readonly Dictionary<MapKey, ZoneMap> s_MapCache = new Dictionary<MapKey, ZoneMap>();
+
+    // Etwas transparenter Rand, damit die Außenkante der Scheibe ebenfalls
+    // weich auslaufen kann statt an der Texturgrenze abgeschnitten zu werden.
+    private const float TexturePadding = 0.01f;
+
+    private static string[] ZoneKeys
     {
-        public DartboardGeometry.Zone zone;
-        public List<Vector2> tris; // normiert: Zentrum = 0, Double außen = 1
+        get
+        {
+            if (s_ZoneKeys == null)
+            {
+                var zones = DartboardGeometry.BuildZones();
+                s_ZoneKeys = new string[zones.Count];
+                for (int i = 0; i < zones.Count; i++)
+                    s_ZoneKeys[i] = zones[i].sectorKey;
+            }
+            return s_ZoneKeys;
+        }
+    }
+
+    private struct MapKey : IEquatable<MapKey>
+    {
+        public int resolution;
+        public int supersampling;
+        public float borderWidth;
+        public float rimWidth;
+        public float tripleScale;
+        public float doubleScale;
+
+        public bool Equals(MapKey other)
+        {
+            return resolution == other.resolution
+                && supersampling == other.supersampling
+                && borderWidth == other.borderWidth
+                && rimWidth == other.rimWidth
+                && tripleScale == other.tripleScale
+                && doubleScale == other.doubleScale;
+        }
+
+        public override bool Equals(object obj) => obj is MapKey other && Equals(other);
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                int h = 17;
+                h = h * 31 + resolution;
+                h = h * 31 + supersampling;
+                h = h * 31 + borderWidth.GetHashCode();
+                h = h * 31 + rimWidth.GetHashCode();
+                h = h * 31 + tripleScale.GetHashCode();
+                h = h * 31 + doubleScale.GetHashCode();
+                return h;
+            }
+        }
+    }
+
+    private sealed class ZoneMap
+    {
+        public int resolution;
+        public byte[] zoneIndex;      // 0..81, 255 = keine Zone (Rand/außen)
+        public byte[] borderCoverage; // 0..255 Anteil Randfarbe
+        public byte[] alpha;          // 0..255 Anteil innerhalb der Scheibe
+    }
+
+    private struct SampleParams
+    {
+        public float outer;
+        public float rimEnd;
+        public float borderHalf;
+        public float bullInner;
+        public float bullOuter;
+        public float tripleInner;
+        public float tripleOuter;
+        public float doubleInner;
     }
 
     private static Gradient CreateDefaultHeatGradient()
@@ -98,36 +183,49 @@ public class DartboardHeatmap : MaskableGraphic
 
         base.Awake();
         raycastTarget = false;
-        BuildZones();
+        // Perf (M2): Zonen-Map und Textur entstehen erst bei Bedarf,
+        // siehe EnsureHeatView(). Balken-Nutzer zahlen keine Mehrkosten.
     }
 
     protected override void OnEnable()
     {
         base.OnEnable();
-        if (builtZones.Count == 0)
-            BuildZones();
-        // Perf (M2): Labels (21 TMP + Lokalisierung) erst bei Bedarf bauen,
-        // siehe EnsureHeatView(). Balken-Nutzer zahlen keine Mehrkosten.
+        if (labelsBuilt && colorDirty)
+            ApplyColors();
     }
 
     /// <summary>
-    /// Perf (M2): Baut Zahlen-/Miss-Labels beim ersten Anzeigen der Heatmap.
-    /// Idempotent; nachfolgendes SetData() aktualisiert nur Farben/Text.
+    /// Baut Zahlen-/Miss-Labels beim ersten Anzeigen der Heatmap und stößt
+    /// das erste Einfärben an. Idempotent; SetData() aktualisiert danach nur
+    /// noch Farben/Text.
     /// </summary>
     public void EnsureHeatView()
     {
         EnsureLabels();
         LayoutLabels();
+        if (heatTexture == null)
+            EnsureTexture(ResolveResolution());
+        EnsureMap();
         SetVerticesDirty();
+        if (colorDirty)
+            ApplyColors();
     }
 
 #if UNITY_EDITOR
     protected override void OnValidate()
     {
         base.OnValidate();
-        bullSegments = Mathf.Clamp(bullSegments, 8, 64);
-        ringSteps = Mathf.Clamp(ringSteps, 2, 12);
-        BuildZones();
+        borderWidth = Mathf.Clamp(borderWidth, 0.001f, 0.03f);
+        textureResolution = Mathf.Clamp(textureResolution, 128, 1024);
+        edgeSupersampling = Mathf.Clamp(edgeSupersampling, 1, 4);
+        tripleThicknessScale = Mathf.Clamp(tripleThicknessScale, 1f, 1.5f);
+        doubleThicknessScale = Mathf.Clamp(doubleThicknessScale, 1f, 1.5f);
+        colorDirty = true;
+        if (labelsBuilt)
+        {
+            EnsureMap();
+            ApplyColors();
+        }
         LayoutLabels();
         SetVerticesDirty();
     }
@@ -153,175 +251,367 @@ public class DartboardHeatmap : MaskableGraphic
         }
 
         UpdateMissLabel();
-        SetVerticesDirty();
+        colorDirty = true;
+        if (labelsBuilt)
+            ApplyColors();
     }
 
     // ---------------------------------------------------------
-    // MESH
+    // TEXTUR / RENDERING
     // ---------------------------------------------------------
+
+    public override Texture mainTexture => heatTexture;
 
     protected override void OnPopulateMesh(VertexHelper vh)
     {
         vh.Clear();
 
-        if (builtZones.Count == 0)
-            BuildZones();
+        // Noch keine Daten/Textur: unsichtbar zeichnen statt schwarz.
+        if (heatTexture == null)
+            return;
 
         Rect rect = GetPixelAdjustedRect();
-        float scale = Mathf.Min(rect.width, rect.height) * 0.5f * 0.80f;
-        if (scale <= 0f)
+        float unitsPerBoard = Mathf.Min(rect.width, rect.height) * 0.5f * 0.80f;
+        float extent = unitsPerBoard *
+            (DartboardGeometry.DoubleOuterRadius + Mathf.Max(0f, rimWidth) + TexturePadding);
+        if (extent <= 0f)
             return;
 
         Vector2 center = rect.center;
-        UIVertex vert = UIVertex.simpleVert;
+        Color32 tint = color;
 
-        // Schwarze Basis-Scheibe zuerst: Sie liegt unter allen Zonen und
-        // scheint durch die Lücken hindurch → schwarze Umrandung jeder Zone
-        // plus schwarzer Außenring. (UI-Material: ZWrite off, daher Maler-
-        // Reihenfolge = Dreiecks-Reihenfolge, kein Z-Fighting.)
-        EmitFan(vh, ref vert, center, scale,
-            DartboardGeometry.DoubleOuterRadius + rimWidth, borderColor);
+        int baseIndex = vh.currentVertCount;
+        vh.AddVert(new Vector3(center.x - extent, center.y - extent, 0f), tint, new Vector2(0f, 0f));
+        vh.AddVert(new Vector3(center.x - extent, center.y + extent, 0f), tint, new Vector2(0f, 1f));
+        vh.AddVert(new Vector3(center.x + extent, center.y + extent, 0f), tint, new Vector2(1f, 1f));
+        vh.AddVert(new Vector3(center.x + extent, center.y - extent, 0f), tint, new Vector2(1f, 0f));
+        vh.AddTriangle(baseIndex, baseIndex + 1, baseIndex + 2);
+        vh.AddTriangle(baseIndex, baseIndex + 2, baseIndex + 3);
+    }
 
-        foreach (var bz in builtZones)
+    private int ResolveResolution()
+    {
+        return Mathf.Clamp(textureResolution, 128, 1024);
+    }
+
+    private void EnsureTexture(int resolution)
+    {
+        if (heatTexture != null && heatTexture.width == resolution)
+            return;
+
+        if (heatTexture != null)
         {
-            int count = 0;
-            counts.TryGetValue(bz.zone.sectorKey, out count);
+            if (Application.isPlaying)
+                Destroy(heatTexture);
+            else
+                DestroyImmediate(heatTexture);
+        }
+
+        heatTexture = new Texture2D(resolution, resolution, TextureFormat.RGBA32, false, false)
+        {
+            filterMode = FilterMode.Bilinear,
+            wrapMode = TextureWrapMode.Clamp,
+            hideFlags = HideFlags.HideAndDontSave
+        };
+        pixelBuffer = null;
+        SetMaterialDirty();
+    }
+
+    private void EnsureMap()
+    {
+        GetZoneMap();
+    }
+
+    private ZoneMap GetZoneMap()
+    {
+        var key = new MapKey
+        {
+            resolution = ResolveResolution(),
+            supersampling = Mathf.Clamp(edgeSupersampling, 1, 4),
+            borderWidth = borderWidth,
+            rimWidth = Mathf.Max(0f, rimWidth),
+            tripleScale = Mathf.Max(0f, tripleThicknessScale),
+            doubleScale = Mathf.Max(0f, doubleThicknessScale)
+        };
+
+        if (s_MapCache.TryGetValue(key, out ZoneMap cached))
+            return cached;
+
+        // Editor-Slider können viele Varianten erzeugen; Cache klein halten.
+        if (s_MapCache.Count >= 8)
+            s_MapCache.Clear();
+
+        ZoneMap map = BuildZoneMap(key);
+        s_MapCache[key] = map;
+        return map;
+    }
+
+    private void ApplyColors()
+    {
+        ZoneMap map = GetZoneMap();
+        EnsureTexture(map.resolution);
+
+        int total = map.resolution * map.resolution;
+        if (pixelBuffer == null || pixelBuffer.Length != total)
+            pixelBuffer = new Color32[total];
+
+        string[] keys = ZoneKeys;
+        var palette = new Color[keys.Length];
+        for (int i = 0; i < keys.Length; i++)
+        {
+            counts.TryGetValue(keys[i], out int count);
             float t = maxCount > 0 ? count / (float)maxCount : 0f;
-            Color c = heatGradient != null
+            palette[i] = heatGradient != null
                 ? heatGradient.Evaluate(Mathf.Clamp01(t))
                 : Color.white;
-
-            EmitTris(vh, ref vert, center, scale, bz.tris, c);
         }
-    }
 
-    private void EmitFan(VertexHelper vh, ref UIVertex vert, Vector2 center,
-        float scale, float radius, Color color)
-    {
-        scratchTris.Clear();
-        AddDisc(scratchTris, 0f, radius, 48);
-        EmitTris(vh, ref vert, center, scale, scratchTris, color);
-    }
-
-    private static void EmitTris(VertexHelper vh, ref UIVertex vert, Vector2 center,
-        float scale, List<Vector2> tris, Color color)
-    {
-        for (int i = 0; i + 2 < tris.Count; i += 3)
+        Color border = borderColor;
+        for (int i = 0; i < total; i++)
         {
-            for (int k = 0; k < 3; k++)
+            byte alphaByte = map.alpha[i];
+            if (alphaByte == 0)
             {
-                Vector2 p = tris[i + k];
-                vert.position = new Vector3(center.x + p.x * scale, center.y + p.y * scale, 0f);
-                vert.color = color;
-                vert.uv0 = Vector2.zero;
-                vh.AddVert(vert);
+                pixelBuffer[i] = new Color32(0, 0, 0, 0);
+                continue;
             }
-            int baseIndex = vh.currentVertCount - 3;
-            vh.AddTriangle(baseIndex, baseIndex + 1, baseIndex + 2);
+
+            int zone = map.zoneIndex[i];
+            Color zoneColor = zone < palette.Length ? palette[zone] : border;
+            float coverage = map.borderCoverage[i] / 255f;
+            Color c = Color.Lerp(zoneColor, border, coverage);
+            c.a *= alphaByte / 255f;
+            pixelBuffer[i] = c;
         }
+
+        heatTexture.SetPixels32(pixelBuffer);
+        heatTexture.Apply(false, false);
+        colorDirty = false;
+        SetMaterialDirty();
     }
 
-    private void BuildZones()
+    // ---------------------------------------------------------
+    // ZONEN-MAP
+    // ---------------------------------------------------------
+
+    private static ZoneMap BuildZoneMap(MapKey key)
     {
-        builtZones.Clear();
+        int res = key.resolution;
+        int samples = key.supersampling;
+        int total = res * res;
 
-        foreach (var zone in DartboardGeometry.BuildZones())
+        var map = new ZoneMap
         {
-            var bz = new BuiltZone
-            {
-                zone = zone,
-                tris = new List<Vector2>()
-            };
+            resolution = res,
+            zoneIndex = new byte[total],
+            borderCoverage = new byte[total],
+            alpha = new byte[total]
+        };
 
-            switch (zone.kind)
-            {
-                case DartboardGeometry.ZoneKind.Bull:
-                    AddDisc(bz.tris, 0f, DartboardGeometry.BullInnerRadius - radialGap, bullSegments);
-                    break;
-                case DartboardGeometry.ZoneKind.OuterBull:
-                    AddRing(bz.tris, DartboardGeometry.BullInnerRadius + radialGap,
-                        DartboardGeometry.BullOuterRadius - radialGap, 0f, 360f, bullSegments);
-                    break;
-                default:
-                    float centerAngle = DartboardGeometry.GetSegmentCenterAngle(zone.number);
-                    float half = DartboardGeometry.SegmentAngle * 0.5f - angularGapDeg * 0.5f;
-                    float a0 = centerAngle - half;
-                    float a1 = centerAngle + half;
+        float outer = DartboardGeometry.DoubleOuterRadius;
+        float halfExtent = outer + key.rimWidth + TexturePadding;
+        float pixelSize = 2f * halfExtent / res;
+        float invSamples = 1f / samples;
 
-                    switch (zone.kind)
+        const float tripleInner = DartboardGeometry.TripleInnerRadius;
+        const float tripleOuter = DartboardGeometry.TripleOuterRadius;
+        float tripleMid = (tripleInner + tripleOuter) * 0.5f;
+        float tripleHalf = (tripleOuter - tripleInner) * 0.5f * key.tripleScale;
+
+        var sampleParams = new SampleParams
+        {
+            outer = outer,
+            rimEnd = outer + key.rimWidth,
+            borderHalf = key.borderWidth * 0.5f,
+            bullInner = DartboardGeometry.BullInnerRadius,
+            bullOuter = DartboardGeometry.BullOuterRadius,
+            tripleInner = tripleMid - tripleHalf,
+            tripleOuter = tripleMid + tripleHalf,
+            doubleInner = outer - (outer - DartboardGeometry.DoubleInnerRadius) * key.doubleScale
+        };
+
+        var votes = new int[82];
+        var touched = new List<int>(4);
+
+        for (int py = 0; py < res; py++)
+        {
+            float boardY = (((py + 0.5f) / res) * 2f - 1f) * halfExtent;
+            for (int px = 0; px < res; px++)
+            {
+                float boardX = (((px + 0.5f) / res) * 2f - 1f) * halfExtent;
+
+                int insideCount = 0;
+                int borderCount = 0;
+                touched.Clear();
+
+                for (int sy = 0; sy < samples; sy++)
+                {
+                    float sampleY = boardY + (((sy + 0.5f) * invSamples) - 0.5f) * pixelSize;
+                    for (int sx = 0; sx < samples; sx++)
                     {
-                        case DartboardGeometry.ZoneKind.InnerSingle:
-                            AddRing(bz.tris, DartboardGeometry.BullOuterRadius + radialGap,
-                                DartboardGeometry.TripleInnerRadius - radialGap, a0, a1, ringSteps);
-                            break;
-                        case DartboardGeometry.ZoneKind.Triple:
-                            AddRing(bz.tris, DartboardGeometry.TripleInnerRadius + radialGap,
-                                DartboardGeometry.TripleOuterRadius - radialGap, a0, a1, ringSteps);
-                            break;
-                        case DartboardGeometry.ZoneKind.OuterSingle:
-                            AddRing(bz.tris, DartboardGeometry.TripleOuterRadius + radialGap,
-                                DartboardGeometry.DoubleInnerRadius - radialGap, a0, a1, ringSteps);
-                            break;
-                        case DartboardGeometry.ZoneKind.Double:
-                            AddRing(bz.tris, DartboardGeometry.DoubleInnerRadius + radialGap,
-                                DartboardGeometry.DoubleOuterRadius, a0, a1, ringSteps);
-                            break;
+                        float sampleX = boardX + (((sx + 0.5f) * invSamples) - 0.5f) * pixelSize;
+                        SamplePoint(sampleX, sampleY, sampleParams,
+                            out int zone, out bool isBorder, out bool inside);
+
+                        if (!inside)
+                            continue;
+
+                        insideCount++;
+                        if (isBorder || zone < 0)
+                        {
+                            borderCount++;
+                        }
+                        else
+                        {
+                            if (votes[zone] == 0)
+                                touched.Add(zone);
+                            votes[zone]++;
+                        }
                     }
-                    break;
+                }
+
+                int index = py * res + px;
+                int sampleTotal = samples * samples;
+
+                if (insideCount == 0)
+                {
+                    map.zoneIndex[index] = 255;
+                    map.borderCoverage[index] = 0;
+                    map.alpha[index] = 0;
+                    continue;
+                }
+
+                int bestZone = 0;
+                int bestVotes = 0;
+                for (int t = 0; t < touched.Count; t++)
+                {
+                    int zone = touched[t];
+                    if (votes[zone] > bestVotes)
+                    {
+                        bestVotes = votes[zone];
+                        bestZone = zone;
+                    }
+                    votes[zone] = 0;
+                }
+
+                map.zoneIndex[index] = (byte)bestZone;
+                map.borderCoverage[index] = (byte)Mathf.RoundToInt(255f * borderCount / insideCount);
+                map.alpha[index] = (byte)Mathf.RoundToInt(255f * insideCount / sampleTotal);
             }
-
-            builtZones.Add(bz);
         }
+
+        return map;
     }
 
-    // 0° = oben (12 Uhr), Winkel im Uhrzeigersinn.
-    private static Vector2 Polar(float angleDeg, float radius)
+    private static void SamplePoint(float x, float y, SampleParams p,
+        out int zone, out bool isBorder, out bool inside)
     {
-        float rad = angleDeg * Mathf.Deg2Rad;
-        return new Vector2(Mathf.Sin(rad) * radius, Mathf.Cos(rad) * radius);
-    }
+        float r = Mathf.Sqrt(x * x + y * y);
 
-    private static void AddDisc(List<Vector2> tris, float r0, float r1, int segments)
-    {
-        if (r1 <= r0)
-            return;
-
-        Vector2 c = Vector2.zero;
-        if (r0 <= 0f)
+        if (r > p.rimEnd)
         {
-            for (int i = 0; i < segments; i++)
-            {
-                float a0 = 360f * i / segments;
-                float a1 = 360f * (i + 1) / segments;
-                tris.Add(c);
-                tris.Add(Polar(a0, r1));
-                tris.Add(Polar(a1, r1));
-            }
+            zone = -1;
+            isBorder = false;
+            inside = false;
+            return;
         }
+
+        inside = true;
+
+        // Außenring (Rim) ist komplett Rand.
+        if (r >= p.outer)
+        {
+            zone = -1;
+            isBorder = true;
+            return;
+        }
+
+        if (r < p.bullInner)
+        {
+            zone = 0; // D25
+            isBorder = Mathf.Abs(r - p.bullInner) <= p.borderHalf;
+            return;
+        }
+
+        if (r < p.bullOuter)
+        {
+            zone = 1; // 25
+            isBorder = Mathf.Abs(r - p.bullInner) <= p.borderHalf
+                || Mathf.Abs(r - p.bullOuter) <= p.borderHalf;
+            return;
+        }
+
+        bool onBorder =
+            Mathf.Abs(r - p.bullOuter) <= p.borderHalf
+            || Mathf.Abs(r - p.tripleInner) <= p.borderHalf
+            || Mathf.Abs(r - p.tripleOuter) <= p.borderHalf
+            || Mathf.Abs(r - p.doubleInner) <= p.borderHalf;
+
+        float angle = Mathf.Atan2(x, y) * Mathf.Rad2Deg;
+        if (angle < 0f)
+            angle += 360f;
+
+        int numberCount = DartboardGeometry.NumberOrder.Length;
+        int sector = Mathf.RoundToInt(angle / DartboardGeometry.SegmentAngle);
+        sector %= numberCount;
+        if (sector < 0)
+            sector += numberCount;
+        int number = DartboardGeometry.NumberOrder[sector];
+
+        // Abstand zur nächsten Sektorkante (Kanten liegen bei 9° + n*18°).
+        float halfSegment = DartboardGeometry.SegmentAngle * 0.5f;
+        float nearestBoundary =
+            Mathf.Round((angle - halfSegment) / DartboardGeometry.SegmentAngle)
+            * DartboardGeometry.SegmentAngle
+            + halfSegment;
+        float angularDistanceDeg = Mathf.Abs(angle - nearestBoundary);
+        float perpendicularDistance = r * angularDistanceDeg * Mathf.Deg2Rad;
+
+        if (perpendicularDistance <= p.borderHalf)
+            onBorder = true;
+
+        DartboardGeometry.ZoneKind kind;
+        if (r < p.tripleInner)
+            kind = DartboardGeometry.ZoneKind.InnerSingle;
+        else if (r < p.tripleOuter)
+            kind = DartboardGeometry.ZoneKind.Triple;
+        else if (r < p.doubleInner)
+            kind = DartboardGeometry.ZoneKind.OuterSingle;
         else
-        {
-            AddRing(tris, r0, r1, 0f, 360f, segments);
-        }
+            kind = DartboardGeometry.ZoneKind.Double;
+
+        zone = ZoneIndex(number, kind);
+        isBorder = onBorder;
     }
 
-    private static void AddRing(List<Vector2> tris, float r0, float r1, float a0, float a1, int steps)
+    private static int ZoneIndex(int number, DartboardGeometry.ZoneKind kind)
     {
-        if (r1 <= r0 || a1 <= a0)
-            return;
+        if (number == 25)
+            return kind == DartboardGeometry.ZoneKind.Bull ? 0 : 1;
 
-        steps = Mathf.Max(1, steps);
-        for (int i = 0; i < steps; i++)
+        int offset;
+        switch (kind)
         {
-            float sa0 = Mathf.Lerp(a0, a1, i / (float)steps);
-            float sa1 = Mathf.Lerp(a0, a1, (i + 1) / (float)steps);
+            case DartboardGeometry.ZoneKind.InnerSingle: offset = 0; break;
+            case DartboardGeometry.ZoneKind.Triple: offset = 1; break;
+            case DartboardGeometry.ZoneKind.OuterSingle: offset = 2; break;
+            case DartboardGeometry.ZoneKind.Double: offset = 3; break;
+            default: offset = 0; break;
+        }
 
-            Vector2 p00 = Polar(sa0, r0);
-            Vector2 p01 = Polar(sa0, r1);
-            Vector2 p10 = Polar(sa1, r0);
-            Vector2 p11 = Polar(sa1, r1);
+        return 2 + (number - 1) * 4 + offset;
+    }
 
-            tris.Add(p00); tris.Add(p01); tris.Add(p11);
-            tris.Add(p00); tris.Add(p11); tris.Add(p10);
+    protected override void OnDestroy()
+    {
+        base.OnDestroy();
+        if (heatTexture != null)
+        {
+            if (Application.isPlaying)
+                Destroy(heatTexture);
+            else
+                DestroyImmediate(heatTexture);
+            heatTexture = null;
         }
     }
 
@@ -471,6 +761,12 @@ public class DartboardHeatmap : MaskableGraphic
             rt.anchoredPosition = new Vector2(x, 0f);
             rt.sizeDelta = new Vector2(labelW, 48f);
         }
+    }
+
+    private static Vector2 Polar(float angleDeg, float radius)
+    {
+        float rad = angleDeg * Mathf.Deg2Rad;
+        return new Vector2(Mathf.Sin(rad) * radius, Mathf.Cos(rad) * radius);
     }
 
     private void UpdateMissLabel()
