@@ -75,13 +75,13 @@ public class BotItem : MonoBehaviour, IPointerClickHandler
         menuSetupPanel = GetComponentInParent<SetupHandler>();
 
         if (playerName != null)
-            playerName.text = bot.GetNameWithDifficulty();
+            playerName.text = bot.GetNameWithSkill();
 
         if (botImage != null)
             botImage.gameObject.SetActive(true);
 
         ApplyBackgroundColor();
-        ApplyDifficultyColor(bot.GetDifficulty());
+        ApplySkillColor(bot.GetSkillRating());
 
         // Rename/Delete nur in PlayerList (IPlayerItemOwner), nicht in Setup.
         bool isEditable = list is IPlayerItemOwner;
@@ -99,12 +99,12 @@ public class BotItem : MonoBehaviour, IPointerClickHandler
         backgroundImage.color = ThemeManager.Instance.GetColor(ThemeColorRole.Background2);
     }
 
-    private void ApplyDifficultyColor(DartBotDifficulty difficulty)
+    private void ApplySkillColor(float skillRating)
     {
         if (botImage == null || ThemeManager.Instance == null)
             return;
 
-        botImage.color = ThemeManager.Instance.GetBotDifficultyColor(difficulty);
+        botImage.color = ThemeManager.Instance.GetBotSkillColor(skillRating);
     }
 
     public void Rename()

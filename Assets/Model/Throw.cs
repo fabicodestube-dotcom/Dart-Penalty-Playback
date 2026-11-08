@@ -12,6 +12,7 @@ public class Throw
     [JsonProperty] public HitType HitType { get; }
     [JsonProperty] public bool IsTargetHit { get; }
     [JsonProperty] public int TargetValue { get; }
+    [JsonProperty] public DartMultiplier TargetMultiplier { get; }
 
     /// <summary>
     /// Sektor-ID eines Custom-Treffer-Bereichs (nur bei HitType.Custom gesetzt,
@@ -24,13 +25,14 @@ public class Throw
     // CONSTRUCTION
     // =========================================================
 
-    public Throw(DartMultiplier multiplier, int value, HitType hitType = HitType.Board, bool isTargetHit = false, int targetValue = -1, string customHitId = null)
+    public Throw(DartMultiplier multiplier, int value, HitType hitType = HitType.Board, bool isTargetHit = false, int targetValue = -1, string customHitId = null, DartMultiplier targetMultiplier = DartMultiplier.Single)
     {
         Multiplier = multiplier;
         Value = value;
         HitType = hitType;
         IsTargetHit = isTargetHit;
         TargetValue = targetValue;
+        TargetMultiplier = targetMultiplier;
         CustomHitId = hitType == HitType.Custom ? customHitId : null;
     }
 

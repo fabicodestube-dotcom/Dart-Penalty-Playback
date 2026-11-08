@@ -407,20 +407,13 @@ public class ATCGame : Game
         var throws = lastTurnWithThrows.GetThrows();
         var lastThrow = throws.Last();
 
-        int currentIndex = playerCurrentIndex[undoPlayerId]; 
+        int currentIndex = playerCurrentIndex[undoPlayerId];
         bool isValid = lastThrow.IsTargetHit;
 
         // Ziel zur Wurfzeit rekonstruieren
-        int targetAtTimeOfThrow;
-
-        if (isValid)
-        {
-            targetAtTimeOfThrow = targets[Math.Max(0, currentIndex - 1)];
-        }
-        else
-        {
-            targetAtTimeOfThrow = GetCurrentTarget(undoPlayerId);
-        }
+        int targetAtTimeOfThrow = isValid && currentIndex > 0 && currentIndex <= targets.Count
+            ? targets[currentIndex - 1]
+            : GetCurrentTarget(undoPlayerId);
 
         if (playerStats.TryGetValue(undoPlayerId, out var stats))
         {
@@ -566,32 +559,37 @@ public class ATCGame : Game
         // Vorwärts rekonstruieren
         foreach (var thr in playerThrows)
         {
-            if (targetIndex < targets.Count &&
-                thr.Value == targets[targetIndex])
-            {
+            if (targetIndex >= targets.Count)
+                break;
+
+            if (IsValidThrowForStep(thr, targets[targetIndex], GetTargetMultiplierAt(targetIndex)))
                 targetIndex++;
-            }
         }
 
         // Jetzt rückwärts streak zählen
         int streak = 0;
 
-        for (int i = playerThrows.Count - 1; i >= 0; i--)
+        for (int i = playerThrows.Count - 1; i >= 0 && targetIndex > 0; i--)
         {
-            int expectedTarget = targets[targetIndex - 1];
+            int expectedIndex = targetIndex - 1;
+            int expectedTarget = targets[expectedIndex];
 
-            if (playerThrows[i].Value == expectedTarget)
-            {
-                streak++;
-                targetIndex--;
-            }
-            else
-            {
+            if (!IsValidThrowForStep(playerThrows[i], expectedTarget, GetTargetMultiplierAt(expectedIndex)))
                 break;
-            }
+
+            streak++;
+            targetIndex--;
         }
 
         return streak;
+    }
+
+    private DartMultiplier GetTargetMultiplierAt(int index)
+    {
+        if (targetMultipliers != null && index >= 0 && index < targetMultipliers.Count)
+            return targetMultipliers[index];
+
+        return DefaultMultiplierFor(GetSettingsAsATC().targetType);
     }
 
     // =========================================================

@@ -85,7 +85,7 @@ public class ATCInputHandler : InputHandler
         if (target == -1)
             return new Throw(DartMultiplier.Single, 0, HitType.Board, false, -1);
 
-        return new Throw(required, target, HitType.Board, true, target);
+        return new Throw(required, target, HitType.Board, true, target, targetMultiplier: required);
     }
 
     public void UpdateHitButtonLabel()

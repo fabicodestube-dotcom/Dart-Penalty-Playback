@@ -232,9 +232,9 @@ public class AppHandler : MonoBehaviour
         OnPlayerAdded?.Invoke(newId);
     }
 
-    public void AddDartBot(DartBotDifficulty difficulty)
+    public void AddDartBot(float skillRating)
     {
-        Guid newId = database.AddDartBot(difficulty);
+        Guid newId = database.AddDartBot(skillRating);
         MarkDatabaseDirty();
         OnPlayerAdded?.Invoke(newId);
     }

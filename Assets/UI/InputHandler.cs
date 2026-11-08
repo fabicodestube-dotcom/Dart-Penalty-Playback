@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using TMPro;
@@ -14,6 +15,10 @@ public abstract class InputHandler : MonoBehaviour
     public GameObject botPausePanel;
     public GameObject botPausePanelPause;
     public GameObject botPausePanelPlay;
+    [SerializeField] private Sprite botDartSprite;
+    [SerializeField] private Sprite botDartboardSprite;
+
+    private BotTurnPanel botTurnPanel;
 
     // [Header("Penalty Buttons")]
     // public CanvasGroup wallCanvasGroup;
@@ -392,23 +397,69 @@ public abstract class InputHandler : MonoBehaviour
         TriggerHaptic();
     }
 
-    public void ShowBotPlayingState()
+    public void ShowBotPlayingState(DartBot bot)
     {
         botPausePanel.SetActive(true);
+        EnsureBotTurnPanel();
+
+        if (botTurnPanel != null)
+            botTurnPanel.ShowBot(bot);
+
         botPausePanelPlay.SetActive(true);
         botPausePanelPause.SetActive(false);
+    }
+
+    public void ShowBotTarget(Throw throwData)
+    {
+        EnsureBotTurnPanel();
+
+        if (botTurnPanel != null)
+            botTurnPanel.ShowTarget(throwData);
+    }
+
+    public IEnumerator PlayBotThrow(Throw throwData)
+    {
+        EnsureBotTurnPanel();
+
+        if (botTurnPanel == null)
+        {
+            yield return new WaitForSeconds(0.65f);
+            yield break;
+        }
+
+        yield return botTurnPanel.PlayThrow(throwData);
     }
 
     public void ShowBotPausedState()
     {
         botPausePanel.SetActive(true);
+        EnsureBotTurnPanel();
+
+        if (botTurnPanel != null)
+            botTurnPanel.ResetVisuals();
+
         botPausePanelPause.SetActive(true);
         botPausePanelPlay.SetActive(false);
     }
 
     public void HideBotState()
     {
+        if (botTurnPanel != null)
+            botTurnPanel.ResetVisuals();
+
         botPausePanel.SetActive(false);
+    }
+
+    private void EnsureBotTurnPanel()
+    {
+        if (botTurnPanel != null || botPausePanel == null)
+            return;
+
+        botTurnPanel = botPausePanel.GetComponent<BotTurnPanel>();
+        if (botTurnPanel == null)
+            botTurnPanel = botPausePanel.AddComponent<BotTurnPanel>();
+
+        botTurnPanel.Initialize(botPausePanel, botPausePanelPlay, botPausePanelPause, botDartSprite, botDartboardSprite);
     }
 
 

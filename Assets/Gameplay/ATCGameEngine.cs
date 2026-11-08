@@ -128,6 +128,10 @@ public class ATCGameEngine : GameEngine
     protected override IEnumerator HandleBotTurn(DartBot bot)
     {
         inputHandler.SetInputEnabled(false);
+
+        Throw pendingThrow = GetNextATCBotThrow(bot);
+        inputHandler.ShowBotTarget(pendingThrow);
+
         yield return new WaitForSeconds(1.5f);
 
         // Endlose Schleife, die nur abbricht, wenn der Bot nicht mehr dran ist
@@ -135,15 +139,11 @@ public class ATCGameEngine : GameEngine
         {
             //yield return new WaitUntil(() => !isPaused && (!botPausePending || pauseConfirmed));
             yield return new WaitUntil(() => !isPaused);
-            Guid playerId = bot.GetID();
-            
-            // Ziel für diesen spezifischen Wurf holen (Zahl + geforderter Multiplikator des Steps)
-            Throw t = bot.GetNextATCThrow(
-                ((ATCGame) game).GetCurrentTarget(playerId),
-                ((ATCGame) game).GetCurrentTargetMultiplier(playerId),
-                ((ATCGame) game).HasPlayerStarted(playerId)
-            );
 
+            Throw t = pendingThrow ?? GetNextATCBotThrow(bot);
+            pendingThrow = null;
+
+            yield return inputHandler.PlayBotThrow(t);
             AddThrow(t);
 
             // Nach AddThrow hat die Engine evtl. NextPlayer() gerufen (bei Miss oder Turn-Ende ohne Carry)
@@ -153,10 +153,24 @@ public class ATCGameEngine : GameEngine
                 break; 
             }
 
-            yield return new WaitForSeconds(1.5f);
+            pendingThrow = GetNextATCBotThrow(bot);
+            inputHandler.ShowBotTarget(pendingThrow);
+
+            yield return new WaitForSeconds(0.85f);
         }
 
         Debug.Log($"Bot {bot.GetName()} beendet seinen Turn-Zyklus.");
+    }
+
+    private Throw GetNextATCBotThrow(DartBot bot)
+    {
+        Guid playerId = bot.GetID();
+
+        return bot.GetNextATCThrow(
+            ((ATCGame) game).GetCurrentTarget(playerId),
+            ((ATCGame) game).GetCurrentTargetMultiplier(playerId),
+            ((ATCGame) game).HasPlayerStarted(playerId)
+        );
     }
 
 
@@ -178,10 +192,18 @@ public class ATCGameEngine : GameEngine
         if (game == null)
             return;
 
-        ((ATCGame) game).Undo();
-        PlayManualAudioEvent(SeededAudioEvents.UndoId);
-        RefreshPlayerList();
-        HandleUndoBotState();
+        StopBotTurn();
+
+        try
+        {
+            ((ATCGame) game).Undo();
+            PlayManualAudioEvent(SeededAudioEvents.UndoId);
+            RefreshPlayerList();
+        }
+        finally
+        {
+            HandleUndoBotState();
+        }
     }
 
     public ATCGame GetGame() => ((ATCGame) game);
@@ -231,6 +253,6 @@ public class ATCGameEngine : GameEngine
         if (target == -1)
             return new Throw(DartMultiplier.Single, 0, HitType.Board, false, -1);
 
-        return new Throw(required, target, HitType.Board, true, target);
+        return new Throw(required, target, HitType.Board, true, target, targetMultiplier: required);
     }
 }

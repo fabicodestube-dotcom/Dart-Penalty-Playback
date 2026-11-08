@@ -373,4 +373,81 @@ public static class ATCUndoReproTest
 
         Debug.Log($"ATC_TRIPLES: RESULT failures={failures}");
     }
+
+    /// <summary>
+    /// Regression für: Undo nach mehreren Misses des zweiten Spielers (Bot)
+    /// warf ArgumentOutOfRangeException in CalculateStreakBeforeUndo
+    /// (targets[-1]), weil kein gültiger Treffer vorlag.
+    /// </summary>
+    [MenuItem("Darts/Tests/ATC Undo Bot All-Miss")]
+    public static void RunBotAllMissUndoFromMenu()
+    {
+        RunBotAllMissUndo();
+    }
+
+    public static void RunBotAllMissUndo()
+    {
+        int failures = 0;
+
+        void Check(bool cond, string name, string detail = "")
+        {
+            Debug.Log($"ATC_UNDO_MISS: {(cond ? "PASS" : "FAIL")} {name} {detail}");
+            if (!cond) failures++;
+        }
+
+        try
+        {
+            var p1 = new Player(Guid.NewGuid(), "T_P1");
+            var p2 = new Player(Guid.NewGuid(), "T_P2");
+
+            var settings = new ATCGameSettings
+            {
+                targetType = ATCTargetType.Singles,
+                order = ATCOrder.Ascending,
+                setsAndLegsMode = SetsAndLegs.FirstTo,
+                setCount = 1,
+                legCount = 1,
+                soundEnabled = false,
+                Penalties = new PenaltySettings()
+            };
+
+            var game = new ATCGame(Guid.NewGuid(), settings, new List<Guid> { p1.GetID(), p2.GetID() });
+
+            Throw Miss() => new Throw(DartMultiplier.Single, 0, HitType.Board, false, -1);
+
+            // Spieler 1 beendet seinen Visit mit 3 Misses -> Wechsel zu Spieler 2.
+            for (int i = 0; i < 3; i++)
+                game.AddThrow(Miss());
+
+            Check(game.GetCurrentPlayerId() == p2.GetID(), "p2-active-after-p1-visit");
+
+            // Spieler 2 (Bot-Rolle) wirft 2 Misses. Vor dem Fix crashte Undo
+            // hier, weil der Streak-Rebuild auf targets[-1] zugriff.
+            game.AddThrow(Miss());
+            game.AddThrow(Miss());
+
+            int targetBefore = game.GetCurrentTarget(p2.GetID());
+            var turnBefore = game.GetCurrentTurnOfPlayer(p2.GetID());
+            int throwsBefore = turnBefore != null ? turnBefore.GetThrowCount() : -1;
+
+            game.Undo();
+
+            var turnAfter = game.GetCurrentTurnOfPlayer(p2.GetID());
+            int throwsAfter = turnAfter != null ? turnAfter.GetThrowCount() : -1;
+
+            Check(game.GetCurrentPlayerId() == p2.GetID(), "p2-stays-active-after-undo");
+            Check(targetBefore == 1 && game.GetCurrentTarget(p2.GetID()) == 1, "target-unchanged",
+                $"before={targetBefore} after={game.GetCurrentTarget(p2.GetID())}");
+            Check(throwsBefore == 2 && throwsAfter == 1, "one-throw-removed",
+                $"before={throwsBefore} after={throwsAfter}");
+            Check(!game.IsFinished(), "match-not-finished");
+        }
+        catch (Exception ex)
+        {
+            Debug.Log($"ATC_UNDO_MISS: EXCEPTION {ex.GetType().Name}: {ex.Message}\n{ex.StackTrace}");
+            failures++;
+        }
+
+        Debug.Log($"ATC_UNDO_MISS: RESULT failures={failures}");
+    }
 }

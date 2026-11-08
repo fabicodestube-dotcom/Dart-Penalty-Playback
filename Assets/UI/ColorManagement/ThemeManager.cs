@@ -12,6 +12,11 @@ public struct ThemeEntry
 
 public class ThemeManager : MonoBehaviour
 {
+    private static readonly Color BotSkillGreen = new Color32(52, 168, 83, 255);
+    private static readonly Color BotSkillYellow = new Color32(200, 180, 71, 255);
+    private static readonly Color BotSkillOrange = new Color32(220, 120, 38, 255);
+    private static readonly Color BotSkillRed = new Color32(180, 38, 38, 255);
+
     public static ThemeManager Instance { get; private set; }
 
     [SerializeField] private List<ThemeEntry> themes;
@@ -148,21 +153,17 @@ public class ThemeManager : MonoBehaviour
         return Color.magenta;
     }
 
-    public Color GetBotDifficultyColor(DartBotDifficulty difficulty)
+    public Color GetBotSkillColor(float skillRating)
     {
-        switch (difficulty)
-        {
-            case DartBotDifficulty.Easy:
-                return GetColor(ThemeColorScheme.Green, ThemeColorRole.Accent1);
-            case DartBotDifficulty.Medium:
-                return GetColor(ThemeColorRole.Double);
-            case DartBotDifficulty.Hard:
-                return GetColor(ThemeColorRole.Triple);
-            case DartBotDifficulty.Pro:
-                return GetColor(ThemeColorRole.Error);
-            default:
-                return Color.clear;
-        }
+        float skill = BotSkillScale.Normalize(skillRating);
+
+        if (skill <= 4f)
+            return Color.Lerp(BotSkillGreen, BotSkillYellow, (skill - 1f) / 3f);
+
+        if (skill <= 7f)
+            return Color.Lerp(BotSkillYellow, BotSkillOrange, (skill - 4f) / 3f);
+
+        return Color.Lerp(BotSkillOrange, BotSkillRed, (skill - 7f) / 3f);
     }
 
     public void ForceApplyAll()

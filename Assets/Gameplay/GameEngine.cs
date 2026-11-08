@@ -289,7 +289,7 @@ public abstract class GameEngine : MonoBehaviour
         if (player is DartBot bot)
         {
             // Immer Bot-UI anzeigen
-            inputHandler.ShowBotPlayingState();
+            inputHandler.ShowBotPlayingState(bot);
 
 
             // Bot wurde durch Undo oder Pause angehalten
@@ -366,6 +366,13 @@ public abstract class GameEngine : MonoBehaviour
         if (IsCurrentPlayerBot())
         {
             botUndoPending = true;
+
+            if (game != null)
+            {
+                BasePlayer current = appHandler.GetPlayerByID(game.GetCurrentPlayerId());
+                if (current is DartBot bot)
+                    inputHandler.ShowBotPlayingState(bot);
+            }
 
             inputHandler.ShowBotPausedState();
         }

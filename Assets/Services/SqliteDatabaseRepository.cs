@@ -1499,9 +1499,10 @@ public static class SqliteDatabaseRepository
         if (player is DartBot bot)
         {
             connection.Execute(
-                "INSERT OR REPLACE INTO bot_state (player_id, difficulty, number, confidence, darts_thrown, streak) VALUES (?, ?, ?, ?, ?, ?);",
+                "INSERT OR REPLACE INTO bot_state (player_id, skill, difficulty, number, confidence, darts_thrown, streak) VALUES (?, ?, ?, ?, ?, ?, ?);",
                 player.GetID().ToString(),
-                bot.GetDifficulty().ToString(),
+                bot.GetSkillRating(),
+                BotSkillScale.GetTierKey(bot.GetSkillRating()),
                 bot.GetNumber(),
                 GetPrivateField(bot, "confidence", 0f),
                 GetPrivateField(bot, "dartsThrown", 0),
@@ -1697,7 +1698,13 @@ public static class SqliteDatabaseRepository
                 p.deleted AS Deleted,
                 p.show_in_statistics AS ShowInStatistics,
                 p.setup_start_position AS SetupStartPosition,
-                COALESCE(b.difficulty, 'Easy') AS Difficulty,
+                COALESCE(b.skill,
+                    CASE UPPER(COALESCE(b.difficulty, 'Easy'))
+                        WHEN 'MEDIUM' THEN 4.0
+                        WHEN 'HARD' THEN 7.0
+                        WHEN 'PRO' THEN 10.0
+                        ELSE 1.0
+                    END) AS Skill,
                 COALESCE(b.number, 1) AS BotNumber,
                 COALESCE(b.confidence, 0) AS Confidence,
                 COALESCE(b.darts_thrown, 0) AS DartsThrown,
@@ -1707,12 +1714,8 @@ public static class SqliteDatabaseRepository
 
         foreach (var row in rows)
         {
-            var difficulty = DartBotDifficulty.Easy;
-            if (!string.IsNullOrWhiteSpace(row.Difficulty))
-                Enum.TryParse(row.Difficulty, true, out difficulty);
-
             BasePlayer player = row.TypeName == "DartBot"
-                ? new DartBot(Guid.Parse(row.Id), row.Name, difficulty, row.BotNumber)
+                ? new DartBot(Guid.Parse(row.Id), row.Name, (float)row.Skill, row.BotNumber)
                 : new Player(Guid.Parse(row.Id), row.Name);
 
             player.ShowInStatistics(row.ShowInStatistics == 1);
@@ -2042,7 +2045,7 @@ public static class SqliteDatabaseRepository
         public int Deleted { get; set; }
         public int ShowInStatistics { get; set; }
         public int SetupStartPosition { get; set; }
-        public string Difficulty { get; set; }
+        public double Skill { get; set; }
         public int BotNumber { get; set; }
         public double Confidence { get; set; }
         public int DartsThrown { get; set; }

@@ -153,11 +153,11 @@ public class Database
         return newId;
     }
 
-    public Guid AddDartBot(DartBotDifficulty difficulty)
+    public Guid AddDartBot(float skillRating)
     {
         int nextBotId = GetNextFreeBotNumber();
         Guid newId = Guid.NewGuid();
-        DartBot newBot = new DartBot(newId, $"Bot {nextBotId}", difficulty, nextBotId);
+        DartBot newBot = new DartBot(newId, $"Bot {nextBotId}", skillRating, nextBotId);
         reservePlayers.Add(newBot);
 
         Debug.Log($"DartBot {newBot.GetName()} mit ID {newId} wurde angelegt.");

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class SetupHandler : MonoBehaviour, IUIScreen
 {   
@@ -51,7 +52,11 @@ public class SetupHandler : MonoBehaviour, IUIScreen
     public SetupPlayerList reserveList;
     public UIScreen popupNoPlayersAlert;
     public UIScreen popupAddBot;
-    public SingleSelectionGroup botDifficultyGroup;
+
+    [Header("Add Bot")]
+    public Slider botSkillSlider;
+    public Image botSkillIcon;
+    public TMP_Text botSkillValueLabel;
 
 
     [Header("Private")]
@@ -65,7 +70,14 @@ public class SetupHandler : MonoBehaviour, IUIScreen
 
     private void Start()
     {
+        InitializeBotSkillControls();
         ApplyStoredSettings();
+    }
+
+    private void OnDestroy()
+    {
+        if (botSkillSlider != null)
+            botSkillSlider.onValueChanged.RemoveListener(OnBotSkillSliderChanged);
     }
 
     public void OnShow()
@@ -417,24 +429,70 @@ public class SetupHandler : MonoBehaviour, IUIScreen
 
     public void AddBot()
     {
+        UpdateBotSkillVisuals(GetBotSkillValue());
         windowHandler.ShowPopup(popupAddBot);
     }
 
 
     public void OnClickAddBotConfirm()
     {
-        DartBotDifficulty difficulty = DartBotDifficulty.Easy;
-        if (botDifficultyGroup.GetSelectedIndex() == 1)
-            difficulty = DartBotDifficulty.Medium;
-        else if (botDifficultyGroup.GetSelectedIndex() == 2)            
-            difficulty = DartBotDifficulty.Hard;
-        else if (botDifficultyGroup.GetSelectedIndex() == 3)            
-            difficulty = DartBotDifficulty.Pro;
-
-        appHandler.AddDartBot(difficulty);
+        appHandler.AddDartBot(GetBotSkillValue());
         activeList.ShowPlayers();
         reserveList.ShowPlayers();
         windowHandler.HidePopup();
+    }
+
+    private void InitializeBotSkillControls()
+    {
+        if (botSkillSlider == null)
+            return;
+
+        if (botSkillIcon != null)
+        {
+            ThemeColorBinding iconBinding = botSkillIcon.GetComponent<ThemeColorBinding>();
+            if (iconBinding != null)
+            {
+                iconBinding.enabled = false;
+                Destroy(iconBinding);
+            }
+        }
+
+        botSkillSlider.minValue = BotSkillScale.Min;
+        botSkillSlider.maxValue = BotSkillScale.Max;
+        botSkillSlider.wholeNumbers = false;
+        botSkillSlider.SetValueWithoutNotify(BotSkillScale.Default);
+        botSkillSlider.onValueChanged.AddListener(OnBotSkillSliderChanged);
+        UpdateBotSkillVisuals(BotSkillScale.Default);
+    }
+
+    private void OnBotSkillSliderChanged(float value)
+    {
+        float skill = BotSkillScale.Normalize(value);
+        if (!Mathf.Approximately(skill, value))
+            botSkillSlider.SetValueWithoutNotify(skill);
+
+        UpdateBotSkillVisuals(skill);
+    }
+
+    private float GetBotSkillValue()
+    {
+        return botSkillSlider != null
+            ? BotSkillScale.Normalize(botSkillSlider.value)
+            : BotSkillScale.Default;
+    }
+
+    private void UpdateBotSkillVisuals(float skill)
+    {
+        skill = BotSkillScale.Normalize(skill);
+        Color skillColor = ThemeManager.Instance != null
+            ? ThemeManager.Instance.GetBotSkillColor(skill)
+            : Color.white;
+
+        if (botSkillValueLabel != null)
+            botSkillValueLabel.text = skill.ToString("0.0");
+
+        if (botSkillIcon != null)
+            botSkillIcon.color = skillColor;
     }
 
 

@@ -139,6 +139,9 @@ public class X01GameEngine : GameEngine
         // Input sperren
         inputHandler.SetInputEnabled(false);
 
+        Throw pendingThrow = GetNextX01BotThrow(bot);
+        inputHandler.ShowBotTarget(pendingThrow);
+
         yield return new WaitForSeconds(2f);
 
         for (int i = 0; i < 3; i++)
@@ -147,18 +150,42 @@ public class X01GameEngine : GameEngine
             yield return new WaitUntil(() => !isPaused);
             // Falls Turn schon beendet (z.B. durch Bust oder Win)
             var currentTurn = game.GetCurrentTurnOfPlayer(bot.GetID());
-            
-            if (!currentTurn.HasSpace() || currentTurn.IsBust || ((X01Game) game).GetScore(bot.GetID()) == 0)
+
+            if (currentTurn == null || !currentTurn.HasSpace() || currentTurn.IsBust || ((X01Game) game).GetScore(bot.GetID()) == 0)
             {
                 Debug.Log("Bust oder Turnende erkannt, keine weiteren Bot-Würfe");
                 yield break;
             }
 
-            Throw t = bot.GetNextX01Throw(((X01Game) game).GetScore(bot.GetID()), ((X01Game) game).GetSettingsAsX01().checkoutType);
+            Throw t = pendingThrow ?? GetNextX01BotThrow(bot);
+            pendingThrow = null;
+
+            yield return inputHandler.PlayBotThrow(t);
             AddThrow(t);
 
-            yield return new WaitForSeconds(2f);
+            var updatedTurn = game.GetCurrentTurnOfPlayer(bot.GetID());
+            bool canThrowAgain = i < 2
+                && updatedTurn != null
+                && updatedTurn.HasSpace()
+                && !updatedTurn.IsBust
+                && !game.IsFinished()
+                && ((X01Game) game).GetScore(bot.GetID()) != 0;
+
+            if (canThrowAgain)
+            {
+                pendingThrow = GetNextX01BotThrow(bot);
+                inputHandler.ShowBotTarget(pendingThrow);
+            }
+
+            yield return new WaitForSeconds(1.35f);
         }
+    }
+
+    private Throw GetNextX01BotThrow(DartBot bot)
+    {
+        return bot.GetNextX01Throw(
+            ((X01Game) game).GetScore(bot.GetID()),
+            ((X01Game) game).GetSettingsAsX01().checkoutType);
     }
 
     private void HandleLegWon(Guid playerId)

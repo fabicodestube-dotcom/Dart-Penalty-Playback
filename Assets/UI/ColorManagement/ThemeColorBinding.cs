@@ -16,6 +16,20 @@ public class ThemeColorBinding : MonoBehaviour
         _graphic = GetComponent<Graphic>();
     }
 
+    /// <summary>
+    /// Initialisiert das Binding zur Laufzeit (z.B. für dynamisch erzeugte
+    /// Labels) und wendet die Rolle sofort an.
+    /// </summary>
+    public void SetRole(ThemeColorRole newRole)
+    {
+        role = newRole;
+
+        if (_graphic == null)
+            _graphic = GetComponent<Graphic>();
+
+        Apply();
+    }
+
     private void Start()
     {
         // 🔥 Event registrieren (manuell kontrolliert)

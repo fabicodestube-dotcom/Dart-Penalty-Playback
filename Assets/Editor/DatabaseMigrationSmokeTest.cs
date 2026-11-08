@@ -35,6 +35,7 @@ public static class DatabaseMigrationSmokeTest
 
             TestFreshDatabase(tempRoot);
             TestNewPlayerPersistence();
+            TestBotSkillPersistence();
             TestLegacyMigration();
             TestBackupAndRestore();
             TestClipIntegrityRepair();
@@ -84,6 +85,8 @@ public static class DatabaseMigrationSmokeTest
             Check(connection.ExecuteScalar<int>("SELECT COUNT(*) FROM schema_migrations WHERE version = 3;") == 1, "Fresh database is missing migration v3.");
             Check(connection.ExecuteScalar<int>("SELECT COUNT(*) FROM schema_migrations WHERE version = 4;") == 1, "Fresh database is missing migration v4.");
             Check(connection.ExecuteScalar<int>("SELECT COUNT(*) FROM schema_migrations WHERE version = 5;") == 1, "Fresh database is missing migration v5.");
+            Check(connection.ExecuteScalar<int>("SELECT COUNT(*) FROM schema_migrations WHERE version = 7;") == 1, "Fresh database is missing migration v7.");
+            Check(DatabaseHealth.ColumnExists(connection, "bot_state", "skill"), "bot_state.skill is missing.");
             Check(DatabaseHealth.ColumnExists(connection, "game_runtime_state", "custom_hit_sectors_snapshot_json"), "custom_hit_sectors_snapshot_json is missing.");
             Check(DatabaseHealth.ColumnExists(connection, "player_game_stats", "stats_schema_version"), "stats_schema_version is missing.");
             Check(DatabaseHealth.ColumnExists(connection, "recorded_clips", "file_size"), "recorded_clips.file_size is missing.");
@@ -154,6 +157,44 @@ public static class DatabaseMigrationSmokeTest
         Debug.Log("[DB-SMOKE] New player persistence OK");
     }
 
+    private static void TestBotSkillPersistence()
+    {
+        string root = CreateRoot("bot-skill");
+        DatabaseBootstrapper.ResetForTests();
+        SaveSystem.ResetLoadFailedForTests();
+        ResetRoot(root);
+
+        var bootstrap = DatabaseBootstrapper.Prepare();
+        Check(bootstrap.Success, "Bot skill bootstrap failed: " + bootstrap.Error);
+
+        var database = new Database();
+        Guid mediumId = database.AddDartBot(4.5f);
+        Guid proId = database.AddDartBot(10f);
+        SqliteDatabaseRepository.SaveDatabase(database);
+
+        using (var connection = new SQLiteConnection(DatabasePaths.DatabasePath, SQLiteOpenFlags.ReadOnly))
+        {
+            Check(Math.Abs(connection.ExecuteScalar<double>("SELECT skill FROM bot_state WHERE player_id = ?;", mediumId.ToString()) - 4.5) < 0.001,
+                "Bot skill 4.5 was not persisted.");
+            Check(connection.ExecuteScalar<string>("SELECT difficulty FROM bot_state WHERE player_id = ?;", mediumId.ToString()) == "Medium",
+                "Legacy difficulty tier for skill 4.5 was not persisted.");
+            Check(Math.Abs(connection.ExecuteScalar<double>("SELECT skill FROM bot_state WHERE player_id = ?;", proId.ToString()) - 10.0) < 0.001,
+                "Bot skill 10.0 was not persisted.");
+            Check(connection.ExecuteScalar<string>("SELECT difficulty FROM bot_state WHERE player_id = ?;", proId.ToString()) == "Pro",
+                "Legacy difficulty tier for skill 10.0 was not persisted.");
+        }
+
+        var loaded = SqliteDatabaseRepository.LoadDatabase();
+        var mediumBot = loaded.GetPlayerByID(mediumId) as DartBot;
+        var proBot = loaded.GetPlayerByID(proId) as DartBot;
+
+        Check(mediumBot != null && Math.Abs(mediumBot.GetSkillRating() - 4.5f) < 0.001f, "Bot skill 4.5 did not survive reload.");
+        Check(proBot != null && Math.Abs(proBot.GetSkillRating() - 10f) < 0.001f, "Bot skill 10.0 did not survive reload.");
+
+        Directory.Delete(root, true);
+        Debug.Log("[DB-SMOKE] Bot skill persistence OK");
+    }
+
     private static void TestLegacyMigration()
     {
         string root = CreateRoot("legacy");
@@ -180,6 +221,8 @@ public static class DatabaseMigrationSmokeTest
             Check(connection.ExecuteScalar<int>("SELECT COUNT(*) FROM schema_migrations WHERE version = 3;") == 1, "Migration v3 row is missing.");
             Check(connection.ExecuteScalar<int>("SELECT COUNT(*) FROM schema_migrations WHERE version = 4;") == 1, "Migration v4 row is missing.");
             Check(connection.ExecuteScalar<int>("SELECT COUNT(*) FROM schema_migrations WHERE version = 5;") == 1, "Migration v5 row is missing.");
+            Check(connection.ExecuteScalar<int>("SELECT COUNT(*) FROM schema_migrations WHERE version = 7;") == 1, "Migration v7 row is missing.");
+            Check(DatabaseHealth.ColumnExists(connection, "bot_state", "skill"), "Legacy bot skill column was not added.");
             Check(DatabaseHealth.ColumnExists(connection, "game_runtime_state", "custom_hit_sectors_snapshot_json"), "Legacy hit-sector snapshot column was not added.");
             Check(!DatabaseHealth.TableExists(connection, "player_meta"), "Legacy player_meta was not removed.");
             Check(!DatabaseHealth.TableExists(connection, "game_meta"), "Legacy game_meta was not removed.");
@@ -188,6 +231,7 @@ public static class DatabaseMigrationSmokeTest
             Check(connection.ExecuteScalar<int>("SELECT setup_start_position FROM players LIMIT 1;") == 2, "Legacy setup start position was not migrated.");
             Check(connection.ExecuteScalar<int>("SELECT COUNT(*) FROM bot_state;") == 1, "Legacy bot state was not migrated.");
             Check(connection.ExecuteScalar<string>("SELECT difficulty FROM bot_state LIMIT 1;") == "Hard", "Legacy bot difficulty was not migrated.");
+            Check(Math.Abs(connection.ExecuteScalar<double>("SELECT skill FROM bot_state LIMIT 1;") - 7.0) < 0.001, "Legacy bot skill was not migrated.");
             Check(connection.ExecuteScalar<int>("SELECT number FROM bot_state LIMIT 1;") == 7, "Legacy bot number was not migrated.");
             Check(connection.ExecuteScalar<int>("SELECT x01_sudden_death_triggered FROM game_runtime_state LIMIT 1;") == 1, "Legacy runtime state was not migrated.");
             Check(connection.ExecuteScalar<string>("SELECT x01_player_scores_json FROM game_runtime_state LIMIT 1;") != null, "Legacy player scores were not migrated.");

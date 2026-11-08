@@ -37,6 +37,19 @@ public class HitSectorBar : MonoBehaviour,
         }
 
         ApplyValueVisibility(false);
+        EnsureValueLabelTheme();
+    }
+
+    private void EnsureValueLabelTheme()
+    {
+        if (valueLabel == null)
+            return;
+
+        if (valueLabel.GetComponent<ThemeColorBinding>() != null)
+            return;
+
+        var binding = valueLabel.gameObject.AddComponent<ThemeColorBinding>();
+        binding.SetRole(ThemeColorRole.Text2);
     }
 
     /// <summary>

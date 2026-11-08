@@ -645,7 +645,18 @@ public class DartboardHeatmap : MaskableGraphic
             missLabelAutoCreated = true;
             SetupMissLocalization(missLabel);
         }
+
+        EnsureLabelTheme(missLabel);
         UpdateMissLabel();
+    }
+
+    private static void EnsureLabelTheme(TMP_Text label)
+    {
+        if (label == null || label.GetComponent<ThemeColorBinding>() != null)
+            return;
+
+        var binding = label.gameObject.AddComponent<ThemeColorBinding>();
+        binding.SetRole(ThemeColorRole.Text3);
     }
 
     /// <summary>
@@ -721,6 +732,9 @@ public class DartboardHeatmap : MaskableGraphic
         tmp.raycastTarget = false;
         if (labelFont != null)
             tmp.font = labelFont;
+
+        EnsureLabelTheme(tmp);
+
         return tmp;
     }
 

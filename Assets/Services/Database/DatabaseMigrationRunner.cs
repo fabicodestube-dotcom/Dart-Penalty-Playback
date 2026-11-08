@@ -127,7 +127,8 @@ public static class DatabaseMigrations
         new Migration003RecordedClipMetadata(),
         new Migration004NormalizeSchema(),
         new Migration005HitSectorSnapshot(),
-        new Migration006MultiTriggers()
+        new Migration006MultiTriggers(),
+        new Migration007BotSkillRating()
     };
 }
 

@@ -123,6 +123,12 @@ public class AudioEventEditorPopup : UIScreen, IUIScreen
             categoryDropdown.onValueChanged.AddListener(_ => OnCategoryChanged());
         }
 
+        if (triggerKindDropdown != null)
+        {
+            triggerKindDropdown.onValueChanged.RemoveAllListeners();
+            triggerKindDropdown.onValueChanged.AddListener(_ => OnTriggerKindChanged());
+        }
+
         if (newTriggerButton != null)
         {
             newTriggerButton.onClick.RemoveAllListeners();
@@ -170,6 +176,8 @@ public class AudioEventEditorPopup : UIScreen, IUIScreen
             newTriggerButton = CreateFallbackButton(newParent, "New", new Color(0.2f, 0.6f, 1f, 1f), OnNewTrigger);
         }
 
+        EnsureThresholdControls();
+
         if (triggerPanel == null)
             return;
 
@@ -195,6 +203,38 @@ public class AudioEventEditorPopup : UIScreen, IUIScreen
 
         if (backToListButton == null)
             backToListButton = CreateFallbackButton(rowGo.transform, "Back", new Color(0.4f, 0.4f, 0.4f, 1f), ShowTriggerList);
+    }
+
+    private void EnsureThresholdControls()
+    {
+        if (thresholdInput != null || thresholdGroup == null || scoreInput == null)
+            return;
+
+        thresholdGroup.name = "Threshold";
+
+        foreach (Transform child in thresholdGroup.transform)
+            child.gameObject.SetActive(false);
+
+        var clone = Instantiate(scoreInput.gameObject, thresholdGroup.transform, false);
+        clone.name = "ThresholdInput";
+
+        var sourceRect = scoreInput.GetComponent<RectTransform>();
+        var cloneRect = clone.GetComponent<RectTransform>();
+        if (sourceRect != null && cloneRect != null)
+        {
+            cloneRect.anchorMin = sourceRect.anchorMin;
+            cloneRect.anchorMax = sourceRect.anchorMax;
+            cloneRect.pivot = sourceRect.pivot;
+            cloneRect.anchoredPosition = sourceRect.anchoredPosition;
+            cloneRect.sizeDelta = sourceRect.sizeDelta;
+            cloneRect.localScale = Vector3.one;
+        }
+
+        thresholdInput = clone.GetComponent<TMP_InputField>();
+        thresholdOutline = clone.GetComponent<Image>();
+
+        if (thresholdInput != null)
+            thresholdInput.text = "0";
     }
 
     private static Button CreateFallbackButton(Transform parent, string label, Color color, Action onClick)
@@ -305,15 +345,7 @@ public class AudioEventEditorPopup : UIScreen, IUIScreen
         EnsureFallbackControls();
         SetConfirmView(false);
         pendingDeleteId = null;
-
-        if (editingNew)
-        {
-            ShowTriggerEditor();
-        }
-        else
-        {
-            ShowTriggerList();
-        }
+        ShowTriggerList();
     }
 
     public void OnHide()
@@ -347,7 +379,7 @@ public class AudioEventEditorPopup : UIScreen, IUIScreen
 
         isLoading = true;
         ResetNewAudioUI();
-        ShowTriggerEditor();
+        ShowTriggerList();
         isLoading = false;
         RefreshDeleteButton();
         RefreshValidation();
@@ -436,6 +468,8 @@ public class AudioEventEditorPopup : UIScreen, IUIScreen
 
         if (categoryLabel != null)
             categoryLabel.text = CategoryDisplayName(category);
+
+        UpdateTriggerGroups();
     }
 
     /// <summary>
@@ -444,18 +478,21 @@ public class AudioEventEditorPopup : UIScreen, IUIScreen
     public void OnCategoryChanged()
     {
         var newCategory = CurrentCategory();
+        var oldKind = TriggerForCategory(editingCategory,
+            triggerKindDropdown != null ? triggerKindDropdown.value : 0);
         editingCategory = newCategory;
 
         if (triggerKindDropdown != null)
         {
             triggerKindDropdown.ClearOptions();
             triggerKindDropdown.AddOptions(TriggerOptions(newCategory));
+            triggerKindDropdown.SetValueWithoutNotify(TriggerIndex(newCategory, oldKind));
         }
 
         if (categoryLabel != null)
             categoryLabel.text = CategoryDisplayName(newCategory);
 
-        RefreshValidation();
+        UpdateTriggerGroups();
     }
 
     private static string CategoryDisplayName(AudioEventCategory category)
@@ -522,6 +559,24 @@ public class AudioEventEditorPopup : UIScreen, IUIScreen
 
     public void OnTriggerKindChanged()
     {
+        UpdateTriggerGroups();
+    }
+
+    private void UpdateTriggerGroups()
+    {
+        var kind = TriggerForCategory(CurrentCategory(),
+            triggerKindDropdown != null ? triggerKindDropdown.value : 0);
+
+        if (scoreGroup != null)
+            scoreGroup.SetActive(kind == AudioEventTriggerKind.ScoreReached);
+        if (thresholdGroup != null)
+            thresholdGroup.SetActive(kind == AudioEventTriggerKind.MarksThreshold
+                || kind == AudioEventTriggerKind.PointsReached
+                || kind == AudioEventTriggerKind.HitsInTurnThreshold
+                || kind == AudioEventTriggerKind.StreakReached);
+        if (patternGroup != null)
+            patternGroup.SetActive(kind == AudioEventTriggerKind.TurnPattern);
+
         RefreshValidation();
     }
 
@@ -727,6 +782,8 @@ public class AudioEventEditorPopup : UIScreen, IUIScreen
             thresholdInput.text = trigger.threshold.ToString();
 
         patternEditor?.LoadEntries(trigger.pattern, trigger.matchOrder);
+
+        UpdateTriggerGroups();
     }
 
     private void OnNewTrigger()

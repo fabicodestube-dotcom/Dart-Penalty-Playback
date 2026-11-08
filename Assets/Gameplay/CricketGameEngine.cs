@@ -186,6 +186,9 @@ public class CricketGameEngine : GameEngine
         // Input sperren
         inputHandler.SetInputEnabled(false);
 
+        Throw pendingThrow = GetNextCricketBotThrow(bot);
+        inputHandler.ShowBotTarget(pendingThrow);
+
         yield return new WaitForSeconds(2f);
 
         for (int i = 0; i < 3; i++)
@@ -195,17 +198,37 @@ public class CricketGameEngine : GameEngine
 
             // Falls Turn schon beendet (z.B. durch Bust oder Win)
             var currentTurn = game.GetCurrentTurnOfPlayer(bot.GetID());
-            if (!currentTurn.HasSpace() || game.IsFinished())
+            if (currentTurn == null || !currentTurn.HasSpace() || game.IsFinished())
             {
                 Debug.Log("Bust oder Turnende erkannt, keine weiteren Bot-Würfe");
                 yield break;
             }
 
-            Throw t = bot.GetNextCricketThrow(CreateBotContext(bot.GetID()));
+            Throw t = pendingThrow ?? GetNextCricketBotThrow(bot);
+            pendingThrow = null;
+
+            yield return inputHandler.PlayBotThrow(t);
             AddThrow(t);
 
-            yield return new WaitForSeconds(2f);
+            var updatedTurn = game.GetCurrentTurnOfPlayer(bot.GetID());
+            bool canThrowAgain = i < 2
+                && updatedTurn != null
+                && updatedTurn.HasSpace()
+                && !game.IsFinished();
+
+            if (canThrowAgain)
+            {
+                pendingThrow = GetNextCricketBotThrow(bot);
+                inputHandler.ShowBotTarget(pendingThrow);
+            }
+
+            yield return new WaitForSeconds(1.35f);
         }
+    }
+
+    private Throw GetNextCricketBotThrow(DartBot bot)
+    {
+        return bot.GetNextCricketThrow(CreateBotContext(bot.GetID()));
     }
 
     private CricketBotContext CreateBotContext(Guid playerId)
