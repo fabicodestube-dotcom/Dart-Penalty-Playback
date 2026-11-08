@@ -195,6 +195,8 @@ public class X01GameEngine : GameEngine
         StopBotTurn();
 
         playerList.RefreshUI(GetUIStats());
+
+        NotifyWin(WinLevel.Leg, playerId);
     }
 
     private void HandleSetWon(Guid? playerId)
@@ -204,6 +206,9 @@ public class X01GameEngine : GameEngine
         StopBotTurn();
 
         playerList.RefreshUI(GetUIStats());
+
+        if (playerId.HasValue && playerId.Value != Guid.Empty)
+            NotifyWin(WinLevel.Set, playerId.Value);
     }
 
     private void HandleCheckoutAvailable(Guid playerId, string option)

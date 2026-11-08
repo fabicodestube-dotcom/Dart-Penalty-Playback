@@ -89,6 +89,8 @@ public class ATCGameEngine : GameEngine
 
         playerList.Refresh((ATCGame) game);
 
+        NotifyWin(WinLevel.Leg, playerId);
+
         HandleBotCheck(game.GetCurrentPlayerId());
     }
 
@@ -99,6 +101,9 @@ public class ATCGameEngine : GameEngine
         StopBotTurn();
 
         playerList.Refresh((ATCGame) game);
+
+        if (playerId.HasValue && playerId.Value != Guid.Empty)
+            NotifyWin(WinLevel.Set, playerId.Value);
 
         HandleBotCheck(game.GetCurrentPlayerId());
     }

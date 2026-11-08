@@ -166,6 +166,8 @@ public class CricketGameEngine : GameEngine
 
         playerList.RefreshUI();
 
+        NotifyWin(WinLevel.Leg, playerId);
+
         HandleBotCheck(game.GetCurrentPlayerId());
     }
 
@@ -176,6 +178,9 @@ public class CricketGameEngine : GameEngine
         StopBotTurn();
 
         playerList.RefreshUI();
+
+        if (playerId.HasValue && playerId.Value != Guid.Empty)
+            NotifyWin(WinLevel.Set, playerId.Value);
 
         HandleBotCheck(game.GetCurrentPlayerId());
     }

@@ -26,6 +26,7 @@ public abstract class GameEngine : MonoBehaviour
     protected bool isPaused;
     protected Coroutine botCoroutine;
     private bool botUndoPending;
+    private WinAnimationController winAnimation;
 
     public virtual void StartGame(Game game)
     {
@@ -76,6 +77,8 @@ public abstract class GameEngine : MonoBehaviour
         SetHeadline();
 
         HidePausePanel();
+
+        EnsureWinAnimation();
 
         if (inputHandler != null)
             inputHandler.RefreshSectorUiFromGame();
@@ -184,8 +187,11 @@ public abstract class GameEngine : MonoBehaviour
             return;
         }
 
-        summary.ShowSummary(summaryObj);
-        windowHandler.Replace(ScreenId.Summary);
+        NotifyWin(WinLevel.Match, playerId, () =>
+        {
+            summary.ShowSummary(summaryObj);
+            windowHandler.Replace(ScreenId.Summary);
+        });
     }
 
     protected GameSummary CreateGameSummaryFromGame(Game game)
@@ -347,6 +353,24 @@ public abstract class GameEngine : MonoBehaviour
     protected void PlayManualAudioEvent(string eventId)
     {
         game?.TryTriggerManualAudioEvent(eventId);
+    }
+
+    private void EnsureWinAnimation()
+    {
+        if (winAnimation != null)
+            return;
+
+        winAnimation = FindAnyObjectByType<WinAnimationController>();
+        if (winAnimation == null)
+            winAnimation = WinAnimationController.Create();
+    }
+
+    protected void NotifyWin(WinLevel level, Guid playerId, Action onComplete = null)
+    {
+        EnsureWinAnimation();
+
+        string playerName = appHandler?.GetPlayerByID(playerId)?.GetName() ?? string.Empty;
+        winAnimation.NotifyWin(level, playerName, onComplete);
     }
 
     public void PauseBotTurn()
