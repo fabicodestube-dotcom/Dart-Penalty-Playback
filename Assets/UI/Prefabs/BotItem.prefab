@@ -647,19 +647,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 875022460017146964}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 4025096386057683368}
-        m_TargetAssemblyTypeName: BotItem, Assembly-CSharp
-        m_MethodName: Rename
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!114 &3045080032368602369
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -903,16 +891,4 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 3592504338949117397}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 4025096386057683368}
-        m_TargetAssemblyTypeName: BotItem, Assembly-CSharp
-        m_MethodName: Delete
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []

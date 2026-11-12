@@ -15,14 +15,14 @@ public class GameStatsCricket : GameStats
     [JsonProperty] public Dictionary<Guid, float> gameTriplePercentage = new Dictionary<Guid, float>();
     [JsonProperty] public Dictionary<Guid, float> gameMarksPerRound = new Dictionary<Guid, float>();
 
-    // Neue Felder für erweiterte Statistiken
-    [JsonProperty] public Dictionary<int, int> turnScores = new Dictionary<int, int>(); // Punkte pro Turn
+    // New fields for extended statistics
+    [JsonProperty] public Dictionary<int, int> turnScores = new Dictionary<int, int>(); // Points per turn
     [JsonProperty] public Dictionary<int, int> turnMarks = new Dictionary<int, int>(); // Marks pro Turn
-    [JsonProperty] public Dictionary<int, int> turnOverkills = new Dictionary<int, int>(); // Overkill-Punkte pro Turn
-    [JsonProperty] public float maxMPR = 0f; // Höchste MPR einer Runde
+    [JsonProperty] public Dictionary<int, int> turnOverkills = new Dictionary<int, int>(); // Overkill points per turn
+    [JsonProperty] public float maxMPR = 0f; // Highest MPR of a round
 
-    // Aggregierte TurnScores/Overkills pro Spiel (für AllTime-Average/Max/Overkill).
-    // turnScores/turnOverkills enthalten den Merge aller Spiele mit fortlaufendem Index.
+    // Aggregated TurnScores /Overkills per game (for AllTime -Average/Max/Overkill).
+    // turnScores / turnOverkills contain the merge of all games with continuous index.
     [JsonProperty] public Dictionary<string, Dictionary<int, int>> gameTurnScores = new Dictionary<string, Dictionary<int, int>>();
     [JsonProperty] public Dictionary<string, Dictionary<int, int>> gameTurnOverkills = new Dictionary<string, Dictionary<int, int>>();
     
@@ -67,7 +67,7 @@ public class GameStatsCricket : GameStats
         gameTriplePercentage[gameId] = cricket.triplePercentage;
         gameMarksPerRound[gameId] = cricket.marksPerRound;
 
-        // Neue Felder hinzufügen
+        // Add new fields
         if (cricket.maxMPR > maxMPR)
             maxMPR = cricket.maxMPR;
 
@@ -87,8 +87,8 @@ public class GameStatsCricket : GameStats
         whiteHorseTurns += cricket.whiteHorseTurns;
         sameTripleTurns += cricket.sameTripleTurns;
 
-        // TurnScores/Overkills pro Spiel merken und gemergt aggregieren,
-        // damit Average/Max/Overkill über alle Zeiten stimmen.
+        // TurnScores /Overkills per game memorize and merged aggregate,
+        // So that Average/Max/Overkill will be right for all time.
         gameTurnScores ??= new Dictionary<string, Dictionary<int, int>>();
         gameTurnOverkills ??= new Dictionary<string, Dictionary<int, int>>();
         gameTurnScores[gameId.ToString()] = new Dictionary<int, int>(cricket.turnScores);
@@ -136,18 +136,18 @@ public class GameStatsCricket : GameStats
         gameTriplePercentage.Remove(gameId);
         gameMarksPerRound.Remove(gameId);
 
-        // Neue Felder entfernen
+        // Remove new fields
         nineMarkTurns = Math.Max(0, nineMarkTurns - cricket.nineMarkTurns);
         whiteHorseTurns = Math.Max(0, whiteHorseTurns - cricket.whiteHorseTurns);
         sameTripleTurns = Math.Max(0, sameTripleTurns - cricket.sameTripleTurns);
 
-        // Aggregierte TurnScores/Overkills symmetrisch abbauen
+        // Reduce aggregated TurnScores/Overkills symmetrically
         gameTurnScores?.Remove(gameId.ToString());
         gameTurnOverkills?.Remove(gameId.ToString());
         if (gameTurnScores != null && gameTurnOverkills != null)
             RebuildMergedTurnScores();
 
-        // Maximalwerte neu berechnen
+        // Recalculate maximum values
         if (cricket.maxMPR >= maxMPR)
             RecalculateMaxMPR();
 
@@ -228,7 +228,7 @@ public class GameStatsCricket : GameStats
     }
 
     // ========================================================
-    // NEUE STATISTIK-METHODEN
+    // NEW STATISTICS METHODS
     // ========================================================
 
     public void UpdateTurnStats(int turnIndex, int score, int marks, int overkills)
@@ -237,7 +237,7 @@ public class GameStatsCricket : GameStats
         turnMarks[turnIndex] = marks;
         turnOverkills[turnIndex] = overkills;
 
-        // Erkenne 9 Marks
+        // Detect 9 marks
         if (marks == 9)
             nineMarkTurns++;
     }
@@ -252,7 +252,7 @@ public class GameStatsCricket : GameStats
 
     public void UpdateMaxMPR()
     {
-        // Aktualisiere maxMPR nach RegisterTurn()
+        // Update maxMPR after RegisterTurn()
         if (marksPerRound > maxMPR)
             maxMPR = marksPerRound;
     }

@@ -171,10 +171,10 @@ public static class CheckoutDatabase
         // ROUTE CLEANNESS BONUS
         // =========================================
 
-        // Weniger komplex = besser
+        // Less complex = better
         score -= route.Count * 0.05f;
 
-        // Zu viele Triples bestrafen
+        // Punishing too many triples
         int triples = route.Count(d => d.StartsWith("T"));
         score -= triples * 0.15f;
 
@@ -247,7 +247,7 @@ public static class CheckoutDatabase
 
         int dartValue = GetDartValue(dart);
 
-        // Kleine Zahlen lieber als Single spielen
+        // Prefer playing small numbers as singles
         if (remainingScore <= 20)
         {
             if (IsSingle(dart))
@@ -260,7 +260,7 @@ public static class CheckoutDatabase
                 value -= 2.0f;
         }
 
-        // T1-T6 vermeiden
+        // Avoid T1-T6
         if (dart.StartsWith("T"))
         {
             int triple = int.Parse(dart.Substring(1));
@@ -280,7 +280,7 @@ public static class CheckoutDatabase
             value += 0.3f;
         }
 
-        // Lieblingszahlen
+        // Favorite numbers
         if (after == 40)
             value += 1.0f;
 

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
@@ -8,13 +8,13 @@ using UnityEngine.Localization.Components;
 using UnityEngine.UI;
 
 /// <summary>
-/// Detail-Popup für EINEN Spieler (Detail-Button pro Tabellenzeile):
-/// Zeilen pro Penalty (Name | Kosten | Anzahl | Zeilensumme) im eigenen
-/// Scroll-Bereich + Grand Total im Header. EINE wiederverwendete Instanz
-/// (Top-Level-Popup neben den anderen Popups, NICHT in Tabellen-Layouts).
-/// Verdrahtung: Skript aufs Popup-Objekt, titleText + contentParent ziehen,
-/// sumText → Summen-Text (optional), Schließen-Button → Close().
-/// windowHandler/appHandler optional (Auto-Find, inkl. inaktiver Objekte).
+/// Detailed popup for ONE player (detail button per table line):
+    /// Lines per penalty (name | cost | count | line total) in its own
+/// Scroll area + Grand Total in the header. ONE reused instance
+/// (Top level popup next to the other popups, NOT in table layouts).
+/// Wiring: put script on popup object, drag titleText + contentParent,
+/// sumText → Sum text (optional), Close button → Close().
+/// windowHandler/appHandler optional (auto-find, incl. inactive objects).
 /// </summary>
 public class PenaltyDetailPopup : UIScreen, IUIScreen
 {
@@ -51,23 +51,23 @@ public class PenaltyDetailPopup : UIScreen, IUIScreen
     [Tooltip("Vertikale Marge des Fensters gegenüber dem Hintergrund (100 oben + 100 unten). Der Hintergrund liegt im Screens-Container und ist bereits BottomBar-frei (BottomBar 175px), daher hier kein extra Abzug.")]
     public float windowMarginY = 200f;
 
-    // Auto-Size: Nur die Listenhöhe wird gesetzt:
-    // LayoutElement.preferredHeight = min(Formel, Cap).
-    // Formel: PadTop + PadBottom + N * Zeilenhöhe + max(0, N-1) * Spacing
-    // (N = Childzahl, Zeilenhöhe live aus erster Zeile, Pad/Spacing aus VLG).
-    // Cap: Backgroundhöhe (BottomBar-frei) - Marge (200) - Chrome (Top +
-    // ButtonRow + Window-Padding/Spacing, live gemessen, Fallback 450).
+    // Auto-Size: Only the list height is set:
+    // LayoutElement.preferredHeight = min(formula, cap).
+    // Formula: PadTop + PadBottom + N * line height + max(0, N-1) * Spacing
+    // (N = Child number, line height live from first line, pad/spacing from VLG).
+    // Cap: Background Height (BottomBar -free) - Margin (200) - Chrome (Top +)
+    // ButtonRow + window padding/spacing, measured live, fallback 450).
     private const float RowHeight = 130f;
     private const float ChromeFallback = 450f;
 
     private Coroutine scrollResetRoutine;
 
     /// <summary>
-    /// Findet die zum sichtbaren Screen gehörende Popup-Instanz.
-    /// Es gibt zwei Instanzen (Statistics + GameDetail); der erstbeste
-    /// Auto-Find-Treffer kann unter einem inaktiven Screen hängen und bliebe
-    /// nach ShowPopup unsichtbar. Daher: Instanz mit aktiver Elternkette
-    /// bevorzugen, sonst erste als Fallback.
+    /// Find the pop-up instance belonging to the visible screen.
+    /// There are two instances (Statistics + GameDetail); the first one
+    /// Auto-Find hit can hang under an inactive screen and remain
+    /// Invisible to ShowPopup. Therefore, instance with active parent chain
+    /// I prefer first as fallback.
     /// </summary>
     public static PenaltyDetailPopup FindVisibleInstance()
     {
@@ -91,8 +91,8 @@ public class PenaltyDetailPopup : UIScreen, IUIScreen
     }
 
     /// <summary>
-    /// True, wenn die Elternkette (Screen) aktiv ist — das Popup selbst
-    /// ausgenommen (versteckte Popups sind per deactivateWhenHidden aus).
+    /// True, when the parent chain (screen) is active — the popup itself
+    /// Except (hidden popups are off deactivateWhenHidden).
     /// </summary>
     private static bool HasActiveScreen(PenaltyDetailPopup p)
     {
@@ -152,10 +152,10 @@ public class PenaltyDetailPopup : UIScreen, IUIScreen
     }
 
     /// <summary>
-    /// Breakdown EINES Spielers in EINEM Spiel (GameDetail): Zeilen für ALLE
-    /// AKTIVEN Penalties (Legacy per Settings + Snapshot-Customs) — auch mit
-    /// 0 Treffern, damit die Liste immer vollständig ist. Grand Total im Header.
-    /// Alles aus Summary + Snapshot (delete-sicher).
+    /// Breakdown of a player in a game (GameDetail): lines for ALL
+    /// ACTIVES (Legacy per Settings + Snapshot Customs) – also with
+    /// 0 hits so that the list is always complete. Grand Total in the header.
+    /// Everything from Summary + Snapshot (delete-safe).
     /// </summary>
     public void ShowPlayerPenalties(GameSummary summary, Guid playerId, string playerName)
     {
@@ -172,9 +172,9 @@ public class PenaltyDetailPopup : UIScreen, IUIScreen
         float grandTotal = 0f;
         bool anyRow = false;
 
-        // Legacy: nur Typen mit Buchungen (alte Spiele). Neue Spiele buchen
-        // dort 0 (System stillgelegt) — Settings-Gates zählen nicht mehr.
-        // Ohne lesbare Settings: Fallback auf gezählte Typen mit Kosten 0.
+        // Legacy: only types with bookings (old games).
+        // there 0 (system decommissioned) — Settings gates no longer count.
+        // Without readable settings: Fallback to counted types with a cost of 0.
         bool settingsOk = settings?.Penalties != null;
         foreach (var legacy in PenaltyDisplay.LegacyPenaltyTypes)
         {
@@ -193,8 +193,8 @@ public class PenaltyDetailPopup : UIScreen, IUIScreen
             anyRow = true;
         }
 
-        // Customs: nur aktivierte Snapshot-Defs, die der Spieler in DIESEM
-        // Spiel auch kassiert hat (Anzahl >= 1) — analog zum Statistik-Weg.
+        // Customs: Only activated snapshot defs that the player can use in THIS
+        // Game also has cashed (number >= 1) — analogous to the statistic way.
         var snapshot = summary.CustomPenaltySnapshot;
         if (snapshot != null)
         {
@@ -223,8 +223,8 @@ public class PenaltyDetailPopup : UIScreen, IUIScreen
     }
 
     /// <summary>
-    /// Breakdown EINES Spielers in der STATISTIK (Aggregate): Legacy ohne
-    /// Kosten (je Spiel verschieden → Strich), Customs mit jüngstem Preis.
+    /// Breakdown of a player in the aggregate: Legacy without
+    /// Cost (different per game → stroke), Customs with the latest price.
     /// </summary>
     public void ShowPlayerAggregates(string playerName, GameStats stats)
     {
@@ -268,7 +268,7 @@ public class PenaltyDetailPopup : UIScreen, IUIScreen
         if (!anyRow)
             AddInfoRow(LocalizationText.Get("No_penalties", "No penalties applied."), "");
 
-        // TEMP-DIAG: Objekt-Identität Tap vs. Tabelle + Zeilenbilanz.
+        // TEMP-DIAG: Object Identity Tap vs. Table + Line Balance.
         int childCount = contentParent != null ? contentParent.childCount : -1;
         int customIds = 0;
         if (stats?.customPenaltyCounts != null)
@@ -282,7 +282,7 @@ public class PenaltyDetailPopup : UIScreen, IUIScreen
             $"kosten={(stats != null ? stats.totalPenaltyCost.ToString("0.##") : "-")}," +
             $"customIds={customIds}) legacyRows={legacyRows} customRows={customRows} childCount={childCount}");
 
-        // Legacy-Anteile ohne stabile Kosten: Grand Total aus der Aggregat-Summe.
+        // Legacy shares without stable costs: Grand Total from the aggregate sum.
         float aggregateTotal = stats?.totalPenaltyCost ?? 0f;
         SetTotal(aggregateTotal > 0f ? aggregateTotal : grandTotal);
         FinishShow();
@@ -295,7 +295,7 @@ public class PenaltyDetailPopup : UIScreen, IUIScreen
         if (appHandler == null)
             return null;
 
-        // GetGameSummaries ist absteigend nach Zeit sortiert: erster Treffer gewinnt.
+        // GetGameSummaries is sorted descending by time: first hit wins.
         foreach (var summary in appHandler.GetGameSummaries())
         {
             var def = summary?.CustomPenaltySnapshot?.Find(d => d != null && d.id == columnId);
@@ -347,7 +347,7 @@ public class PenaltyDetailPopup : UIScreen, IUIScreen
             titleText.text = title ?? "";
     }
 
-    /// <summary>Grand Total in den Header-Bereich (sumText) oder Titel-Suffix.</summary>
+    /// <summary>Grand Total to the header area (sumText) or title suffix.</summary>
     private void SetTotal(float grandTotal)
     {
         string text = LocalizationText.Get("Total", "Total") + ": " + grandTotal.ToString("0.##");
@@ -361,7 +361,7 @@ public class PenaltyDetailPopup : UIScreen, IUIScreen
         }
     }
 
-    /// <summary>Kopfzeile der 4 Detail-Spalten (Name | Kosten | Anzahl | Summe).</summary>
+    /// <summary>Header of the 4 detail columns (name | cost | number | sum).</summary>
     private void AddTableHeader()
     {
         AddItemRow(
@@ -372,8 +372,8 @@ public class PenaltyDetailPopup : UIScreen, IUIScreen
     }
 
     /// <summary>
-    /// Detail-Zeile (Name | Kosten | Anzahl | Summe): bevorzugt das
-    /// verdrahtete Prefab, sonst Code-Zeile als Fallback (stiller Notbetrieb).
+    /// Detail line (name | cost | number | sum): prefers the
+    /// wired prefab, otherwise code line as fallback (silent emergency operation).
     /// </summary>
     private void AddItemRow(string name, string cost, string count, string rowTotal)
     {
@@ -398,7 +398,7 @@ public class PenaltyDetailPopup : UIScreen, IUIScreen
         AddDetailRow(name, cost, count, rowTotal);
     }
 
-    /// <summary>Detail-Zeile mit 4 Spalten (Name | Kosten | Anzahl | Summe).</summary>
+    /// <summary>Detail line with 4 columns (name | cost | number | sum).</summary>
     private void AddDetailRow(string name, string cost, string count, string rowTotal, bool header = false)
     {
         if (contentParent == null)
@@ -453,7 +453,7 @@ public class PenaltyDetailPopup : UIScreen, IUIScreen
         }
     }
 
-    /// <summary>StringTable-Key für den Leerfall (Tabelle wird separat gepflegt).</summary>
+    /// <summary>2@@ - key for empty case (table maintained separately).</summary>
     private const string NoPenaltiesKey = "No_penalties";
 
     private void AddInfoRow(string label, string value)
@@ -461,8 +461,8 @@ public class PenaltyDetailPopup : UIScreen, IUIScreen
         if (contentParent == null)
             return;
 
-        // Bevorzugt: Leer-Prefab (TMP + LayoutElement + LocalizeStringEvent +
-        // ThemeColorBinding auf einer Zeile). Key wird zur Laufzeit gesetzt.
+        // Preferred: empty prefab (TMP + LayoutElement + LocalizeStringEvent +
+        // ThemeColorBinding on one line. Key is set to runtime.
         if (emptyStatePrefab != null)
         {
             var go = Instantiate(emptyStatePrefab, contentParent);
@@ -482,7 +482,7 @@ public class PenaltyDetailPopup : UIScreen, IUIScreen
             return;
         }
 
-        // Fallback ohne Prefab: Code-Zeile (stiller Notbetrieb).
+        // Fallback without prefab: code line (silent fallback mode).
         var row = new GameObject("DetailRow", typeof(RectTransform));
         row.transform.SetParent(contentParent, false);
 
@@ -501,9 +501,9 @@ public class PenaltyDetailPopup : UIScreen, IUIScreen
             catch { tmp.color = Color.white; }
         }
 
-        // Leer-Text lokalisieren (Muster HistoryHandler): Fallback steht sofort,
-        // LocalizedString überschreibt nur bei nicht-leerem Tabellenwert —
-        // funktioniert auch, solange der Key noch nicht in der Tabelle ist.
+        // Localize empty text (HistoryScreen pattern): fallback is immediate,
+        // LocalizedString overwrites only in the case of non-empty table value —
+        // It also works as long as the key is not yet in the table.
         var codeLocalizeEvent = row.AddComponent<LocalizeStringEvent>();
         codeLocalizeEvent.OnUpdateString.AddListener(localizedValue =>
         {
@@ -522,8 +522,8 @@ public class PenaltyDetailPopup : UIScreen, IUIScreen
         for (int i = contentParent.childCount - 1; i >= 0; i--)
         {
             var child = contentParent.GetChild(i);
-            // Sofort aus dem Layout lösen, damit keine alten Zeilen in die
-            // Höhenmessung einfließen. Destroy() selbst wirkt erst am Frame-Ende.
+            // Immediately remove from the layout so that no old lines are placed in the
+            // Destroy() itself only acts at the frame end.
             child.SetParent(null, false);
             Destroy(child.gameObject);
         }
@@ -538,9 +538,9 @@ public class PenaltyDetailPopup : UIScreen, IUIScreen
     }
 
     /// <summary>
-    /// Zeigt das Popup (aktiviert zuerst — Messungen sind erst dann gültig),
-    /// passt die Listenhöhe an und parkt die ScrollView oben (synchron +
-    /// verzögert bis nach dem Layout-Rebuild am Frame-Ende).
+    /// Shows the popup (activates first — measurements are valid only then),
+    /// adjust the list height and park the ScrollView above (synchronous +)
+    /// delayed until after the layout rebuild at the frame end.
     /// </summary>
     private void FinishShow()
     {
@@ -551,7 +551,7 @@ public class PenaltyDetailPopup : UIScreen, IUIScreen
     }
 
     // =========================
-    // AUTO-SIZE (nur Liste scrollt)
+    // AUTO-SIZE (only list scrolls)
     // =========================
 
     private void EnsureSizeRefs()
@@ -575,6 +575,7 @@ public class PenaltyDetailPopup : UIScreen, IUIScreen
 
         if (backgroundRect == null)
         {
+            Debug.LogWarning("[PenaltyDetailPopup] backgroundRect nicht verdrahtet; Fallback-Suche nach 'PenaltyColumnDetailPopupBackground'.", this);
             var bg = transform.Find("PenaltyColumnDetailPopupBackground");
             if (bg != null)
                 backgroundRect = bg as RectTransform;
@@ -595,10 +596,10 @@ public class PenaltyDetailPopup : UIScreen, IUIScreen
     }
 
     /// <summary>
-    /// Passt NUR die Listenhöhe an (Top + ButtonRow bleiben fix).
-    /// Wunschhöhe per expliziter Formel (Pad + N*Zeilenhöhe + (N-1)*Spacing,
-    /// alles live gelesen), gecappt auf Backgroundhöhe - Marge - Chrome.
-    /// Muss bei aktivem Popup laufen (FinishShow aktiviert zuerst).
+    /// ONLY adjust the list height (top + ButtonRow remain fixed).
+    /// desired height by explicit formula (pad + N*line height + (N-1)*spacing),
+    /// everything read live), capped at background level - margin - Chrome.
+    /// Must run with active popup (FinishShow activated first).
     /// </summary>
     private void ApplyListHeight()
     {
@@ -610,7 +611,7 @@ public class PenaltyDetailPopup : UIScreen, IUIScreen
         float listHeight = GetDesiredListHeight();
         float maxList = GetMaxListHeight();
 
-        // TEMP-DIAG: Welche Höhe wurde woraus gerechnet?
+        // TEMP-DIAG: What height was calculated from?
         try
         {
             float measured = listContentRect != null
@@ -632,7 +633,7 @@ public class PenaltyDetailPopup : UIScreen, IUIScreen
 
         float target = Mathf.Min(listHeight, maxList);
 
-        // Nur schreiben, was sich ändert — jeder Setter dirtied das Layout.
+        // Just write what changes — each setter dirtied the layout.
         if (!Mathf.Approximately(listLayoutElement.preferredHeight, target))
             listLayoutElement.preferredHeight = target;
 
@@ -644,8 +645,8 @@ public class PenaltyDetailPopup : UIScreen, IUIScreen
     }
 
     /// <summary>
-    /// Erzwingt synchronen Layout-Durchlauf für Content + Window, damit die
-    /// anschließende Messung den frisch aufgebauten Zeilen entspricht.
+    /// Forces synchronous layout through for content + window to allow the
+    /// subsequent measurement corresponds to the freshly constructed lines.
     /// </summary>
     private void RebuildLayouts()
     {
@@ -665,11 +666,11 @@ public class PenaltyDetailPopup : UIScreen, IUIScreen
     }
 
     /// <summary>
-    /// Wunschhöhe der Liste — explizit gerechnet (Primärpfad):
-    /// PadTop + PadBottom + N * Zeilenhöhe + max(0, N-1) * Spacing.
-    /// N = echte Childzahl im Content, Zeilenhöhe live aus der ersten Zeile
-    /// (Fallback Konstante 130), Padding/Spacing live aus der Content-VLG.
-    /// Lücken nur ZWISCHEN Zeilen (N=0 → nur Padding, N=1 → kein Spacing).
+    /// The desired height of the list — explicitly calculated (primary path):
+    /// PadTop + PadBottom + N * line height + max(0, N-1) * Spacing.
+    /// N = real child number in the content, line height live from the first line
+    /// (Fallback Constant 130), Padding/Spacing live from the Content-VLG.
+    /// Gaps only between lines (N=0 → only padding, N=1 → no spacing).
     /// </summary>
     private float GetDesiredListHeight()
     {
@@ -695,8 +696,8 @@ public class PenaltyDetailPopup : UIScreen, IUIScreen
     }
 
     /// <summary>
-    /// Live-Zeilenhöhe: preferredHeight der ersten Zeile im Content.
-    /// Fallback Konstante (Prefab-Wurzel LayoutElement.preferredHeight).
+    /// Live line height: preferredHeight of the first line in the content.
+    /// Fallback constant (prefab root LayoutElement.preferredHeight).
     /// </summary>
     private float GetLiveRowHeight()
     {
@@ -714,8 +715,8 @@ public class PenaltyDetailPopup : UIScreen, IUIScreen
     }
 
     /// <summary>
-    /// Chrome = alles im Fenster AUSSER der ScrollView (Top + ButtonRow)
-    /// inkl. Window-Padding/Spacing. Live nach Rebuild gemessen, Fallback 450
+    /// Chrome = everything in the window EXCEPT of ScrollView (top + ButtonRow)
+    /// incl. window padding/spacing. Live measured after rebuild, fallback 450
     /// (130 Top + 120 ButtonRow + 100 Padding + 100 Spacing).
     /// </summary>
     private float GetWindowChromeHeight()
@@ -760,8 +761,8 @@ public class PenaltyDetailPopup : UIScreen, IUIScreen
     }
 
     /// <summary>
-    /// Cap für die ScrollView: Backgroundhöhe (BottomBar-frei) - Marge
-    /// (200 = 100 oben + 100 unten) - Chrome. Frisch pro Öffnen gerechnet.
+    /// Cap for the ScrollView: Background height (BottomBar -free) - Margin
+    /// (200 = 100 above + 100 below) - Chrome. Fresh calculated per open.
     /// </summary>
     private float GetMaxListHeight()
     {
@@ -780,9 +781,9 @@ public class PenaltyDetailPopup : UIScreen, IUIScreen
     }
 
     /// <summary>
-    /// Setzt die ScrollView synchron nach oben. Reicht allein nicht — der
-    /// Layout-Rebuild danach kann den Offset verschieben, daher zusätzlich
-    /// EnsureScrollReset (Coroutine bis Frame-Ende).
+    /// Set the ScrollView up synchronously.
+    /// Layout rebuild after that can move the offset, therefore, additionally
+    /// EnsureScrollReset (coroutine to frame end).
     /// </summary>
     private void ResetScrollTop()
     {
@@ -797,8 +798,8 @@ public class PenaltyDetailPopup : UIScreen, IUIScreen
     }
 
     /// <summary>
-    /// Startet den verzögerten Scroll-Reset (läuft bis nach dem
-    /// Layout-Rebuild am Frame-Ende).
+    /// Starts the delayed scroll reset (runs until after the
+    /// Layout rebuild at the frame end.
     /// </summary>
     private void EnsureScrollReset()
     {

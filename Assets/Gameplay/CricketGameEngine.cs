@@ -93,7 +93,7 @@ public class CricketGameEngine : GameEngine
         windowHandler.GoTo(ScreenId.Optionen);
     }
 
-    public void OnClickAbortCancle()
+    public void OnClickAbortCancel()
     {
         if (windowHandler != null){
             isPaused = false;
@@ -130,13 +130,13 @@ public class CricketGameEngine : GameEngine
 
     private void HandleTurnCompleted(CricketTurnResult result)
     {
-        // (Legacy-)Penalties sind stillgelegt; Customs feuern über
+        // (Legacy) penalties are decommissioned; Customs fire over
         // OnCustomPenaltyTriggered (HandleCustomPenaltyAudio), Specials
-        // (z.B. White Horse) über OnCustomAudioEvent — beide vor diesem
-        // Hook. Reihenfolge hier: Marks-Anzahl, Punkte, dann Marks-Event.
+        // (e.g. White Horse) via OnCustomAudioEvent — both before this
+        // Hook. Order here: Marks number, points, then Marks event.
         if (result.Hits.Count > 0)
         {
-            // Marks: Zahl ansagen, dann Punkte, dann Marks-Event (Custom, Seed cricket_marks).
+            // Marks: announce number, then points, then Marks event (Custom, Seed cricket_marks).
             int totalMarks = result.Hits.Sum(h => h.EffectiveMarks);
             audioManager.PlayScore(totalMarks);
 
@@ -146,7 +146,7 @@ public class CricketGameEngine : GameEngine
             PlayManualAudioEvent(SeededAudioEvents.MarksId);
         }
 
-        // Gar nix
+        // Nothing at all
         else
         {
             audioManager.PlayScore(0);
@@ -188,14 +188,14 @@ public class CricketGameEngine : GameEngine
 
     protected override IEnumerator HandleBotTurn(DartBot bot)
     {
-        // Input sperren
+        // Lock input
         inputHandler.SetInputEnabled(false);
 
         for (int i = 0; i < 3; i++)
         {
             yield return new WaitUntil(() => !isPaused);
 
-            // Falls Turn schon beendet (z.B. durch Bust oder Win)
+            // If Turn has already ended (e.g. by Bust or Win)
             var currentTurn = game.GetCurrentTurnOfPlayer(bot.GetID());
             if (currentTurn == null || !currentTurn.HasSpace() || game.IsFinished())
             {

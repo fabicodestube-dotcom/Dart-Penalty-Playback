@@ -1,16 +1,16 @@
 using UnityEngine;
-using System.Collections.Generic; // Ermöglicht die Nutzung von Listen/Arrays
+using System.Collections.Generic; // Allows the use of lists/arrays
 
 public class LanguagePopup : MonoBehaviour
 {
-    public OptionsHandler optionsHandler;
+    public OptionsScreen optionsHandler;
 
     [Tooltip("Add all your language buttons here in the Inspector")]
     public List<LanguageButton> languageButtons = new List<LanguageButton>();
 
     private GameObject currentlyActiveBorder;
 
-    // Wird von Unity aufgerufen, wenn das Skript geladen wird
+    // Called by Unity when the script is loaded
     private void Start()
     {
         InitializeCurrentLanguageSelection();
@@ -21,22 +21,22 @@ public class LanguagePopup : MonoBehaviour
     /// </summary>
     private void InitializeCurrentLanguageSelection()
     {
-        // 1. Hole den aktuell aktiven Sprachcode (z. B. aus deinem AppSettingsManager)
-        // HINWEIS: Passe diesen Aufruf an, je nachdem wie deine Methode im AppSettingsManager genau heißt!
+        // Get the currently active language code (e.g. from your AppSettingsManager)
+        // NOTE: Adjust this call depending on what your method is called in AppSettingsManager!
         string currentLocale = AppSettingsManager.Instance.Settings.Language.lastLocaleCode; 
 
-        // 2. Durchsuche alle registrierten Buttons nach dem passenden Sprachcode
+        // Search all registered buttons for the appropriate language code
         foreach (LanguageButton button in languageButtons)
         {
             if (button != null && string.Equals(button.localeCode, currentLocale, System.StringComparison.OrdinalIgnoreCase))
             {
-                // Wenn der richtige Button gefunden wurde, aktiviere seine Umrandung
+                // If the correct button has been found, activate its border
                 if (button.borderObject != null)
                 {
                     button.borderObject.SetActive(true);
                     currentlyActiveBorder = button.borderObject;
                 }
-                break; // Schleife abbrechen, da wir den passenden Button gefunden haben
+                break; // Cancel the loop, as we have found the right button
             }
         }
     }

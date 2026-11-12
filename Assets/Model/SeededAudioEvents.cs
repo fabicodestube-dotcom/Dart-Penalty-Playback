@@ -2,11 +2,11 @@ using System.Collections.Generic;
 using System.Linq;
 
 /// <summary>
-/// Geseedete Audio-Events (Defaults ab erstem Start). Built-in-Seeds sind
-/// nicht löschbar (builtIn=true) und haben einen Fallback-Sound. Einige
-/// Seeds sind dagegen bewusst user-ähnlich (builtIn=false, löschbar) und
-/// werden nur im Custom-Paket einmalig angelegt; ihre Clips kommen
-/// ausschließlich aus der normalen Event-Aufnahme.
+/// Seeded audio events (defaults from first start).
+/// non-erasable (builtIn =true) and have a fallback sound.
+/// Seeds, on the other hand, are deliberately user-like (builtIn =false, erasable) and
+/// are created only once in the custom package; their clips come
+/// exclusively from the normal event recording.
 /// </summary>
 public static class SeededAudioEvents
 {
@@ -96,8 +96,8 @@ public static class SeededAudioEvents
             new List<AudioEventTrigger> { new AudioEventTrigger { kind = AudioEventTriggerKind.ScoreReached, score = 420 } },
             fallbackSpecial: SpecialAudioType.FourTwenty,
             fallbackScore: 420),
-        // Marks-Ansage (Cricket): bewusst Manual — die Engine spielt sie nach
-        // dem Turn-Score (Reihenfolge: Penalties → Specials → Score → Marks).
+        // Marks announcement (cricket): deliberate manual — the engine plays it
+        // The turn score (order: Penalties → Specials → Score → Marks).
         new Seed(MarksId, "Marks", AudioEventCategory.Cricket,
             new List<AudioEventTrigger> { new AudioEventTrigger { kind = AudioEventTriggerKind.Manual } },
             fallbackSpecial: SpecialAudioType.Marks),
@@ -123,8 +123,8 @@ public static class SeededAudioEvents
             new List<AudioEventTrigger> { new AudioEventTrigger { kind = AudioEventTriggerKind.StreakReached, threshold = 3 } },
             fallbackSpecial: SpecialAudioType.ATCStreak),
 
-        // User-ähnliche X01-Events: löschbar, ohne eingebauten Clip, nur im
-        // Custom-Paket einmalig angelegt. Clips kommen aus der Event-UI.
+        // User-like X01 events: erasable, without built-in clip, only in
+        // Custom package created once. Clips come from the event UI.
         new Seed(BahId, "Bah", AudioEventCategory.X01,
             new List<AudioEventTrigger>
             {
@@ -169,7 +169,7 @@ public static class SeededAudioEvents
             builtIn: false, onlyCustomAudioSet: true)
     };
 
-    /// <summary>Default White-Horse-Slot: beliebiges Triple (3 verschiedene egal).</summary>
+    /// <summary>Default White Horse slot: any triple (any 3 different).</summary>
     private static TurnPatternEntry TripleSlot()
     {
         return new TurnPatternEntry
@@ -181,7 +181,7 @@ public static class SeededAudioEvents
         };
     }
 
-    /// <summary>Exakter Single-Treffer auf dem Board (z. B. S20).</summary>
+    /// <summary>Exact single hit on the board (e.g. S20).</summary>
     private static TurnPatternEntry SingleBoardSlot(int value)
     {
         return new TurnPatternEntry
@@ -195,7 +195,7 @@ public static class SeededAudioEvents
         };
     }
 
-    /// <summary>Einmal-Marker für user-ähnliche Seeds (verhindert Wiederanlage).</summary>
+    /// <summary>One-time marker for user-like seeds (prevents reinvestment).</summary>
     public static string SeedMarkerKey(string id)
     {
         return "audio_seed_" + id + "_v1";

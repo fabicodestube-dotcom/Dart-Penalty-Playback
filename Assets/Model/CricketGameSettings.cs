@@ -32,7 +32,7 @@ public class CricketGameSettings : GameSettings
             return false;
         }
 
-        // As requested: Only "Punkte aus" + "CutThroat an" is not allowed.
+        // As requested: Only "points off" + "CutThroat on" is not allowed.
         if (!pointsEnabled && cutThroatEnabled)
         {
             reason = "Cricket: 'Points off' + 'CutThroat on' is not allowed.";

@@ -2,9 +2,9 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// Baut das ATC-Diagramm "Versuche pro Feld" auf Basis des X01-Hit-Sektor-Prefabs:
-/// instanziieren, Bars auf die ATC-Keys (Singles, Doubles, Triples) beschneiden,
-/// Daten setzen. Analog zu X01: Single "20", Double "D20", Triple "T20" (kein T25).
+/// Builds the ATC diagram "Trials per field" based on the X01 hit sector prefab:
+/// instantiate, cut bars to the ATC keys (Singles, Doubles, Triples),
+/// Analogous to X01: single "20", double "D20", triple "T20" (no T25).
 /// </summary>
 public static class ATCAttemptsChart
 {
@@ -21,10 +21,10 @@ public static class ATCAttemptsChart
         }
         keys.Add("25");
         keys.Add("D25");
-        return keys; // 63 Keys, kein T25 (analog X01-Prefab)
+        return keys; // 63 Keys, no T25 (analog X01-Prefab)
     }
 
-    /// <summary>Instanziert ein beschnittenes Chart und setzt die Daten.</summary>
+    /// <summary>Directs a cropped chart and sets the data.</summary>
     public static HitSectorChart BuildChart(GameObject prefabHitSectorChart, Transform parent,
         string playerName, IReadOnlyDictionary<string, int> sectorCounts)
     {
@@ -42,7 +42,7 @@ public static class ATCAttemptsChart
         return chart;
     }
 
-    /// <summary>Beschneidet ein (ggf. wiederverwendetes) Chart und setzt die Daten neu.</summary>
+    /// <summary>crops a (possibly reused) chart and resets the data.</summary>
     public static void SetupChart(HitSectorChart chart, string playerName, IReadOnlyDictionary<string, int> sectorCounts)
     {
         if (chart == null)
@@ -50,13 +50,13 @@ public static class ATCAttemptsChart
 
         PruneBars(chart);
         chart.gameObject.SetActive(true);
-        // Neuer Spieler ohne Stats -> leeres Dict statt null (SetData iteriert darüber)
+        // New player without stats -> empty dict instead of null (SetData iterates over it)
         chart.SetData(playerName, sectorCounts ?? new Dictionary<string, int>());
     }
 
     /// <summary>
-    /// Bars außerhalb der ATC-Keys werden nur deaktiviert, nicht zerstört
-    /// (Destroy = verzögerter Rebuild + GC). Optisch identisch zur alten Lösung.
+    /// Bars outside the ATC keys are only deactivated, not destroyed
+    /// (Destroy = delayed rebuild + GC). Visually identical to the old solution.
     /// </summary>
     private static void PruneBars(HitSectorChart chart)
     {

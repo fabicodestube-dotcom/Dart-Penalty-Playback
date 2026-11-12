@@ -8,10 +8,10 @@ using UnityEngine.Localization.Components;
 using UnityEngine.UI;
 
 /// <summary>
-/// Editor-Popup für Audio-Events (Tab 3). Hauptpanel zeigt eine Liste aller
-/// Triggern. Über „Neu“ und „Bearbeiten“ öffnet sich das Trigger-Panel
-/// (einzelner Trigger-Editor). Ein Event ohne Trigger wird beim Speichern
-/// automatisch deaktiviert. Built-ins haben eine feste Triggerliste.
+/// Editor popup for audio events (Tab 3). main panel shows a list of all
+/// Triggers. "New" and "Edit" opens the trigger panel
+/// (single trigger editor) An event without trigger is stored
+/// automatically disabled. Built-ins have a fixed trigger list.
 /// </summary>
 public class AudioEventEditorPopup : UIScreen, IUIScreen
 {
@@ -32,6 +32,7 @@ public class AudioEventEditorPopup : UIScreen, IUIScreen
 
     [Header("Trigger-Editor (Trigger-Panel)")]
     public GameObject triggerPanel;
+    public Transform triggerEditorContent;
     public LocalizeStringEvent triggerHeadlineLocalize;
     public TMP_Dropdown triggerKindDropdown;
     public TMP_InputField scoreInput;
@@ -184,7 +185,12 @@ public class AudioEventEditorPopup : UIScreen, IUIScreen
         if (saveTriggerButton != null && backToListButton != null)
             return;
 
-        Transform editorContent = triggerPanel.transform.Find("Content");
+        Transform editorContent = triggerEditorContent;
+        if (editorContent == null)
+        {
+            Debug.LogWarning("[AudioEventEditorPopup] triggerEditorContent nicht verdrahtet; Fallback-Suche nach 'Content'.", this);
+            editorContent = triggerPanel.transform.Find("Content");
+        }
         Transform buttonParent = editorContent != null ? editorContent : triggerPanel.transform;
 
         var rowGo = new GameObject("TriggerButtons", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(LayoutElement));
@@ -445,7 +451,7 @@ public class AudioEventEditorPopup : UIScreen, IUIScreen
             enabledToggle.Initialize(true);
     }
 
-    /// <summary>Aktuelle Kategorie (Dropdown gewinnt, sonst Edit-Stand).</summary>
+    /// <summary>Current category (dropdown wins, otherwise edit stand).</summary>
     private AudioEventCategory CurrentCategory()
     {
         if (categoryDropdown != null)
@@ -473,7 +479,7 @@ public class AudioEventEditorPopup : UIScreen, IUIScreen
     }
 
     /// <summary>
-    /// Kategorie-Wechsel im Popup: Trigger-Optionen neu aufbauen.
+    /// Category change in popup: Rebuild trigger options.
     /// </summary>
     public void OnCategoryChanged()
     {
@@ -502,7 +508,7 @@ public class AudioEventEditorPopup : UIScreen, IUIScreen
             : category.ToString();
     }
 
-    /// <summary>Trigger-Optionen je Kategorie (Dropdown-Reihenfolge = Index).</summary>
+    /// <summary>Trigger options per category (dropdown order = index).</summary>
     private static List<string> TriggerOptions(AudioEventCategory category)
     {
         return category switch
@@ -767,8 +773,8 @@ public class AudioEventEditorPopup : UIScreen, IUIScreen
     {
         if (triggerKindDropdown != null)
         {
-            // Kategorie bestimmt welche Trigger möglich sind; der erste Eintrag
-            // der Kategorie passt zum Trigger-Typ (falls vorhanden).
+            // Category determines which triggers are possible; the first entry
+            // The category matches the trigger type (if any).
             var kind = trigger.kind;
             var category = CurrentCategory();
             int idx = TriggerIndex(category, kind);

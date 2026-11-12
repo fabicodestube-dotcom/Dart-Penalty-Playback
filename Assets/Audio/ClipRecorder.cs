@@ -8,7 +8,7 @@ using UnityEngine.Android;
 public class ClipRecorder : MonoBehaviour
 {
     [Header("Browser")]
-    public ClipBrowser clipBrowser;
+    public ClipBrowserScreen clipBrowser;
 
     [Header("Recorder Button")]
     public GameObject idleImage;
@@ -396,7 +396,7 @@ public class ClipRecorder : MonoBehaviour
         int start = -1;
         int end = -1;
 
-        // Anfang suchen (framebasiert)
+        // Find start (frame-based)
         for (int i = 0; i < samples.Length; i += channels)
         {
             bool audible = false;
@@ -417,7 +417,7 @@ public class ClipRecorder : MonoBehaviour
             }
         }
 
-        // Ende suchen (framebasiert)
+        // Find end (frame-based)
         for (int i = samples.Length - channels; i >= 0; i -= channels)
         {
             bool audible = false;
@@ -438,7 +438,7 @@ public class ClipRecorder : MonoBehaviour
             }
         }
 
-        // Nur Stille
+        // Only silence
         if (start < 0 || end < 0)
             return null;
 
@@ -589,8 +589,8 @@ public class ClipRecorder : MonoBehaviour
     }
 
     /// <summary>
-    /// Berechnet Peak + RMS. Entfernt vorher den DC-Offset (Mittelwert),
-    /// damit ein Offset nicht die Lautheitsmessung verfälscht.
+    /// Calculates peak + RMS. removes the DC offset (mean value) beforehand,
+    /// so that an offset does not falsify the loudness measurement.
     /// </summary>
     private void ComputeStats(float[] samples, out float peak, out float rms)
     {

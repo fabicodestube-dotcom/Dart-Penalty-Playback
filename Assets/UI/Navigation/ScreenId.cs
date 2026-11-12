@@ -1,0 +1,20 @@
+public enum ScreenId
+{
+    Zoggen,
+    Players,
+    History,
+    Statistic,
+    Optionen,
+    X01Game,
+    Summary,
+    GameDetail,
+    ATCGame,
+    CricketGame,
+    Popup,
+    About,
+    CustomClipHandler,
+    CustomClipBrowser,
+    Customization,
+    PenaltyEditor,
+    AudioEventEditor
+}

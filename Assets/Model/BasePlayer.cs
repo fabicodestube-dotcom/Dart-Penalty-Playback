@@ -771,14 +771,14 @@ public abstract class BasePlayer
     internal int GetSetupStartPosition() => setupStartPosition;
 
     // =========================================================
-    // STATISTICS READ API (In-Memory, kein SQLite)
+    // STATISTICS READ API (In-Memory, not SQLite)
     // =========================================================
 
     /// <summary>
-    /// Modus-Aggregat für eine Range direkt aus dem Speicher (O(1), kein
-    /// SQLite-Read, kein Deserialize). AllTime = persistierte Aggregate,
-    /// Time-Ranges = per Save/Delete fortgeführte Snapshots.
-    /// Gibt nie null zurück (Fallback: leeres Stats-Objekt).
+    /// Mode unit for a range directly from memory (O(1), no
+    /// SQLite-Read, not deserialize. AllTime = persistent aggregates,
+    /// Time-Ranges = Save/Delete continued snapshots.
+    /// Never returns null (fallback: empty stat object).
     /// </summary>
     public GameStats GetModeStats(GameMode mode, StatisticsRange range)
     {
@@ -807,9 +807,9 @@ public abstract class BasePlayer
     }
 
     /// <summary>
-    /// Modusübergreifendes Kombi-Aggregat für die "All Games"-Seite: Summe der
-    /// drei In-Memory-Modusaggregate (exakt für alle angezeigten Felder:
-    /// Games, Legs, Penalties). Ersetzt LoadPlayerStatsAll im Hot-Path.
+    /// Cross-mode combination unit for the "All Games" page: sum of the
+    /// Three in-memory mode sets (exact for all displayed fields):
+    /// Games, Legs, Penalties. Replaced LoadPlayerStatsAll in the Hot Path.
     /// </summary>
     public GameStats GetCombinedStats(StatisticsRange range)
     {

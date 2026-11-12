@@ -8,7 +8,7 @@ public class ThemeColorBinding : MonoBehaviour
 
     private Graphic _graphic;
 
-    // 🔥 wichtig: verhindert doppelte Subscriptions
+    // Important: prevents double subscriptions
     private bool _isSubscribed;
 
     private void Awake()
@@ -17,8 +17,8 @@ public class ThemeColorBinding : MonoBehaviour
     }
 
     /// <summary>
-    /// Initialisiert das Binding zur Laufzeit (z.B. für dynamisch erzeugte
-    /// Labels) und wendet die Rolle sofort an.
+    /// Initializes the binding at runtime (e.g. for dynamically generated
+    /// Labels) and applies the role immediately.
     /// </summary>
     public void SetRole(ThemeColorRole newRole)
     {
@@ -32,16 +32,16 @@ public class ThemeColorBinding : MonoBehaviour
 
     private void Start()
     {
-        // 🔥 Event registrieren (manuell kontrolliert)
+        // Register event (manually controlled)
         SubscribeToTheme();
 
-        // 🔥 Initialer Sync nach Start
+        // Initial Sync after Start
         Apply();
     }
 
     /// <summary>
-    /// Registriert dieses Binding beim ThemeManager.
-    /// Wird manuell kontrolliert, kein Unity Enable/Disable nötig.
+    /// Register this binding at ThemeManager.
+    /// Manually controlled, no Unity Enable/Disable is required.
     /// </summary>
     private void SubscribeToTheme()
     {
@@ -56,8 +56,8 @@ public class ThemeColorBinding : MonoBehaviour
     }
 
     /// <summary>
-    /// Entfernt dieses Binding sauber aus dem Event.
-    /// Verhindert MissingReferenceException bei Destroy.
+    /// Remove this binding cleanly from the event.
+    /// Prevent MissingReferenceException at Destroy.
     /// </summary>
     private void UnsubscribeFromTheme()
     {
@@ -74,7 +74,7 @@ public class ThemeColorBinding : MonoBehaviour
 
     private void Apply()
     {
-        // 🔥 harte Safety Guards gegen destroyed / invalid state
+        // Safety Guards against destroyed / invalid state
         if (this == null)
             return;
 
@@ -89,7 +89,7 @@ public class ThemeColorBinding : MonoBehaviour
 
     private void OnDestroy()
     {
-        // 🔥 KRITISCH: Event sauber entfernen bevor Objekt endgültig verschwindet
+        // CRITICAL: Remove the event cleanly before the object finally disappears
         UnsubscribeFromTheme();
     }
 }

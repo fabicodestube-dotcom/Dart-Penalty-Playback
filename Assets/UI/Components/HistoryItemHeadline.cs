@@ -102,10 +102,10 @@ public class HistoryItemHeadline : MonoBehaviour
     };
 
     /// <summary>
-    /// Wie viele Strafregeln im Spiel gegriffen haben: Legacy-Typen mit
-    /// Buchungen (alte Spiele) + aktivierte Snapshot-Customs.
-    /// Legacy-Settings zählen nicht mehr (System stillgelegt); neue Spiele
-    /// buchen dort 0 und zeigen nur Customs.
+    /// How many penalties have taken hold in the game: Legacy types with
+    /// Bookings (old games) + activated snapshot customs.
+    /// Legacy settings no longer count (system decommissioned); new games
+    /// Book 0 there and show only Customs.
     /// </summary>
     private static int CountActivePenalties(GameSummary summary)
     {
@@ -153,8 +153,8 @@ public class HistoryItemHeadline : MonoBehaviour
     }
 
     /// <summary>
-    /// Summe der verhängten Strafen über alle Spieler (eine Wahrheit mit
-    /// dem Detail-Popup: PenaltyDisplay.PlayerImposedTotal pro Spieler).
+    /// Sum of penalties imposed on all players (one truth with a penalty)
+    /// The detail popup: PenaltyDisplay.PlayerImposedTotal per player.
     /// Z.B. Wall 3× à 10 + Ceiling 1× à 20 = 50.
     /// </summary>
     private static float SumImposedPenaltyCosts(GameSummary summary, GameSettings settings)

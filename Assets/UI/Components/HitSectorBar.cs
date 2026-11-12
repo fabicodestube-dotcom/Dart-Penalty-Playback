@@ -28,8 +28,8 @@ public class HitSectorBar : MonoBehaviour,
 
     private void Awake()
     {
-        // Perf (M1): Texte sind nie interaktiv (Press läuft über barFill),
-        // aber jeder RaycastTarget wird bei jedem Touch getestet.
+        // Perf (M1): Texts are never interactive (press is available at barFill),
+        // But every RaycastTarget is tested on every touch.
         foreach (var tmp in GetComponentsInChildren<TMP_Text>(true))
         {
             if (tmp != null && tmp.raycastTarget)

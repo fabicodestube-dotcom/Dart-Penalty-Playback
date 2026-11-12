@@ -12,16 +12,16 @@ public class PlayerList : MonoBehaviour, IPlayerItemOwner
 
     private List<GameObject> items = new List<GameObject>();
 
-    private PlayerHandler handler;
+    private PlayersScreen handler;
 
-    public void Initialize(PlayerHandler handler)
+    public void Initialize(PlayersScreen handler)
     {
         this.handler = handler;
     }
 
     public void UpdateList(List<BasePlayer> players)
     {
-        // 🔥 1. Alte Items zerstören
+        // Destroying old items
         if (items != null)
         {
             foreach (var item in items)
@@ -35,7 +35,7 @@ public class PlayerList : MonoBehaviour, IPlayerItemOwner
         if (players == null)
             return;
 
-        // 🔥 2. Neue UI Elemente erzeugen
+        // 2. Create new UI elements
         foreach (var player in players)
         {
             GameObject template = prefab;

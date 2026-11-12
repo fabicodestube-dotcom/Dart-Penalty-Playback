@@ -13,8 +13,8 @@ public class AudioManager : MonoBehaviour
     private Queue<AudioClip> audioQueue = new Queue<AudioClip>();
     private bool isPlaying = false;
 
-    // Speichert pro PenaltyType den zuletzt abgespielten Clip,
-    // um direkte Wiederholungen zu vermeiden
+    // Save the last clip played per PenaltyType,
+    // to avoid direct repetitions
     private Dictionary<PenaltyType, AudioClip> lastPlayedClips = new Dictionary<PenaltyType, AudioClip>();
 
 
@@ -78,9 +78,9 @@ public void PlayPenalty(PenaltyType type)
     }
 
     /// <summary>
-    /// Custom-Penalty-Sound (stabile String-ID). Die Kette steckt komplett
-    /// in der AudioLibrary: aufgenommener Clip → eingebauter Fallback aus dem
-    /// aktiven Set (Default bei WillBePublished, sonst Custom) → Warnung.
+    /// Custom penalty sound (stable string ID).
+    /// The chain lives in the AudioLibrary: recorded clip → built-in fallback from the
+    /// active set (default if WillBePublished, otherwise custom) → warning.
     /// </summary>
     public void PlayCustomPenaltyClip(string penaltyId)
     {
@@ -99,9 +99,9 @@ public void PlayPenalty(PenaltyType type)
     }
 
     /// <summary>
-    /// Custom-Audio-Event-Sound (stabile String-ID). Die Kette steckt komplett
-    /// in der AudioLibrary: aufgenommener Clip → eingebauter Fallback aus dem
-    /// aktiven Set (Default bei WillBePublished, sonst Custom) → Warnung.
+    /// Custom audio event sound (stable string ID).
+    /// The chain lives in the AudioLibrary: recorded clip → built-in fallback from the
+    /// active set (default if WillBePublished, otherwise custom) → warning.
     /// </summary>
     public void PlayCustomEvent(string eventId)
     {
@@ -120,9 +120,9 @@ public void PlayPenalty(PenaltyType type)
     }
 
     /// <summary>
-    /// Sektor-Sound (Wall/Ceiling/Custom), Key = Sektor-ID. Ohne eigenen
-    /// aufgenommenen Clip bleibt der Sektor stumm; eine verknüpfte Strafe
-    /// klingt weiterhin über PlayCustomPenaltyClip.
+    /// Sector sound (Wall/Ceiling/Custom), Key = Sector ID. Without own
+    /// recorded clip, the sector remains muted; a linked penalty
+    /// Sounds still on PlayCustomPenaltyClip.
     /// </summary>
     public void PlaySectorClip(string sectorId)
     {
@@ -153,7 +153,7 @@ public void PlayPenalty(PenaltyType type)
     {
         var settings = AppSettingsManager.Instance?.Settings;
 
-        // Defensive Checks → falls Settings unvollständig sind
+        // Defensive checks → if settings are incomplete
         if (settings == null || settings.Sound == null)
             return true;
 
@@ -161,8 +161,8 @@ public void PlayPenalty(PenaltyType type)
     }
 
     /// <summary>
-    /// Turn-Score-Ansagen (Score-Sammel-Row, Tab 3). Default true
-    /// (Altsaves ohne Feld ebenfalls).
+    /// Turn score announcements (score summary row, Tab 3). Default true
+    /// (old saves without field as well).
     /// </summary>
     private bool AreScoreAnnouncementsEnabled()
     {
@@ -175,9 +175,9 @@ public void PlayPenalty(PenaltyType type)
     }
 
     /// <summary>
-    /// Fehlender Clip: Ist der eingebaute Fallback aktiv, ist das ein
-    /// Fehlerfall → Warnung. Ist der Fallback abgeschaltet, ist "kein Clip"
-    /// der Normalfall → nur Log, sonst spammt die Konsole bei jedem Zug.
+    /// Missing Clip: If the built-in fallback is active, this is a
+    /// If the fallback is switched off, "no clip" is
+    /// the normal case → only log, otherwise the console spams every move.
     /// </summary>
     private void LogMissingClip(string message)
     {
@@ -200,7 +200,7 @@ public void PlayPenalty(PenaltyType type)
 
         audioQueue.Enqueue(clip);
 
-        // Startet Coroutine nur, wenn aktuell keine läuft
+        // Starts coroutine only if currently none is running
         if (!isPlaying)
             StartCoroutine(PlayQueue());
     }
@@ -209,7 +209,7 @@ private IEnumerator PlayQueue()
     {
         isPlaying = true;
 
-        // Arbeitet die Queue strikt FIFO ab
+        // Processes the queue strictly FIFO
         while (audioQueue.Count > 0)
         {
             if (source == null)
@@ -225,7 +225,7 @@ private IEnumerator PlayQueue()
 
             source.PlayOneShot(clip, GetVolume());
 
-            // Wartet exakt die Länge des Clips → sequentielle Wiedergabe garantiert
+            // Waits exactly the length of the clip → sequential playback guaranteed
             yield return new WaitForSeconds(Mathf.Max(0f, clip.length));
         }
 
@@ -240,7 +240,7 @@ private IEnumerator PlayQueue()
             return null;
         }
 
-        // Wenn nur ein Clip vorhanden ist → keine Randomisierung nötig
+        // If there is only one clip → no randomization is necessary
         if (clips.Length == 1)
             return clips[0];
 
@@ -250,8 +250,8 @@ private IEnumerator PlayQueue()
         AudioClip newClip;
         int attempts = 0;
 
-        // Versucht bis zu 10x einen anderen Clip als den zuletzt gespielten zu finden
-        // → verhindert monotone Wiederholungen
+        // Try to find up to 10x a different clip than the last one played
+        // → prevents monotonous repetitions
         do
         {
             newClip = clips[Random.Range(0, clips.Length)];
@@ -259,7 +259,7 @@ private IEnumerator PlayQueue()
         }
         while (newClip == lastClip && attempts < 10);
 
-        // Merkt sich den zuletzt gespielten Clip für diesen PenaltyType
+        // Remember the last clip played for this PenaltyType
         lastPlayedClips[type] = newClip;
 
         return newClip;

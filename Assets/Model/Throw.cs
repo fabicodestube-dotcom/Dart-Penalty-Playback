@@ -4,7 +4,7 @@ using Newtonsoft.Json;
 public class Throw
 {
     // =========================================================
-    // IMMUTABLE STATE (Throw ist bewusst unveränderlich nach Konstruktion)
+    // Immutable state (Throw is deliberately unchangeable by construction)
     // =========================================================
 
     [JsonProperty] public DartMultiplier Multiplier { get; }
@@ -15,8 +15,8 @@ public class Throw
     [JsonProperty] public DartMultiplier TargetMultiplier { get; }
 
     /// <summary>
-    /// Sektor-ID eines Custom-Treffer-Bereichs (nur bei HitType.Custom gesetzt,
-    /// sonst null). Value/Multiplier bestimmen den Score (0 = Miss).
+    /// sector ID of a custom hit area (only set at HitType.Custom),
+    /// Value/multiplier determines the score (0 = miss).
     /// </summary>
     [JsonProperty] public string CustomHitId { get; }
 
@@ -42,8 +42,8 @@ public class Throw
     // =========================================================
 
     /// <summary>
-    /// Berechnet den Score dieses Wurfs.
-    /// Wichtig: Nur gültige Board-Treffer zählen, alles andere = 0.
+    /// Calculate the score of this throw.
+    /// Important: Only valid board hits count, everything else = 0.
     /// </summary>
     public int GetScore() => 
         (HitType != HitType.Board && HitType != HitType.Custom)
@@ -62,13 +62,13 @@ public class Throw
     // =========================================================
 
     /// <summary>
-    /// Prüft, ob der Wurf ein Double-Finish sein könnte.
+    /// Check if the litter could be a double finish.
     /// </summary>
     public bool IsDouble() => 
         (HitType == HitType.Board || HitType == HitType.Custom) && Multiplier == DartMultiplier.Double;
 
     /// <summary>
-    /// Prüft, ob der Wurf ein Triple-Finish sein könnte.
+    /// Check if the litter could be a triple finish.
     /// </summary>
     public bool IsTriple() => 
         (HitType == HitType.Board || HitType == HitType.Custom) && Multiplier == DartMultiplier.Triple;

@@ -7,23 +7,23 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 
 /// <summary>
-/// Build-Hilfen für die eingebauten Audio-Clips.
+/// Build help for the built-in audio clips.
 ///
-/// Der AudioLibrary hält im Inspector zwei Clip-Sets: Default (veröffentlicht)
-/// und Custom (Entwicklung). Welches Set zur Laufzeit als eingebauter
-/// Fallback dient, entscheidet WillBePublished. Damit nicht beide Sätze
-/// (419 Clips, ~115 MB Roh-WAV) in den Build wandern, entfernt der
-/// Szenen-Processor das inaktive Set aus der Build-Kopie der Szene.
-/// Das Quell-Szenen-Asset bleibt unberührt.
+/// The AudioLibrary holds two clip sets in the Inspector: Default (released)
+/// and custom (development). which set at runtime as a built-in
+/// Fallback serves, decides WillBePublished.
+/// (419 clips, ~115 MB raw WAV) migrate to the build, the
+/// Scene Processor: The inactive set from the build copy of the scene.
+/// The source-scene asset remains unaffected.
 ///
-/// Menü: Darts/Audio/...
+/// Menu: Darts/Audio/...
 /// </summary>
 public class AudioLibraryBuildTools : IProcessSceneWithReport
 {
-    /// <summary>Reihenfolge: nach den üblichen Processoren laufen.</summary>
+    /// <summary>Order: run according to the usual processors.</summary>
     public int callbackOrder => 100;
 
-    /// <summary>Anzahl der Clips, die beim letzten Build entfernt wurden.</summary>
+    /// <summary>Number of clips removed during last build.</summary>
     public static int StrippedClipCount { get; private set; }
 
     public void OnProcessScene(Scene scene, BuildReport report)
@@ -44,8 +44,8 @@ public class AudioLibraryBuildTools : IProcessSceneWithReport
     }
 
     /// <summary>
-    /// Entfernt das Set, das laut WillBePublished nicht verwendet wird.
-    /// Rückgabe: Anzahl entfernter Clips.
+    /// Removes the set that is not in use according to WillBePublished.
+    /// Return: Number of removed clips.
     /// </summary>
     private static int StripInactiveSet(AudioLibrary lib)
     {
@@ -56,7 +56,7 @@ public class AudioLibraryBuildTools : IProcessSceneWithReport
 
         if (lib.WillBePublished)
         {
-            // Default-Set ist aktiv → Custom-Set entfernen.
+            // Default set is active → Remove custom set.
             removed += CountClips(lib.customNumberClips);
             lib.customNumberClips = null;
 
@@ -80,7 +80,7 @@ public class AudioLibraryBuildTools : IProcessSceneWithReport
         }
         else
         {
-            // Custom-Set ist aktiv → Default-Set entfernen.
+            // Custom-Set is active → Remove default-Set.
             removed += CountClips(lib.numberClips);
             lib.numberClips = null;
 
@@ -122,12 +122,12 @@ public class AudioLibraryBuildTools : IProcessSceneWithReport
     }
 
     // =========================================================
-    // MENÜ
+    // MENU
     // =========================================================
 
     /// <summary>
-    /// Schaltet WillBePublished im geöffneten Szenen-Asset um (Default ↔ Custom)
-    /// und speichert die Szene. Bestimmt, welches Clip-Set im Build landet.
+    /// Switches WillBePublished in the open scene asset (Default ↔ Custom)
+    /// And saves the scene. Determines which clip set lands in the build.
     /// </summary>
     [MenuItem("Darts/Audio/Verwendetes Set umschalten (Default/Custom)")]
     public static void ToggleActiveSet()
@@ -148,7 +148,7 @@ public class AudioLibraryBuildTools : IProcessSceneWithReport
             UnityEditor.EditorUtility.SetDirty(lib);
         }
 
-        // Szene(n) sichern, damit der Build das neue Set verwendet.
+        // Secure scene(s) so that the build uses the new set.
         foreach (var scene in GetOpenScenes())
         {
             if (!scene.IsValid() || !scene.isLoaded)
@@ -161,7 +161,7 @@ public class AudioLibraryBuildTools : IProcessSceneWithReport
         Debug.Log($"[AUDIO] WillBePublished = {target} → aktives Set: {(target ? "Default" : "Custom")}.");
     }
 
-    /// <summary>Info-Log: Welche Clips sind verdrahtet, welches Set ist aktiv?</summary>
+    /// <summary>Info-Log: Which clips are wired, which set is active?</summary>
     [MenuItem("Darts/Audio/AudioLibrary-Status anzeigen")]
     public static void ShowStatus()
     {

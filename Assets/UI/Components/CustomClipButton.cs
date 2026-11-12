@@ -3,10 +3,10 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// Clip-Button des Score-Grids (ScoreClipGridHandler): ein Button je
-/// Score-Slot (0–180), zeigt die Clip-Anzahl (Farbwechsel
-/// imageGotClips/imageNoClips) und öffnet den ClipBrowser für den Slot.
-/// SetupCustom bleibt für Nachnutzung (öffnet via ClipNavigationHelper).
+/// Clip button of the score grid (ScoreClipGridHandler): one button each
+/// Score slot (0–180), shows the clip number (color change)
+/// imageGotClips / imageNoClips) and opens the ClipBrowser for the slot.
+/// SetupCustom remains for reuse (opens via ClipNavigationHelper).
 /// </summary>
 public class CustomClipButton : MonoBehaviour
 {

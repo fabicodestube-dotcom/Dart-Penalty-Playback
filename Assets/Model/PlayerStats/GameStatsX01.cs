@@ -339,7 +339,7 @@ public class GameStatsX01 : GameStats
         }
         else
         {
-            // Neuberechnung des Maximums über LINQ
+            // Recalculation of the maximum over LINQ
             highestCheckout = checkoutTurns.Max(t => t.GetTurnScore());
         }
     }
@@ -363,7 +363,7 @@ public class GameStatsX01 : GameStats
         if (checkoutTurns == null || checkoutTurns.Count == 0)
             return LocalizationText.Get("No_checkouts", "No checkouts");
 
-        // Wir sammeln den Key (z.B. "D20", "D16") des jeweils LETZTEN Wurfs jedes Checkout-Turns
+        // We collect the key (e.g. "D20", "D16") of the LAST litter of each checkout turn
         var closingSectors = checkoutTurns
             .Select(t => t.GetThrows().LastOrDefault())
             .Where(lastThrow => lastThrow != null)
@@ -373,7 +373,7 @@ public class GameStatsX01 : GameStats
         if (closingSectors.Count == 0)
             return LocalizationText.Get("No_data", "No data");
 
-        // Gruppieren nach dem Key, zählen und den mit dem höchsten Count nehmen
+        // Group by the key, count and take the one with the highest count
         return closingSectors
             .GroupBy(sector => sector)
             .OrderByDescending(group => group.Count())
@@ -449,8 +449,8 @@ public class GameStatsX01 : GameStats
         }
     }
 
-    // Hilfsmethode, um aus einem Throw den String-Key (D20, T19 etc.) zu erzeugen
-    // (Analog zu deiner ApplyThrowToStats Logik)
+    // Auxiliary method to generate the string key (D20, T19, etc.) from a Throw
+    // (Analog to your ApplyThrowToStats logic)
     private string GetSectorKey(Throw t)
     {
         if ((t.HitType != HitType.Board && t.HitType != HitType.Custom) || t.GetScore() == 0) return "0";

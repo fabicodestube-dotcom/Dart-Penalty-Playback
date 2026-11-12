@@ -5,17 +5,17 @@ using UnityEditor;
 using UnityEngine;
 
 /// <summary>
-/// Repro/Regression für: ATC Undo nach Match-Ende zeigt Target "Finished".
-/// Baut ein echtes ATC-Spiel (Singles, 1 Set/1 Leg), spielt einen Spieler
-/// bis Match-Ende, Undo, prüft Target + Finish-Flags.
-/// Menü: Darts/Tests/ATC Undo After MatchEnd. Batchmode: -executeMethod ATCUndoReproTest.Run
+/// Repro/Regression for: ATC Undo after match ending shows Target "Finished".
+/// Builds a real ATC game (Singles, 1 Set/1 Leg), plays a player
+/// Until match end, Undo, checks Target + Finish flags.
+/// Menu: Darts/Tests/ATC Undo After MatchEnd. Batchmode: - executeMethod0@@
 /// </summary>
 public static class ATCUndoReproTest
 {
     /// <summary>
-    /// Regression für: Bot wirft nicht, wenn nach Leg-Gewinn ein Bot dran ist.
-    /// Prüft Event-Reihenfolge: Nach OnLegWon muss OnBotCheck für den neuen
-    /// Startspieler kommen (ATCGame.StartNewLeg triggert, wie X01/Cricket).
+    /// Regression for: Bot does not throw if there is a bot after Leg win.
+    /// Checks event order: After OnLegWon must OnBotCheck for the new
+    /// Starting players come (ATCGame.StartNewLeg triggers, like X01/Cricket).
     /// </summary>
     [MenuItem("Darts/Tests/ATC BotCheck After LegWin")]
     public static void RunLegWinBotCheckFromMenu()
@@ -93,8 +93,8 @@ public static class ATCUndoReproTest
     }
 
     /// <summary>
-    /// Variante 2: simuliert den LoadGameById-Zustand (playerCurrentIndex wird
-    /// nie persistiert → nach Load alle 0, finishedAt gesetzt), dann Undo.
+    /// Variant 2: simulates the LoadGameById state (playerCurrentIndex is
+    /// never persists → after load set all 0, finishedAt, then Undo.
     /// </summary>
     [MenuItem("Darts/Tests/ATC Undo From Load State")]
     public static void RunFromLoadStateMenu()
@@ -148,7 +148,7 @@ public static class ATCUndoReproTest
 
             Check(game.IsFinished(), "match-finished");
 
-            // ---- LoadGameById simulieren: Indizes gehen verloren, finished bleibt ----
+            // ---- Simulate LoadGameById: indices are lost, finished remains ----
             var indexField = typeof(ATCGame).GetField("playerCurrentIndex",
                 System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
             var indices = (Dictionary<Guid, int>)indexField.GetValue(game);
@@ -163,8 +163,8 @@ public static class ATCUndoReproTest
             Check(!uiFinished, "player-not-finished-after-undo");
             Check(uiTarget == 25, "target-back-to-last", $"got={uiTarget} expect=25");
 
-            // Exakt die Label-Datenquelle der UI (ATCPlayerListItem.SetTarget /
-            // ATCInputHandler-Label) prüfen, nicht nur Modell-Getter.
+            // Exactly the label data source of the UI (ATCPlayerListItem.SetTarget /
+            // ATCInputHandler -Label) check, not just model getters.
             var uiStats = new ATCUIStats(game, p1);
             Check(!uiStats.isFinished, "uistats-not-finished");
             Check(uiStats.currentTarget == 25, "uistats-target", $"got={uiStats.currentTarget}");
@@ -226,7 +226,7 @@ public static class ATCUndoReproTest
                 }
                 else
                 {
-                    // Gegner passt (Board-Miss ohne Penalty)
+                    // Opponent fits (board miss without penalty)
                     game.AddThrow(new Throw(DartMultiplier.Single, 0, HitType.Board, false, -1));
                 }
             }
@@ -237,9 +237,9 @@ public static class ATCUndoReproTest
             int lastTarget = 25;
             Check(game.GetCurrentTarget(p1.GetID()) == -1, "target-minus1-when-finished");
 
-            // Hinweis: kein JSON-Gesamt-Roundtrip — Produktion lädt relational
-            // (Sets/Legs/Turns), nie per Game-JSON. Roundtrip-Fälle deckt
-            // RunTriplesLoadUndo mit exakter Load-Semantik ab.
+            // Note: no JSON total round trip — production loads relational
+            // (Sets/Legs/Turns), never by Game-JSON.
+            // RunTriplesLoadUndo with exact load semantics.
             game.Undo();
 
             bool uiFinished = game.IsPlayerFinished(p1.GetID());
@@ -265,9 +265,9 @@ public static class ATCUndoReproTest
     }
 
     /// <summary>
-    /// Exakte LoadGameById-Semantik: frische Singles-Steps + genullte Indizes
-    /// (so baut der Repo-Load), dann RestoreProgressAfterLoad + Undo.
-    /// Triples-Variante des gemeldeten Bugs (Single20 statt T20).
+    /// Exact LoadGameById semantics: fresh singles steps + zeroed indices
+    /// (this is how the repo load builds), then RestoreProgressAfterLoad + Undo.
+    /// Triples variant of the reported bug (Single20 instead of T20).
     /// </summary>
     [MenuItem("Darts/Tests/ATC Triples Load Undo")]
     public static void RunTriplesLoadUndoFromMenu()
@@ -321,14 +321,14 @@ public static class ATCUndoReproTest
 
             Check(game.IsFinished(), "match-finished");
 
-            // Persistierte Payloads sichern (wie game_meta), inkl. JSON-Format-Check.
+            // Secure persistent payloads (such as game_meta), including JSON format check.
             string jTargets = Newtonsoft.Json.JsonConvert.SerializeObject(game.GetTargetNumbers());
             string jMults = Newtonsoft.Json.JsonConvert.SerializeObject(
                 game.GetTargetMultipliers().ConvertAll(m => (int)m));
             string jProgress = Newtonsoft.Json.JsonConvert.SerializeObject(
                 game.GetTargetIndices().ToDictionary(kvp => kvp.Key.ToString(), kvp => kvp.Value));
 
-            // ---- Load simulieren: frische Singles-Steps + Indizes 0 ----
+            // ---- Simulate load: fresh singles steps + indices 0 ----
             var flags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
             typeof(ATCGame).GetField("targets", flags).SetValue(game,
                 Enumerable.Range(1, 20).Concat(new[] { 25 }).ToList());
@@ -338,7 +338,7 @@ public static class ATCUndoReproTest
             foreach (var pid in game.GetPlayerIDs())
                 indices[pid] = 0;
 
-            // ---- Restore wie Repository (JSON zurücklesen) ----
+            // ---- Restore like repository (JSON read back) ----
             var restoredTargets = Newtonsoft.Json.JsonConvert.DeserializeObject<List<int>>(jTargets);
             var restoredMultInts = Newtonsoft.Json.JsonConvert.DeserializeObject<List<int>>(jMults);
             var restoredMults = restoredMultInts.ConvertAll(i => (DartMultiplier)i);
@@ -360,7 +360,7 @@ public static class ATCUndoReproTest
             Check(uiTarget == 20 && uiMult == DartMultiplier.Triple,
                 "target-back-to-T20", $"got={(uiMult == DartMultiplier.Double ? "D" : uiMult == DartMultiplier.Triple ? "T" : "")}{uiTarget}");
 
-            // Fallback-Pfad (alte Saves ohne Keys): deterministisch neu + replayen.
+            // Fallback path (old saves without keys): deterministic new + replay.
             game.RestoreProgressAfterLoad(null, null, null);
             Check(game.GetTargetNumbers().Count == 20, "fallback-no-bull",
                 $"count={game.GetTargetNumbers().Count}");
@@ -375,9 +375,9 @@ public static class ATCUndoReproTest
     }
 
     /// <summary>
-    /// Regression für: Undo nach mehreren Misses des zweiten Spielers (Bot)
-    /// warf ArgumentOutOfRangeException in CalculateStreakBeforeUndo
-    /// (targets[-1]), weil kein gültiger Treffer vorlag.
+    /// Regression for: Undo after several misses of the second player (bot)
+    /// threw ArgumentOutOfRangeException in CalculateStreakBeforeUndo
+    /// (targets[-1]), because there was no valid hit.
     /// </summary>
     [MenuItem("Darts/Tests/ATC Undo Bot All-Miss")]
     public static void RunBotAllMissUndoFromMenu()
@@ -415,14 +415,14 @@ public static class ATCUndoReproTest
 
             Throw Miss() => new Throw(DartMultiplier.Single, 0, HitType.Board, false, -1);
 
-            // Spieler 1 beendet seinen Visit mit 3 Misses -> Wechsel zu Spieler 2.
+            // Player 1 ends his visit with 3 misses -> Switch to Player 2.
             for (int i = 0; i < 3; i++)
                 game.AddThrow(Miss());
 
             Check(game.GetCurrentPlayerId() == p2.GetID(), "p2-active-after-p1-visit");
 
-            // Spieler 2 (Bot-Rolle) wirft 2 Misses. Vor dem Fix crashte Undo
-            // hier, weil der Streak-Rebuild auf targets[-1] zugriff.
+            // Player 2 (bot role) throws 2 misses.
+            // Here, because the Streak rebuild accessed targets[-1].
             game.AddThrow(Miss());
             game.AddThrow(Miss());
 

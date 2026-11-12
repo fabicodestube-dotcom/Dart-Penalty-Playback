@@ -143,10 +143,10 @@ public class CricketDefaultPlayerList : MonoBehaviour
         if (contentWidth <= viewportWidth)
             return 0f;
 
-        // Position relativ zum Content-Start
+        // Position relative to the content start
         float targetX = Mathf.Abs(target.anchoredPosition.x);
 
-        // Center item in viewport (optional, aber meistens besser)
+        // Center item in viewport (optional, but usually better)
         float targetCentered = targetX - (viewportWidth * 0.5f) + (target.rect.width * 0.5f);
 
         float maxScroll = contentWidth - viewportWidth;
@@ -173,7 +173,7 @@ public class CricketDefaultPlayerList : MonoBehaviour
 
             float target = isLocked ? LockedAlpha : DefaultAlpha;
 
-            // 🔥 Nur animieren wenn sich wirklich was ändert
+            // Only animate when something really changes
             if (!Mathf.Approximately(cg.alpha, target))
             {
                 FadeTo(cg, target);

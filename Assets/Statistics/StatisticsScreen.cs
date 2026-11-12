@@ -1,11 +1,11 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class StatisticsHandler : MonoBehaviour, IUIScreen
+public class StatisticsScreen : MonoBehaviour, IUIScreen
 {
     [Header("Inspector Components")]
     public AppHandler appHandler;
@@ -56,12 +56,12 @@ public class StatisticsHandler : MonoBehaviour, IUIScreen
     [Header("Single Selection Group Timeline")]
     public SingleSelectionGroup timelineSelectionGroup;
 
-    // Live-Pages: genau EIN Satz aus 4 Pages (eine pro Swipe-Mode) ist
-    // dauerhaft aktiv und zeigt immer die currentRange. Timeline-Wechsel ist
-    // ein reiner Daten-Rebind (gechunkt), kein SetActive-Toggle — Deaktivieren
-    // + Reaktivieren großer Hierarchien war der Timeline-Lag-Spike.
-    // Die übrigen 16 Range-Pages werden einmalig deaktiviert und nie wieder
-    // angefasst (kein Layout, kein Overdraw, keine Rebuilds).
+    // Live Pages: exactly ONE set of 4 pages (one per swipe mode) is
+    // permanently active and always shows the currentRange. timeline change is
+    // a pure data rebind (chunked), no SetActive -toggle - deactivate
+    // + Reactivating large hierarchies was the timeline lag spike.
+    // The remaining 16 range pages are deactivated once and never again
+    // touched (no layout, no overdraw, no rebuilds).
     private StatisticsPageAll liveAllPage;
     private StatisticsPageX01 liveX01Page;
     private StatisticsPageCricket liveCricketPage;
@@ -70,24 +70,24 @@ public class StatisticsHandler : MonoBehaviour, IUIScreen
 
     private List<StatisticsFilterListItem> popupItems = new List<StatisticsFilterListItem>();
 
-    // Event-Deltas statt Voll-Rebuild: Handler markieren nur dirty, die
-    // Verarbeitung läuft gechunkt (max. PlayersPerFrame Spieler pro Frame) und
-    // nur wenn die Seite sichtbar ist. Bei hidden Seite bleiben die Flags
-    // stehen und werden im nächsten OnShow abgearbeitet — kein GameObject-Touch
-    // im Hintergrund, kein SQLite-Read (Aggregate kommen aus BasePlayer).
+    // Event Deltas Instead of Full Rebuild: Traders Only Mark Dirty That
+    // Processing is chunked (max. PlayersPerFrame Players per frame) and
+    // If the page is visible, the flags remain hidden.
+    // stand and will be processed in the next OnShow — no GameObject touch
+    // in the background, no SQLite read (aggregates come from BasePlayer).
     private readonly HashSet<Guid> dirtyPlayers = new HashSet<Guid>();
     private bool everythingDirty;
     private bool screenVisible;
     private DateTime lastRangeEvaluationDate = DateTime.Now.Date;
     private const int PlayersPerFrame = 6;
 
-    // Popup Auto-Size: Das Fenster (VerticalLayoutGroup) wächst mit Header +
-    // Liste + Buttons. Nur die Listenhöhe wird gesetzt:
-    // LayoutElement.preferredHeight = min(Formel, Cap).
-    // Formel: PadTop + PadBottom + N * Zeilenhöhe + max(0, N-1) * Spacing
-    // (N = Childzahl, Zeilenhöhe live aus erster Zeile, Pad/Spacing aus VLG).
-    // Cap: Backgroundhöhe (BottomBar-frei, Screens-Container minus 175) -
-    // Fenstermarge (200 = 100 oben + 100 unten) - Chrome (alles außer ScrollView).
+    // Popup Auto-Size: The window (VerticalLayoutGroup) grows with header +
+    // List + Buttons. Only the list height is set:
+    // LayoutElement.preferredHeight = min(formula, cap).
+    // Formula: PadTop + PadBottom + N * line height + max(0, N-1) * Spacing
+    // (N = Child number, line height live from first line, pad/spacing from VLG).
+    // Cap: Background height (BottomBar -free, screens container minus 175) -
+    // Window Margin (200 = 100 above + 100 below) - Chrome (everything except ScrollView).
     private const float PopupRowHeight = 130f;
 
     private bool popupIsOpen;
@@ -100,19 +100,19 @@ public class StatisticsHandler : MonoBehaviour, IUIScreen
     private Coroutine spareRoutine;
 
     /// <summary>
-    /// Reserve-Rows pro Tabelle (für künftig neue Spieler, ohne Hitch).
+    /// Reserve rows per table (for future new players, without Hitch).
     /// </summary>
     private const int SpareRowsPerTable = 4;
 
     /// <summary>
-    /// True, sobald die 4 Live-Pages einmalig aufgebaut UND die Reserve-Rows
-    /// aufgefüllt sind (BootLoader wartet darauf, bevor der Ladebildschirm
-    /// ausgeblendet wird).
+    /// True, once the 4 Live Pages are built once AND the Reserve Rows
+    /// filled up (BootLoaderwaits for it before the loading screen)
+    /// It is hidden.
     /// </summary>
     public bool IsInitialBuildDone => livePagesBuilt && spareRoutine == null && !SpareShortage();
 
-    // Einmalig aufgelöste Vertikal-Scroller (Inspector-Felder, sonst Fallback).
-    // Kein Traversal pro Verlassen — ResetScrollPositions nutzt nur diese Refs.
+    // One-time vertical scrollers (inspector fields, otherwise fallback).
+    // No traversal per exit — ResetScrollPositions uses only these refs.
     private ScrollRect[] resolvedVerticalScrollers;
 
     private void Start()
@@ -158,15 +158,15 @@ public class StatisticsHandler : MonoBehaviour, IUIScreen
 
     private void FilterByDate(StatisticsRange range)
     {
-        // KEIN SetActive-Toggle mehr: Die 4 Live-Pages (eine pro Swipe-Mode)
-        // bleiben dauerhaft aktiv, nur ihre Daten werden auf die neue Range
-        // umgebunden (gechunkt über die Dirty-Queue). Dadurch kein
-        // Deaktivierungs-/Reaktivierungs-Rebuild beim Timeline-Wechsel, und
-        // Swipe-Nachbarn sind immer live sichtbar.
+        // NO SetActive -Toggle more: The 4 Live Pages (one per swipe mode)
+        // remain permanently active, only your data will be on the new range
+        // And then there is no sign of the wickedness.
+        // Deactivation/reactivation rebuild on timeline change, and
+        // Swipe neighbors are always visible live.
         bool rangeChanged = currentRange != range;
         currentRange = range;
 
-        // Noch im Erstaufbau: Build auf die neue Range umlenken.
+        // Still in the initial setup: redirect build to the new range.
         if (!livePagesBuilt)
         {
             if (screenVisible && rangeChanged && buildRoutine != null)
@@ -216,8 +216,8 @@ public class StatisticsHandler : MonoBehaviour, IUIScreen
     private IEnumerator BuildStartupSequence()
     {
         timelineSelectionGroup.Init(4);
-        // Range dynamisch: Falls der User vor Build-Ende die Timeline tippt,
-        // baut der Erstaufbau direkt die gewünschte Range (siehe FilterByDate).
+        // Range dynamic: If the user taps the timeline before the end of the build,
+        // the initial setup directly builds the desired range (see FilterByDate).
         yield return BuildLivePagesAsync(currentRange);
         yield return null;
         buildRoutine = null;
@@ -227,17 +227,17 @@ public class StatisticsHandler : MonoBehaviour, IUIScreen
     }
 
     /// <summary>
-    /// OnShow-Sequenz: Rollover prüfen, Live-Pages ggf. erstaufbauen,
-    /// Dirty-Queue abarbeiten. Kein Preload nötig — alle Ranges lesen dieselben
-    /// In-Memory-Aggregate, Rebinds laufen über die Queue.
+    /// OnShow - Sequence: Check rollover, first set up live pages if necessary,
+    /// No preload required — all ranks read the same
+    /// In-memory aggregates, rebinds run over the queue.
     /// </summary>
     private IEnumerator OnShowWorkSequence()
     {
         if (appHandler != null && lastRangeEvaluationDate != DateTime.Now.Date)
         {
-            // Transition anlaufen lassen, dann Time-Snapshots neu aufbauen
-            // (einmal pro Tag statt pro Event). Live-Pages danach komplett
-            // neu einbinden.
+            // Start transition, then rebuild time snapshots
+            // (once a day instead of per event). Live pages are then fully
+            // re-incorporated.
             yield return null;
             appHandler.RebuildTimeBasedStatistics();
             lastRangeEvaluationDate = DateTime.Now.Date;
@@ -257,8 +257,8 @@ public class StatisticsHandler : MonoBehaviour, IUIScreen
     }
 
     /// <summary>
-    /// Arbeitet dirty Spieler-Chunks ab (max. PlayersPerFrame pro Frame).
-    /// Schreibt immer die currentRange auf die 4 Live-Pages.
+    /// Processes dirty player chunks (max PlayersPerFrame per frame).
+    /// Always write the currentRange on the 4 live pages.
     /// </summary>
     private IEnumerator ProcessDirtyQueue()
     {
@@ -277,7 +277,7 @@ public class StatisticsHandler : MonoBehaviour, IUIScreen
 
         while (dirtyPlayers.Count > 0)
         {
-            // Snapshot pro Chunk, damit neue Events in die nächste Runde fallen.
+            // Snapshot per chunk so that new events fall into the next round.
             var chunk = new List<Guid>(PlayersPerFrame);
             foreach (var pid in dirtyPlayers)
             {
@@ -300,8 +300,8 @@ public class StatisticsHandler : MonoBehaviour, IUIScreen
     }
 
     /// <summary>
-    /// Startet die Dirty-Verarbeitung, wenn die Seite sichtbar und sonst idle
-    /// ist. Läuft ein Vordergrund-Build, übernimmt dessen Tail das Draining.
+    /// Starts dirty processing when the page is visible and otherwise idle
+    /// If a foreground build is running, its tail takes over the draining.
     /// </summary>
     private void EnsureDirtyProcessing()
     {
@@ -321,7 +321,7 @@ public class StatisticsHandler : MonoBehaviour, IUIScreen
     }
 
     /// <summary>
-    /// True, wenn irgendeine Live-Page noch Reserve-Rows braucht.
+    /// True, if any live page still needs reserve rows.
     /// </summary>
     private bool SpareShortage()
     {
@@ -335,8 +335,8 @@ public class StatisticsHandler : MonoBehaviour, IUIScreen
     }
 
     /// <summary>
-    /// Füllt verbrauchte Reserve-Rows im Idle nach (nur wenn sonst nichts
-    /// läuft). Hält die Hitch-Garantie für neue Spieler dauerhaft aufrecht.
+    /// Fill in used-up reserve rows in the idle (only if nothing else)
+    /// Keeps the Hitch guarantee for new players permanently.
     /// </summary>
     private void EnsureSpareTopUp()
     {
@@ -365,8 +365,8 @@ public class StatisticsHandler : MonoBehaviour, IUIScreen
     }
 
     /// <summary>
-    /// Baut die 4 Live-Pages einmalig für eine Range auf (gechunkt).
-    /// Danach sind alle Tabellen/Charts gepoolt — alles Weitere sind Upserts.
+    /// Build the 4 Live Pages uniquely for a range (chunked).
+    /// After that, all tables/charts are pooled — everything else is upserts.
     /// </summary>
     private IEnumerator BuildLivePagesAsync(StatisticsRange range)
     {
@@ -408,8 +408,8 @@ public class StatisticsHandler : MonoBehaviour, IUIScreen
         List<Guid> playerIds,
         List<string> playerNames)
     {
-        // Aggregate kommen aus BasePlayer (In-Memory, O(1) pro Spieler) —
-        // kein SQLite-Read, kein Rescan über alle Spiele.
+        // Aggregates come from BasePlayer (In-Memory, O(1) per player) —
+        // No SQLite Read, no rescan of all games.
         var stats = new List<GameStats>(playerIds.Count);
 
         for (int i = 0; i < playerIds.Count; i++)
@@ -504,25 +504,25 @@ public class StatisticsHandler : MonoBehaviour, IUIScreen
     {
         EnsurePopupRefs();
 
-        // Zeilen nur neu aufbauen, wenn sich die Spielerliste geändert hat
-        // (hinzugefügt/gelöscht oder Sichtbarkeit geändert). Sonst bestehende
-        // Zeilen unangetastet lassen — kein Instantiate, kein Rebuild.
+        // Rebuild lines only if the player list has changed
+        // (added/deleted or visibility modified).
+        // Leave lines untouched — no instantiate, no rebuild.
         if (!TryReusePopupRows())
             SetupPopup();
 
         popupIsOpen = true;
 
-        // Zuerst aktivieren: Alle Höhenmessungen (Background.rect,
-        // LayoutUtility) sind erst bei aktivem Popup gültig. Vorher synchron
-        // gemessen gab es stale/0-Werte und der nachfolgende Layout-Rebuild
-        // hat die Scrollposition wieder überschrieben.
+        // Activate first: All height measurements (Background.rect,
+        // LayoutUtility) are valid only with active popup.
+        // measured there were stale/0 values and the subsequent layout rebuild
+        // has overwritten the scroll position again.
         if (windowHandler != null)
             windowHandler.ShowPopup(popup);
         else if (popup != null)
             popup.gameObject.SetActive(true);
 
-        // Höhe + Scroll-Reset immer — auch im Reuse-Pfad (Screen-Größe kann
-        // sich geändert haben, Scroll-Offset stammt vom letzten Öffnen).
+        // Height + Scroll reset always – even in the Reuse path (screen size can be)
+        // have changed, scroll offset is from the last opening.
         ApplyPopupListHeight();
         EnsurePopupScrollReset();
     }
@@ -574,9 +574,9 @@ public class StatisticsHandler : MonoBehaviour, IUIScreen
     }
 
     /// <summary>
-    /// True, wenn die aufgebauten Zeilen noch exakt zur Spielerliste passen
-    /// (gleiche Spieler in gleicher Reihenfolge + gleiche Namen +
-    /// gleiche Sichtbarkeit) — dann kein Neuaufbau, kein Rebuild.
+    /// True, if the built-up lines still fit exactly to the player list
+    /// (same players in same order + same names +
+    /// same visibility) — then no rebuild, no rebuild.
     /// </summary>
     private bool TryReusePopupRows()
     {
@@ -611,8 +611,8 @@ public class StatisticsHandler : MonoBehaviour, IUIScreen
     }
 
     /// <summary>
-    /// Gezieltes Anhängen einer einzelnen Zeile (z.B. Bot während offenem Popup
-    /// hinzugefügt) statt Voll-Rebuild. Höhe wird nachgezogen, Liste bleibt oben.
+    /// Targeted attachment of a single line (e.g.bot during open popup)
+    /// Added) instead of full rebuild. Height is pulled, list remains at the top.
     /// </summary>
     private void AppendPopupRow(Guid playerId)
     {
@@ -642,8 +642,8 @@ public class StatisticsHandler : MonoBehaviour, IUIScreen
         {
             if (item != null)
             {
-                // Sofort aus dem Layout lösen, damit keine alten Zeilen
-                // aufblitzen. Destroy() selbst wirkt erst am Frame-Ende.
+                // Instantly remove from the layout so that no old lines
+                // flash. Destroy() itself only takes effect at the end of the frame.
                 item.transform.SetParent(null, false);
                 Destroy(item.gameObject);
             }
@@ -651,8 +651,8 @@ public class StatisticsHandler : MonoBehaviour, IUIScreen
 
         popupItems.Clear();
 
-        // Falls etwas ohne Tracking unter popupParent liegt (z.B. nach
-        // abgebrochenem Aufbau), ebenfalls lösen/zerstören.
+        // If something without tracking is at popupParent (e.g.. to
+        // broken off, also detach/destroy.
         if (popupParent != null)
         {
             for (int i = popupParent.childCount - 1; i >= 0; i--)
@@ -669,11 +669,11 @@ public class StatisticsHandler : MonoBehaviour, IUIScreen
     // =========================
 
     /// <summary>
-    /// Passt NUR die Listenhöhe an (Header + Mark-Buttons + OK bleiben fix).
-    /// Wunschhöhe per expliziter Formel (Pad + N*Zeilenhöhe + (N-1)*Spacing,
-    /// alles live gelesen), gecappt auf Backgroundhöhe - Marge - Chrome.
-    /// Muss bei aktivem Popup laufen (ShowPopup aktiviert zuerst) — sonst sind
-    /// rect/LayoutUtility-Werte stale. Scroll-Reset siehe EnsurePopupScrollReset.
+    /// ONLY adjust the list height (header + mark buttons + OK remain fixed).
+    /// desired height by explicit formula (pad + N*line height + (N-1)*spacing),
+    /// everything read live), capped at background level - margin - Chrome.
+    /// Must run with active popup (ShowPopup activated first) — otherwise
+    /// rect/LayoutUtility values stale. See EnsurePopupScrollReset for scroll reset.
     /// </summary>
     private void ApplyPopupListHeight()
     {
@@ -685,7 +685,7 @@ public class StatisticsHandler : MonoBehaviour, IUIScreen
         float listHeight = GetPopupListDesiredHeight();
         float maxList = GetPopupMaxListHeight();
 
-        // TEMP-DIAG: Welche Höhe wurde woraus gerechnet?
+        // TEMP-DIAG: What height was calculated from?
         try
         {
             float measured = popupListContentRect != null
@@ -701,13 +701,13 @@ public class StatisticsHandler : MonoBehaviour, IUIScreen
 
         if (maxList <= 0f)
         {
-            Debug.LogWarning($"[StatisticsHandler] Popup Auto-Size abgebrochen: maxList={maxList}, items={popupItems.Count}");
+            Debug.LogWarning($"[StatisticsScreen] Popup Auto-Size abgebrochen: maxList={maxList}, items={popupItems.Count}");
             return;
         }
 
         float target = Mathf.Min(listHeight, maxList);
 
-        // Nur schreiben, was sich ändert — jeder Setter dirtied das Layout.
+        // Just write what changes — each setter dirtied the layout.
         if (!Mathf.Approximately(popupListLayoutElement.preferredHeight, target))
             popupListLayoutElement.preferredHeight = target;
 
@@ -719,9 +719,9 @@ public class StatisticsHandler : MonoBehaviour, IUIScreen
     }
 
     /// <summary>
-    /// Erzwingt synchronen Layout-Durchlauf für Content + Window, damit die
-    /// anschließende Messung (LayoutUtility / rect) den frisch aufgebauten
-    /// Zeilen entspricht statt dem Vorframe.
+    /// Forces synchronous layout through for content + window to allow the
+    /// subsequent measurement (LayoutUtility / rect) of the freshly built
+    /// Lines correspond instead of the pre-frame.
     /// </summary>
     private void RebuildPopupLayouts()
     {
@@ -731,7 +731,7 @@ public class StatisticsHandler : MonoBehaviour, IUIScreen
         }
         catch (Exception e)
         {
-            Debug.LogWarning($"[StatisticsHandler] ForceUpdateCanvases fehlgeschlagen: {e.Message}");
+            Debug.LogWarning($"[StatisticsScreen] ForceUpdateCanvases fehlgeschlagen: {e.Message}");
         }
 
         if (popupListContentRect != null)
@@ -741,10 +741,10 @@ public class StatisticsHandler : MonoBehaviour, IUIScreen
     }
 
     /// <summary>
-    /// Setzt die ScrollView synchron nach oben (erste Zeile unter den fixen
-    /// Elementen). Reicht allein nicht beim Öffnen — der Layout-Rebuild danach
-    /// kann den Offset wieder verschieben, daher zusätzlich
-    /// EnsurePopupScrollReset (Coroutine bis Frame-Ende).
+    /// Sets the ScrollView synchronously up (first line under the fixed ones)
+    /// Items. It's not enough when you open it — the layout rebuild after that.
+    /// can move the offset again, therefore additionally
+    /// EnsurePopupScrollReset (coroutine to frame end).
     /// </summary>
     private void ResetPopupScrollTop()
     {
@@ -759,8 +759,8 @@ public class StatisticsHandler : MonoBehaviour, IUIScreen
     }
 
     /// <summary>
-    /// Startet den verzögerten Scroll-Reset (läuft bis nach dem
-    /// Layout-Rebuild am Frame-Ende). Nur wenn das Popup offen ist.
+    /// Starts the delayed scroll reset (runs until after the
+    /// Layout rebuild at the frame end. Only if the popup is open.
     /// </summary>
     private void EnsurePopupScrollReset()
     {
@@ -795,13 +795,13 @@ public class StatisticsHandler : MonoBehaviour, IUIScreen
     }
 
     /// <summary>
-    /// Wunschhöhe der Liste — explizit gerechnet (Primärpfad):
-    /// PadTop + PadBottom + N * Zeilenhöhe + max(0, N-1) * Spacing.
-    /// N = echte Childzahl im Content, Zeilenhöhe live aus der ersten Zeile
-    /// (Fallback Konstante 130), Padding/Spacing live aus der Content-VLG.
-    /// Lücken nur ZWISCHEN Zeilen (N=0 → nur Padding, N=1 → kein Spacing).
-    /// Die Layout-Messung (LayoutUtility) erwies sich als spacing-los und
-    /// dient nur noch als TEMP-DIAG-Vergleichswert in ApplyPopupListHeight.
+    /// The desired height of the list — explicitly calculated (primary path):
+    /// PadTop + PadBottom + N * line height + max(0, N-1) * Spacing.
+    /// N = real child number in the content, line height live from the first line
+    /// (Fallback Constant 130), Padding/Spacing live from the Content-VLG.
+    /// Gaps only between lines (N=0 → only padding, N=1 → no spacing).
+    /// The layout measurement (LayoutUtility ) turned out to be distance-free and
+    /// serves only as a TEMP-DIAG comparison value in ApplyPopupListHeight.
     /// </summary>
     private float GetPopupListDesiredHeight()
     {
@@ -809,8 +809,8 @@ public class StatisticsHandler : MonoBehaviour, IUIScreen
     }
 
     /// <summary>
-    /// Live-Zeilenhöhe: preferredHeight der ersten Zeile im Content.
-    /// Fallback Konstante (Prefab-Wurzel LayoutElement.preferredHeight).
+    /// Live line height: preferredHeight of the first line in the content.
+    /// Fallback constant (prefab root LayoutElement.preferredHeight).
     /// </summary>
     private float GetPopupRowHeightLive()
     {
@@ -828,7 +828,7 @@ public class StatisticsHandler : MonoBehaviour, IUIScreen
     }
 
     /// <summary>
-    /// Listenhöhe per Formel (Primärpfad, siehe GetPopupListDesiredHeight).
+    /// List height by formula (primary path, see GetPopupListDesiredHeight).
     /// </summary>
     private float GetPopupFormulaHeight()
     {
@@ -856,10 +856,10 @@ public class StatisticsHandler : MonoBehaviour, IUIScreen
     }
 
     /// <summary>
-    /// Chrome = alles im Fenster AUSSER der ScrollView (Headline, Line,
-    /// Mark-Buttons, ButtonPanel) inkl. Window-Padding/Spacing.
-    /// Nutzt die serialisierten LayoutElement-Werte (alle fix) — keine
-    /// Layout-Messung, daher jederzeit synchron abrufbar.
+    /// Chrome = everything in the window EXCEPT ScrollView (headline, line,
+    /// Mark buttons, ButtonPanel) incl. window padding/spacing.
+    /// Uses the serialized LayoutElement values (all fixed) — none
+    /// Layout measurement, therefore can be retrieved synchronously at any time.
     /// </summary>
     private float GetPopupWindowChromeHeight()
     {
@@ -903,12 +903,12 @@ public class StatisticsHandler : MonoBehaviour, IUIScreen
     }
 
     /// <summary>
-    /// Cap für die ScrollView: Backgroundhöhe - Fenstermarge - Chrome.
-    /// Background liegt im Screens-Container (Display minus BottomBar 175),
-    /// ist also bereits BottomBar-frei — hier KEIN extra BottomBar-Abzug,
-    /// sonst Doppelzählung. Marge 200 = 100 oben + 100 unten (analog X).
-    /// Wird bei jedem Öffnen frisch aus der live Backgroundhöhe gerechnet
-    /// (kein Caching — der Wert hängt von der Bildschirmgröße ab).
+    /// Cap for the ScrollView: Background Height - Window Margin - Chrome.
+    /// Background is in the screens container (display minus BottomBar 175),
+    /// So is already BottomBar -free — here NO extra BottomBar deduction,
+    /// Margin 200 = 100 above + 100 below (analog X).
+    /// Is freshly calculated from the live background height at each opening
+    /// (no caching — the value depends on the screen size).
     /// </summary>
     private float GetPopupMaxListHeight()
     {
@@ -940,7 +940,7 @@ public class StatisticsHandler : MonoBehaviour, IUIScreen
         if (popupListLayoutElement == null && popupScrollViewRect != null)
             popupListLayoutElement = popupScrollViewRect.GetComponent<LayoutElement>();
 
-        // Listen-Content: explizites Feld, sonst popupParent, sonst ScrollRect.content.
+        // List content: explicit field, otherwise popupParent, otherwise ScrollRect.content.
         if (popupListContentRect == null && popupParent != null)
             popupListContentRect = popupParent as RectTransform;
         if (popupListContentRect == null && popupScrollRect != null && popupScrollRect.content != null)
@@ -948,13 +948,14 @@ public class StatisticsHandler : MonoBehaviour, IUIScreen
         if (popupParent == null && popupListContentRect != null)
             popupParent = popupListContentRect;
 
-        // Fenster: explizites Feld, sonst Parent der ScrollView (Window mit VLG+CSF).
+        // Window: explicit field, otherwise Parent of ScrollView (Window with VLG+CSF).
         if (popupWindowRect == null && popupScrollViewRect != null)
             popupWindowRect = popupScrollViewRect.parent as RectTransform;
 
-        // Hintergrund: explizites Feld, sonst per Name unter dem Popup suchen.
+        // Background: explicit field, otherwise search by name under the popup.
         if (popupBackgroundRect == null && popup != null)
         {
+            Debug.LogWarning("[StatisticsScreen] popupBackgroundRect nicht verdrahtet; Fallback-Suche nach 'PopupFilterPlayersBackground'.", this);
             var bg = popup.transform.Find("PopupFilterPlayersBackground");
             if (bg != null)
                 popupBackgroundRect = bg as RectTransform;
@@ -993,8 +994,8 @@ public class StatisticsHandler : MonoBehaviour, IUIScreen
 
         HidePopup();
 
-        // Ausgeblendete Spieler sofort verstecken (billig: nur SetActive auf
-        // bestehenden Zeilen). Eingeblendete über die Dirty-Queue (gechunkt).
+        // Hide hidden players immediately (cheap: only SetActive on)
+        // Iterates over the dirty queue (chunked).
         var newVisible = new HashSet<Guid>(GetVisiblePlayerIds());
 
         foreach (var pid in oldVisible)
@@ -1033,12 +1034,12 @@ public class StatisticsHandler : MonoBehaviour, IUIScreen
 
     private void HandleDartBotAdded(Guid botId)
     {
-        // Neuer Spieler, noch keine Spiele: über die Dirty-Queue einreihen
-        // (gechunkt, nur aufgebaute Ranges) statt synchron aufzubauen.
+        // New player, no games yet: rowing through the dirty queue
+        // (chunked, only built-up rows) instead of building up synchronously.
         dirtyPlayers.Add(botId);
         EnsureDirtyProcessing();
 
-        // Bei offenem Popup gezielt eine Zeile anhängen statt Voll-Rebuild.
+        // If the popup is open, attach a line instead of a full rebuild.
         if (popupIsOpen)
             AppendPopupRow(botId);
     }
@@ -1058,8 +1059,8 @@ public class StatisticsHandler : MonoBehaviour, IUIScreen
 
     private void HandlePlayerRenamed(Guid playerId, string oldName, string newName)
     {
-        // Row-Keys sind Namen: alte Zeilen ausblenden, neue über die Queue
-        // anlegen (gechunkt, nur wenn sichtbar).
+        // Row keys are names: hide old lines, new ones over the queue
+        // Then, then, it is only visible.
         if (!string.IsNullOrEmpty(oldName) && oldName != newName)
             HidePlayerEverywhere(oldName);
 
@@ -1073,8 +1074,8 @@ public class StatisticsHandler : MonoBehaviour, IUIScreen
     }
 
     /// <summary>
-    /// Baut die Filter-Popup-Liste vollständig neu (selten: Delete/Rename bei
-    /// offenem Popup). Reguläres Öffnen nutzt TryReusePopupRows.
+    /// Completely rebuilds the filter popup list (rarely: Delete/Rename on it)
+    /// Open popup. Regular opening is TryReusePopupRows.
     /// </summary>
     private void RefreshPopupList()
     {
@@ -1137,13 +1138,13 @@ public class StatisticsHandler : MonoBehaviour, IUIScreen
         if (game == null || appHandler == null)
             return;
 
-        // Unfertige Spiele sind in keiner Aggregation.
+        // Unfinished games are not in any aggregation.
         if (!game.IsFinished())
             return;
 
-        // BasePlayer- + DB-Aggregate sind durch den Save-Pfad bereits aktuell —
-        // hier nur die betroffenen Teilnehmer über die Dirty-Queue einreihen.
-        // Das Game-Objekt selbst trägt alle Deltas, kein Nachladen nötig.
+        // BasePlayer - + DB aggregates are already up-to-date through the Save path —
+        // Only the affected participants can be listed here via the dirty queue.
+        // The game object itself carries all deltas, no reloading necessary.
         foreach (var pid in game.GetPlayerIDs())
             dirtyPlayers.Add(pid);
 
@@ -1155,8 +1156,8 @@ public class StatisticsHandler : MonoBehaviour, IUIScreen
         if (appHandler == null)
             return;
 
-        // Aggregate sind durch den Delete-Pfad bereits abgezogen —
-        // nur betroffene Teilnehmer einreihen (aus dem Event, kein Re-Read).
+        // Aggregates are already subtracted through the Delete path,
+        // Only row affected participants (from the event, no re-read).
         if (affectedPlayerIds != null)
         {
             foreach (var pid in affectedPlayerIds)
@@ -1185,21 +1186,21 @@ public class StatisticsHandler : MonoBehaviour, IUIScreen
         if (appHandler == null)
             return;
 
-        // Keine Spiele mehr: alle Spieler einreihen (frische Leer-Aggregate,
-        // Zeilen bleiben bestehen). Chunked über die Queue.
+        // No more games: row all players (fresh empty aggregates,
+        // The queue is chunked.
         MarkAllPlayersDirty();
         EnsureDirtyProcessing();
     }
 
     // =========================
-    // GEZIELTE SPIELER-UPDATES (immer currentRange auf den 4 Live-Pages)
+    // DIRECTED PLAYER UPDATES (always currentRange on the 4 live pages)
     // =========================
 
     /// <summary>
-    /// Frischt EINEN Spieler auf den 4 Live-Pages auf (currentRange):
-    /// Aggregate aus BasePlayer (In-Memory, kein SQLite), Zeilen per Upsert.
-    /// Einziger Update-Pfad für Add/Delete/Modus-Delete/Rename/Sichtbarkeit
-    /// und Timeline-Rebinds.
+    /// Refresh ONE player on the 4 live pages (currentRange):
+    /// Aggregates from BasePlayer (in-memory, no SQLite), lines per upsert.
+    /// Only update path for Add/Delete/Mode Delete/Rename/Visibility
+    /// and timeline rebinds.
     /// </summary>
     private void RefreshPlayerEverywhere(Guid playerId)
     {
@@ -1214,14 +1215,14 @@ public class StatisticsHandler : MonoBehaviour, IUIScreen
         bool visible = player.IsVisibleInStatistics();
         var range = currentRange;
 
-        // ALL-Modus: kombiniertes In-Memory-Aggregat.
+        // ALL mode: combined in-memory aggregate.
         if (liveAllPage != null)
         {
             liveAllPage.UpsertPlayerRow(player.GetCombinedStats(range), name);
             liveAllPage.SetPlayerRowVisible(name, visible);
         }
 
-        // X01-Modus.
+        // X01 mode.
         if (liveX01Page != null)
         {
             var x01 = player.GetModeStats(GameMode.X01, range) as GameStatsX01
@@ -1230,7 +1231,7 @@ public class StatisticsHandler : MonoBehaviour, IUIScreen
             liveX01Page.SetPlayerRowVisible(name, visible);
         }
 
-        // Cricket-Modus.
+        // Cricket mode.
         if (liveCricketPage != null)
         {
             var cricket = player.GetModeStats(GameMode.Cricket, range) as GameStatsCricket
@@ -1239,7 +1240,7 @@ public class StatisticsHandler : MonoBehaviour, IUIScreen
             liveCricketPage.SetPlayerRowVisible(name, visible);
         }
 
-        // ATC-Modus.
+        // ATC mode.
         if (liveATCPage != null)
         {
             var atc = player.GetModeStats(GameMode.ATC, range) as GameStatsATC
@@ -1250,10 +1251,10 @@ public class StatisticsHandler : MonoBehaviour, IUIScreen
     }
 
     /// <summary>
-    /// Blendet EINEN Spieler auf den Live-Pages aus.
-    /// Legt nichts an — nur bestehende Zeilen/Charts. Tabellenhöhen werden
-    /// NUR auf den Pages neu berechnet, auf denen sich die sichtbare
-    /// Zeilenzahl wirklich geändert hat (Anzahl vorher != Anzahl nachher).
+    /// Hide a player on the live pages.
+    /// Don't create anything — just existing rows/charts.
+    /// ONLY on the pages recalculated on which the visible
+    /// The number of lines has really changed (number before!=number afterwards).
     /// </summary>
     private void HidePlayerEverywhere(string playerName)
     {
@@ -1277,10 +1278,10 @@ public class StatisticsHandler : MonoBehaviour, IUIScreen
 
     private void InitializePageDictionary()
     {
-        // Die AllTime-Instanzen sind die dauerhaft aktiven Live-Pages (eine
-        // pro Swipe-Mode). Die alten Today/Week/Month/Year-Pages wurden aus
-        // der Szene gelöscht — Timeline-Wechsel ist ein reiner Daten-Rebind,
-        // kein Page-Toggle.
+        // The AllTime instances are the permanently active live pages (one
+        // The old Today/Week/Month/Year pages were made
+        // deleted the scene — Timeline change is a pure data rebind,
+        // No page-toggle.
         liveAllPage = pageAllAlltime;
         liveX01Page = pageX01Alltime;
         liveCricketPage = pageCricketAlltime;
@@ -1290,10 +1291,10 @@ public class StatisticsHandler : MonoBehaviour, IUIScreen
     }
 
     /// <summary>
-    /// Penalty-Taps lösen ihre Stats zum Tap-Zeitpunkt frisch aus BasePlayer
-    /// + currentRange auf (Stale-Closure-Fix): Der Build-Zeit-Snapshot in der
-    /// Tap-Closure kann veralten (Upsert schreibt Zeile neu, Tap behielt das
-    /// alte Objekt → Popup mit fremden Counts/Total). Resolver lesen live.
+    /// Penalty taps freshly trigger their stats at tap time (BasePlayer
+    /// + currentRange) (stale-closure fix): the build-time snapshot in the
+    /// tap closure may be obsolete (upsert rewrites the row, the tap keeps the
+    /// old object → popup with foreign counts/total). Resolvers read live.
     /// </summary>
     private void WirePenaltyResolvers()
     {
@@ -1350,7 +1351,7 @@ public class StatisticsHandler : MonoBehaviour, IUIScreen
         screenVisible = true;
         RefreshLocalization();
 
-        // Laufende Arbeit fortsetzen lassen (kein Doppelstart).
+        // Continue ongoing work (no double start).
         if (buildRoutine != null || dirtyRoutine != null)
             return;
 
@@ -1373,24 +1374,24 @@ public class StatisticsHandler : MonoBehaviour, IUIScreen
     {
         screenVisible = false;
 
-        // Hintergrund-Arbeit anhalten (Flags bleiben, Fortsetzung bei OnShow).
+        // Stop background work (flags remain, resume on OnShow).
         StopAllBuildWork();
 
-        // Scrollpositionen zurücksetzen (Swipe auf Seite 0, alle Listen nach
-        // oben), damit das nächste Öffnen wieder von oben startet. Nur
-        // gecachte Referenzen + guarded Writes: kein Traversal, kein SetActive,
-        // kein Event — im Regelfall (eh schon oben) praktisch null Kosten.
-        // Ersetzt das alte swipeMenu.ResetView(), das pro Verlassen einen
-        // GetComponentsInChildren-Traversal über alle Pages gelegt hat
+        // Reset scroll positions (Swipe on page 0, all lists to
+        // above), so that the next opening starts again from above.
+        // cached references + guarded writings: no traversal, no SetActive,
+        // no event — usually (even above) practically null costs.
+        // Replaces the old swipeMenu.ResetView() which leaves one
+        // GetComponentsInChildren traversal is used across all pages
         // (Close-Spike).
         ResetScrollPositions();
     }
 
     /// <summary>
-    /// Setzt die Swipe-Position auf Seite 0 und alle 4 vertikalen Modus-Listen
-    /// nach oben. Schreibt nur, was wirklich abweicht (jeder Setter dirtied
-    /// ScrollRect + Layout). Die 16 deaktivierten Range-Pages haben keine
-    /// eigenen Scroller und brauchen nichts.
+    /// Sets the swipe position on page 0 and all 4 vertical mode lists
+    /// Just write what really differs (each setter dirtied)
+    /// ScrollRect + Layout. The 16 deactivated range pages have no
+    /// They have their own scrollers and need nothing else.
     /// </summary>
     private void ResetScrollPositions()
     {
@@ -1418,17 +1419,17 @@ public class StatisticsHandler : MonoBehaviour, IUIScreen
             if (Mathf.Abs(horizontal.horizontalNormalizedPosition) > 0.0005f)
                 horizontal.horizontalNormalizedPosition = 0f;
 
-            // SetPage pflegt currentPage + TopBar + Indicator; feuert
-            // OnPageChanged(0), das auf dieser Seite keinen Subscriber hat.
+            // SetPage maintains currentPage + TopBar + Indicator; fires
+            // OnPageChanged (0), which does not have a subscriber on this page.
             if (swipeMenu.GetCurrentPage() != 0)
                 swipeMenu.SetPage(0);
         }
     }
 
     /// <summary>
-    /// Löst die 4 Vertikal-Scroller einmalig auf: Inspector-Felder zuerst,
-    /// fehlende Einträge per Parent-Walk vom zugehörigen Mode-Parent
-    /// (kein Full-Traversal im Betrieb).
+    /// Resets the 4 vertical scrollers once: inspector fields first,
+    /// Missing entries by parent-walk from the associated mode-parent
+    /// (no full traversal in operation).
     /// </summary>
     private void EnsureScrollRefs()
     {
@@ -1451,8 +1452,8 @@ public class StatisticsHandler : MonoBehaviour, IUIScreen
     }
 
     /// <summary>
-    /// Nächster ScrollRect über dem Mode-Parent, der NICHT der horizontale
-    /// Swipe-Scroller ist (Muster wie HistoryHandler.HookScrollRects).
+    /// Next ScrollRect above the fashion parent who is NOT the horizontal
+    /// Swipe scroller is (pattern like HistoryScreen.HookScrollRects).
     /// </summary>
     private ScrollRect FindVerticalScroller(Transform modeParent)
     {

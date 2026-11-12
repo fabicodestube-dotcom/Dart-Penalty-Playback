@@ -19,19 +19,23 @@ public abstract class InputHandler : MonoBehaviour
     [SerializeField] private Sprite botDartSprite;
     [SerializeField] private Sprite botDartboardSprite;
 
+    [Header("Bot Icons")]
+    public Transform botIconRow;
+    public Image botIcon;
+
     private BotTurnPanel botTurnPanel;
 
     // [Header("Penalty Buttons")]
     // public CanvasGroup wallCanvasGroup;
     // public CanvasGroup ceilingCanvasGroup;
 
-    // [Header("Custom Sektoren (Tab 1 „Bereiche“)")]
-    // [Tooltip("Eltern-Container für Sektor-Buttons. Leer = Eltern des Wall-Buttons.")]
+    // [Header("Custom Sectors (Tab 1 “Areas”)")]
+    // [Tooltip("Parent container for sector buttons. Empty = parent of the Wall button.")]
     // public Transform sectorButtonParent;
-    // [Tooltip("Button-Vorlage (Button + TMP_Text + optional CanvasGroup). Leer = Wall-Button wird geklont.")]
+    // [Tooltip("Button template (Button + TMP_Text + optional CanvasGroup). Empty = clone the Wall button.")]
     // public GameObject sectorButtonPrefab;
 
-    // (Sektor-Dropdown entfernt; Sektor-Auswahl läuft über das Sector-Panel.)
+    // (Sector dropdown removed; sector selection runs through the sector panel.)
 
     [Header("Quick Select")]
     public Button quickSelectButton;
@@ -92,8 +96,8 @@ public abstract class InputHandler : MonoBehaviour
         if (!gameObject.activeInHierarchy)
             return;
 
-        // Input-UI kennt nur Penalty-/Sektor-Buttons; reine AudioEvent-
-        // Änderungen betreffen sie nicht.
+        // Input UI only knows penalty/sector buttons; pure AudioEvent
+        // changes do not affect them.
         if (kind == CustomizationChangeKind.AudioEvents)
             return;
 
@@ -151,8 +155,8 @@ public abstract class InputHandler : MonoBehaviour
     }
 
     /// <summary>
-    /// Klick auf einen Sektor-Button im Panel: wirft den passenden Sektor
-    /// (Wall/Ceiling/Custom) und schließt das Panel.
+    /// Click on a sector button in the panel: throws the appropriate sector
+    /// (Wall/Ceiling/Custom) and closes the panel.
     /// </summary>
     public virtual void OnSectorButtonClicked(string sectorId)
     {
@@ -215,7 +219,7 @@ public abstract class InputHandler : MonoBehaviour
             }
         }
 
-        // Fallback: Wall (auch wenn noch nie ein Sektor gewählt wurde).
+        // Fallback: Wall (even if no sector has ever been chosen).
         var wall = sectors.Find(x => x != null && x.id == CustomHitDef.WallId);
 
         displayName = wall != null && !string.IsNullOrWhiteSpace(wall.name)
@@ -242,13 +246,13 @@ public abstract class InputHandler : MonoBehaviour
         if (sectorPanel == null)
             return;
 
-        // Panel selbst muss dauerhaft aktiv bleiben.
+        // Panel itself must remain permanently active.
         if (sectorPanel != null)
             sectorPanel.SetActive(true);
 
         isSectorPanelOpen = true;
 
-        // Panel bleibt aktiv (Alpha 1 auf Image); nur Hintergrund-Image + Container/Backdrop einblenden.
+        // Panel remains active (Alpha 1 on Image); only show background image + container/backdrop.
         UnityEngine.UI.Image bg = GetSectorPanelBackgroundImage();
         if (bg != null)
         {
@@ -264,13 +268,13 @@ public abstract class InputHandler : MonoBehaviour
 
     public void CloseSectorPanel()
     {
-        // Panel selbst bleibt aktiv.
+        // Panel itself remains active.
         if (sectorPanel != null)
             sectorPanel.SetActive(true);
 
         if (!isSectorPanelOpen)
         {
-            // Panel bleibt aktiv; nur Hintergrund ausblenden, Raycasts durchlassen.
+            // Panel remains active; only hide background, let raycasts pass through.
             UnityEngine.UI.Image bg = GetSectorPanelBackgroundImage();
             if (bg != null)
             {
@@ -342,7 +346,7 @@ public abstract class InputHandler : MonoBehaviour
 
     private void SetSectorButtonsVisible(bool visible)
     {
-        // Nie das sectorPanel selbst deaktivieren (würde den Toggle-Button mitnehmen).
+        // Never deactivate the sectorPanel itself (would take the toggle button with you).
         if (sectorButtonContainer == null || (sectorPanel != null && sectorButtonContainer.gameObject == sectorPanel))
         {
             foreach (var btn in sectorButtons)
@@ -469,7 +473,7 @@ public abstract class InputHandler : MonoBehaviour
         if (botTurnPanel == null)
             botTurnPanel = botPausePanel.AddComponent<BotTurnPanel>();
 
-        botTurnPanel.Initialize(botPausePanel, botPausePanelPlay, botPausePanelPause, botDartSprite, botDartboardSprite);
+        botTurnPanel.Initialize(botPausePanel, botPausePanelPlay, botPausePanelPause, botDartSprite, botDartboardSprite, botIconRow, botIcon);
     }
 
 
@@ -481,8 +485,8 @@ public abstract class InputHandler : MonoBehaviour
 
     protected virtual void UpdatePenaltyUI()
     {
-        // Wall/Ceiling-Buttons dimmen anhand der Custom-Penalties
-        // (custom_wall/custom_ceiling, enabled-Stand aus dem Store).
+        // Wall/Ceiling buttons dim based on custom penalties
+        // (custom_wall / custom_ceiling, enabled-Stand from the store).
         bool wallEnabled = HasEnabledInstantPenalty(HitType.Wall);
         bool ceilingEnabled = HasEnabledInstantPenalty(HitType.Ceiling);
     }
@@ -509,8 +513,8 @@ public abstract class InputHandler : MonoBehaviour
     }
 
     /// <summary>
-    /// Aktualisiert den Quick-Select-Button: zuletzt gewählter, noch
-    /// verfügbarer Sektor oder Fallback auf Wall.
+    /// Update the Quick-Select button: last chosen, still
+    /// Available sector or fallback on Wall.
     /// </summary>
     protected virtual void RefreshQuickSelect()
     {
@@ -527,13 +531,13 @@ public abstract class InputHandler : MonoBehaviour
     }
 
     /// <summary>
-    /// Baut die Buttons für freie Custom-Sektoren neu (Wand/Decke haben
-    /// statische Buttons und werden hier übersprungen). Deaktivierte
-    /// Sektoren werden gedimmt wie deaktivierte Wall/Ceiling-Buttons.
-    /// Vorlage: sectorButtonPrefab oder geklonter Wall-Button (gleiches
-    /// Styling ohne Prefab-Aufwand).
-    /// Hinweis: Der Sammelbutton „Sectors“ (UI-Umbau) ersetzt die
-    /// statischen Buttons; OnCustomSector(sectorId) bleibt die API dafür.
+    /// Rebuild the buttons for free custom sectors (have wall/ceiling)
+    /// Static buttons and are skipped here.
+    /// Sectors are dimmed like deactivated Wall/Ceiling buttons.
+    /// Template: sectorButtonPrefab or cloned wall button (same)
+    /// styling without prefab overhead.
+    /// Note: The "Sectors" (UI conversion) button replaces the
+    /// static buttons; OnCustomSector (sectorId) remains the API for this.
     /// </summary>
     protected virtual void RefreshSectorButtons()
     {
@@ -553,7 +557,7 @@ public abstract class InputHandler : MonoBehaviour
             if (def == null || string.IsNullOrEmpty(def.id))
                 continue;
 
-            // Wand/Decke haben keine statischen Buttons mehr — alle Sektoren als Panel-Buttons.
+            // Wall/ceiling no longer have static buttons — all sectors as panel buttons.
             if (!def.enabled)
                 continue;
 

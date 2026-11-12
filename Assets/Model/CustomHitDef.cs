@@ -1,12 +1,12 @@
 using Newtonsoft.Json;
 
 /// <summary>
-/// Treffer-Bereich aus Tab 1 („Bereiche“): Fehlwurf-Variante neben Wall/Ceiling.
-/// Board-Treffer sind fest verdrahtet und erscheinen hier nicht. Custom-Sektoren
-/// können einen Dart-Wert und Multiplier haben (zählen dann wie Board-Treffer).
-/// Value 0 / Multiplier Single = Miss (0 Punkte). Stabile String-ID, damit
-/// Pattern-Referenzen und Audio-Clips beim Editieren verlinkt bleiben.
-/// Seeds: "builtin:wall" (Wand), "builtin:ceiling" (Decke).
+/// Hit area from Tab 1 ("Areas"): miss throw variant next to Wall/Ceiling.
+/// Board hits are hardwired and do not appear here. Custom sectors
+/// can have a dart value and multiplier (count then like board hits).
+/// Value 0 / Multiplier Single = Miss (0 points).
+/// Pattern references and audio clips remain linked when editing.
+/// Seeds: "builtin:wall" (wall), "builtin:ceiling" (ceiling).
 /// </summary>
 [System.Serializable]
 public class CustomHitDef
@@ -18,10 +18,10 @@ public class CustomHitDef
     [JsonProperty] public string name = "New area";
     [JsonProperty] public bool enabled = true;
 
-    /// <summary>Dart-Wert des Sektors (0-20, 25). 0 = Miss (keine Punkte).</summary>
+    /// <summary>darts value of the sector (0-20, 25). 0 = miss (no points).</summary>
     [JsonProperty] public int value = 0;
 
-    /// <summary>Multiplier des Sektors (Single/Double/Triple).</summary>
+    /// <summary>Multiplier of the sector (Single/Double/Triple).</summary>
     [JsonProperty] public DartMultiplier multiplier = DartMultiplier.Single;
 
     /// <summary>
@@ -32,8 +32,8 @@ public class CustomHitDef
     [JsonProperty] public string info;
 
     /// <summary>
-    /// True = Seed (nicht löschbar, aber normal editierbar). Die
-    /// Wall-/Ceiling-Seeds sind built-in und damit nicht löschbar.
+    /// True = Seed (not erasable, but normally editable).
+    /// Wall/Ceiling seeds are built-in and therefore not erasable.
     /// </summary>
     [JsonProperty] public bool builtIn;
 
@@ -48,14 +48,14 @@ public class CustomHitDef
         };
     }
 
-    /// <summary>True für die beiden Seed-Bereiche Wand/Decke.</summary>
+    /// <summary>True for the two seed areas wall/ceiling.</summary>
     public static bool IsBuiltInSector(string id)
     {
         return string.Equals(id, WallId, System.StringComparison.OrdinalIgnoreCase)
             || string.Equals(id, CeilingId, System.StringComparison.OrdinalIgnoreCase);
     }
 
-    /// <summary>Liefert den festen HitType eines Seeds (Wall/Ceiling), sonst Custom.</summary>
+    /// <summary>Deliver the fixed HitType of a seed (Wall/Ceiling), otherwise custom.</summary>
     public static HitType HitTypeForSector(string id)
     {
         if (string.Equals(id, WallId, System.StringComparison.OrdinalIgnoreCase))
@@ -66,9 +66,9 @@ public class CustomHitDef
     }
 
     /// <summary>
-    /// Stabile Audio-/Sektor-ID eines Wurfs. Board-Würfe liefern null.
-    /// Wall/Ceiling werden auf ihre Seed-IDs abgebildet, freie Sektoren
-    /// behalten ihre eigene ID.
+    /// Stable audio/sector ID of a roll. Board rolls deliver null.
+    /// Wall/Ceiling are mapped to their seed IDs, free sectors
+    /// keep their own ID.
     /// </summary>
     public static string GetSectorId(Throw throwItem)
     {

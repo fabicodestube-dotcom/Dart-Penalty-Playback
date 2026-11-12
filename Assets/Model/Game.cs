@@ -34,13 +34,13 @@ public abstract class Game
     [JsonIgnore] public Action<Guid?> OnSetWon;
     [JsonIgnore] public Action<Guid, Turn> OnTurnCompleted;
 
-    /// <summary>Custom-Penalty ausgelöst (Audio + Anzeige; Zähler/Kosten folgen separat).</summary>
+    /// <summary>Custom-Penalty triggered (audio + display; counter/costs follow separately).</summary>
     [JsonIgnore] public Action<string, Guid, Turn> OnCustomPenaltyTriggered;
 
-    /// <summary>Custom-Audio-Event ausgelöst (nur Abspielen).</summary>
+    /// <summary>Custom audio event triggered (play only).</summary>
     [JsonIgnore] public Action<string> OnCustomAudioEvent;
 
-    /// <summary>Sektor-Eingabe (Wall/Ceiling/Custom) für den Sektor-Sound.</summary>
+    /// <summary>sector input (wall/ceiling/custom) for the sector sound.</summary>
     [JsonIgnore] public Action<Guid, string> OnSectorHit;
 
 
@@ -101,14 +101,14 @@ public abstract class Game
 
     public virtual void InitializeAfterLoad()
     {
-        // Wenn das Jahr kleiner als 2000 ist, wurde es nicht korrekt geladen/gesetzt
+        // If the year is less than 2000, it was not loaded/set correctly
         if (createdAt.Year < 2000)
             createdAt = finishedAt ?? DateTime.Now;
 
         if (lastActivityAt.Year < 2000)
             lastActivityAt = finishedAt ?? createdAt;
 
-        // Normales deutsches Format für leichtere Lesbarkeit im Log
+        // Normal German format for easier readability in the log
         Debug.Log("Created at: " + createdAt.ToString("dd.MM.yyyy HH:mm:ss") + 
                 ", Last activity at: " + lastActivityAt.ToString("dd.MM.yyyy HH:mm:ss"));
     }
@@ -137,13 +137,13 @@ public abstract class Game
 
     protected void IdentifyNextLegStarter()
     {
-        // 1. Berechne, welcher Spieler dieses Set anfangen durfte
-        // sets.Count ist die Anzahl der derzeitigen Sets. Der Index des aktuellen Sets ist sets.Count-1 (0-basiert).
-        int setIndex = (sets.Count - 1 + playerIDs.Count) % playerIDs.Count; // sicherstellen, dass nicht negativ
+        // Calculate which player was allowed to start this set
+        // sets.Count is the number of current sets. The index of the current set is sets.Count -1 (0-based).
+        int setIndex = (sets.Count - 1 + playerIDs.Count) % playerIDs.Count; // Ensure that it is not negative
         int setStarter = setIndex % playerIDs.Count;
 
-        // 2. Berechne ausgehend vom Set-Starter, wer das aktuelle Leg anfängt
-        // Die Legs-Liste enthält das aktuelle Leg als letztes Element, daher ist der 0-basierte Leg-Index legs.Count-1.
+        // Based on the set starter, calculate who starts the current leg
+        // The Legs list contains the current Leg as the last element, so the 0-based Leg Index is legs.Count -1.
         int legIndex = Math.Max(0, sets[^1].GetLegs().Count - 1);
 
         startingPlayerIndex = (setStarter + legIndex) % playerIDs.Count;
@@ -152,7 +152,7 @@ public abstract class Game
     protected void RotateStartingPlayer()
     {
         IdentifyNextLegStarter();
-        // Bei Bedarf könnte hier zusätzlich hochgezählt werden, je nach Aufrufsemantik.
+        // If necessary, this could be incremented, depending on the call semantics.
         //startingPlayerIndex = (startingPlayerIndex + 1) % playerIDs.Count;
     }
 
@@ -162,8 +162,8 @@ public abstract class Game
     }
 
     /// <summary>
-    /// Zentrale Methode, um den Bot-Check auszulösen. Subklassen sollten
-    /// diese Methode verwenden anstatt direkt das Event zu feuern.
+    /// Central method to trigger the bot check. subclasses should
+    /// Use this method instead of directly firing the event.
     /// </summary>
     protected void TriggerBotCheck()
     {
@@ -214,23 +214,23 @@ public abstract class Game
     // =========================================================
 
     /// <summary>
-    /// Custom-Penalty-Defs zum Spielstart (alle nicht-built-in, inkl.
-    /// enabled-Stand als Deep-Copy). Die Auswertung nutzt ausschließlich
-    /// diesen Snapshot: Mid-Game-Toggles beeinflussen laufende Spiele
-    /// nicht, und die History kann rückverfolgen, was aktiv war.
-    /// Persistenz: game_runtime_state (siehe Save/RestoreRuntimeGameState).
+    /// Custom penalty defs at game start (all non-built-in, incl.
+    /// enabled state as a deep copy).
+    /// Mid-game toggles affect running games but not this snapshot,
+    /// and history can trace what was active.
+    /// Persistence: game_runtime_state (see Save/RestoreRuntimeGameState).
     /// </summary>
     protected List<CustomPenaltyDef> penaltySnapshot;
 
-    /// <summary>Audio-Event-Defs zum Spielstart (analog, inkl. enabled).</summary>
+    /// <summary>Audio event defs for game start (analogous, incl. enabled).</summary>
     protected List<AudioEventDef> audioEventSnapshot;
 
-    /// <summary>Hit-Sector-Defs zum Spielstart (analog, inkl. enabled/builtIn).</summary>
+    /// <summary>Hit sector defs for game start (analogous, incl. enabled/builtIn).</summary>
     protected List<CustomHitDef> hitSectorSnapshot;
 
     /// <summary>
-    /// Friert die Customization zum Spielstart ein. Aus den Konstruktoren
-    /// aller Modi aufrufen (nach playerIDs/settings).
+    /// Freezes customization at game start.
+    /// call for all modes (after playerIDs/settings).
     /// </summary>
     protected void CaptureCustomizationSnapshot()
     {
@@ -321,8 +321,8 @@ public abstract class Game
     }
 
     /// <summary>
-    /// Snapshot-Defs für die Auswertung (Lazy-Fallback für alte Saves ohne
-    /// Snapshot: einmalig aus dem Live-Store aufbauen).
+    /// Snapshot defs for evaluation (Lazy fallback for old saves without
+    /// Snapshot: build uniquely from the live store.
     /// </summary>
     protected List<CustomPenaltyDef> GetSnapshotPenalties()
     {
@@ -332,7 +332,7 @@ public abstract class Game
         return penaltySnapshot;
     }
 
-    /// <summary>Analog für Audio-Events (Lazy-Fallback für alte Saves).</summary>
+    /// <summary>Analogue for audio events (lazy fallback for old saves).</summary>
     protected List<AudioEventDef> GetSnapshotAudioEvents()
     {
         if (audioEventSnapshot == null)
@@ -341,7 +341,7 @@ public abstract class Game
         return audioEventSnapshot;
     }
 
-    /// <summary>Analog für Hit-Sectors (Lazy-Fallback für alte Saves).</summary>
+    /// <summary>Analog for Hit-Sectors (Lazy-Fallback for old saves).</summary>
     protected List<CustomHitDef> GetSnapshotHitSectors()
     {
         if (hitSectorSnapshot == null)
@@ -350,16 +350,16 @@ public abstract class Game
         return hitSectorSnapshot;
     }
 
-    /// <summary>Öffentlicher Snapshot-Zugriff (Summary/History/Statistik).</summary>
+    /// <summary>Public snapshot access (Summary/History/Statistics).</summary>
     public List<CustomPenaltyDef> GetPenaltySnapshot() => new List<CustomPenaltyDef>(GetSnapshotPenalties());
 
-    /// <summary>Öffentlicher AudioEvent-Snapshot (Persistenz/Summary).</summary>
+    /// <summary>Public AudioEvent -Snapshot (Persistence/Summary).</summary>
     public List<AudioEventDef> GetAudioEventSnapshot() => new List<AudioEventDef>(GetSnapshotAudioEvents());
 
-    /// <summary>Öffentlicher Hit-Sector-Snapshot (Persistenz/Gameplay).</summary>
+    /// <summary>Public Hit-Sector-Snapshot (Persistence/Gameplay).</summary>
     public List<CustomHitDef> GetHitSectorSnapshot() => new List<CustomHitDef>(GetSnapshotHitSectors());
 
-    /// <summary>Stellt den Penalty-Snapshot wieder her (Load-Pfad).</summary>
+    /// <summary>Restore the penalty snapshot (load path).</summary>
     public void RestorePenaltySnapshot(List<CustomPenaltyDef> snapshot)
     {
         penaltySnapshot = snapshot != null
@@ -367,7 +367,7 @@ public abstract class Game
             : null;
     }
 
-    /// <summary>Stellt den AudioEvent-Snapshot wieder her (Load-Pfad).</summary>
+    /// <summary>Restore the AudioEvent snapshot (load path).</summary>
     public void RestoreAudioEventSnapshot(List<AudioEventDef> snapshot)
     {
         audioEventSnapshot = snapshot != null
@@ -375,7 +375,7 @@ public abstract class Game
             : null;
     }
 
-    /// <summary>Stellt den Hit-Sector-Snapshot wieder her (Load-Pfad).</summary>
+    /// <summary>Recovers the hit-sector snapshot (load path).</summary>
     public void RestoreHitSectorSnapshot(List<CustomHitDef> snapshot)
     {
         hitSectorSnapshot = snapshot != null
@@ -384,8 +384,8 @@ public abstract class Game
     }
 
     /// <summary>
-    /// Zentraler Aktiv-Guard für Custom-Penalties: enabled + mit Bedingung
-    /// werden je ausgewertet/gebucht. builtIn heißt nur „nicht löschbar“.
+    /// Central Active Guard for Custom Penalties: enabled + with condition
+    /// are always evaluated/booked. builtIn means only "not erasable".
     /// </summary>
     protected static bool IsPenaltyDefActive(CustomPenaltyDef def)
     {
@@ -393,8 +393,8 @@ public abstract class Game
     }
 
     /// <summary>
-    /// Zentraler Aktiv-Guard für Audio-Events (Auto-Trigger + Manuale).
-    /// builtIn heißt nur „nicht löschbar“.
+    /// Central active guard for audio events (auto-trigger + manual).
+    /// builtIn means only "not erasable".
     /// </summary>
     protected static bool IsAudioEventActive(AudioEventDef def)
     {
@@ -402,9 +402,9 @@ public abstract class Game
     }
 
     /// <summary>
-    /// Spielt ein manuelles Audio-Event nur, wenn es im Spiel-Snapshot aktiv
-    /// und für den aktuellen Modus freigegeben ist. So wirken enabled-/
-    /// Kategorie-Einstellungen auch auf die bisher hart verdrahteten Sounds.
+    /// Plays a manual audio event only when it is active in the game snapshot
+    /// and is released for the current mode.
+    /// Category settings also on the previously hard-wired sounds.
     /// </summary>
     public bool TryTriggerManualAudioEvent(string eventId)
     {
@@ -438,8 +438,8 @@ public abstract class Game
     }
 
     /// <summary>
-    /// Meldet einen Sektor-Wurf (Wall/Ceiling/Custom) für den Sektor-Sound.
-    /// Board-Würfe und Würfe ohne Sektor-ID bleiben stumm.
+    /// Reports a sector roll (wall/ceiling/custom) for the sector sound.
+    /// Board rolls and rolls without sector ID remain muted.
     /// </summary>
     protected void NotifySectorHit(Guid playerId, Throw throwItem)
     {
@@ -452,7 +452,7 @@ public abstract class Game
 
 
     // =========================================================
-    // PENALTY SYSTEM (nur Custom; Legacy-Buchung ist stillgelegt)
+    // PENALTY SYSTEM (custom only; legacy booking is decommissioned)
     // =========================================================
 
     public float GetPenaltyCost(PenaltyType type)
@@ -488,9 +488,9 @@ public abstract class Game
     }
 
     /// <summary>
-    /// Wertet Custom-Penalties (Turn-Ende-Typen) gegen den Turn aus.
-    /// Bucht Kosten ins separate Custom-Konto + feuert Audio/Anzeige.
-    /// Game-Events (2.3) laufen nicht hier, sondern an Leg-/Set-/Game-Ende.
+    /// Evaluates custom penalties (turn-end types) against the turn.
+    /// Books costs into the separate custom account + fires audio/display.
+    /// Game events (2.3) do not run here, but at the leg/set/game end.
     /// </summary>
     protected void EvaluateCustomTurnPenalties(Guid playerId, Turn turn, bool silent = false)
     {
@@ -515,12 +515,12 @@ public abstract class Game
     }
 
     /// <summary>
-    /// Wertet Rest-basierte Custom-Penalties (RemainingExactScore) aus:
-    /// X01-Rest bzw. Cricket-Totals (Cutthroat: Gegner-Totals, Buchung an
-    /// den Total-Inhaber — wie die frühere Schnapszahl-Regel). Modi ohne
-    /// Rest-Begriff (ATC) liefern keine Totals und feuern nie.
-    /// Läuft in CheckTurnPenalties NACH den Turn-Penalties und VOR den
-    /// Audio-Events (stabile Abspiel-Reihenfolge).
+    /// Evaluates remaining-based custom penalties (RemainingExactScore):
+    /// X01 rest or cricket totals (cutthroat: opponent totals, booking to)
+    /// Total holder — like the previous repdigit rule.
+    /// Rest term (ATC) does not deliver totals and never fire.
+    /// Runs in CheckTurnPenalties AFTER the turn-penalties and BEFORE the
+    /// Audio events (stable playback order).
     /// </summary>
     protected void EvaluateCustomRemainingPenalties(Guid playerId, Turn turn, bool silent = false)
     {
@@ -552,15 +552,15 @@ public abstract class Game
     }
 
     /// <summary>
-    /// (Spieler → vorher/nachher)-Totals für die Remaining-Auswertung.
-    /// Base: keine (ATC). X01: eigener Rest; Cricket: selbst/Gegner.
+    /// (Players → before/after) totals for the Remaining evaluation.
+    /// Base: none (ATC). X01: own remaining; Cricket: own/opponent.
     /// </summary>
     protected virtual Dictionary<Guid, (int before, int after)> GetRemainingTotals(Guid playerId, Turn turn)
     {
         return null;
     }
 
-    /// <summary>Instant-Prüfung eines einzelnen Wurfs (HitTypeMiss-Typ).</summary>
+    /// <summary>Instant check of a single litter (HitTypeMiss type).</summary>
     protected void CheckCustomInstantPenalties(Guid playerId, Throw throwItem, Turn turn, bool silent = false)
     {
         var defs = GetSnapshotPenalties();
@@ -581,9 +581,9 @@ public abstract class Game
     }
 
     /// <summary>
-    /// Löst ein Custom-Penalty aus: Kosten ins Custom-Konto buchen, für Undo
-    /// im Turn vermerken, Event für Audio/Anzeige. Silent = ohne Event
-    /// (Undo-Re-Finalize). Game-Events (turn=null) werden nicht vermerkt.
+    /// Triggers a custom penalty: book costs into the custom account, for Undo
+    /// Turn note, event for audio/display. Silent = without event
+    /// (Undo-Re-Finalize). Game events (turn=null) are not recorded.
     /// </summary>
     protected void AddCustomPenalty(Guid playerId, CustomPenaltyDef def, Turn turn, bool instant = false, bool silent = false)
     {
@@ -609,7 +609,7 @@ public abstract class Game
             OnCustomPenaltyTriggered?.Invoke(def.id, playerId, turn);
     }
 
-    /// <summary>Nimmt eine Custom-Buchung zurück (Undo).</summary>
+    /// <summary>Takes back a custom booking (Undo).</summary>
     protected void RemoveCustomPenalty(Guid playerId, string customPenaltyId, float cost)
     {
         if (string.IsNullOrEmpty(customPenaltyId) || cost <= 0f)
@@ -630,10 +630,10 @@ public abstract class Game
     }
 
     /// <summary>
-    /// Undo-Helfer: alle Custom-Buchungen des Turns stornieren, dann die
-    /// Instant-Buchungen der verbleibenden Würfe (alle außer dem letzten,
-    /// der gerade entfernt wird) still neu buchen. Turn-Penalties bleiben
-    /// storniert (Turn ist nach Undo unvollständig).
+    /// Undo-Helper: cancel all custom bookings of the turn, then the
+    /// Then the scriptures are written, except for the last one.
+    /// which is just removed) quietly rebook. Turn-Penalties remain
+    /// canceled (turn is incomplete after Undo).
     /// </summary>
     protected void RefundAndRefireCustoms(Turn turn)
     {
@@ -657,8 +657,8 @@ public abstract class Game
     }
 
     /// <summary>
-    /// Wertet Custom-Audio-Events (Auto-Trigger, je Modus-Kategorie) aus.
-    /// Manuelle Events (Undo, ...) feuern weiter direkt im Code.
+    /// Evaluates custom audio events (auto trigger, per mode category).
+    /// Manual events (Undo,...) continue to fire directly in the code.
     /// </summary>
     protected void EvaluateCustomAudioEvents(Guid playerId, Turn turn, Predicate<AudioEventDef> filter = null)
     {
@@ -686,8 +686,8 @@ public abstract class Game
     }
 
     /// <summary>
-    /// Nur Events der eigenen Modus-Kategorie auswerten (Global immer).
-    /// Verhindert z.B., dass ein X01-Score-Event bei Cricket-Punkten feuert.
+    /// Only evaluate events of your own mode category (always global).
+    /// Prevent e.g.. that an X01 score event fires at cricket points.
     /// </summary>
     private bool IsEventCategoryApplicable(AudioEventCategory category)
     {
@@ -704,8 +704,8 @@ public abstract class Game
     }
 
     /// <summary>
-    /// Befüllt Trigger-Kennzahlen. Basis: TurnScore + Würfe; Modi ergänzen
-    /// Marks/Punkte (Cricket) bzw. Hits/Streak (ATC) per Override.
+    /// Fills trigger metrics. Base: TurnScore + throws; add modes
+    /// Marks/points (cricket) or hits/streak (ATC) per override.
     /// </summary>
     protected virtual void CollectAudioTriggerValues(Guid playerId, Turn turn, AudioTriggerValues values)
     {
@@ -749,8 +749,8 @@ public abstract class Game
     }
 
     /// <summary>
-    /// Wertet Custom-Game-Events (2.3) aus: Kosten tragen alle Spieler außer
-    /// dem Gewinner. Keine Turn-Vermerkung (kein Throw-Undo-Bezug).
+    /// Evaluates custom game events (2.3 ): Costs are borne by all players except
+    /// No turn-note (no Throw-Undo reference).
     /// </summary>
     protected void EvaluateCustomGameEventPenalties(PenaltyConditionKind kind, Guid winnerId)
     {
@@ -775,9 +775,9 @@ public abstract class Game
         }
     }
 
-    /// <summary>Storniert Game-Event-Buchungen einer Art für alle Nicht-Gewinner.
-    /// Bewusst OHNE enabled-Filter: Storno muss auch nach Deaktivieren
-    /// funktionieren, sonst bleiben Geisterbuchungen zurück.</summary>
+    /// <summary>Cancels game event bookings of one kind for all non-winners.
+    /// Consciously WITHOUT enabled filter: Cancellation must also be completed after deactivation
+    /// It works, otherwise ghost bookings will be left behind.</summary>
     protected void RefundCustomGameEventPenalties(PenaltyConditionKind kind, Guid winnerId)
     {
         var defs = GetSnapshotPenalties();
@@ -805,7 +805,7 @@ public abstract class Game
         return GetWonSets(playerId) >= GetRequiredSetsToWin();
     }
 
-    /// <summary>Sets, die zum Matchgewinn nötig sind (FirstTo bzw. BestOf).</summary>
+    /// <summary>Sets necessary to win the match (FirstTo or BestOf ).</summary>
     protected int GetRequiredSetsToWin()
     {
         GameSettings settings = GetSettings();
@@ -921,15 +921,15 @@ public abstract class Game
             }
         }
 
-        // Legacy-Penalty-Counter werden NICHT rebuildet: Sie stammen für alte
-        // Spiele aus der persistierten Zeile (RestorePersistedLegacyPenalties),
-        // für neue Spiele bleiben sie 0. Customs dito (Turn-Records + Zeile).
-        // Keine Events hier (still, sonst Audio-/UI-Spam bei Load/Save).
+        // Legacy-Penalty-Counters Are NOT Rebuilt: They Are for Old
+        // Games from the persistent line (RestorePersistedLegacyPenalties ),
+        // for new games they remain 0. Custom likewise (turn records + line).
+        // No events here (quiet, otherwise audio/UI spam at load/save).
     }
 
     protected bool IsEmpty()
     {
-        // Es darf nur ein Set und ein Leg existieren
+        // Only one set and one leg must exist
         if (sets.Count != 1)
             return false;
 
@@ -938,7 +938,7 @@ public abstract class Game
         if (legs.Count != 1)
             return false;
 
-        // Im ersten Leg darf es keinerlei Aktion geben
+        // In the first leg there must be no action
         return legs[0].GetTurns().All(t => t.GetThrows().Count == 0 && !t.IsBust);
     }
 
@@ -1018,7 +1018,7 @@ public abstract class Game
         var currentSet = sets[^1];
         var currentLeg = currentSet.GetCurrentLeg();
 
-        // 1. Match-Status zurücksetzen
+        // Reset the match status
         if (finishedAt.HasValue)
         {
             result.LegWinnerUndone = true;
@@ -1030,9 +1030,9 @@ public abstract class Game
                 matchWinnerId = null;
             }
 
-            // Custom GameLost-Buchungen des beendeten Matches stornieren.
-            // (Legacy-LostGame ist stillgelegt; alte Spiele behalten ihre
-            // Counts aus der persistierten Zeile.)
+            // Cancel custom GameLost bookings of the finished match.
+            // (Legacy LostGame is decommissioned; old games keep their
+            // counts from the persistent line.
             if (exWinner.HasValue)
                 RefundCustomGameEventPenalties(PenaltyConditionKind.GameLost, exWinner.Value);
 
@@ -1041,14 +1041,14 @@ public abstract class Game
             currentLeg.ClearWinner();
         }
 
-        // Prüfen, ob wir am Anfang eines leeren Legs stehen (was gerade durch einen Sieg erzeugt wurde)
+        // Check if we are at the beginning of an empty leg (which was just created by a victory)
         bool legHasNoAction = currentLeg.GetTurns().All(t => t.GetThrows().Count == 0);
 
         if (legHasNoAction)
         {
             if (currentSet.GetLegs().Count > 1)
             {
-                // Leg innerhalb des Sets entfernen
+                // Remove the leg within the set
                 currentSet.GetLegs().RemoveAt(currentSet.GetLegs().Count - 1);
                 result.LegWinnerUndone = true;
             }
@@ -1069,17 +1069,17 @@ public abstract class Game
                 result.PreviousWinnerId = currentLeg.WinnerPlayerId;
 
                 currentLeg.ClearWinner();
-                // Start-Rotation neu berechnen (sicherer als manuelles Dekrement)
+                // Recalculate start rotation (more secure than manual decrement)
                 IdentifyNextLegStarter();
 
-                // Custom LegLost-Buchungen des rückgängig gemachten Legs stornieren.
-                // (Set/Game-Storni sind nicht abgedeckt: Set-Win-Undo ist final.)
+                // Custom LegLost cancel bookings of the undone leg.
+                // (Set/Game cancellations are not covered: Set-Win-Undo is final.)
                 if (result.PreviousWinnerId != Guid.Empty)
                     RefundCustomGameEventPenalties(PenaltyConditionKind.LegLost, result.PreviousWinnerId);
             }
         }
 
-        // Den letzten relevanten Turn finden, um currentPlayerIndex zu korrigieren
+        // Finding the Last Relevant Turn to Correct currentPlayerIndex
         Turn lastTurn = currentLeg.GetTurns().LastOrDefault(t => t.GetThrows().Count > 0 || t.IsBust);
         if (lastTurn != null)
         {
@@ -1096,9 +1096,9 @@ public abstract class Game
 
     private void RemoveBasePenalties(Turn t)
     {
-        // Nur Custom-Penalties: Buchungen stornieren, Instant-Buchungen
-        // der verbleibenden Würfe still neu buchen (der letzte Wurf fliegt
-        // gleich). Legacy-Pfade sind stillgelegt.
+        // Custom penalties only: cancel bookings, instant bookings
+        // Then the remaining pitches are quietly rebooked (the last pitch flies).
+        // Legacy paths are closed.
         RefundAndRefireCustoms(t);
     }
 }

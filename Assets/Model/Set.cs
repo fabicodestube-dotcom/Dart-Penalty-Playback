@@ -24,19 +24,19 @@ public class Set
     }
 
     /// <summary>
-    /// Gibt das aktuelle Leg zurück.
-    /// Falls noch kein Leg existiert, wird automatisch eines erstellt.
+    /// Returns the current leg.
+    /// If there is no leg yet, one is automatically created.
     /// </summary>
     public Leg GetCurrentLeg()
     {
-        // Lazy initialization: erstes Leg wird bei Bedarf erzeugt
+        // Lazy initialization: first leg is generated when needed
         if (legs.Count == 0)
         {
             var leg = new Leg();
             legs.Add(leg);
         }
 
-        // Rückgabe des letzten Elements (aktuelles Leg)
+        // Return of the last element (current leg)
         return legs[^1];
     }
 

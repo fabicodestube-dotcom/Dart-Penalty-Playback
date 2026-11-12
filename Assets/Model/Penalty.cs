@@ -15,7 +15,7 @@ public class Penalty
 {
    public int PlayerId;
    public PenaltyType Type;
-   public Turn Turn; // 🔴 Referenz für Undo
+   public Turn Turn; // Reference for Undo
 }
 
 [System.Serializable]

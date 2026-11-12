@@ -3,7 +3,7 @@
 using UnityEngine;
 using UnityEditor;
 using System.Collections.Generic;
-using UnityEngine.Localization.Components; // Benötigt für LocalizeStringEvent
+using UnityEngine.Localization.Components; // Required for LocalizeStringEvent
 
 public class DuplicateLocalizeSearcher : EditorWindow
 {
@@ -40,16 +40,16 @@ public class DuplicateLocalizeSearcher : EditorWindow
 
             foreach (GameObject go in _foundObjects)
             {
-                // Falls das Objekt gelöscht wurde, überspringen
+                // If the object has been deleted, skip
                 if (go == null) continue;
 
-                // Ein klickbarer Button, der aussieht wie Text/Link
+                // A clickable button that looks like text/link
                 GUIStyle linkStyle = new GUIStyle(EditorStyles.linkLabel);
                 linkStyle.wordWrap = true;
 
                 if (GUILayout.Button($"• {go.name} (Pfad: {GetGameObjectPath(go)})", linkStyle))
                 {
-                    // Ping in der Hierarchie und Auswahl im Inspector
+                    // Ping in the hierarchy and selection in the inspector
                     Selection.activeGameObject = go;
                     EditorGUIUtility.PingObject(go);
                 }
@@ -65,15 +65,15 @@ public class DuplicateLocalizeSearcher : EditorWindow
     {
         _foundObjects.Clear();
 
-        // Durchsucht alle GameObjects in der aktuellen Szene (auch inaktive)
+        // Searches all GameObjects in the current scene (even inactive)
         LocalizeStringEvent[] allEvents = Resources.FindObjectsOfTypeAll<LocalizeStringEvent>();
 
-        // Dictionary, um zu zählen, wie oft ein GameObject vorkommt
+        // Dictionary to count how often an GameObject occurs
         Dictionary<GameObject, int> counts = new Dictionary<GameObject, int>();
 
         foreach (var ev in allEvents)
         {
-            // Sicherstellen, dass das Objekt zur Szene gehört und kein Asset/Prefab im Projektordner ist
+            // Ensure that the object belongs to the scene and there is no asset/prefab in the project folder
             if (ev.gameObject.scene.name == null) continue;
 
             if (counts.ContainsKey(ev.gameObject))
@@ -86,7 +86,7 @@ public class DuplicateLocalizeSearcher : EditorWindow
             }
         }
 
-        // Filtern: Nur Objekte mit 2 oder mehr Komponenten hinzufügen
+        // Filter: Add objects with 2 or more components only
         foreach (var pair in counts)
         {
             if (pair.Value >= 2)
@@ -96,7 +96,7 @@ public class DuplicateLocalizeSearcher : EditorWindow
         }
     }
 
-    // Hilfsfunktion, um den genauen Pfad in der Hierarchie anzuzeigen
+    // Help function to show the exact path in the hierarchy
     private string GetGameObjectPath(GameObject obj)
     {
         string path = obj.name;

@@ -2,12 +2,12 @@ using System.Linq;
 using UnityEngine;
 
 /// <summary>
-/// Tab 1 des Customization-Screens („Bereiche“): Treffer-Sektoren
-/// (Seed-Bereiche Wand/Decke + Customs). Einheitliche Rows
-/// (CustomizationListItem): Name, Clip-Anzahl/-Icon, Recorder, Edit,
-/// Delete, Toggle direkt in der Zeile. Löschen nur wenn nicht builtIn.
-/// Die Ja/Nein-Bestätigung inklusive verknüpfter Penalties läuft über das
-/// DeletePanel des SectorEditorPopup (kein separates Szenen-Popup nötig).
+/// Tab 1 of the customization screen ("areas"): hit sectors
+/// (seed areas wall/ceiling + customs). Uniform rows
+/// (CustomizationListItem): name, clip count/icon, recorder, edit,
+/// delete, toggle directly in the row. Delete only if not builtIn.
+/// The yes/no confirmation including linked penalties runs through the
+/// DeletePanel of the SectorEditorPopup (no separate scene popup required).
 /// </summary>
 public class CustomizationSectorsPage : MonoBehaviour, ICustomizationRowOwner
 {
@@ -22,7 +22,7 @@ public class CustomizationSectorsPage : MonoBehaviour, ICustomizationRowOwner
     public ClipNavigationHelper clipNav;
 
     /// <summary>
-    /// Lebende Rows pro Sektor-ID (Abgleich statt Neuaufbau, siehe Penalties).
+    /// Living rows per sector ID (reconciliation instead of rebuilding, see Penalties).
     /// </summary>
     private readonly System.Collections.Generic.Dictionary<string, CustomizationListItem> rowsById =
         new System.Collections.Generic.Dictionary<string, CustomizationListItem>();
@@ -105,8 +105,8 @@ public class CustomizationSectorsPage : MonoBehaviour, ICustomizationRowOwner
 
     public void OnClickNewSector()
     {
-        // Der Editor ist ein UIScreen (id Popup) und zeigt sich selbst
-        // über den WindowHandler an.
+        // The editor is a UIScreen (id popup) and shows itself
+        // via the WindowHandler.
         if (editor == null)
             editor = FindAnyObjectByType<SectorEditorPopup>();
 
@@ -123,7 +123,7 @@ public class CustomizationSectorsPage : MonoBehaviour, ICustomizationRowOwner
             editor.ShowEdit(this, id);
     }
 
-    // ---- ICustomizationRowOwner (einheitliches Listen-Item) ----
+    // ---- ICustomizationRowOwner (uniform list item) ----
 
     public void OnRowEdit(string id) => OnClickEditSector(id);
 
@@ -145,7 +145,7 @@ public class CustomizationSectorsPage : MonoBehaviour, ICustomizationRowOwner
         return CustomizationInfo.LocalizeInfo(string.IsNullOrEmpty(def.info) ? CustomizationInfo.BuildSector(def) : def.info);
     }
 
-    /// <summary>Toggle direkt in der Zeile: enabled speichern (Changed → Refresh).</summary>
+    /// <summary>Toggle directly in the row: save enabled (Changed → Refresh).</summary>
     public void OnRowToggle(string id, bool enabled)
     {
         if (string.IsNullOrEmpty(id))
@@ -158,15 +158,15 @@ public class CustomizationSectorsPage : MonoBehaviour, ICustomizationRowOwner
         def.enabled = enabled;
         CustomizationStore.SaveHitSector(def);
 
-        // Direkt-Refresh (sofort sichtbar; Changed-Event aktualisiert ggf. zusätzlich).
+        // Direct refresh (immediately visible; changed event updated if necessary).
         Refresh();
     }
 
     /// <summary>
-    /// Clip-Button einer Sektor-Row: öffnet den ClipBrowser. Wall/Ceiling
-    /// hängen an ihren Sofort-Penalties (dort liegen Kosten + Sound,
-    /// custom_wall/custom_ceiling); freie Sektoren nutzen ihre eigene
-    /// Sektor-ID als Clip-Key.
+    /// Clip button of a sector row: open the ClipBrowser. Wall/Ceiling
+    /// hang on their instant penalties (there are costs + sound,
+    /// custom_wall/custom_ceiling); free sectors use their own
+    /// Sector ID as Clip Key.
     /// </summary>
     public void OnClickOpenClips(string id, string labelOverride = null)
     {
@@ -187,7 +187,7 @@ public class CustomizationSectorsPage : MonoBehaviour, ICustomizationRowOwner
         clipNav.OpenCustomClips(key, label);
     }
 
-    /// <summary>Clip-Anzahl für den Row-Indikator (inkl. verlinkter Penalty).</summary>
+    /// <summary>Clip number for the row indicator (including linked penalty).</summary>
     public int GetClipCount(string id)
     {
         if (string.IsNullOrEmpty(id) || AudioLibrary.Instance == null)
@@ -197,9 +197,9 @@ public class CustomizationSectorsPage : MonoBehaviour, ICustomizationRowOwner
     }
 
     /// <summary>
-    /// Sektor-Sound läuft immer über die Sektor-ID (Wall = builtin:wall,
-    /// Ceiling = builtin:ceiling, freie Sektoren = eigene ID). Penalty-Clips
-    /// bleiben separat unter der Penalty-ID und werden zusätzlich gespielt.
+    /// Sector sound always runs through the sector ID (wall = builtin:wall),
+    /// Ceiling = builtin:ceiling, free sectors = own ID). Penalty clips
+    /// remain separately under the penalty ID and are additionally played.
     /// </summary>
     public string ResolveSectorClipKey(string sectorId)
     {

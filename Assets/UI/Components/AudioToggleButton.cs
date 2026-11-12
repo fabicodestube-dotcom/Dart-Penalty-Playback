@@ -12,7 +12,7 @@ public class AudioToggleButton : MonoBehaviour
     private Button toggleButton;
     private bool isSoundOn = true;
 
-    // Eigenschaft, um den Zustand von außen auszulesen
+    // Properties to read the condition from the outside
     public bool IsSoundOn => isSoundOn;
 
     private void Awake()
@@ -28,18 +28,18 @@ public class AudioToggleButton : MonoBehaviour
     }
 
     /// <summary>
-    /// Initialisiert den Button mit einem Startzustand (wichtig für Lade- oder Save-Systeme).
+    /// Initializes the button with a start state (important for charging or save systems).
     /// </summary>
-    /// <param name="startMuted">True, wenn der Ton anfangs aus sein soll.</param>
+    /// <param name="startMuted">True, if the sound should be off at first.</param>
     public void Initialize(bool startMuted)
     {
-        // Zustand setzen (Invertiert, da SetAudioState true für "Sound an" erwartet)
+        // Set state (inverted, because SetAudioState expects true for "Sound on")
         SetAudioState(!startMuted);
     }
 
     private void OnButtonClick()
     {
-        // Zustand umkehren
+        // Toggle state
         SetAudioState(!isSoundOn);
         AppSettingsManager.Instance.Settings.Sound.Enabled = isSoundOn;
     }
@@ -48,7 +48,7 @@ public class AudioToggleButton : MonoBehaviour
     {
         isSoundOn = state;
 
-        // Sprite basierend auf dem Zustand wechseln
+        // Switch Sprite Based on State
         if (buttonImage != null)
         {
             buttonImage.sprite = isSoundOn ? soundOnSprite : soundOffSprite;

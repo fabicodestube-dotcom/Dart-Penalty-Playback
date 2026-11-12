@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -39,12 +39,12 @@ public class StatisticsPageAll : MonoBehaviour
     }
 
     [Header("Penalty-Resolver (TEMP-DIAG)")]
-    [Tooltip("Löst Penalty-Stats zum Tap-Zeitpunkt frisch auf (statt Build-Zeit-Closure). Wird vom StatisticsHandler gesetzt.")]
+    [Tooltip("Löst Penalty-Stats zum Tap-Zeitpunkt frisch auf (statt Build-Zeit-Closure). Wird vom StatisticsScreen gesetzt.")]
     public Func<string, GameStats> penaltyStatsResolver;
 
     /// <summary>
-    /// Tap-Handler mit frischem Lookup (Stale-Closure-Fix): Stats werden erst
-    /// beim Antippen aus BasePlayer/currentRange geholt, Closure nur Fallback.
+    /// Tap handlers with fresh lookup (Stale-Closure-Fix): stats are only now
+    /// When tapping brought in BasePlayer / currentRange, Closure only Fallback.
     /// </summary>
     private void ShowPenaltyDetails(PenaltyDetailPopup popup, string playerName, GameStats fallbackStats)
     {
@@ -80,8 +80,8 @@ public class StatisticsPageAll : MonoBehaviour
 
 
     /// <summary>
-    /// Gezieltes Refresh EINER Spielerzeile (alle Tabellen dieser Page).
-    /// Kein Neuaufbau, kein Clear — nutzt die gecachten Tabellen.
+    /// Targeted refresh of a player line (all tables of this page).
+    /// No rebuild, no clear — use the cached tables.
     /// </summary>
     public void UpsertPlayerRow(GameStats stats, string playerName)
     {
@@ -158,10 +158,10 @@ public class StatisticsPageAll : MonoBehaviour
     }
 
     /// <summary>
-    /// Blendet alle Zeilen eines Spielers auf dieser Page um (Sichtbarkeit,
-    /// Löschen). Legt nichts an — nur bestehende Zeilen.
-    /// Gibt true zurück, wenn mindestens eine Zeile WIRKLICH umgeschaltet hat
-    /// (nur dann muss die Tabellenhöhe via RefreshLayout neu berechnet werden).
+    /// Redirects all the lines of a player on this page (visibility,
+    /// Delete. Don't add anything — just existing lines.
+    /// Returns true if at least one line has REALLY switched
+    /// (only then the table height must be recalculated via RefreshLayout).
     /// </summary>
     public bool SetPlayerRowVisible(string playerName, bool visible)
     {
@@ -179,9 +179,9 @@ public class StatisticsPageAll : MonoBehaviour
     }
 
     /// <summary>
-    /// Rechnet alle Tabellenhöhen dieser Page aus den SICHTBAREN Zeilen neu
-    /// (Divider + LayoutElement.preferredHeight). Nur aufrufen, wenn sich die
-    /// sichtbare Zeilenzahl wirklich geändert hat.
+    /// Recalculates all table heights of this page from the visible lines
+    /// (Divider + LayoutElement.preferredHeight).
+    /// The visible number of lines really changed.
     /// </summary>
     public void RefreshLayout()
     {
@@ -189,7 +189,7 @@ public class StatisticsPageAll : MonoBehaviour
     }
 
     /// <summary>
-    /// True, wenn irgendeine Tabelle weniger als `desired` Reserve-Rows hat.
+    /// True if any table has less than `desired` reserve rows.
     /// </summary>
     public bool SpareShortage(int desired)
     {
@@ -203,7 +203,7 @@ public class StatisticsPageAll : MonoBehaviour
     }
 
     /// <summary>
-    /// Füllt Reserve-Rows aller Tabellen auf (gechunkt, eine Tabelle pro Frame).
+    /// Fills up reserve rows of all tables (chunked, one table per frame).
     /// </summary>
     public IEnumerator PreallocateSpareRowsAsync(int desired)
     {
@@ -308,11 +308,11 @@ public class StatisticsPageAll : MonoBehaviour
             if (!activeParticipationKeys.Contains(k))
                 participationTable.SetRowActive(k, false);
 
-        // Frame abgeben (wie X01: kein N-Spieler-Burst pro Frame).
+        // Submit frames (like X01: no N-player burst per frame).
         yield return null;
 
         // =====================================================
-        // PENALTIES (einfach: Anzahl | Kosten | Details → Popup)
+        // PENALTIES (simple: count | cost | details → popup)
         // =====================================================
         var penaltyTable = GetOrCreateCachedTable(
             AllGamesPenaltiesKey,

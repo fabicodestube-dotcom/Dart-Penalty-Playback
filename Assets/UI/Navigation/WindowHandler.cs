@@ -16,7 +16,7 @@ public class WindowHandler : MonoBehaviour
     [SerializeField] private X01GameEngine x01Engine;
     [SerializeField] private CricketGameEngine cricketEngine;
     [SerializeField] private ATCGameEngine atcEngine;
-    [SerializeField] private Summary summaryScreen;
+    [SerializeField] private SummaryScreen summaryScreen;
 
     [Header("Popup")]
     public UIScreen activePopup;
@@ -390,11 +390,11 @@ public class WindowHandler : MonoBehaviour
         switch (currentId)
         {
             case ScreenId.X01Game when x01Engine != null:
-                x01Engine.OnClickAbortCancle();
+                x01Engine.OnClickAbortCancel();
                 return;
 
             case ScreenId.CricketGame when cricketEngine != null:
-                cricketEngine.OnClickAbortCancle();
+                cricketEngine.OnClickAbortCancel();
                 return;
 
             case ScreenId.ATCGame when atcEngine != null:
@@ -408,11 +408,11 @@ public class WindowHandler : MonoBehaviour
     private void InvokeSummaryBack()
     {
         if (summaryScreen == null)
-            summaryScreen = GetComponentInChildren<Summary>(true);
+            summaryScreen = GetComponentInChildren<SummaryScreen>(true);
 
         if (summaryScreen == null)
         {
-            Debug.LogError("Summary Screen nicht gefunden.");
+            Debug.LogError("SummaryScreen nicht gefunden.");
             return;
         }
 
@@ -882,25 +882,4 @@ public class WindowHandler : MonoBehaviour
 
     public ScreenId GetCurrentScreen() => currentId;
     public ScreenId? GetPreviousScreen() => previousId;
-}
-
-public enum ScreenId
-{
-    Zoggen,
-    Players,
-    History,
-    Statistic,
-    Optionen,
-    X01Game,
-    Summary,
-    GameDetail,
-    ATCGame,
-    CricketGame,
-    Popup,
-    About,
-    CustomClipHandler,
-    CustomClipBrowser,
-    Customization,
-    PenaltyEditor,
-    AudioEventEditor
 }

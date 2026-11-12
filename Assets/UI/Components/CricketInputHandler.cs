@@ -15,8 +15,8 @@ public class CricketInputHandler : InputHandler
     private DartMultiplier currentMultiplier = DartMultiplier.Single;
 
 
-    // ========== FARBEN =========
-    // Gelb
+    // ========== COLORS =========
+    // Yellow
     private static readonly Color YellowLight  = new Color(200f / 255f, 180f / 255f, 70f  / 255f);
     private static readonly Color YellowSolid  = new Color(180f / 255f, 150f / 255f, 20f  / 255f);
 

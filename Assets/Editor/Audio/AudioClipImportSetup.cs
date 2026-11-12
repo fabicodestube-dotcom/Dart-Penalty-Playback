@@ -2,21 +2,21 @@ using UnityEditor;
 using UnityEngine;
 
 /// <summary>
-/// Setzt die Import-Settings der eingebauten Audio-Clips unter Assets/AudioFiles.
+/// Sets the import settings of the built-in audio clips under Assets/ AudioFiles.
 ///
-/// Default-Set: kurze Ansagen (24 kHz, mono) → Decompress On Load, kein Preload.
-///              RAM-Bedarft ≈ Roh-WAV-Größe (~14 MB) — unkritisch.
+/// Default set: short announcements (24 kHz, mono) → Decompress On Load, no preload.
+/// RAM demand ≈ raw WAV size (~14 MB) — non-critical.
 ///
-/// Custom-Set:  lange Aufnahmen (bis ~10 s, 44,1 kHz stereo, ~101 MB Roh-WAV) →
-///              Force To Mono + Compressed In Memory. Dadurch bleibt der
-///              RAM-Verbrauch auf dem Handy im Rahmen (komprimiert statt
-///              volldekodiert im Speicher).
+/// Custom set: long recordings (up to ~10 s, 44.1 kHz stereo, ~101 MB raw WAV) →
+/// Force To Mono + Compressed In Memory. This keeps the
+/// RAM consumption on the mobile phone in the frame (compressed instead)
+/// fully decoded in memory.
 ///
-/// Preload ist bei beiden Sets aus: die Clips werden erst beim Abspielen
-/// geladen (die eingebauten Clips liegen als Assets vor, sie müssen nicht
-/// vorab in die Runtime-Dicts geladen werden).
+/// Preload is off for both sets: the clips are only played when
+/// loaded (the built-in clips are available as assets, they do not have to be)
+/// be loaded into the runtime dicts in advance.
 ///
-/// Menü: Darts/Audio/Import-Settings anwenden
+/// Menu: Apply darts/audio/import settings
 /// </summary>
 public static class AudioClipImportSetup
 {
@@ -63,7 +63,7 @@ public static class AudioClipImportSetup
                 dirty = true;
             }
 
-            // Standard-Settings (alle Plattformen ohne expliziten Override).
+            // Standard settings (all platforms without explicit override).
             var settings = importer.defaultSampleSettings;
             bool settingsChanged = false;
 
@@ -85,7 +85,7 @@ public static class AudioClipImportSetup
                 dirty = true;
             }
 
-            // Android-Override mit denselben Werten.
+            // Android overrides with the same values.
             var android = importer.GetOverrideSampleSettings(AndroidPlatform);
             bool androidChanged = false;
 
@@ -117,7 +117,7 @@ public static class AudioClipImportSetup
         return changed;
     }
 
-    /// <summary>Status-Log der beiden Sets (Clip-Anzahl + Import-Settings).</summary>
+    /// <summary>Status log of the two sets (clip number + import settings).</summary>
     [MenuItem("Darts/Audio/Import-Status anzeigen")]
     public static void ShowStatus()
     {

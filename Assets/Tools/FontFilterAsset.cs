@@ -16,7 +16,7 @@ public class FontFilterAsset : EditorWindow
         Debug.Log("<b>[Font Scanner]</b> Starte Suche nach falschen Fonts...");
         int totalFound = 0;
 
-        // 1. Suche in der aktuellen Szene
+        // 1. Search in the current scene
         TMP_Text[] sceneTexts = GameObject.FindObjectsByType<TMP_Text>(FindObjectsInactive.Include, FindObjectsSortMode.None);
         foreach (var txt in sceneTexts)
         {
@@ -28,7 +28,7 @@ public class FontFilterAsset : EditorWindow
             }
         }
 
-        // 2. Suche in allen Prefabs im Projekt-Ordner
+        // 2. Search in all prefabs in the project folder
         string[] allPrefabGUIDs = AssetDatabase.FindAssets("t:Prefab");
         foreach (string guid in allPrefabGUIDs)
         {
@@ -53,7 +53,7 @@ public class FontFilterAsset : EditorWindow
         Debug.Log($"<b>[Font Scanner]</b> Suche beendet. Insgesamt {totalFound} Felder mit abweichenden Fonts gefunden.");
     }
 
-    // Hilfsmethode, um den vollen Pfad in der Hierarchie anzuzeigen
+    // Help method to show the full path in the hierarchy
     private static string GetHierarchyPath(Transform transform)
     {
         string path = transform.name;

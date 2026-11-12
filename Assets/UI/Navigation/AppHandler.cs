@@ -12,8 +12,8 @@ using UnityEngine;
 public class AppHandler : MonoBehaviour
 {
     /// <summary>
-    /// Nach letzter Spieler-/Setup-Änderung so lange warten, bevor die DB
-    /// geschrieben wird. Bündelt Klickserien (Setup-Stepper etc.) zu einem Write.
+    /// After last player/setup change, wait until the DB
+    /// Bundles click series (setup stepper etc.) into a write.
     /// </summary>
     private const float DatabaseIdleSaveDelaySeconds = 2f;
 
@@ -21,15 +21,15 @@ public class AppHandler : MonoBehaviour
 
     public Action<Game> OnAddGame;
     /// <summary>
-    /// Parameter: Modus, GameId, betroffene Spieler-Ids (aus der Summary VOR dem
-    /// Delete gelesen). Die In-Memory-Aggregate (BasePlayer) + SQLite-Aggregate
-    /// sind beim Feuern bereits aktualisiert — Listener lesen sie direkt und
-    /// sparen sich jedes Nachladen.
+    /// Parameters: mode, game ID, affected player IDs (read from the summary BEFORE the
+    /// delete). The in-memory aggregates (BasePlayer) + SQLite aggregates
+    /// are already updated when firing — listeners read them directly and
+    /// avoid any reloading.
     /// </summary>
     public Action<GameMode, Guid, List<Guid>> OnDeleteGame;
     /// <summary>
-    /// Parameter: Modus, betroffene Spieler-Ids (distinct aus den gelöschten
-    /// Summaries). Aggregate sind beim Feuern bereits aktualisiert.
+    /// Parameters: mode, affected player ids (distinct from the deleted
+    /// Aggregates are already updated when firing.
     /// </summary>
     public Action<GameMode, List<Guid>> OnDeleteGamesOfMode;
     public Action OnAllGamesDeleted;
@@ -45,17 +45,17 @@ public class AppHandler : MonoBehaviour
     private bool isShuttingDown = false;
 
     /// <summary>
-    /// True, wenn Spieler-/Setup-Änderungen noch nicht in SQLite stehen.
-    /// Alle kleinen Setter markieren nur dirty; geschrieben wird gebündelt
-    /// (Idle-Debounce, Spielstart, Lifecycle-Save).
+    /// True if player/setup changes are not yet in SQLite.
+    /// All small setters only mark dirty; writes are batched
+    /// (idle debounce, game start, lifecycle save).
     /// </summary>
     private bool databaseDirty = false;
     private Coroutine dirtySaveRoutine = null;
 
     /// <summary>
-    /// Kollabiert Pause/Fokus/Quit-Doppelevents zu einem Save. Auf Mobile
-    /// feuern OnApplicationPause(true) + OnApplicationFocus(false) beim
-    /// Weglegen fast immer direkt hintereinander (ggf. + Quit danach).
+    /// Collapse break/focus/quit double events into a save.
+    /// fire OnApplicationPause (true) + OnApplicationFocus (false) when
+    /// Put away almost always directly one after the other (if necessary + quit afterwards).
     /// </summary>
     private const float LifecycleSaveCooldownSeconds = 2f;
     private float lastLifecycleSaveTime = -1000f;
@@ -258,8 +258,8 @@ public class AppHandler : MonoBehaviour
     public void SetPlayerVisibleInStatistics(Guid id, bool isVisible)
     {
         database.SetPlayerVisibleInStatistics(id, isVisible);
-        // Wurde vorher nie persistiert (Auswahl nach Neustart weg) —
-        // läuft jetzt über den gebündelten Dirty-Save mit.
+        // Has never been persistent before (selected after restart) —
+        // Now it's on the bundled dirty save.
         MarkDatabaseDirty();
     }
 
@@ -275,13 +275,13 @@ public class AppHandler : MonoBehaviour
 
         SetSelectedGame(g);
 
-        // Ausstehende Spieler-/Setup-Änderungen mit sichern (Crash-Sicherheit),
-        // No-Op wenn seit letztem Write nichts geändert wurde.
+        // Pending player/setup changes with backup (crash security),
+        // No-op if nothing has been changed since last write.
         FlushDatabase();
 
-        // Per-Game-Stats immer aus der Struktur recomputen (idempotent dank Resets),
-        // damit auch Reload+Save (z.B. Summary-Screen) korrekte Legs/Sets/Games schreibt.
-        // Cricket/ATC haben eigene Overrides für modus-spezifische Felder.
+        // Per-game states always recompute from the structure (idempotent thanks to resets),
+        // so that Reload+Save (e.g. Summary-Screen) also writes correct legs/sets/games.
+        // Cricket/ATC have their own overrides for mode-specific fields.
         g.CalculatePlayerStatsOnSave();
 
         if (!SaveSystem.SaveGame(g))
@@ -312,8 +312,8 @@ public class AppHandler : MonoBehaviour
     {
         GameSummary summary = database.GetGameSummary(id);
 
-        // Stats VOR dem SQLite-Delete laden (danach sind die Zeilen weg).
-        // Ein gezielter Single-Game-Read statt Full-Table-Read.
+        // Load stats BEFORE the SQLite delete (after which the rows are gone).
+        // A targeted single-game read instead of full-table read.
         var playerStats = summary != null && summary.IsFinished
             ? SqliteDatabaseRepository.LoadPlayerGameStatsForGame(id)
             : null;
@@ -328,8 +328,8 @@ public class AppHandler : MonoBehaviour
 
         if (summary != null && summary.IsFinished)
         {
-            // Aggregate inkrementell abziehen statt alle Tabellen aus allen
-            // Spielen neu aufzubauen (O(1) statt O(Historie)).
+            // Subtract aggregates incrementally instead of all tables from all
+            // rebuild (O(1) instead of O(history)).
             SubtractAggregatedPlayerStats(summary, playerStats);
 
             if (playerStats != null)
@@ -365,9 +365,9 @@ public class AppHandler : MonoBehaviour
     }
 
     /// <summary>
-    /// Zieht EIN gelöschtes Spiel aus den persistierten Aggregaten ab.
-    /// Spiegel von SaveAggregatedPlayerStats; ungefährlich für unfertige
-    /// Spiele (nie aggregiert) und fehlende Zeilen (RemoveGameStat guardet).
+    /// Subtracts a deleted game from the persistent aggregates.
+    /// Mirror of SaveAggregatedPlayerStats; harmless for unfinished
+    /// Games (never aggregated) and missing lines (RemoveGameStatguardet).
     /// </summary>
     private void SubtractAggregatedPlayerStats(GameSummary summary, Dictionary<Guid, GameStats> playerStats)
     {
@@ -400,7 +400,7 @@ public class AppHandler : MonoBehaviour
             .Where(s => s.GameMode == mode)
             .ToList();
 
-        // Stats EINMAL vor dem Delete laden (ein Full-Read statt N).
+        // Load stats ONCE before the delete (a full-read instead of N).
         var allStats = SqliteDatabaseRepository.LoadAllPlayerGameStats();
 
         if (!SaveSystem.DeleteGamesByMode(mode))
@@ -463,8 +463,8 @@ public class AppHandler : MonoBehaviour
         }
 
         database.DeleteGames(null);
-        // Aggregate sind damit leer: Full-Rebuild findet keine Spiele mehr
-        // und räumt nur die Aggregat-Tabellen ab (billig, keine toten Loops).
+        // Aggregates are empty: Full-Rebuild will not find any games anymore
+        // and only cleans the aggregate tables (cheap, no dead loops).
         if (!SaveSystem.RebuildAggregatedPlayerStats())
             Debug.LogError("Spieler-Aggregate konnten nach dem Löschen nicht neu aufgebaut werden.");
 
@@ -579,9 +579,9 @@ public class AppHandler : MonoBehaviour
     }
 
     /// <summary>
-    /// Markiert Spieler-/Setup-Änderungen als ungespeichert. Der eigentliche
-    /// Write läuft gebündelt nach Idle-Timeout (bündelt Klickserien zu
-    /// einem Write statt einem pro Klick).
+    /// Marks player/setup changes as unsaved.
+    /// Write runs bundled to idle timeout (bundles click series)
+    /// One write instead of one per click.
     /// </summary>
     private void MarkDatabaseDirty()
     {
@@ -594,15 +594,15 @@ public class AppHandler : MonoBehaviour
 
     private IEnumerator FlushDatabaseAfterIdle()
     {
-        // Realtime: feuert auch bei pausiertem TimeScale zuverlässig.
+        // Realtime: fires reliably even when paused TimeScale.
         yield return new WaitForSecondsRealtime(DatabaseIdleSaveDelaySeconds);
         dirtySaveRoutine = null;
         FlushDatabase();
     }
 
     /// <summary>
-    /// Schreibt ausstehende Spieler-/Setup-Änderungen. No-Op wenn clean.
-    /// Einzige Stellen mit sofortigem Write: Spielstart, Lifecycle, explizit.
+    /// Writes pending player/setup changes. No-op if clean.
+    /// Only places with an immediate write: game start, lifecycle, explicit.
     /// </summary>
     private bool FlushDatabase()
     {
@@ -658,10 +658,10 @@ public class AppHandler : MonoBehaviour
             return;
         }
 
-        // Pause/Fokus/Quit kommen gebündelt: nur der erste speichert, der Rest
-        // wäre ein identischer Voll-Save (Spiele-Rewrite + DB). Dazwischen kann
-        // sich nichts ändern, da die App im Hintergrund liegt. Steht bewusst
-        // vor dem Summaries-Check, damit Doppelevents gar keine Arbeit machen.
+        // Pause/Focus/Quit come bundled: only the first saves, the rest
+        // would be an identical full save (game rewrite + DB).
+        // Nothing changes because the app is in the background.
+        // before the Summaries-Check, so that double events do not do any work.
         if (Time.realtimeSinceStartup - lastLifecycleSaveTime < LifecycleSaveCooldownSeconds)
             return;
         lastLifecycleSaveTime = Time.realtimeSinceStartup;
@@ -755,19 +755,19 @@ public class AppHandler : MonoBehaviour
     private void LoadDatabase()
     {
         database = SaveSystem.LoadDatabase();
-        // Hinweis: KEIN RebuildPlayerStatistics() mehr hier. SaveSystem hat
-        // bereits RebuildAllPlayerStatistics() laufen lassen (All-Time UND
-        // Time-Ranges aus einem einzigen Full-Table-Read). Ein zweiter
-        // Durchlauf wäre ein komplettes Re-Deserialize aller Spiele.
-        // Time-Range-Refresh bei Datumswechsel läuft über
+        // Note: NO RebuildPlayerStatistics() more here. SaveSystem has
+        // already RebuildAllPlayerStatistics() running (all-time AND)
+        // Time ranges from a single full table read.
+        // Run would be a complete re-deserialize of all games.
+        // Time-range refresh at date change runs over
         // RebuildTimeBasedStatistics().
     }
 
     /// <summary>
-    /// Baut nur die Time-Range-Snapshots (Today/Week/Month/Year) aller Spieler
-    /// aus den gespeicherten Per-Game-Stats neu. Nötig nach Datumswechsel, da
-    /// die Snapshots vom Save-Zeitpunkt sonst stale sind. All-Time-Aggregate
-    /// bleiben unangetastet. Einmal pro Tag, nicht pro Event.
+    /// Build only the time-range snapshots (Today/Week/Month/Year) of all players
+    /// new from the stored per-game stats.
+    /// The snapshots from the save time are otherwise stale.
+    /// Once a day, not per event.
     /// </summary>
     public void RebuildTimeBasedStatistics()
     {
@@ -827,8 +827,8 @@ public class AppHandler : MonoBehaviour
             summary.PlayerEntries.Add(entry);
         }
 
-        // Snapshot aus dem Game (Spielstart-Stand, inkl. enabled) — gleiche
-        // Quelle wie der persistente Pfad, damit Namen statt IDs stehen.
+        // Snapshot from the game (start-status, incl. enabled) — same
+        // Source like the persistent path so that names are instead of IDs.
         try
         {
             summary.CustomPenaltySnapshot = game.GetPenaltySnapshot();
@@ -860,10 +860,10 @@ public class AppHandler : MonoBehaviour
     }
 
     /// <summary>
-    /// Deckelte Bildrate statt Maximal-FPS: VSync an + 60 FPS geben der GPU
-    /// Schlafphasen (kein Thermal Throttling) und stabile 16,6ms-Frames.
-    /// Der alte Maximum-Modus (vSync aus + bis zu 120 FPS Dauerlast auf
-    /// statischer UI) war die Hauptursache für sporadische Ruckler am Phone.
+    /// Capped frame rate instead of maximum FPS: VSync at +60 FPS give the GPU
+    /// Sleep phases (no thermal throttling) and stable 16.6ms frames.
+    /// The old maximum mode (vSync from + up to 120 FPS continuous load on
+    /// Static UI) was the main cause of sporadic jerks on the phone.
     /// </summary>
     private void MaximizeFPS()
     {

@@ -2,13 +2,13 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// Öffnet den ClipBrowser für einen Custom-Key (Penalty-/Event-/Sektor-ID)
-/// oder einen Score-Slot. Ersatz für die Open*-Methoden des entfallenen
-/// 4. Tabs (CustomClipHandler): Die Customization-Rows rufen über ihre Page
-/// hierher, statt über ein Button-Grid zu navigieren.
-/// Verdrahtung in der Szene: WindowHandler + ClipBrowser zuweisen (Fallback:
-/// FindAnyObjectByType). Pages halten eine Referenz (clipNav) und reichen
-/// sie an ihre Rows weiter.
+/// Opens the ClipBrowserScreen for a custom key (Penalty/Event/Sector ID)
+/// or a score slot. substitute for the Open* methods of the deleted
+/// Tabs (CustomClipHandler): The customization rows call via their page
+/// Here instead of navigating via a button grid.
+/// Wiring in the scene: assign WindowHandler + ClipBrowserScreen (fallback:
+/// FindAnyObjectByType. Pages hold a reference (clipNav) and reach
+/// they pass them on to their rows.
 /// </summary>
 public class ClipNavigationHelper : MonoBehaviour
 {
@@ -16,14 +16,14 @@ public class ClipNavigationHelper : MonoBehaviour
     public WindowHandler windowHandler;
 
     [Header("Clip Browser")]
-    public ClipBrowser clipBrowser;
+    public ClipBrowserScreen clipBrowser;
 
     private void Awake()
     {
         if (windowHandler == null)
             windowHandler = FindAnyObjectByType<WindowHandler>();
         if (clipBrowser == null)
-            clipBrowser = FindAnyObjectByType<ClipBrowser>();
+            clipBrowser = FindAnyObjectByType<ClipBrowserScreen>();
     }
 
     public void OpenCustomClips(string customKey, string label)
@@ -36,7 +36,7 @@ public class ClipNavigationHelper : MonoBehaviour
         if (windowHandler == null)
             windowHandler = FindAnyObjectByType<WindowHandler>();
         if (clipBrowser == null)
-            clipBrowser = FindAnyObjectByType<ClipBrowser>();
+            clipBrowser = FindAnyObjectByType<ClipBrowserScreen>();
         if (windowHandler == null || clipBrowser == null)
             return;
 
@@ -54,7 +54,7 @@ public class ClipNavigationHelper : MonoBehaviour
         if (windowHandler == null)
             windowHandler = FindAnyObjectByType<WindowHandler>();
         if (clipBrowser == null)
-            clipBrowser = FindAnyObjectByType<ClipBrowser>();
+            clipBrowser = FindAnyObjectByType<ClipBrowserScreen>();
         if (windowHandler == null || clipBrowser == null)
             return;
 

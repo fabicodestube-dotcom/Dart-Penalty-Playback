@@ -12,10 +12,10 @@ public class TMP_AndroidUppercase : MonoBehaviour
     {
         inputField = GetComponent<TMP_InputField>();
         
-        // Registriere das Event, wenn sich der Text ändert
+        // Register the event when the text changes
         inputField.onValueChanged.AddListener(OnTextChanged);
         
-        // Initialer Check für den Start
+        // Initial check for the start
         ConfigureKeyboard();
     }
 
@@ -32,7 +32,7 @@ public class TMP_AndroidUppercase : MonoBehaviour
         {
             inputField.inputType = TMP_InputField.InputType.Standard;
 
-            // Wichtig: ContentType steuert Auto-Capitalization
+            // Important: ContentType controls auto-capitalization
             inputField.contentType = TMP_InputField.ContentType.Name; 
             inputField.ForceLabelUpdate();
         }

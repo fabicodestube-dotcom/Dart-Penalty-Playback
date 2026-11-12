@@ -3,14 +3,14 @@ using System.Linq;
 using UnityEngine;
 
 /// <summary>
-/// Ladebildschirm beim App-Start (ein GO, keine Szene).
-/// Ablauf: 1–2 Frames Loader painten lassen, dann auf echte Ready-Flags warten
-/// (Statistik-Live-Build inkl. Reserve-Rows, History-Initial-Tab), danach
-/// smooth über die CanvasGroup ausfaden und deaktivieren. Hängt nie fest
-/// (Timeout-Sicherung). Input bleibt bis zum Fade-Ende geblockt.
-/// Als Warte-Indikator pulsiert das Logo (Sinus-Skalierung).
-/// Szene-Setup: Bootloader-GO als LETZTES Kind unter den Darts-Canvas (damit
-/// es über der App rendert), darauf CanvasGroup + Logo, pulseTarget mit Logo verdrahten.
+/// Loading screen at app launch (one GO, no scene).
+/// Process: Let 1–2 frames loader paint, then wait for real ready flags
+/// (statistics live build incl. reserve rows, history initial tab), then
+/// smoothly spread over the CanvasGroup and deactivate.
+/// (Timeout backup) Input remains blocked until the fade end.
+/// As a waiting indicator, the logo pulsates (sinus scaling).
+/// Scene Setup: Bootloader GO as LAST Child Among the Darts Canvas (with it)
+/// renders it over the app), on it CanvasGroup + logo, pulseTarget wire with logo.
 /// </summary>
 [DefaultExecutionOrder(-10000)]
 public class BootLoader : MonoBehaviour
@@ -36,8 +36,8 @@ public class BootLoader : MonoBehaviour
     public float pulseFrequency = 1.5f;
 
     [Header("Ready-Quellen (optional, sonst Auto-Find)")]
-    public StatisticsHandler statisticsHandler;
-    public HistoryHandler historyHandler;
+    public StatisticsScreen statisticsHandler;
+    public HistoryScreen historyHandler;
     public AudioLibrary audioLibrary;
 
     [Header("Ablauf")]
@@ -51,7 +51,7 @@ public class BootLoader : MonoBehaviour
 
     private void Awake()
     {
-        // Muss vor AppHandler.Awake und AppSettingsManager.Awake laufen.
+        // Must run before AppHandler.Awake and AppSettingsManager.Awake.
         var bootstrapResult = DatabaseBootstrapper.Prepare();
         if (bootstrapResult == null || !bootstrapResult.Success)
             ShowDatabaseError(bootstrapResult != null ? bootstrapResult.Error : "Unbekannter Datenbankfehler.");
@@ -68,15 +68,16 @@ public class BootLoader : MonoBehaviour
         }
 
         if (statisticsHandler == null)
-            statisticsHandler = FindFirstObjectByType<StatisticsHandler>();
+            statisticsHandler = FindFirstObjectByType<StatisticsScreen>();
         if (historyHandler == null)
-            historyHandler = FindFirstObjectByType<HistoryHandler>();
+            historyHandler = FindFirstObjectByType<HistoryScreen>();
         if (audioLibrary == null)
             audioLibrary = FindAnyObjectByType<AudioLibrary>();
         if (loaderCanvasGroup == null)
             loaderCanvasGroup = GetComponent<CanvasGroup>();
         if (pulseTarget == null)
         {
+            Debug.LogWarning("[BootLoader] pulseTarget nicht verdrahtet; Fallback-Suche nach 'Logo'.", this);
             Transform logoChild = transform.Find("Logo");
             if (logoChild is RectTransform logoRect)
                 pulseTarget = logoRect;
@@ -88,7 +89,7 @@ public class BootLoader : MonoBehaviour
         else
             Debug.LogWarning("[BootLoader] Kein pulseTarget verdrahtet — Logo pulsiert nicht. Bitte Logo-RectTransform zuweisen.", this);
 
-        // Harte Obergrenzen (Inspector-Range ist nur UI-seitig, daher hier zusätzlich clampen).
+        // Hard upper limits (Inspector range is only UI-side, therefore here additionally clamp).
         pulseAmplitude = Mathf.Clamp(pulseAmplitude, 0f, 0.5f);
         pulseFrequency = Mathf.Clamp(pulseFrequency, 0.1f, 5f);
 
@@ -114,8 +115,8 @@ public class BootLoader : MonoBehaviour
 
     private IEnumerator BootSequence()
     {
-        // Loader erst painten lassen (Logo sichtbar), bevor Flags
-        // gepollt werden.
+        // Let the loader paint first (logo visible) before flags
+        // are polled.
         yield return null;
         yield return null;
 
@@ -148,15 +149,15 @@ public class BootLoader : MonoBehaviour
             yield return null;
         }
 
-        // Puffer: SetupPlayerList baut auf Frame 2 um — zwei Extra-Frames,
-        // damit Rest-Bursts nicht in den Fade fallen.
+        // Buffer: SetupPlayerList rebuilds to Frame 2 — two extra frames,
+        // so that rest bursts do not fall into the fade.
         yield return null;
         yield return null;
 
-        // Aktiver Push an CustomizationHandler: Clip-Counts neu einlesen,
-        // sobald die AudioLibrary fertig geladen ist (nicht per Event,
-        // da Rows ggf. noch nicht subscribed waren).
-        var customizationHandler = Resources.FindObjectsOfTypeAll<CustomizationHandler>()
+        // Active push to CustomizationScreen: re-read clip counts,
+        // as soon as the AudioLibrary is ready loaded (not by event),
+        // Rows may not have been subscribed yet.
+        var customizationHandler = Resources.FindObjectsOfTypeAll<CustomizationScreen>()
             .FirstOrDefault();
         customizationHandler?.RefreshCustomizationCounts();
 

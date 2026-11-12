@@ -26,14 +26,14 @@ public class X01GameEngine : GameEngine
 
         this.game = (X01Game) game;
 
-         // Daten-Initialisierung
+         // Data initialization
         settings = ((X01Game)game).GetSettingsAsX01();
         
         checkoutHandler.Show(null);
 
         playerList.Init(GetUIStats());
 
-        // Logik & Events
+        // Logic & Events
         TriggerInitialCheckout();
         HandleBotCheck(game.GetCurrentPlayerId());
         inputHandler?.SetUndoEnabled(false);
@@ -101,7 +101,7 @@ public class X01GameEngine : GameEngine
         windowHandler.ShowPopup(popupAbortGame);
     }
 
-    public void OnClickAbortCancle()
+    public void OnClickAbortCancel()
     {
         isPaused = false;
         windowHandler.HidePopup();
@@ -136,14 +136,14 @@ public class X01GameEngine : GameEngine
 
     protected override IEnumerator HandleBotTurn(DartBot bot)
     {
-        // Input sperren
+        // Lock input
         inputHandler.SetInputEnabled(false);
 
         for (int i = 0; i < 3; i++)
         {
             yield return new WaitUntil(() => !isPaused);
 
-            // Falls Turn schon beendet (z.B. durch Bust oder Win)
+            // If Turn has already ended (e.g. by Bust or Win)
             var currentTurn = game.GetCurrentTurnOfPlayer(bot.GetID());
 
             if (currentTurn == null || !currentTurn.HasSpace() || currentTurn.IsBust || ((X01Game) game).GetScore(bot.GetID()) == 0)
@@ -203,13 +203,13 @@ public class X01GameEngine : GameEngine
         if (playerId != GetCurrentPlayerId())
             return;
 
-        // UI bekommt Checkout-Vorschlag
+        // UI receives checkout suggestion
         checkoutHandler.Show(option);
     }
 
-    // Hinweis: Restscore 420 feuert als globales Custom-Event
-    // (ScoreReached x01_420) über die Turn-Auswertung — bewusst KEIN
-    // expliziter OnFourTwenty-Hook mehr, der würde doppelt spielen.
+    // Note: Restscore 420 fires as global custom event
+    // (ScoreReached0@@) about the turn evaluation — consciously NOT
+    // more explicit OnFourTwenty hook more, who would play double.
 
 
     // =========================================================
@@ -221,7 +221,7 @@ public class X01GameEngine : GameEngine
         var turn = game.GetCurrentTurnOfPlayer(playerId);
 
         if (turn == null)
-            return 3; // noch kein Turn → volle Darts
+            return 3; // No turning yet, full darts
 
         return 3 - turn.GetThrows().Count;
     }
@@ -280,9 +280,9 @@ public class X01GameEngine : GameEngine
 
     private void HandleSuddenDeath()
     {
-        // Expliziter Moment (Einmaligkeit + Undo-Konsistenz steuert das
-        // suddenDeathTriggered-Flag im X01Game): spielt das Custom-Event,
-        // Fallback ist der bisherige Sudden-Death-Sound.
+        // Explicit moment (uniqueness + undo-consistency controls this)
+        // suddenDeathTriggered -Flag in the X01Game: plays the custom event,
+        // Fallback is the Sudden Death sound.
         PlayManualAudioEvent(SeededAudioEvents.SuddenDeathId);
     }
 }

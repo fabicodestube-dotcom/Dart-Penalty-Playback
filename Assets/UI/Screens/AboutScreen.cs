@@ -1,10 +1,10 @@
 using UnityEngine;
 
-public class AboutHandler : MonoBehaviour
+public class AboutScreen : MonoBehaviour
 {
     public WindowHandler windowHandler;
 
-    // Definiere deine Links hier im Inspector oder direkt im Code
+    // Define your links here in the Inspector or directly in the code
     [Header("Web Links")]
     public string githubUrl = "https://github.com/fabicodestube-dotcom/Dart-Penalty-Playback";
     public string kofiUrl = "https://ko-fi.com/fabiscodestube";
@@ -52,7 +52,7 @@ public class AboutHandler : MonoBehaviour
 
 // ================= PRIVATE HELPERS =================
 
-    // Eine kleine Hilfsmethode, um den Code sauber zu halten und Fehler abzufangen
+    // A small helper method to keep the code clean and catch errors
     private void OpenBrowser(string url)
     {
         if (!string.IsNullOrEmpty(url))

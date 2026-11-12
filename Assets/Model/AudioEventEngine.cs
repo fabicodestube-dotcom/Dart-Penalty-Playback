@@ -2,8 +2,8 @@ using System.Collections.Generic;
 using System.Linq;
 
 /// <summary>
-/// Vom Aufrufer (Engine/Game je Modus) gefüllte Kennzahlen für die Auswertung.
-/// Nicht zutreffende Felder bleiben 0; reachedScores ist dann leer.
+/// Key figures filled by the caller (engine/game per mode) for the evaluation.
+/// Non-applicable fields remain 0; reachedScores is then empty.
 /// </summary>
 public class AudioTriggerValues
 {
@@ -23,12 +23,12 @@ public class AudioTriggerValues
 }
 
 /// <summary>
-/// Wertet AudioEventDef-Trigger aus (rein, testbar). Manual-Trigger werden
-/// übersprungen (direkte Aufrufe im Code bleiben bestehen).
+/// Evaluates AudioEventDef trigger (pure, testable).
+/// skipped (direct calls in the code remain).
 /// </summary>
 public static class AudioEventEngine
 {
-    /// <summary>Gibt die IDs aller zutreffenden (nicht-manuellen) Events zurück.</summary>
+    /// <summary>Returns the IDs of all applicable (non-manual) events.</summary>
     public static List<string> Evaluate(IEnumerable<AudioEventDef> defs, AudioTriggerValues values)
     {
         var matched = new List<string>();
@@ -79,7 +79,7 @@ public static class AudioEventEngine
         }
     }
 
-    /// <summary>Gibt true zurück, wenn JEDE Trigger-Übereinstimmung (OR-Logik, Manual übersprungen).</summary>
+    /// <summary>Returns true if EVERY trigger match (OR logic, manual skipped).</summary>
     public static bool MatchesAny(List<AudioEventTrigger> triggers, AudioTriggerValues v)
     {
         if (triggers == null || v == null)

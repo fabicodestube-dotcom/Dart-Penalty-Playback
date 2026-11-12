@@ -2,36 +2,36 @@ using System.Collections.Generic;
 using Newtonsoft.Json;
 
 /// <summary>
-/// Bedingungsart eines (Custom-)Penalties. HitTypeMiss/RepdigitScore sind
-/// Legacy (Altdaten + Evaluierung); der Editor bietet TurnPattern (2.1),
-/// ExactScore (2.2) und Leg/Set/GameLost (2.3) an.
+/// Conditional type of a (custom) penalty. HitTypeMiss / RepdigitScore are
+/// legacy (old data + evaluation); the editor offers TurnPattern (2.1),
+/// ExactScore (2.2) and Leg/Set/GameLost (2.3)
 /// </summary>
 public enum PenaltyConditionKind
 {
-    /// <summary>Einzelner Fehlwurf (Wand/Decke). Wird instant bei AddThrow geprüft. (Legacy)</summary>
+    /// <summary>Single miss throw (wall/ceiling) Instantly checked at AddThrow. (Legacy)</summary>
     HitTypeMiss,
-    /// <summary>Exakte Turn-Punktzahl (Punkte-Event).</summary>
+    /// <summary>Exact turn point count (points event).</summary>
     ExactScore,
     /// <summary>
-    /// Exakter Rest-Score nach dem Turn (X01-Rest, Cricket-Total).
-    /// Mit Übergangsregel: feuert nur bei neu erreichtem Total.
-    /// Ersetzt die Legacy-Schnapszahl (Seeds 111–999).
+    /// Exact rest score after the turn (X01 rest, cricket total).
+    /// With transition rule: fire only when the total is newly reached.
+    /// Replaces the Legacy repdigit (Seeds 111–999).
     /// </summary>
     RemainingExactScore,
-    /// <summary>Schnapszahl: Turn-Punktzahl ist Repdigit (11, 22, ..., 111, 222, ...). (Legacy)</summary>
+    /// <summary>Bnaps number: Turn score is Repdigit (11, 22,..., 111, 222,...). (Legacy)</summary>
     RepdigitScore,
-    /// <summary>Bestimmte Würfe innerhalb einer Turn (z.B. 3x1).</summary>
+    /// <summary>Certain rolls within a turn (e.g. 3x1).</summary>
     TurnPattern,
-    /// <summary>Leg verloren (Kosten tragen alle außer Leg-Gewinner).</summary>
+    /// <summary>Leg lost (costs are borne by all but Leg winners).</summary>
     LegLost,
-    /// <summary>Set verloren (Kosten tragen alle außer Set-Gewinner).</summary>
+    /// <summary>Set lost (costs are borne by all but Set winners).</summary>
     SetLost,
-    /// <summary>Game verloren (Kosten tragen alle außer Match-Gewinner).</summary>
+    /// <summary>Game lost (costs are all but match winners).</summary>
     GameLost
 }
 
 /// <summary>
-/// Ein Slot eines Turn-Patterns. anyValue/anyMultiplier/anyHitType = Wildcard.
+/// A slot of a turn pattern. anyValue / anyMultiplier / anyHitType = Wildcard.
 /// </summary>
 [System.Serializable]
 public class TurnPatternEntry
@@ -44,19 +44,19 @@ public class TurnPatternEntry
     [JsonProperty] public HitType hitType = HitType.Board;
 
     /// <summary>
-    /// Sektor-ID bei hitType == Custom (Tab 1 „Bereiche“). Leer = jeder
-    /// Custom-Sektor. Wird nur ausgewertet, wenn anyHitType false ist.
+    /// Sector ID at hitType == Custom (Tab 1 “Areas”). Empty = everyone
+    /// Custom sector. Only evaluated if anyHitType is false.
     /// </summary>
     [JsonProperty] public string customHitId;
 
     /// <summary>
-    /// True = Wall-oder-Ceiling (für AllMiss-Slots). Board scheidet aus.
+    /// True = Wall-or-Ceiling (for AllMiss slots).
     /// </summary>
     [JsonProperty] public bool anyMissHitType;
 }
 
 /// <summary>
-/// Auswertbare Bedingung eines Penalties.
+/// Evaluable condition of a penalty.
 /// </summary>
 [System.Serializable]
 public class PenaltyCondition
@@ -67,32 +67,32 @@ public class PenaltyCondition
     [JsonProperty] public HitType hitType = HitType.Wall;
 
     /// <summary>
-    /// Sektor-ID bei hitType == Custom (Tab 1 „Bereiche“). Leer = jeder
-    /// Custom-Sektor. Wall/Ceiling nutzen ihre festen HitTypes.
+    /// Sector ID at hitType == Custom (Tab 1 “Areas”). Empty = everyone
+    /// Custom sector. Wall/Ceiling use their fixed HitTypes.
     /// </summary>
     [JsonProperty] public string customHitId;
 
     // ExactScore
     [JsonProperty] public int score;
 
-    // RepdigitScore (Mindest-Punktzahl, Default 11)
+    // RepdigitScore (minimum score, default 11)
     [JsonProperty] public int minScore = 11;
 
     // TurnPattern
     [JsonProperty] public List<TurnPatternEntry> pattern = new List<TurnPatternEntry>();
 
     /// <summary>
-    /// Einziger Reihenfolge-Toggle (2.1): true = geordnet (Slots in dieser
-    /// Reihenfolge im Turn), false = ungeordnet (Pattern als Multimenge im
-    /// Turn). Zusätzliche Würfe sind in beiden Fällen erlaubt. Ersetzt das
-    /// alte matchExact (Altdaten ohne matchOrder verhalten sich wie false).
+    /// Single order toggle (2.1): true = ordered (slots in this
+    /// Order in the turn), false = disordered (pattern as multi-set in the
+    /// Turn. Additional throws are allowed in both cases. Replace that
+    /// old matchExact (old data without matchOrder behave like false).
     /// </summary>
     [JsonProperty] public bool matchOrder = false;
 }
 
 /// <summary>
-/// Benutzerdefiniertes Penalty (stabile String-ID, damit Audio-Clips beim
-/// Editieren verlinkt bleiben). Built-ins bleiben PenaltyType-Enum.
+/// Custom penalty (stable string ID, so audio clips are used for
+/// stay linked when editing). Built-ins remain the PenaltyType enum.
 /// </summary>
 [System.Serializable]
 public class CustomPenaltyDef
@@ -101,8 +101,8 @@ public class CustomPenaltyDef
     [JsonProperty] public string name = "New penalty";
 
     /// <summary>
-    /// Optionale Kurzbezeichnung für schmale Tabellenspalten (z.B. "Floor"
-    /// statt "ExtraLangerPenaltyName..."). Leer = Anzeigename (ggf. gekürzt).
+    /// Optional short name for narrow columns of tables (e.g. "Floor")
+    /// instead of "ExtraLangerPenaltyName..."). Empty = display name (if applicable).
     /// </summary>
     [JsonProperty] public string shortName;
 
@@ -115,21 +115,21 @@ public class CustomPenaltyDef
     [JsonProperty] public bool enabled = true;
 
     /// <summary>
-    /// True = Seed (nicht löschbar, aber normal evaluiert/editierbar).
-    /// Penalty-Seeds sind löschbar (false); Event-/Sektor-Seeds nutzen das
-    /// Flag zum Löschschutz.
+    /// True = Seed (not erasable, but normally evaluated/editable).
+    /// Penalty seeds are erasable (false); event/sector seeds use the
+    /// Flag for extinguishing protection.
     /// </summary>
     [JsonProperty] public bool builtIn;
 
     /// <summary>
-    /// Kosten. Wird hier editiert/gespeichert; die Abrechnungslogik
-    /// (Anwendung im Spiel) folgt separat.
+    /// Cost. Edited/stored here; the billing logic
+    /// (Application in the game) follows separately.
     /// </summary>
     [JsonProperty] public int cost = 10;
 
     [JsonProperty] public List<PenaltyCondition> conditions = new List<PenaltyCondition>();
 
-    /// <summary>"builtin:wall" → PenaltyType.Wall (für PenaltySettings-Sync und Enum-Clip-Buttons).</summary>
+    /// <summary>"builtin:wall" → PenaltyType.Wall (for PenaltySettings -Sync and Enum-Clip-Buttons).</summary>
     public static bool TryParseBuiltInType(string id, out PenaltyType type)
     {
         type = default;
@@ -175,7 +175,7 @@ public class CustomPenaltyDef
         };
     }
 
-    /// <summary>True für LegLost/SetLost/GameLost (Auswertung an Leg-/Set-/Game-Ende).</summary>
+    /// <summary>True for LegLost / SetLost / GameLost (evaluation at leg/set/game ending).</summary>
     public static bool IsGameEventKind(PenaltyConditionKind kind)
     {
         return kind == PenaltyConditionKind.LegLost

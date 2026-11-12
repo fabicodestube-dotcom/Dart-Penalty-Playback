@@ -1,14 +1,14 @@
 using System.Collections.Generic;
 
 /// <summary>
-/// Offizielle Dartscheiben-Geometrie + Mapping von HitSector-Keys auf Board-Zonen.
-/// Alles normiert: Board-Radius (Double außen) = 1.
-/// Reale Maße (mm, Durchmesser): Bull 12.7 / Außen-Bull 31.8 / Triple innen 198 /
-/// Triple außen 214 / Double innen 324 / Double außen 340.
+/// Official dartboard geometry + mapping of HitSector keys on board zones.
+/// Everything normalized: Board radius (double outside) = 1.
+/// Real dimensions (mm, diameter): Bull 12.7 / Outside Bull 31.8 / Triple inside 198 /
+/// Triple outside 214 / Double inside 324 / Double outside 340.
 /// </summary>
 public static class DartboardGeometry
 {
-    /// <summary>Zahlenreihenfolge im Uhrzeigersinn, 20 steht oben (12 Uhr).</summary>
+    /// <summary>Number order clockwise, 20 is above (12 o'clock)</summary>
     public static readonly int[] NumberOrder =
     {
         20, 1, 18, 4, 13, 6, 10, 15, 2, 17,
@@ -24,7 +24,7 @@ public static class DartboardGeometry
 
     public const float SegmentAngle = 18f;
 
-    /// <summary>Mitte des Segments für eine Zahl in Grad (0 = oben, Uhrzeigersinn).</summary>
+    /// <summary>Center of the segment for a number in degrees (0 = above, clockwise).</summary>
     public static float GetSegmentCenterAngle(int number)
     {
         for (int i = 0; i < NumberOrder.Length; i++)
@@ -41,21 +41,21 @@ public static class DartboardGeometry
         OuterBull,   // 25
         InnerSingle, // "n"
         Triple,      // "Tn"
-        OuterSingle, // "n" (gleicher Key wie InnerSingle)
+        OuterSingle, // "n" (same key as InnerSingle)
         Double       // "Dn"
     }
 
     public struct Zone
     {
         public string sectorKey; // HitSector-Key ("20", "D20", "T20", "25", "D25")
-        public int number;       // 1..20, 25 für Bull
+        public int number;       // 1.20, 25 for Bull
         public ZoneKind kind;
     }
 
     /// <summary>
-    /// Alle 82 Zonen: Bull + Außen-Bull + 20 Zahlen x 4 Ringe.
-    /// Inneres + äußeres Single teilen sich bewusst einen Key
-    /// (Datenmodell fasst beide in "n" zusammen).
+    /// All 82 zones: Bull + Outer Bull + 20 numbers x 4 rings.
+    /// Inner + External Single Consciously Share a Key
+    /// (Data model combines both in "n").
     /// </summary>
     public static List<Zone> BuildZones()
     {
@@ -77,7 +77,7 @@ public static class DartboardGeometry
         return zones;
     }
 
-    /// <summary>Basisfarbe einer Zone im klassischen Board-Farbschema.</summary>
+    /// <summary>Base color of a zone in the classic board color scheme.</summary>
     public static UnityEngine.Color GetBaseColor(Zone zone, int segmentIndex)
     {
         bool isEven = segmentIndex % 2 == 0;
@@ -87,23 +87,23 @@ public static class DartboardGeometry
             case ZoneKind.Bull:
                 return new UnityEngine.Color(0.78f, 0.12f, 0.12f); // rot
             case ZoneKind.OuterBull:
-                return new UnityEngine.Color(0.10f, 0.45f, 0.18f); // grün
+                return new UnityEngine.Color(0.10f, 0.45f, 0.18f); // Green
             case ZoneKind.InnerSingle:
             case ZoneKind.OuterSingle:
                 return isEven
-                    ? new UnityEngine.Color(0.08f, 0.08f, 0.08f)    // schwarz
+                    ? new UnityEngine.Color(0.08f, 0.08f, 0.08f)    // Black
                     : new UnityEngine.Color(0.92f, 0.85f, 0.70f);   // creme
             case ZoneKind.Triple:
             case ZoneKind.Double:
                 return isEven
                     ? new UnityEngine.Color(0.78f, 0.12f, 0.12f)    // rot
-                    : new UnityEngine.Color(0.10f, 0.45f, 0.18f);   // grün
+                    : new UnityEngine.Color(0.10f, 0.45f, 0.18f);   // Green
             default:
                 return UnityEngine.Color.gray;
         }
     }
 
-    /// <summary>Segment-Index (0..19) einer Zahl für das Schachbrett-Farbschema.</summary>
+    /// <summary>Segment index (0..19) of a number for the chessboard color scheme.</summary>
     public static int GetSegmentIndex(int number)
     {
         for (int i = 0; i < NumberOrder.Length; i++)

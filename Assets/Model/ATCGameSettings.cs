@@ -18,7 +18,7 @@ public enum ATCTargetType
 
 public static class ATCTargetTypeExtensions
 {
-    /// <summary>Anzeigename für Setup-Label und Spielzusammenfassungen.</summary>
+    /// <summary>Display name for setup label and game summaries.</summary>
     public static string ToDisplayName(this ATCTargetType type)
     {
         return type switch
@@ -34,7 +34,7 @@ public static class ATCTargetTypeExtensions
         };
     }
 
-    /// <summary>Ist der Single-Ring für diesen Modus ein gültiger Treffer?</summary>
+    /// <summary>Is the single ring for this mode a valid hit?</summary>
     public static bool IncludesSingles(this ATCTargetType type)
     {
         return type is ATCTargetType.Singles
@@ -43,7 +43,7 @@ public static class ATCTargetTypeExtensions
             or ATCTargetType.Everything;
     }
 
-    /// <summary>Ist der Double-Ring für diesen Modus ein gültiger Treffer?</summary>
+    /// <summary>Is the double ring a valid hit for this mode?</summary>
     public static bool IncludesDoubles(this ATCTargetType type)
     {
         return type is ATCTargetType.Doubles
@@ -52,7 +52,7 @@ public static class ATCTargetTypeExtensions
             or ATCTargetType.Everything;
     }
 
-    /// <summary>Ist der Triple-Ring für diesen Modus ein gültiger Treffer?</summary>
+    /// <summary>Is the triple ring a valid hit for this mode?</summary>
     public static bool IncludesTriples(this ATCTargetType type)
     {
         return type is ATCTargetType.Triples

@@ -30,7 +30,7 @@ public class X01PlayerList : MonoBehaviour
             playerItems.Add(item);
         }
 
-        lastActiveIndex = -1; // reset wichtig
+        lastActiveIndex = -1; // Reset is important
         RefreshUI(stats);
     }
 
@@ -87,7 +87,7 @@ public class X01PlayerList : MonoBehaviour
             time += Time.deltaTime;
             float t = time / duration;
 
-            // 👉 Ease-Out (fühlt sich deutlich besser an)
+            // Ease-out (feels much better)
             t = 1f - Mathf.Pow(1f - t, 3f);
 
             scrollRect.verticalNormalizedPosition = Mathf.Lerp(start, target, t);
@@ -106,7 +106,7 @@ public class X01PlayerList : MonoBehaviour
         float contentHeight = content.rect.height;
         float viewportHeight = viewport.rect.height;
 
-        // 👉 Pivot-Korrektur: von Mittelpunkt auf Oberkante
+        // Pivot correction: from midpoint to upper edge
         float itemCenterY = Mathf.Abs(target.anchoredPosition.y);
         float itemTop = itemCenterY - (target.rect.height * (1 - target.pivot.y));
 

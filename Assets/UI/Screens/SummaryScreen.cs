@@ -3,7 +3,7 @@ using System.Linq;
 using TMPro;
 using UnityEngine;
 
-public class Summary : MonoBehaviour
+public class SummaryScreen : MonoBehaviour
 {
     public AppHandler appHandler;
     public WindowHandler windowHandler;
@@ -71,7 +71,7 @@ public class Summary : MonoBehaviour
         var loadedGame = appHandler.LoadGameById(gameSummary.Id);
         if (loadedGame == null || !appHandler.SaveGame(loadedGame))
         {
-            Debug.LogError("Summary: Spiel konnte nicht gespeichert werden.");
+            Debug.LogError("SummaryScreen: Spiel konnte nicht gespeichert werden.");
             return;
         }
 
@@ -85,7 +85,7 @@ public class Summary : MonoBehaviour
 
         if (!appHandler.DeleteGame(gameSummary.Id))
         {
-            Debug.LogError("Summary: Spiel konnte nicht gelöscht werden.");
+            Debug.LogError("SummaryScreen: Spiel konnte nicht gelöscht werden.");
             return;
         }
 

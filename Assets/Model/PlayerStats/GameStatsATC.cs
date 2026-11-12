@@ -43,9 +43,9 @@ public class GameStatsATC : GameStats
     [JsonProperty] public Dictionary<int, int> throwsPerTarget;
     [JsonProperty] public Dictionary<int, int> hitsPerTarget;
 
-    // Würfe pro Sektor im X01-Format ("1".."20","25","D1".."D20","D25","T1".."T20",
-    // Triple-Bull fällt auf "25"). Jeder Wurf zählt aufs aktive Zielfeld
-    // (Hit oder Miss), analog zu throwsPerTarget, nur mit S/D/T-Split.
+    // Throws per sector in X01 format ("1.."20", "25", "D1". "D20", "D25", "T1".T20",
+    // Triple bull falls to "25" and each throw counts to the active target field
+    // (Hit or Miss), analogous to throwsPerTarget, only with S/D/T split.
     [JsonProperty] public Dictionary<string, int> throwSectorCounts = new Dictionary<string, int>();
 
     // =========================================================
@@ -74,17 +74,17 @@ public class GameStatsATC : GameStats
     [OnDeserialized]
     private void OnDeserialized(StreamingContext context)
     {
-        // Bei Newtonsoft wird der Konstruktor nicht garantiert aufgerufen.
-        // Falls alte Savegames diese Dictionaries nicht enthalten, müssen wir sie nachziehen.
+        // Newtonsoft does not guarantee that the constructor will be called.
+        // If old savegames do not contain these dictionaries, we must follow them.
         EnsureTargetDictionaries();
         EnsureInternalStructures();
     }
 
     /// <summary>
-    /// Sektor-Key fürs Hit-Sektor-Diagramm (X01-analog): Multiplier-Präfix +
-    /// aktives Zielfeld. Triple-Bull gibt es nicht -> fällt auf "25".
-    /// Wand-/Deckenwürfe und Würfe daneben ("0") zählen wie bei X01 als Miss,
-    /// nicht aufs Zielfeld.
+    /// Sector Key for Hit Sector Chart (X01 analog): Multiplier Prefix +
+    /// Triple bull does not exist -> falls to "25".
+    /// Wall/ceiling throws and throws next to it ("0") count as miss as in X01,
+    /// Not to the target field.
     /// </summary>
     public static string GetAttemptSectorKey(Throw t, int target)
     {
@@ -117,9 +117,9 @@ public class GameStatsATC : GameStats
     }
 
     /// <summary>
-    /// Schließt einen offenen Streak ab (Fehlwurf-Logik): registriert ihn in
-    /// completedStreaks + 3/6/9/12-Zählern und setzt ihn zurück.
-    /// Wird von AddThrow (Miss) UND vom Save-Rebuild (trailing End-Streak) genutzt.
+    /// Closes an open streak (mistake logic): register it in
+    /// completedStreaks + 3/6/9/12-counter and reset it.
+    /// Used by AddThrow (Miss) AND by the Save-Rebuild (trailing end-streak).
     /// </summary>
     public void FlushCurrentStreak()
     {
@@ -179,7 +179,7 @@ public class GameStatsATC : GameStats
         firstDartHits += atc.firstDartHits;
         firstDartAttempts += atc.firstDartAttempts;
 
-        // Versuche pro Feld mitsummieren (Hit-Sektor-Chart über alle Spiele)
+        // Total attempts per field (hit sector chart over all games)
         if (atc.throwsPerTarget != null)
         {
             throwsPerTarget ??= new Dictionary<int, int>();
@@ -187,7 +187,7 @@ public class GameStatsATC : GameStats
                 throwsPerTarget[kv.Key] = throwsPerTarget.TryGetValue(kv.Key, out var v) ? v + kv.Value : kv.Value;
         }
 
-        // Sektor-Zähler (S/D/T-Split) mitsummieren
+        // Total sector counter (S/D/T split)
         if (atc.throwSectorCounts != null)
         {
             throwSectorCounts ??= new Dictionary<string, int>();
@@ -197,7 +197,7 @@ public class GameStatsATC : GameStats
         currentHitStreak = Math.Max(currentHitStreak, atc.currentHitStreak);
         longestHitStreak = Math.Max(longestHitStreak, atc.longestHitStreak);
 
-        // Streak-Längen-Zähler (Highscores-Tabellen) mitsummieren
+        // Streak length counters (high scores tables)
         streak3Plus += atc.streak3Plus;
         streak6Plus += atc.streak6Plus;
         streak9Plus += atc.streak9Plus;
@@ -246,7 +246,7 @@ public class GameStatsATC : GameStats
         streak9Plus = Math.Max(0, streak9Plus - atc.streak9Plus);
         streak12Plus = Math.Max(0, streak12Plus - atc.streak12Plus);
 
-        // Versuche pro Feld symmetrisch abbauen
+        // Reduce attempts per field symmetrically
         if (atc.throwsPerTarget != null && throwsPerTarget != null)
         {
             foreach (var kv in atc.throwsPerTarget)

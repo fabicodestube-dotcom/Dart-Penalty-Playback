@@ -53,7 +53,7 @@ public class CricketUIStats
 
 
     // ===========================
-    // ======= KONSTRUKTOR =======
+    // ======= CONSTRUCTOR =======
     // ===========================
 
     public CricketUIStats(CricketGame game, BasePlayer player)
@@ -96,7 +96,7 @@ public class CricketUIStats
             ? game.GetCurrentTurnOfPlayer(playerID)
             : game.GetLastTurnForPlayer(playerID);
 
-        // Immer alle Darts anzeigen
+        // Always show all darts
         return turn?.GetThrows() ?? new List<Throw>();
     }
 }

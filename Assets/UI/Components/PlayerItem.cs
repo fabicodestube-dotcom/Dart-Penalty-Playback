@@ -24,9 +24,15 @@ public class PlayerItem : MonoBehaviour, IPointerClickHandler
     private void Awake()
     {
         if (renameButton == null)
+        {
+            Debug.LogWarning("[PlayerItem] renameButton nicht verdrahtet; Fallback-Suche nach 'Rename'.", this);
             renameButton = FindButtonByName("Rename");
+        }
         if (deleteButton == null)
+        {
+            Debug.LogWarning("[PlayerItem] deleteButton nicht verdrahtet; Fallback-Suche nach 'Delete'.", this);
             deleteButton = FindButtonByName("Delete");
+        }
 
         if (renameButton != null)
         {
@@ -52,7 +58,7 @@ public class PlayerItem : MonoBehaviour, IPointerClickHandler
     }
     private Guid id;
     private object list;
-    private SetupHandler menuSetupPanel;
+    private SetupScreen menuSetupPanel;
     private PlayerDragHandler dragHandler;
 
     public Guid ID => id;
@@ -74,7 +80,7 @@ public class PlayerItem : MonoBehaviour, IPointerClickHandler
         if (dragHandler != null)
             dragHandler.playerID = id;
 
-        menuSetupPanel = GetComponentInParent<SetupHandler>();
+        menuSetupPanel = GetComponentInParent<SetupScreen>();
 
         if (playerName != null)
             playerName.text = player.GetName();
@@ -82,7 +88,7 @@ public class PlayerItem : MonoBehaviour, IPointerClickHandler
         if (playerImage != null)
             playerImage.SetActive(true);
 
-        // Rename/Delete nur in PlayerList (IPlayerItemOwner), nicht in Setup.
+        // Rename/Delete only in PlayerList (IPlayerItemOwner ), not in Setup.
         bool isEditable = list is IPlayerItemOwner;
         if (renameButton != null)
             renameButton.interactable = isEditable;

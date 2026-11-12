@@ -24,8 +24,8 @@ public class DynamicTableRow : MonoBehaviour
 
     public void Setup(string playerName, TableCellData[] values, float[] columnWidths, bool header)
     {
-        // Perf: Zelltexte sind nie interaktiv. Nur schreiben was sich ändert —
-        // jeder TMP-Setter baut das Mesh neu.
+        // Perf: Cell texts are never interactive. Just write what changes.
+        // Each TMP-Setter rebuilds the mesh.
         if (playerNameText != null)
         {
             if (playerNameText.text != playerName)
@@ -38,10 +38,10 @@ public class DynamicTableRow : MonoBehaviour
     }
 
     /// <summary>
-    /// Hängt an jede SICHTBARE Daten-Zelle einen Tap (Index = Spaltenindex).
-    /// Für Kopfzeilen (Detail-Popup pro Spalte). Idempotent: alte Listener
-    /// werden entfernt (wichtig bei gepoolten Rows). Unsichtbare Zellen
-    /// (gepoolte Überhänge) bekommen keinen Tap.
+    /// Adds a tap (index = column index) to each visible data cell.
+    /// For headers (detail pop-up per column).
+    /// are removed (important in pooled rows).
+    /// (pooled overhangs) do not get a tap.
     /// </summary>
     public void WireCellTaps(Action<int> onCellTapped)
     {
@@ -76,8 +76,8 @@ public class DynamicTableRow : MonoBehaviour
     }
 
     /// <summary>
-    /// Entfernt Zell-Taps (Gegenstück zu WireCellTaps): gepoolte Ex-Header
-    /// dürfen als Daten-Rows keine alten Popup-Taps behalten.
+    /// Removed cell taps (counter to WireCellTaps): pooled ex-headers
+    /// As data rows, you must not keep any old pop-up taps.
     /// </summary>
     public void ClearCellTaps()
     {
@@ -154,7 +154,7 @@ public class DynamicTableRow : MonoBehaviour
                         cellEntry.text.text = values[i].text;
                     if (cellEntry.text.alignment != TextAlignmentOptions.Center)
                         cellEntry.text.alignment = TextAlignmentOptions.Center;
-                    // Perf (M1): Zelltexte sind nie interaktiv.
+                    // Perf (M1): Cell texts are never interactive.
                     if (cellEntry.text.raycastTarget)
                         cellEntry.text.raycastTarget = false;
                 }
@@ -175,8 +175,8 @@ public struct TableCellData
 {
     public string text;
     public Sprite icon;
-    public bool isIcon; // Bestimmt, ob Text oder Bild angezeigt wird
+    public bool isIcon; // Determines whether text or image is displayed
 
-    // Hilfsmethode für schnelles Erstellen von Text-Zellen
+    // Auxiliary method for fast creation of text cells
     public static implicit operator TableCellData(string t) => new TableCellData { text = t, isIcon = false };
 }

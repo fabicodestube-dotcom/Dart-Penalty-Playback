@@ -6,7 +6,7 @@ public class UISwitch : MonoBehaviour
 {
     public Toggle toggle;
 
-    // ❗ getrennt: Position + Visual
+    // Separate: position + visual
     public RectTransform handleRect;
     public Image handleImage;
 
@@ -26,7 +26,7 @@ public class UISwitch : MonoBehaviour
         float width = ((RectTransform)transform).rect.width;
         float handleWidth = handleRect.rect.width;
 
-        // Handle etwas weiter nach außen verschieben
+        // Handle move a little further outwards
         float offset = (width - handleWidth) / 2f + 2f;
 
         handleOnPos = new Vector2(offset, 0);
@@ -48,10 +48,10 @@ public class UISwitch : MonoBehaviour
 
     private System.Collections.IEnumerator WaitForThemeAndApply()
     {
-        // wartet bis ThemeManager existiert UND ready ist
+        // wait until ThemeManager exists AND ready
         while (ThemeManager.Instance == null || !ThemeManager.Instance.IsReady)
         {
-            yield return null; // wartet 1 Frame
+            yield return null; // waits 1 frame
         }
 
         ThemeManager.Instance.OnThemeChanged += Apply;
@@ -107,7 +107,7 @@ public class UISwitch : MonoBehaviour
 
         bool isOn = toggle.isOn;
 
-        // 🔥 NUR Farben setzen (keine Animation, keine Position)
+        // Setting colors ONLY (no animation, no position)
         handleImage.color = GetHandleColor(isOn);
         background.color = GetBackgroundColor(isOn);
     }

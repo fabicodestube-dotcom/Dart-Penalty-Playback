@@ -6,15 +6,15 @@ using UnityEditor;
 using UnityEngine;
 
 /// <summary>
-/// Regression für die Custom-only Penalty-Welt (Legacy-Buchung stillgelegt):
-/// - ExactScore (Turn) + RemainingExactScore (Rest/Total) inkl. enabled,
-///   Übergangsregel und Snapshot-Semantik, alle 3 Modi.
-/// - Kein Legacy mehr: keine Buchungen, keine Events, Counts bleiben 0.
-/// - Abspiel-Reihenfolge: Custom-Penalty vor TurnCompleted.
-/// - ATC-Undo storniert Customs.
-/// - Custom-Sektor-Instant-Penalty, Sektor-Event (auch X01-Check-in),
-///   Manual-Audio-Guard und Snapshot-Roundtrip von customHitId.
-/// Menü: Darts/Tests/Custom Penalties Enabled. Batchmode: -executeMethod CustomPenaltyEnabledTest.Run
+/// Regression for the custom-only penalty world (legacy booking discontinued):
+/// - ExactScore (turn) + RemainingExactScore (rest/total) incl. enabled,
+/// Transition rule and snapshot semantics, all 3 modes.
+/// - No more legacy: no bookings, no events, counts remain 0.
+/// - Play order: Custom penalty before TurnCompleted.
+/// - ATC undo cancels customs.
+/// - Custom sector instant penalty, sector event (also X01 check-in),
+/// Manual audio guard and snapshot round trip by customHitId.
+/// Menu: Darts/Tests/Custom Penalties Enabled. Batchmode: - executeMethod0@@
 /// </summary>
 public static class CustomPenaltyEnabledTest
 {
@@ -165,7 +165,7 @@ public static class CustomPenaltyEnabledTest
         };
     }
 
-    /// <summary>111 Punkte in 3 gültigen Darts: T20 (60) + T12 (36) + S15 (15).</summary>
+    /// <summary>111 points in 3 valid darts: T20 (60) + T12 (36) + S15 (15).</summary>
     private static void Throw111Turn(X01Game game)
     {
         game.AddThrow(new Throw(DartMultiplier.Triple, 20, HitType.Board));
@@ -173,7 +173,7 @@ public static class CustomPenaltyEnabledTest
         game.AddThrow(new Throw(DartMultiplier.Single, 15, HitType.Board));
     }
 
-    /// <summary>90 Punkte: T20 (60) + S20 (20) + S10 (10). Bei 201 -> Rest 111.</summary>
+    /// <summary>90 points: T20 (60) + S20 (20) + S10 (10). At 201 -> Rest 111.</summary>
     private static void Throw90Turn(X01Game game)
     {
         game.AddThrow(new Throw(DartMultiplier.Triple, 20, HitType.Board));
@@ -196,7 +196,7 @@ public static class CustomPenaltyEnabledTest
     }
 
     // =========================================================
-    // TESTS (Bestand)
+    // TESTS (existing)
     // =========================================================
 
     private static void TestDisabledExactScoreX01(Action<bool, string, string> Check)
@@ -247,22 +247,22 @@ public static class CustomPenaltyEnabledTest
         var customEvents = new List<string>();
         game.OnCustomPenaltyTriggered += (id, pid, turn) => customEvents.Add(id);
 
-        Throw111Turn(game); // P1: 111 -> Buchung 1
-        // Simulierter Mid-Game-Toggle: Snapshot des Spiels bleibt unverändert.
-        // (Echte Toggles schreiben nur den Live-Store, nicht den Snapshot.)
-        Throw111Turn(game); // P2: 111 -> Buchung 2 (noch aktiv)
+        Throw111Turn(game); // P1: 111 -> booking 1
+        // Simulated mid-game toggle: Snapshot of the game remains unchanged.
+        // (Real toggles only write the live store, not the snapshot.)
+        Throw111Turn(game); // P2: 111 -> Booking 2 (still active)
 
         Check(customEvents.Count == 2, "snapshot-fires-while-active", $"events={customEvents.Count}");
 
-        // Deaktivieren NACH Spielstart darf das laufende Spiel nicht ändern:
-        // Snapshot ist eingefroren, Neubewertung nutzt ihn weiter.
+        // Deactivate AFTER game start must not change the current game:
+        // Snapshot is frozen, re-evaluation continues to use it.
         var frozen = game.GetPenaltySnapshot();
         Check(frozen.Count == 1 && frozen[0].enabled, "snapshot-frozen-enabled", "");
     }
 
     private static void TestInstantSuppression(Action<bool, string, string> Check)
     {
-        // Deaktiviert: kein Custom, kein Legacy-Count (System stillgelegt).
+        // Deactivated: no custom, no legacy count (system decommissioned).
         {
             var p1 = new Player(Guid.NewGuid(), "T_P1");
             var p2 = new Player(Guid.NewGuid(), "T_P2");
@@ -279,7 +279,7 @@ public static class CustomPenaltyEnabledTest
             Check(LegacyWall(game, p1.GetID()) == 0, "instant-disabled-no-legacy", "");
         }
 
-        // Aktiviert: Custom feuert, Legacy bleibt 0.
+        // Enabled: custom fires, legacy remains 0.
         {
             var p1 = new Player(Guid.NewGuid(), "T_P1");
             var p2 = new Player(Guid.NewGuid(), "T_P2");
@@ -311,7 +311,7 @@ public static class CustomPenaltyEnabledTest
             };
         }
 
-        // Deaktiviert: kein Event.
+        // Deactivated: no event.
         {
             var p1 = new Player(Guid.NewGuid(), "T_P1");
             var p2 = new Player(Guid.NewGuid(), "T_P2");
@@ -327,7 +327,7 @@ public static class CustomPenaltyEnabledTest
             Check(audioEvents.Count == 0, "audio-disabled-silent", $"events={audioEvents.Count}");
         }
 
-        // Aktiviert: Event feuert.
+        // Enabled: event fires.
         {
             var p1 = new Player(Guid.NewGuid(), "T_P1");
             var p2 = new Player(Guid.NewGuid(), "T_P2");
@@ -500,17 +500,17 @@ public static class CustomPenaltyEnabledTest
         var customEvents = new List<string>();
         game.OnCustomPenaltyTriggered += (id, pid, turn) => customEvents.Add(id);
 
-        Throw90Turn(game); // P1: 90 geworfen -> Rest 111 -> feuert
+        Throw90Turn(game); // P1: 90 thrown -> remaining 111 -> fires
         Check(customEvents.Count == 1 && customEvents[0] == "rem111", "x01-remaining-fires", $"events=[{string.Join(",", customEvents)}]");
         Check(CustomCount(game, p1.GetID(), "rem111") == 1, "x01-remaining-count", "");
 
-        // P2 wirft 60 (Rest 141) -> kein Feuer.
+        // P2 throws 60 (rest 141) -> no fire.
         game.AddThrow(new Throw(DartMultiplier.Single, 20, HitType.Board));
         game.AddThrow(new Throw(DartMultiplier.Single, 20, HitType.Board));
         game.AddThrow(new Throw(DartMultiplier.Single, 20, HitType.Board));
         Check(customEvents.Count == 1, "x01-remaining-other-rest-silent", "");
 
-        // P1: 0-Punkte-Turn (3x Wall) bei Rest 111 -> Übergangsregel, kein Feuer.
+        // P1: 0-point turn (3x wall) at rest 111 -> transition rule, no fire.
         game.AddThrow(new Throw(DartMultiplier.Single, 0, HitType.Wall));
         game.AddThrow(new Throw(DartMultiplier.Single, 0, HitType.Wall));
         game.AddThrow(new Throw(DartMultiplier.Single, 0, HitType.Wall));
@@ -528,7 +528,7 @@ public static class CustomPenaltyEnabledTest
         var customEvents = new List<string>();
         game.OnCustomPenaltyTriggered += (id, pid, turn) => customEvents.Add(id);
 
-        Throw90Turn(game); // Rest 111, aber deaktiviert
+        Throw90Turn(game); // Rest 111 but deactivated
 
         Check(customEvents.Count == 0, "x01-remaining-disabled-silent", $"events={customEvents.Count}");
         Check(CustomCount(game, p1.GetID(), "rem111") == 0, "x01-remaining-disabled-no-count", "");
@@ -544,7 +544,7 @@ public static class CustomPenaltyEnabledTest
         var customEvents = new List<string>();
         game.OnCustomPenaltyTriggered += (id, pid, turn) => customEvents.Add(id);
 
-        Throw111Turn(game); // 111 geworfen, Rest 90 -> kein Feuer (Rest-Semantik)
+        Throw111Turn(game); // 111 cast, rest 90 -> no fire (rest semantics)
 
         Check(customEvents.Count == 0, "x01-remaining-turn-only-silent", $"events={customEvents.Count}");
         Check(CustomCount(game, p1.GetID(), "rem111") == 0, "x01-remaining-turn-only-no-count", "");
@@ -560,19 +560,19 @@ public static class CustomPenaltyEnabledTest
         var customEvents = new List<string>();
         game.OnCustomPenaltyTriggered += (id, pid, turn) => customEvents.Add($"{id}:{pid == p1.GetID()}");
 
-        // Turn 1 (P1): T19 (19 zu), T19 (+57), T18 (18 zu). Total 57 -> kein Feuer.
+        // Turn 1 (P1): T19 (19 to), T19 (+57), T18 (18 to).
         game.AddThrow(new Throw(DartMultiplier.Triple, 19, HitType.Board));
         game.AddThrow(new Throw(DartMultiplier.Triple, 19, HitType.Board));
         game.AddThrow(new Throw(DartMultiplier.Triple, 18, HitType.Board));
         Check(customEvents.Count == 0, "cricket-remaining-t1-silent", $"events={customEvents.Count}");
 
-        // Turn 2 (P2): 3x S1 (0 Punkte) -> kein Feuer.
+        // Turn 2 (P2): 3x S1 (0 points) -> no fire.
         game.AddThrow(new Throw(DartMultiplier.Single, 1, HitType.Board));
         game.AddThrow(new Throw(DartMultiplier.Single, 1, HitType.Board));
         game.AddThrow(new Throw(DartMultiplier.Single, 1, HitType.Board));
         Check(customEvents.Count == 0, "cricket-remaining-t2-silent", $"events={customEvents.Count}");
 
-        // Turn 3 (P1): T18 (+54 = Total 111), S1, S1 (füllen). -> feuert an P1.
+        // Turn 3 (P1): T18 (+54 = Total 111), S1, S1 (fill). -> fires at P1.
         game.AddThrow(new Throw(DartMultiplier.Triple, 18, HitType.Board));
         game.AddThrow(new Throw(DartMultiplier.Single, 1, HitType.Board));
         game.AddThrow(new Throw(DartMultiplier.Single, 1, HitType.Board));
@@ -591,19 +591,19 @@ public static class CustomPenaltyEnabledTest
         var customEvents = new List<string>();
         game.OnCustomPenaltyTriggered += (id, pid, turn) => customEvents.Add($"{id}:{pid == p1.GetID()}:{pid == p2.GetID()}");
 
-        // P1-Turn 1: Punkte landen bei P2 (57). P2-Total 57 -> kein Feuer.
+        // P1 turn 1: points land at P2 (57). P2-Total 57 -> no fire.
         game.AddThrow(new Throw(DartMultiplier.Triple, 19, HitType.Board));
         game.AddThrow(new Throw(DartMultiplier.Triple, 19, HitType.Board));
         game.AddThrow(new Throw(DartMultiplier.Triple, 18, HitType.Board));
         Check(customEvents.Count == 0, "cutthroat-t1-silent", $"events={customEvents.Count}");
 
-        // P2-Turn: 3x S1 (0 Punkte, Total P1 unverändert 0) -> kein Feuer.
+        // P2 turn: 3x S1 (0 points, total P1 unchanged 0) -> no fire.
         game.AddThrow(new Throw(DartMultiplier.Single, 1, HitType.Board));
         game.AddThrow(new Throw(DartMultiplier.Single, 1, HitType.Board));
         game.AddThrow(new Throw(DartMultiplier.Single, 1, HitType.Board));
         Check(customEvents.Count == 0, "cutthroat-t2-silent", $"events={customEvents.Count}");
 
-        // P1-Turn 2: T18 (+54 an P2 = Total 111), S1, S1 -> feuert, Buchung an P2.
+        // P1 turn 2: T18 (+54 to P2 = total 111), S1, S1 -> fires, booking to P2.
         game.AddThrow(new Throw(DartMultiplier.Triple, 18, HitType.Board));
         game.AddThrow(new Throw(DartMultiplier.Single, 1, HitType.Board));
         game.AddThrow(new Throw(DartMultiplier.Single, 1, HitType.Board));
@@ -690,7 +690,7 @@ public static class CustomPenaltyEnabledTest
         Check(CustomCount(game, p1.GetID(), "testfloor") == 1,
             "custom-sector-booked", "");
 
-        // Anderer Sektor: eigener Sektor-Sound, aber keine Strafe.
+        // Other sector: own sector sound, but no penalty.
         game.AddThrow(new Throw(DartMultiplier.Single, 0, HitType.Custom, false, -1, "sec2"));
         Check(order.Count == 3 && order[2] == "sector:sec2",
             "custom-sector-other-no-penalty", $"order=[{string.Join(",", order)}]");
@@ -712,7 +712,7 @@ public static class CustomPenaltyEnabledTest
         game.OnSectorHit += (pid, sid) => sectors.Add(sid);
         game.OnCustomPenaltyTriggered += (id, pid, turn) => penalties.Add(id);
 
-        // Check-in-Aufnahme: Sektor-Sound ja, Instant-Penalty bleibt wie bisher aus.
+        // Check-in recording: sector sound yes, instant penalty remains as before.
         game.AddThrow(new Throw(DartMultiplier.Single, 0, HitType.Custom, false, -1, "sec1"));
 
         Check(sectors.Count == 1 && sectors[0] == "sec1", "sector-hit-custom",
@@ -791,8 +791,8 @@ public static class CustomPenaltyEnabledTest
 
     private static void TestLegacySilence(Action<bool, string, string> Check)
     {
-        // Drei volle Miss-Turns + Three-Ones-Turn: ohne Customs darf NICHTS
-        // mehr gebucht werden (Legacy stillgelegt), Counts bleiben 0.
+        // Three full miss turns + three-ones turn: without custom, NOTHING must be
+        // more are booked (legacy decommissioned), counts remain 0.
         var p1 = new Player(Guid.NewGuid(), "T_P1");
         var p2 = new Player(Guid.NewGuid(), "T_P2");
         var game = new X01Game(Guid.NewGuid(), X01Settings201(), new List<Guid> { p1.GetID(), p2.GetID() });

@@ -61,7 +61,7 @@ public class ATCUIStats
 
 
     // ===========================
-    // ======= KONSTRUKTOR =======
+    // ======= CONSTRUCTOR =======
     // ===========================
 
     public ATCUIStats(ATCGame game, BasePlayer player)
@@ -79,9 +79,9 @@ public class ATCUIStats
 
         hitsInRound = game.GetHitsInCurrentRound(playerID);
 
-        // Live-Streak aus den Modell-Stats (nicht aus hitsInRound ableiten:
-        // das enthält bei inaktiven Spielern die Treffer des letzten Besuchs).
-        // Wird bei Fehlwurf sofort zurückgesetzt und bei Undo wiederhergestellt.
+        // Live Streak from the model stats (not deduced from hitsInRound):
+        // This includes the hits of the last visit for inactive players.
+        // Reset immediately in case of misthrow and restored in case of Undo.
         if (game.GetPlayerStats().TryGetValue(playerID, out var baseStats)
             && baseStats is GameStatsATC atcStats)
         {

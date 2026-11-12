@@ -3,18 +3,18 @@ using UnityEditor;
 using UnityEngine;
 
 /// <summary>
-/// Tests für das Turn-Pattern-Matching. Gilt identisch für Custom-Penalties
-/// (PenaltyEvaluator.MatchesTurn) und Custom-Audio-Events
+/// Testing for turn pattern matching. Same applies to custom penalties
+/// (PenaltyEvaluator.MatchesTurn) and custom audio events
 /// (AudioEventEngine.Matches).
 ///
-/// Semantik:
-/// - matchOrder = true  → geordnet: die Slots kommen in dieser Reihenfolge im
-///   Turn vor.
-/// - matchOrder = false → ungeordnet: die Slots kommen im Turn vor, die
-///   Reihenfolge ist egal.
-/// In beiden Fällen sind zusätzliche Würfe im Turn erlaubt.
+/// Semantics:
+/// - matchOrder = true → ordered: the slots come in this order in the
+/// Turn forward.
+/// - matchOrder = false → disordered: the slots occur in the turn, which
+/// Order does not matter.
+/// In both cases, additional throws in the turn are allowed.
 ///
-/// Menü: Darts/Tests/Turn Pattern.
+/// Menu: Darts/Tests/Turn Pattern.
 /// Batchmode: -executeMethod TurnPatternMatchTest.Run
 /// </summary>
 public static class TurnPatternMatchTest
@@ -59,7 +59,7 @@ public static class TurnPatternMatchTest
         Check(!PenaltyEvaluator.MatchesPattern(ordered, Throws(1, 5), true),
             "ordered-1-5-20-rejects-2-darts");
 
-        // Slot mit festem Multiplier: Double 20 passt nicht auf Single 20.
+        // Slot with fixed multiplier: Double 20 does not fit on single 20.
         var singleOnly = new List<TurnPatternEntry>
         {
             Slot(1), Slot(5), Slot(20, DartMultiplier.Single, anyMultiplier: false)
@@ -70,7 +70,7 @@ public static class TurnPatternMatchTest
             T(1), T(5), T(20, HitType.Board, null, DartMultiplier.Double)
         }, true), "ordered-rejects-double-20");
 
-        // ---------- B) 3 Slots, Reihenfolge AUS ----------
+        // ---------- B) 3 slots, order OFF ----------
         Check(PenaltyEvaluator.MatchesPattern(ordered, Throws(20, 5, 1), false),
             "unordered-accepts-20-5-1");
         Check(PenaltyEvaluator.MatchesPattern(ordered, Throws(20, 1, 5), false),
@@ -93,7 +93,7 @@ public static class TurnPatternMatchTest
         Check(PenaltyEvaluator.MatchesPattern(wildcards, Throws(19, 7, 3), false),
             "wildcards-unordered-matches");
 
-        // ---------- D) Miss-Slots (Wand/Decke/Custom) ----------
+        // ---------- D) Miss slots (wall/ceiling/custom) ----------
         var misses = new List<TurnPatternEntry>
         {
             MissSlot(), MissSlot(), MissSlot()
@@ -109,7 +109,7 @@ public static class TurnPatternMatchTest
             T(20), T(0, HitType.Wall), T(0, HitType.Ceiling)
         }, false), "miss-slots-reject-board");
 
-        // ---------- E) 1 Slot (Treffer irgendwo im Turn) ----------
+        // ---------- E) 1 slot (hit anywhere in the turn) ----------
         var single = new List<TurnPatternEntry> { Slot(20) };
 
         Check(PenaltyEvaluator.MatchesPattern(single, Throws(20), false),
@@ -123,7 +123,7 @@ public static class TurnPatternMatchTest
         Check(!PenaltyEvaluator.MatchesPattern(single, Throws(5, 1, 3), false),
             "single-slot-rejects-3-darts-without-match");
 
-        // ---------- E2) Mehrere Slots in längeren Turns ----------
+        // ---------- E2) Multiple slots in longer turns ----------
         var doubleTwenty = new List<TurnPatternEntry> { Slot(20), Slot(20) };
 
         Check(PenaltyEvaluator.MatchesPattern(doubleTwenty, Throws(20, 5, 20), true),
@@ -145,7 +145,7 @@ public static class TurnPatternMatchTest
         Check(PenaltyEvaluator.MatchesPattern(wildcardThenOne, Throws(1, 2), false),
             "unordered-backtracks-wildcard");
 
-        // ---------- F) Custom-Sektor-Slot ----------
+        // ---------- F) Custom sector slot ----------
         var sector = new List<TurnPatternEntry> { SectorSlot("sec1") };
 
         Check(PenaltyEvaluator.MatchesPattern(sector, new List<Throw> { T(0, HitType.Custom, "sec1") }, false),
@@ -159,13 +159,13 @@ public static class TurnPatternMatchTest
             T(0, HitType.Custom, "sec1"), T(0), T(0)
         }, false), "sector-slot-matches-in-3-dart-turn");
 
-        // ---------- G) Leeres Pattern ----------
+        // ---------- G) Empty pattern ----------
         Check(!PenaltyEvaluator.MatchesPattern(new List<TurnPatternEntry>(), Throws(20), true),
             "empty-pattern-rejects");
         Check(!PenaltyEvaluator.MatchesPattern(ordered, null, true),
             "null-throws-rejects");
 
-        // ---------- H) Penalty-Pfad (MatchesTurn) ----------
+        // ---------- H) Penalty path (MatchesTurn) ----------
         var condition = new PenaltyCondition
         {
             kind = PenaltyConditionKind.TurnPattern,
@@ -179,7 +179,7 @@ public static class TurnPatternMatchTest
         condition.matchOrder = false;
         Check(PenaltyEvaluator.MatchesTurn(condition, Throws(20, 5, 1), 26), "penalty-unordered-matches");
 
-        // ---------- I) AudioEvent-Pfad (AudioEventEngine) ----------
+        // ---------- I) AudioEvent path (AudioEventEngine) ----------
         var trigger = new AudioEventTrigger
         {
             kind = AudioEventTriggerKind.TurnPattern,
@@ -196,7 +196,7 @@ public static class TurnPatternMatchTest
         trigger.matchOrder = false;
         Check(AudioEventEngine.Matches(trigger, values), "event-unordered-matches");
 
-        // Manual/ScoreTriggeren bleiben unberührt.
+        // Manual/ ScoreTriggeren remain unaffected.
         trigger.kind = AudioEventTriggerKind.Manual;
         Check(!AudioEventEngine.Matches(trigger, values), "event-manual-never-auto-matches");
 
@@ -222,7 +222,7 @@ public static class TurnPatternMatchTest
     // HELPERS
     // =========================================================
 
-    /// <summary>Pattern-Slot: fester Wert, Multiplier/Hit-Typ frei (Wildcard).</summary>
+    /// <summary>Pattern slot: fixed value, multiplier/hit type free (wildcard).</summary>
     private static TurnPatternEntry Slot(int value, DartMultiplier multiplier = DartMultiplier.Single,
         bool anyMultiplier = true)
     {
@@ -236,7 +236,7 @@ public static class TurnPatternMatchTest
         };
     }
 
-    /// <summary>Pattern-Slot: alles frei (Wert/Multiplier/Hit-Typ).</summary>
+    /// <summary>Patter slot: everything free (value/multiplier/hit type).</summary>
     private static TurnPatternEntry AnySlot()
     {
         return new TurnPatternEntry
@@ -247,7 +247,7 @@ public static class TurnPatternMatchTest
         };
     }
 
-    /// <summary>Pattern-Slot: Fehlwurf (Wand/Decke/Custom-Sektor).</summary>
+    /// <summary>Pattern slot: miss (wall/ceiling/custom sector).</summary>
     private static TurnPatternEntry MissSlot()
     {
         return new TurnPatternEntry
@@ -260,7 +260,7 @@ public static class TurnPatternMatchTest
         };
     }
 
-    /// <summary>Pattern-Slot: Custom-Sektor (Tab 1 „Bereiche“).</summary>
+    /// <summary>Pattern slot: custom sector (Tab 1 “Areas”).</summary>
     private static TurnPatternEntry SectorSlot(string sectorId)
     {
         return new TurnPatternEntry

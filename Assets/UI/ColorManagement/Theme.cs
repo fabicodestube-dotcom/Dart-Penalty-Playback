@@ -29,14 +29,14 @@ public class Theme : ScriptableObject
         foreach (var c in colors)
             _map[c.role] = c.color;
 
-        // Validation: nur warnen, wenn Theme komplett leer ist.
+        // Validation: only warn when the theme is completely empty.
         if (_map.Count == 0)
             Debug.LogWarning($"Theme '{name}' hat keine Farben definiert.");
     }
 
     public Color Get(ThemeColorRole role)
     {
-        // Accent2 ist deprecated → Accent1 verwenden.
+        // Accent2 is deprecated → use Accent1.
         if (role == ThemeColorRole.Accent2)
             role = ThemeColorRole.Accent1;
 

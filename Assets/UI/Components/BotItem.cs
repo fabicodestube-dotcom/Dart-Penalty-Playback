@@ -19,9 +19,15 @@ public class BotItem : MonoBehaviour, IPointerClickHandler
     private void Awake()
     {
         if (renameButton == null)
+        {
+            Debug.LogWarning("[BotItem] renameButton nicht verdrahtet; Fallback-Suche nach 'Rename'.", this);
             renameButton = FindButtonByName("Rename");
+        }
         if (deleteButton == null)
+        {
+            Debug.LogWarning("[BotItem] deleteButton nicht verdrahtet; Fallback-Suche nach 'Delete'.", this);
             deleteButton = FindButtonByName("Delete");
+        }
 
         if (renameButton != null)
         {
@@ -47,7 +53,7 @@ public class BotItem : MonoBehaviour, IPointerClickHandler
     }
     private Guid id;
     private object list;
-    private SetupHandler menuSetupPanel;
+    private SetupScreen menuSetupPanel;
     private PlayerDragHandler dragHandler;
 
     public Guid ID => id;
@@ -72,7 +78,7 @@ public class BotItem : MonoBehaviour, IPointerClickHandler
         if (dragHandler != null)
             dragHandler.playerID = id;
 
-        menuSetupPanel = GetComponentInParent<SetupHandler>();
+        menuSetupPanel = GetComponentInParent<SetupScreen>();
 
         if (playerName != null)
             playerName.text = bot.GetNameWithSkill();
@@ -83,7 +89,7 @@ public class BotItem : MonoBehaviour, IPointerClickHandler
         ApplyBackgroundColor();
         ApplySkillColor(bot.GetSkillRating());
 
-        // Rename/Delete nur in PlayerList (IPlayerItemOwner), nicht in Setup.
+        // Rename/Delete only in PlayerList (IPlayerItemOwner ), not in Setup.
         bool isEditable = list is IPlayerItemOwner;
         if (renameButton != null)
             renameButton.interactable = isEditable;

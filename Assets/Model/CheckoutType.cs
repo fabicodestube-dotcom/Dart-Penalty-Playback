@@ -38,6 +38,6 @@ public static class EnumExtensions
             }
         }
         
-        return value.ToString(); // Fallback, falls kein Attribut existiert
+        return value.ToString(); // Fallback if no attribute exists
     }
 }

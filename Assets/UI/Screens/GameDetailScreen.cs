@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using TMPro;
@@ -6,7 +6,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using Newtonsoft.Json;
 
-public class GameDetail : UIScreen, IUIScreen
+public class GameDetailScreen : UIScreen, IUIScreen
 {
     [Header("Control")]
     public AppHandler appHandler;
@@ -71,7 +71,7 @@ public class GameDetail : UIScreen, IUIScreen
 
         if (gameSummary == null)
         {
-            Debug.LogError("GameDetail: no game summary found");
+            Debug.LogError("GameDetailScreen: no game summary found");
             return;
         }
 
@@ -168,7 +168,7 @@ public class GameDetail : UIScreen, IUIScreen
     {
         if (contentParent == null || prefabTable == null)
         {
-            Debug.LogError("GameDetail: contentParent or prefabTable is not assigned.");
+            Debug.LogError("GameDetailScreen: contentParent or prefabTable is not assigned.");
             return;
         }
 
@@ -216,7 +216,7 @@ public class GameDetail : UIScreen, IUIScreen
         var table = Instantiate(prefabTable, contentParent).GetComponent<TableView>();
         if (table == null)
         {
-            Debug.LogError("GameDetail: prefabTable does not contain a TableView component.");
+            Debug.LogError("GameDetailScreen: prefabTable does not contain a TableView component.");
             return;
         }
 
@@ -479,9 +479,9 @@ public class GameDetail : UIScreen, IUIScreen
             playerIDs
         );
 
-        // Points-Tabelle nur bei "Punkte an": ohne Punkte sind alle Werte
-        // per Design 0 (kein Overflow-Scoring). Fail-open: bei unlesbaren
-        // Settings wird die Tabelle wie bisher angezeigt.
+        // Points table only at "points on": without points, all values are
+        // by design 0 (no overflow scoring).
+        // Settings displays the table as before.
         bool showPointsTable = true;
         try
         {
@@ -697,7 +697,7 @@ public class GameDetail : UIScreen, IUIScreen
             playerIDs
         );
 
-        // Versuche pro Feld (X01-Prefab wiederverwendet, auf ATC-Keys beschnitten)
+        // Attempts per field (X01 prefab reused, trimmed to ATC keys)
         if (prefabHitSectorChart != null)
         {
             if (atcHitSectorHeadline == null)
@@ -864,9 +864,9 @@ public class GameDetail : UIScreen, IUIScreen
     }
 
     /// <summary>
-    /// Füllt die einfache Penalty-Tabelle: Name | Anzahl | Kosten | › Details.
-    /// Header statisch (einmalig bei Erstellung), Zeilen mit Detail-Tap pro
-    /// Spieler (Popup: PenaltyDetailPopup.ShowPlayerPenalties).
+    /// Fills in the simple penalty table: Name | Number | Cost | › Details.
+    /// Header static (once when created), lines with detail-tap pro
+    /// Player (popup: PenaltyDetailPopup.ShowPlayerPenalties).
     /// </summary>
     private void FillSimplePenaltyTable(
         string tableKey, List<Guid> playerIDs, Dictionary<Guid, GameStats> statsDict)
@@ -930,13 +930,13 @@ public class GameDetail : UIScreen, IUIScreen
     {
         if (gameSummary == null)
         {
-            Debug.LogError("GameDetail: no game summary for delete");
+            Debug.LogError("GameDetailScreen: no game summary for delete");
             return;
         }
 
         if (!appHandler.DeleteGame(gameSummary.Id))
         {
-            Debug.LogError("GameDetail: Spiel konnte nicht gelöscht werden.");
+            Debug.LogError("GameDetailScreen: Spiel konnte nicht gelöscht werden.");
             return;
         }
 
@@ -944,7 +944,7 @@ public class GameDetail : UIScreen, IUIScreen
         windowHandler.ResetTo(ScreenId.History);
     }
 
-    public void CancleDeleteGame()
+    public void CancelDeleteGame()
     {
         windowHandler.HidePopup();
     }
@@ -953,20 +953,20 @@ public class GameDetail : UIScreen, IUIScreen
     {
         if (gameSummary == null)
         {
-            Debug.LogError("GameDetail: no game summary for continue");
+            Debug.LogError("GameDetailScreen: no game summary for continue");
             return;
         }
 
         if (gameSummary.IsFinished)
         {
-            Debug.LogWarning("GameDetail: game is finished, cannot continue");
+            Debug.LogWarning("GameDetailScreen: game is finished, cannot continue");
             return;
         }
 
         var game = appHandler.LoadGameById(gameSummary.Id);
         if (game == null)
         {
-            Debug.LogError("GameDetail: failed to load game for continue");
+            Debug.LogError("GameDetailScreen: failed to load game for continue");
             return;
         }
 
@@ -977,7 +977,7 @@ public class GameDetail : UIScreen, IUIScreen
             case GameMode.X01 when game is X01Game x01:
                 if (x01GameEngine == null || windowHandler == null)
                 {
-                    Debug.LogError("GameDetail: x01GameEngine/windowHandler not wired");
+                    Debug.LogError("GameDetailScreen: x01GameEngine/windowHandler not wired");
                     return;
                 }
                 windowHandler.StartGameplay(ScreenId.X01Game);
@@ -987,7 +987,7 @@ public class GameDetail : UIScreen, IUIScreen
             case GameMode.ATC when game is ATCGame atc:
                 if (atcGameEngine == null || windowHandler == null)
                 {
-                    Debug.LogError("GameDetail: atcGameEngine/windowHandler not wired");
+                    Debug.LogError("GameDetailScreen: atcGameEngine/windowHandler not wired");
                     return;
                 }
                 windowHandler.StartGameplay(ScreenId.ATCGame);
@@ -997,7 +997,7 @@ public class GameDetail : UIScreen, IUIScreen
             case GameMode.Cricket when game is CricketGame cricket:
                 if (cricketGameEngine == null || windowHandler == null)
                 {
-                    Debug.LogError("GameDetail: cricketGameEngine/windowHandler not wired");
+                    Debug.LogError("GameDetailScreen: cricketGameEngine/windowHandler not wired");
                     return;
                 }
                 windowHandler.StartGameplay(ScreenId.CricketGame);
@@ -1006,7 +1006,7 @@ public class GameDetail : UIScreen, IUIScreen
 
             default:
                 appHandler.SetActiveRuntimeGame(null);
-                Debug.LogError("GameDetail: loaded game type does not match its mode");
+                Debug.LogError("GameDetailScreen: loaded game type does not match its mode");
                 break;
         }
     }
@@ -1023,7 +1023,7 @@ public class GameDetail : UIScreen, IUIScreen
 
         if (scrollRect == null)
         {
-            Debug.LogError("GameDetail: No ScrollRect found for resetting scroll position");
+            Debug.LogError("GameDetailScreen: No ScrollRect found for resetting scroll position");
             return;
         }
 

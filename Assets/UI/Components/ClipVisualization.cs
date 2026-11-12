@@ -51,8 +51,8 @@ public class ClipVisualization : MonoBehaviour, IPointerClickHandler
         if (!playheadLine.gameObject.activeSelf)
         {
             playheadLine.gameObject.SetActive(true);
-            // Einmalig nach vorne holen statt pro Frame (SetAsLastSibling
-            // markiert die Hierarchie jedes Frame als dirty → Canvas-Rebuild).
+            // Bring forward one-time instead of per frame (SetAsLastSibling)
+            // marks the hierarchy of each frame as a dirty → canvas rebuild.
             playheadLine.SetAsLastSibling();
             lastPlayheadPos = new Vector2(float.NaN, float.NaN);
         }
@@ -70,7 +70,7 @@ public class ClipVisualization : MonoBehaviour, IPointerClickHandler
 
         float x = normalized * rectTransform.rect.width;
 
-        // Nur bei tatsächlicher Bewegung schreiben (pausiert/statisch = idle).
+        // Write only when the movement is actual (paused/static = idle).
         var pos = new Vector2(x, 0f);
         if (pos != lastPlayheadPos)
         {

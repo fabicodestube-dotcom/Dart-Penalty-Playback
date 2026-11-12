@@ -7,15 +7,15 @@ using UnityEngine.Localization.Components;
 using UnityEngine.UI;
 
 /// <summary>
-/// Dartscheiben-Heatmap als anti-aliased Textur auf einem UGUI-Quad.
-/// Eine statische Zonen-Map (Supersampling) wird einmal pro Parameter-Set
-/// erzeugt und von allen Heatmap-Instanzen geteilt. SetData() färbt nur
-/// noch die Pixel neu, sodass Kanten glatt und Trennlinien überall gleich
-/// breit sind (Breite in Board-Einheiten statt Winkel).
-/// Die Felder sind nach Trefferhäufigkeit eingefärbt: weiß (nie) → grün →
-/// gelb → orange → rot. Inneres + äußeres Single teilen sich einen Key ("n")
-/// und zeigen bewusst dieselbe Farbe. Key "0" (daneben) wird als Text gezählt.
-/// Farbskala ist relativ pro Spieler: max Count = rot.
+/// Dartboard heatmap as an anti-aliased texture on a UGUI quad.
+/// A static zone map (supersampling) is used once per parameter set.
+/// generated and shared by all Heatmap instances. SetData() only colors
+/// still the pixels new, so that edges smooth and dividing lines everywhere the same
+/// are wide (width in board units instead of angles).
+/// The fields are colored by hit frequency: white (never) → green →
+/// yellow → orange → red. Inner + outer single share a key ("n")
+/// And then you'll see that the key "0" is counted as text.
+/// Color scale is relative per player: max count = red.
 /// </summary>
 [RequireComponent(typeof(RectTransform))]
 public class DartboardHeatmap : MaskableGraphic
@@ -70,8 +70,8 @@ public class DartboardHeatmap : MaskableGraphic
     private static string[] s_ZoneKeys;
     private static readonly Dictionary<MapKey, ZoneMap> s_MapCache = new Dictionary<MapKey, ZoneMap>();
 
-    // Etwas transparenter Rand, damit die Außenkante der Scheibe ebenfalls
-    // weich auslaufen kann statt an der Texturgrenze abgeschnitten zu werden.
+    // A slightly transparent edge so that the outer edge of the pane is also
+    // soft leakage can be performed instead of being cut off at the texture boundary.
     private const float TexturePadding = 0.01f;
 
     private static string[] ZoneKeys
@@ -129,9 +129,9 @@ public class DartboardHeatmap : MaskableGraphic
     private sealed class ZoneMap
     {
         public int resolution;
-        public byte[] zoneIndex;      // 0..81, 255 = keine Zone (Rand/außen)
-        public byte[] borderCoverage; // 0..255 Anteil Randfarbe
-        public byte[] alpha;          // 0..255 Anteil innerhalb der Scheibe
+        public byte[] zoneIndex;      // 0..81, 255 = no zone (edge/outside)
+        public byte[] borderCoverage; // 0..255 edge color share
+        public byte[] alpha;          // 0..255 proportion within the disc
     }
 
     private struct SampleParams
@@ -175,16 +175,16 @@ public class DartboardHeatmap : MaskableGraphic
 
     protected override void Awake()
     {
-        // Selbstheilung: falls dieses Objekt ohne CanvasRenderer existiert
-        // (Prefab-Merge, manuell angelegt), explizit nachrüsten, BEVOR
-        // Graphic-Maschinerie darauf zugreift.
+        // Self-healing: if this object exists without CanvasRenderer
+        // (Prefab merge, manually created), explicitly retrofit, BEFORE
+        // graphic machinery accesses it.
         if (GetComponent<CanvasRenderer>() == null)
             gameObject.AddComponent<CanvasRenderer>();
 
         base.Awake();
         raycastTarget = false;
-        // Perf (M2): Zonen-Map und Textur entstehen erst bei Bedarf,
-        // siehe EnsureHeatView(). Balken-Nutzer zahlen keine Mehrkosten.
+        // Perf (M2): Zone map and texture are created only when needed,
+        // see EnsureHeatView (.) Bar users do not pay any additional costs.
     }
 
     protected override void OnEnable()
@@ -195,9 +195,8 @@ public class DartboardHeatmap : MaskableGraphic
     }
 
     /// <summary>
-    /// Baut Zahlen-/Miss-Labels beim ersten Anzeigen der Heatmap und stößt
-    /// das erste Einfärben an. Idempotent; SetData() aktualisiert danach nur
-    /// noch Farben/Text.
+    /// Build numbers/miss labels when first displaying the heatmap and bump
+    /// them. Idempotent; SetData() only updates colors/text afterwards.
     /// </summary>
     public void EnsureHeatView()
     {
@@ -231,7 +230,7 @@ public class DartboardHeatmap : MaskableGraphic
     }
 #endif
 
-    /// <summary>Neue Zähldaten (gleiche Keys wie HitSectorChart). Nur Farben werden neu.</summary>
+    /// <summary>New counting data (same keys as HitSectorChart ) Only colors become new.</summary>
     public void SetData(IReadOnlyDictionary<string, int> newCounts)
     {
         counts.Clear();
@@ -257,7 +256,7 @@ public class DartboardHeatmap : MaskableGraphic
     }
 
     // ---------------------------------------------------------
-    // TEXTUR / RENDERING
+    // TEXTURE / RENDERING
     // ---------------------------------------------------------
 
     public override Texture mainTexture => heatTexture;
@@ -266,7 +265,7 @@ public class DartboardHeatmap : MaskableGraphic
     {
         vh.Clear();
 
-        // Noch keine Daten/Textur: unsichtbar zeichnen statt schwarz.
+        // No data/texture yet: invisible drawing instead of black.
         if (heatTexture == null)
             return;
 
@@ -337,7 +336,7 @@ public class DartboardHeatmap : MaskableGraphic
         if (s_MapCache.TryGetValue(key, out ZoneMap cached))
             return cached;
 
-        // Editor-Slider können viele Varianten erzeugen; Cache klein halten.
+        // Editor sliders can create many variants; keep cache small.
         if (s_MapCache.Count >= 8)
             s_MapCache.Clear();
 
@@ -391,7 +390,7 @@ public class DartboardHeatmap : MaskableGraphic
     }
 
     // ---------------------------------------------------------
-    // ZONEN-MAP
+    // ZONE MAP
     // ---------------------------------------------------------
 
     private static ZoneMap BuildZoneMap(MapKey key)
@@ -518,7 +517,7 @@ public class DartboardHeatmap : MaskableGraphic
 
         inside = true;
 
-        // Außenring (Rim) ist komplett Rand.
+        // Outer ring (Rim) is completely rim.
         if (r >= p.outer)
         {
             zone = -1;
@@ -558,7 +557,7 @@ public class DartboardHeatmap : MaskableGraphic
             sector += numberCount;
         int number = DartboardGeometry.NumberOrder[sector];
 
-        // Abstand zur nächsten Sektorkante (Kanten liegen bei 9° + n*18°).
+        // Distance to the next sector edge (edges are 9° + n*18°).
         float halfSegment = DartboardGeometry.SegmentAngle * 0.5f;
         float nearestBoundary =
             Mathf.Round((angle - halfSegment) / DartboardGeometry.SegmentAngle)
@@ -660,10 +659,10 @@ public class DartboardHeatmap : MaskableGraphic
     }
 
     /// <summary>
-    /// Hängt das "Miss"-Label an die StringTable (Key "Miss", Tabelle
-    /// "LocalizationTable"). Pattern wie HistoryHandler: Listener VOR
-    /// Referenz setzen, Text aus lokalisiertem Basis-String + Count bauen.
-    /// Sprachwechsel aktualisieren sich dadurch automatisch.
+    /// Hangs the "Miss" label on the StringTable (Key "Miss", table)
+    /// "LocalizationTable". Pattern like HistoryScreen: set listener BEFORE
+    /// setting the reference, build text from localized base string + count.
+    /// Language changes then update automatically.
     /// </summary>
     private void SetupMissLocalization(TMP_Text tmp)
     {
@@ -683,8 +682,8 @@ public class DartboardHeatmap : MaskableGraphic
     }
 
     /// <summary>
-    /// Font-Auflösung: zugewiesener Font → Headline-Font des Charts (Roboto)
-    /// → TMP-Standard. Danach auf alle selbst erzeugten Labels anwenden.
+    /// Font resolution: assigned font → headline font of the chart (roboto)
+    /// → TMP standard. Then apply to all self-produced labels.
     /// </summary>
     public void RefreshLabelFont()
     {
@@ -719,7 +718,7 @@ public class DartboardHeatmap : MaskableGraphic
 
     private TMP_Text CreateLabel(string goName, int fontSize)
     {
-        // CanvasRenderer ebenfalls explizit (siehe EnsureHeatmapView).
+        // CanvasRenderer also explicitly (see EnsureHeatmapView).
         var go = new GameObject(goName, typeof(RectTransform), typeof(CanvasRenderer));
         go.transform.SetParent(transform, false);
         var rt = (RectTransform)go.transform;
@@ -747,8 +746,8 @@ public class DartboardHeatmap : MaskableGraphic
         float scale = Mathf.Min(rect.width, rect.height) * 0.5f * 0.80f;
         Vector2 center = rect.center;
 
-        // Zahlen sitzen außerhalb des Doubles (Radius 1.14 in Board-Einheiten,
-        // Board selbst geht bis 1.0) — passt in den 0.80-Skalierungs-Rand.
+        // Numbers sit outside the double (Radius 1.14 in board units,
+        // Board itself goes up 1.0 — fits into the 0.80 scaling edge.
         for (int i = 0; i < numberLabels.Count && i < DartboardGeometry.NumberOrder.Length; i++)
         {
             var label = numberLabels[i];
@@ -766,9 +765,9 @@ public class DartboardHeatmap : MaskableGraphic
 
         if (missLabel != null)
         {
-            // Links neben der Scheibe, auf Höhe der Board-Mitte: eine Reihe
-            // mit der 9-Uhr-Zahl, aber weiter außen (Zahlenring + Abstand),
-            // damit weder Board noch Zahlen überlappt werden.
+            // To the left of the window, at the height of the board center: a row
+            // with the 9 o'clock number, but further out (number ring + distance),
+            // so that neither board nor numbers are overlapped.
             const float labelW = 260f;
             float x = -(scale * 1.14f + 30f + 40f + labelW * 0.5f);
             var rt = missLabel.rectTransform;

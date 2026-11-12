@@ -22,7 +22,7 @@ public class SingleSelectionGroup : MonoBehaviour
             }
         }
 
-        // 🔥 Initial Sync NUR wenn Theme existiert
+        // Initial Sync ONLY if Theme Exists
         if (ThemeManager.Instance.ActiveTheme != null)
         {
             ApplyTheme();

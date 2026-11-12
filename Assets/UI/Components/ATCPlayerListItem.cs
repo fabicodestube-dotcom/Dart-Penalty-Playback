@@ -13,8 +13,8 @@ public class ATCPlayerListItem : MonoBehaviour
     public TMP_Text progressText; // e.g. "5/21"
 
     [Header("Status")]
-    public TMP_Text hitsInRoundText; // Anzahl Treffer in der aktuellen Runde
-    public ATCStreakEffect streakIndicator; // Optional: Ein visuelles Element, das anzeigt, ob der Spieler in einer Treffer-Serie ist
+    public TMP_Text hitsInRoundText; // Number of hits in the current round
+    public ATCStreakEffect streakIndicator; // Optional: A visual element that indicates whether the player is in a hit series
     public TMP_Text wonSetsText;
     public TMP_Text wonLegsText;
     public TMP_Text thrownDartsText;
@@ -32,7 +32,7 @@ public class ATCPlayerListItem : MonoBehaviour
         if (glowAnimator == null)
             glowAnimator = GetComponentInChildren<BorderGlowAnimator>(true);
 
-        // Reine Anzeige-Texte: aus dem Touch-Raycast nehmen.
+        // Pure display texts: take from the touch raycast.
         foreach (var text in GetComponentsInChildren<TMP_Text>(true))
             text.raycastTarget = false;
     }
@@ -73,9 +73,9 @@ public class ATCPlayerListItem : MonoBehaviour
         if (hitsInRoundText != null)
             hitsInRoundText.text = stats.hitsInRound.ToString();
 
-        // Streak-Feuer nur beim aktiven Spieler mit live Streak >= 3.
-        // Bei Spielerwechsel ist stats.isActive false -> Animation stoppt sofort.
-        // Bei Undo stellt das Modell den Streak wieder her -> Refresh startet sie neu.
+        // Streak fire only with the active player with live Streak >= 3.
+        // When players change, stats.isActive is false -> Animation stops immediately.
+        // At Undo, the model restores the Streak -> Refresh restarts it.
         if (stats.isActive && stats.hasStreak && stats.currentHitStreak >= 3)
         {
             if (streakIndicator != null)

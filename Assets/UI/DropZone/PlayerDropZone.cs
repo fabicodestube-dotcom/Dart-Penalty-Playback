@@ -25,7 +25,7 @@ public class PlayerDropZone : MonoBehaviour
             Transform child = contentParent.GetChild(i);
 
             if (child == null) continue;
-            if (child.name == "Placeholder") continue;
+            if (child.GetComponent<PlayerDragHandler>() == null) continue;
 
             RectTransform rt = child as RectTransform;
             if (rt == null) continue;
@@ -33,7 +33,7 @@ public class PlayerDropZone : MonoBehaviour
             items.Add(rt);
         }
 
-        // stabiler Snapshot (verhindert Layout feedback loop)
+        // stable snapshot (prevents layout feedback loop)
         items.Sort((a, b) => b.position.y.CompareTo(a.position.y));
 
         for (int i = 0; i < items.Count; i++)

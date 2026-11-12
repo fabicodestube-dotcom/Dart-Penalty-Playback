@@ -6,35 +6,35 @@ using UnityEngine;
 using UnityEngine.Networking;
 
 /// <summary>
-/// Zentrale Audio-Clip-Bibliothek: hält die vom User aufgenommenen Clips
-/// (Runtime-Dicts + SQLite-Index) und liefert den eingebauten Fallback aus
-/// dem Inspector.
+/// Central audio clip library: keeps the clips recorded by the user
+/// (Runtime Dicts + SQLite Index) and delivers the built-in fallback
+/// the inspector.
 ///
-/// Die eingebauten Clips (Default-Set oder Custom-Set) sind KEINE
-/// User-Aufnahmen: sie liegen ausschließlich in den Inspector-Feldern und
-/// tauchen daher in keiner Clip-Count-Anzeige des Customization-Screens auf.
-/// Sie dienen nur als Rückfall, wenn der User für eine ID noch nichts
-/// aufgenommen hat.
+/// The built-in clips (default set or custom set) are NOT
+/// User recordings: they are exclusively in the Inspector fields and
+/// Therefore, no clip count display of the customization screen appears.
+/// They only serve as a fallback if the user has nothing yet for an ID
+/// has been recorded.
 ///
-/// Set-Wahl: WillBePublished == true → Default-Set, false → Custom-Set.
+/// Set choice: WillBePublished == true → default set, false → custom set.
 ///
-/// Der eingebaute Rückfall ist abschaltbar (Option "Default-Clips als
-/// Fallback", Sound.UseDefaultClipsAsFallback). Ist er aus, laufen nur die
-/// vom User aufgenommenen Clips — ohne eigene Aufnahme bleibt es stumm.
+/// The built-in fallback can be switched off (option "Default clips as")
+/// Fallback," Sound.UseDefaultClipsAsFallback. "Only the ones that are out
+/// clips recorded by the user — without recording it itself remains mute.
 /// </summary>
 public class AudioLibrary : MonoBehaviour
 {
     /// <summary>
-    /// true → das Default-Set (numberClips, *Clip) ist der eingebaute Fallback.
-    /// false → das Custom-Set (customNumberClips, custom*Clip) ist der Fallback.
+    /// true → the default set (numberClips, *clip) is the built-in fallback.
+    /// false → the custom set (customNumberClips, custom*clip) is the fallback.
     /// </summary>
     public bool WillBePublished;
 
     public static AudioLibrary Instance;
 
     /// <summary>
-    /// True, wenn aktuell das Custom-Set aktiv ist. Wird u. a. beim Seeding
-    /// user-ähnlicher Audio-Events benötigt, die es nur dort geben soll.
+    /// True, if the custom set is currently active.
+    /// user-like audio events, which should only exist there.
     /// </summary>
     public static bool IsCustomSetActive
     {
@@ -112,16 +112,16 @@ public class AudioLibrary : MonoBehaviour
     private Dictionary<SpecialAudioType, List<AudioClip>> runtimeSpecialClips = new();
 
     /// <summary>
-    /// Clips für Custom-Penalties und Custom-Audio-Events, geschlüsselt per
-    /// stabiler String-ID (GUID). Damit bleiben Clips beim Editieren verlinkt.
+    /// Clips for custom penalties and custom audio events, keyed by
+    /// Stable String ID (GUID) to keep clips linked when edited.
     /// </summary>
     private Dictionary<string, List<AudioClip>> runtimeCustomClips = new();
 
     private Dictionary<string, AudioClip> lastPlayedClips = new();
 
-    // Stabile SQLite-ID + Dateipfad pro Runtime-Clip. Replace/Delete arbeiten
-    // dadurch über die ID statt über die Listenposition (die sich z.B. nach
-    // Reparaturen verschieben kann).
+    // Stable SQLite ID + file path per runtime clip. Replace/Delete work
+    // via the ID instead of the list position (which is e.g. after)
+    // Repairs can be postponed.
     private readonly Dictionary<AudioClip, long> runtimeClipRowIds = new();
     private readonly Dictionary<AudioClip, string> runtimeClipPaths = new();
 
@@ -165,10 +165,10 @@ public class AudioLibrary : MonoBehaviour
     public event Action<AudioCategory> OnLibraryChanged;
 
     /// <summary>
-    /// Feuert OnLibraryChanged ausfallsicher: Snapshot der Subscriber plus
-    /// try/catch pro Empfänger — ein fehlerhafter Subscriber (z.B. zerstörte
-    /// Row) bricht die Kette für alle anderen nicht mehr ab. Zentrale Stelle
-    /// für alle Library-Refreshes (Load-Ende, Add/Delete/Replace).
+    /// Fire OnLibraryChanged failsafe: Snapshot of the subscriber plus
+    /// try/catch per recipient — a faulty subscriber (e.g. destroyed)
+    /// Row doesn't break the chain for everyone else.
+    /// for all library refreshes (load end, add/delete/replace).
     /// </summary>
     private void NotifyLibraryChanged(AudioCategory category)
     {
@@ -242,8 +242,8 @@ public class AudioLibrary : MonoBehaviour
     }
 
     /// <summary>
-    /// Erneuter Ladeversuch nach einem fehlgeschlagenen Library-Load.
-    /// Räumt die Runtime-Listen vorher, damit keine Duplikate entstehen.
+    /// Re-load attempt after a failed library load.
+    /// Clear the runtime lists beforehand so that no duplicates are created.
     /// </summary>
     public void RetryLoad()
     {
@@ -284,7 +284,7 @@ public class AudioLibrary : MonoBehaviour
         return hash.ToString("x8");
     }
 
-    /// <summary>Dateisystem-sicherer Anteil aus beliebiger String-ID.</summary>
+    /// <summary>File system-secure share of any string ID.</summary>
     private static string SanitizeKey(string customKey)
     {
         if (string.IsNullOrEmpty(customKey))
@@ -395,7 +395,7 @@ public class AudioLibrary : MonoBehaviour
     }
 
     /// <summary>
-    /// Clip für Custom-Penalty oder Custom-Audio-Event (stabile String-ID).
+    /// Clip for custom penalty or custom audio event (stable string ID).
     /// </summary>
     public string AddCustomClip(string customKey, AudioClip clip)
     {
@@ -426,28 +426,28 @@ public class AudioLibrary : MonoBehaviour
     }
 
     /// <summary>
-    /// Clip für eine Custom-ID (Penalty- oder Audio-Event-ID).
-    /// Kette: vom User aufgenommener Clip → eingebauter Fallback aus dem
-    /// aktiven Set (Default bei WillBePublished, sonst Custom) → anderes Set
-    /// als Sicherheitsnetz → null.
+    /// Clip for a custom ID (penalty or audio event ID).
+    /// Chain: User-recorded clip → built-in fallback from the
+    /// Active set (default at WillBePublished, otherwise custom) → other set
+    /// as a safety net → null.
     /// </summary>
     public AudioClip GetCustomClip(string customKey)
     {
         if (!IsSoundEnabled() || string.IsNullOrEmpty(customKey))
             return null;
 
-        // 1) VOM USER AUFGENOMMEN
+        // 1) RECORDED BY THE USER
         AudioClip userClip = null;
         if (runtimeCustomClips.TryGetValue(customKey, out var runtimeClips))
         {
             userClip = GetRandomClip(runtimeClips, $"custom_{customKey}");
         }
 
-        // 2) EINGEBAUT (Default- oder Custom-Set) — nur wenn als Fallback erlaubt
+        // 2 — Default or Custom Set — only if allowed as fallback
         return ResolveClip(userClip, () => GetBuiltInClipForKey(customKey), UseBuiltInFallbackEnabled);
     }
 
-    /// <summary>Aufgerufen vom Recorder/Browser-UI (z.B. für Delete-Warnung).</summary>
+    /// <summary>Accessed by the recorder/browser UI (e.g. for Delete warning).</summary>
     public List<AudioClip> GetRuntimeCustomList(string customKey)
         => !string.IsNullOrEmpty(customKey) && runtimeCustomClips.TryGetValue(customKey, out var l) ? l : null;
 
@@ -465,8 +465,8 @@ public class AudioLibrary : MonoBehaviour
     }
 
     /// <summary>
-    /// Löscht alle aufgenommenen Clips einer Custom-ID (Penalty/Audio-Event/
-    /// Target Area) inklusive DB-Einträgen und Dateien.
+    /// Deletes all recorded clips of a custom ID (penalty/audio event/)
+    /// Target Area) including DB records and files.
     /// </summary>
     public int DeleteAllCustomClips(string customKey)
     {
@@ -551,8 +551,8 @@ public class AudioLibrary : MonoBehaviour
             || !runtimeClipPaths.TryGetValue(oldClip, out string path))
             return false;
 
-        // Atomarer Datei-Ersatz: bei einem Schreibfehler bleibt der alte Clip
-        // intakt, statt gelöscht und anschließend halb geschrieben zu sein.
+        // Atomic file replacement: in the event of a spelling error, the old clip remains
+        // intact, instead of being deleted and then half-written.
         if (!SaveWav(path, newClip))
             return false;
 
@@ -626,11 +626,11 @@ public class AudioLibrary : MonoBehaviour
     // =========================================================
 
     /// <summary>
-    /// Kern der Clip-Auflösung (rein, ohne Zustand):
-    /// eigene Aufnahme → eingebauter Fallback → null.
+    /// Core of the clip resolution (pure, without condition):
+    /// own recording → built-in fallback → null.
     ///
-    /// useBuiltInFallback == false → ohne eigene Aufnahme bleibt es stumm
-    /// (Option "Default-Clips als Fallback" im Options-Screen).
+    /// useBuiltInFallback == false → without own recording remains mute
+    /// (Option "Default clips as fallback" in the Options screen).
     /// </summary>
     public static AudioClip ResolveClip(AudioClip userClip, System.Func<AudioClip> builtInFallback, bool useBuiltInFallback)
     {
@@ -643,20 +643,20 @@ public class AudioLibrary : MonoBehaviour
         return builtInFallback != null ? builtInFallback() : null;
     }
 
-    // Aufgerufen vom AudioHandler
+    // Called from AudioHandler
     public AudioClip GetScoreClip(int score)
     {
         if (!IsSoundEnabled())
             return null;
 
-        // 1) VOM USER AUFGENOMMEN
+        // 1) RECORDED BY THE USER
         AudioClip userClip = null;
         if (runtimeScoreClips.TryGetValue(score, out var runtimeClips))
         {
             userClip = GetRandomClip(runtimeClips, $"score_{score}");
         }
 
-        // 2) EINGEBAUT (Default- oder Custom-Set) — nur wenn als Fallback erlaubt
+        // 2 — Default or Custom Set — only if allowed as fallback
         return ResolveClip(userClip, () => GetBuiltInScoreClip(score), UseBuiltInFallbackEnabled);
     }
 
@@ -667,14 +667,14 @@ public class AudioLibrary : MonoBehaviour
         if (!IsSoundEnabled())
             return null;
 
-        // 1) VOM USER AUFGENOMMEN
+        // 1) RECORDED BY THE USER
         AudioClip userClip = null;
         if (runtimePenaltyClips.TryGetValue(type, out var runtimeClips))
         {
             userClip = GetRandomClip(runtimeClips, $"penalty_{type}");
         }
 
-        // 2) EINGEBAUT (Default- oder Custom-Set) — nur wenn als Fallback erlaubt
+        // 2 — Default or Custom Set — only if allowed as fallback
         return ResolveClip(userClip, () => GetBuiltInPenaltyClip(type), UseBuiltInFallbackEnabled);
     }
 
@@ -683,35 +683,35 @@ public class AudioLibrary : MonoBehaviour
         if (!IsSoundEnabled())
             return null;
 
-        // 1) VOM USER AUFGENOMMEN
+        // 1) RECORDED BY THE USER
         AudioClip userClip = null;
         if (runtimeSpecialClips.TryGetValue(type, out var runtimeClips))
         {
             userClip = GetRandomClip(runtimeClips, $"special_{type}");
         }
 
-        // 2) EINGEBAUT (Default- oder Custom-Set) — nur wenn als Fallback erlaubt
+        // 2 — Default or Custom Set — only if allowed as fallback
         return ResolveClip(userClip, () => GetBuiltInSpecialClip(type), UseBuiltInFallbackEnabled);
     }
 
     // =========================================================
-    // EINGEBAUTE CLIPS (FALLBACK — NICHT IM CUSTOMIZATION-SCREEN SICHTBAR)
+    // CLIPS INCLUDED (CASH BACK — NOT VISIBLE IN THE CUSTOMICATION SCENE)
     // =========================================================
 
     /// <summary>
-    /// Aktives Set: Default bei WillBePublished == true, sonst Custom.
-    /// Das jeweils andere Set dient nur als Sicherheitsnetz, falls im
-    /// aktiven Set für eine ID kein Clip hinterlegt ist.
+    /// Active set: default if WillBePublished == true, otherwise custom.
+    /// The other set serves only as a safety net if in
+    /// active set for an ID no clip is stored.
     /// </summary>
     private bool UsesDefaultSet => WillBePublished;
 
     /// <summary>
-    /// true → die eingebauten Clips (Default-/Custom-Set) dienen als Fallback,
-    /// wenn der User für eine ID noch nichts aufgenommen hat.
-    /// false → es laufen nur eigene Aufnahmen; ohne eigene Aufnahme stumm.
+    /// true → the built-in clips (default/custom set) serve as fallback,
+    /// if the user has not yet recorded anything for an ID.
+    /// false → only own recordings play; without own recording, muted.
     ///
-    /// Quelle: Sound.UseDefaultClipsAsFallback (Default true).
-    /// Ohne Settings (z. B. Editor) gilt der Default: Fallback erlaubt.
+    /// Source: Sound.UseDefaultClipsAsFallback (Default true).
+    /// Without settings (e.g. editor), the default is: Fallback allowed.
     /// </summary>
     public bool UseBuiltInFallbackEnabled
     {
@@ -722,7 +722,7 @@ public class AudioLibrary : MonoBehaviour
         }
     }
 
-    /// <summary>Eingebauter Fallback für eine Score-Ansage (0–180).</summary>
+    /// <summary>Built-in fallback for a score announcement (0–180).</summary>
     public AudioClip GetBuiltInScoreClip(int score)
     {
         AudioClip[] active = UsesDefaultSet ? numberClips : customNumberClips;
@@ -739,7 +739,7 @@ public class AudioLibrary : MonoBehaviour
         return clips[score];
     }
 
-    /// <summary>Eingebauter Fallback für eine Strafe.</summary>
+    /// <summary>Built-in fallback for a penalty.</summary>
     public AudioClip GetBuiltInPenaltyClip(PenaltyType type)
     {
         if (UsesDefaultSet)
@@ -748,7 +748,7 @@ public class AudioLibrary : MonoBehaviour
         return GetCustomPenalty(type) ?? GetDefaultPenaltyClip(type);
     }
 
-    /// <summary>Eingebauter Fallback für ein Special-Event.</summary>
+    /// <summary>Built-in fallback for a special event.</summary>
     public AudioClip GetBuiltInSpecialClip(SpecialAudioType type)
     {
         if (UsesDefaultSet)
@@ -758,12 +758,12 @@ public class AudioLibrary : MonoBehaviour
     }
 
     /// <summary>
-    /// Eingebauter Fallback für eine Custom-ID (Penalty- oder Audio-Event-ID).
-    /// Penalty-IDs kommen aus dem Mapping unten, Event-IDs aus den Seeds
-    /// (SeededAudioEvents: FallbackScore vor FallbackSpecial). Die drei
-    /// user-ähnlichen X01-Events nutzen direkte Custom-Set-Listen.
-    /// Unbekannte IDs (z. B. Sektor-IDs, eigene Events) haben keinen
-    /// eingebauten Clip → null (bleiben stumm, bis der User aufnimmt).
+    /// Built-in fallback for a custom ID (penalty or audio event ID).
+    /// Penalty IDs come from the mapping below, Event IDs from the seeds
+    /// (SeededAudioEvents: FallbackScore before FallbackSpecial)
+    /// User-like X01 events use direct custom set lists.
+    /// Unknown IDs (e.g. sector IDs, own events) do not have
+    /// built-in clip → null (stay silent until the user records).
     /// </summary>
     public AudioClip GetBuiltInClipForKey(string customKey)
     {
@@ -773,7 +773,7 @@ public class AudioLibrary : MonoBehaviour
         if (TryGetPenaltyTypeForKey(customKey, out var penaltyType))
             return GetBuiltInPenaltyClip(penaltyType);
 
-        // User-ähnliche X01-Events: Clips liegen ausschließlich im Custom-Set.
+        // User-like X01 events: Clips are exclusively in the custom set.
         if (!UsesDefaultSet)
         {
             if (string.Equals(customKey, SeededAudioEvents.BahId, StringComparison.OrdinalIgnoreCase))
@@ -789,7 +789,7 @@ public class AudioLibrary : MonoBehaviour
         var seed = SeededAudioEvents.Find(customKey);
         if (seed != null)
         {
-            // Score zuerst (z. B. 420), dann Special (Bust, Undo, Marks, ...).
+            // Score first (e.g. 420), then Special (Bust, Undo, Marks,...).
             if (seed.FallbackScore.HasValue)
             {
                 var scoreClip = GetBuiltInScoreClip(seed.FallbackScore.Value);
@@ -805,8 +805,8 @@ public class AudioLibrary : MonoBehaviour
     }
 
     /// <summary>
-    /// Ordnet die Penalty-IDs (Seeds aus dem CustomizationStore) einem
-    /// PenaltyType zu. Rein/testbar (keine Unity-Abhängigkeit).
+    /// Orders the penalty IDs (seeds from the CustomizationStore)
+    /// PenaltyType to. Pure/testable (no Unity dependency).
     /// </summary>
     public static bool TryGetPenaltyTypeForKey(string penaltyId, out PenaltyType type)
     {
@@ -856,7 +856,7 @@ public class AudioLibrary : MonoBehaviour
         return false;
     }
 
-    // Aufgerufen vom RecorderHandler
+    // Called from RecorderHandler
     public List<AudioClip> GetRuntimeScoreList(int score)
     => runtimeScoreClips.TryGetValue(score, out var l) ? l : null;
 
@@ -926,7 +926,7 @@ public class AudioLibrary : MonoBehaviour
     }
 
     // =========================================================
-    // CUSTOM RESOLVERS (eingebautes Custom-Set)
+    // CUSTOM RESOLVERS (built-in custom set)
     // =========================================================
 
     private AudioClip GetCustomPenalty(PenaltyType type)
@@ -960,10 +960,10 @@ public class AudioLibrary : MonoBehaviour
     }
 
     /// <summary>
-    /// Zufälliger Clip aus einer Liste des eingebauten Custom-Sets.
-    /// Mit Wiederholungs-Vermeidung (kein direkter Repeat des zuletzt
-    /// gespielten Clips), damit Varianten (z. B. 9 Undo-Sounds) abwechslungs-
-    /// reich klingen.
+    /// Random clip from a list of the built-in custom set.
+    /// With repetition avoidance (no direct repeat of the last one)
+    /// played clips), so that variants (e.g. 9 undo sounds) varied
+    /// They sound rich.
     /// </summary>
     private AudioClip GetRandomFromList(List<AudioClip> list, string key)
     {
@@ -978,9 +978,9 @@ public class AudioLibrary : MonoBehaviour
     // =========================================================
 
     /// <summary>
-    /// Trägt eine Aufnahme in den SQLite-Index ein (eine Zeile statt
-    /// Full-File-Rewrite). Nur der Dateiname wird gespeichert, der Ordner
-    /// wird pro Kategorie abgeleitet — keine absoluten Pfade mehr.
+    /// Enter a row into the SQLite index (one row instead of the row).
+    /// Full file rewrite. Only the filename is saved, the folder
+    /// is derived per category — no more absolute paths.
     /// </summary>
     private long InsertClipIndex(AudioCategory category, int score, PenaltyType penaltyType,
         SpecialAudioType specialType, string customKey, string fileName, int slotIndex)
@@ -1026,9 +1026,9 @@ public class AudioLibrary : MonoBehaviour
     }
 
     /// <summary>
-    /// Lädt die vom User aufgenommenen Clips aus der SQLite-DB in die
-    /// Runtime-Dicts. Die eingebauten Clips (Default-/Custom-Set) liegen im
-    /// Inspector und müssen hier nicht geladen werden.
+    /// Downloads the clips recorded by the user from the SQLite-DB into the
+    /// Runtime Dicts. The built-in clips (default/custom set) are in the
+    /// Inspector and do not have to load here.
     /// </summary>
     private IEnumerator LoadLibrary()
     {
@@ -1064,8 +1064,8 @@ public class AudioLibrary : MonoBehaviour
                     continue;
                 }
 
-                // LoadClip wirft nie (härtet intern): Yield ohne try/catch
-                // außenrum (CS1626 verbietet yield in try+catch).
+                // LoadClip never throws (hardens internally): yield without try/catch
+                // around it (CS1626 prohibits yield in try+catch).
                 var dto = DtoFromRow(row, category, path);
                 if (dto == null)
                     continue;
@@ -1090,10 +1090,10 @@ public class AudioLibrary : MonoBehaviour
         {
             IsReady = true;
 
-            // Nachlade-Refresh: Subscriber (Customization-Rows, Score-Grid)
-            // wurden ggf. mit leeren Counts aufgebaut, bevor Clips geladen
-            // waren. Liegt im finally → feuert IMMER, damit das UI aus jedem
-            // Ladezustand heraus konsistent wird.
+            // Reload refresh: subscribers (customization rows, score grid)
+            // were set up with empty counts before loading
+            // It is in finally → ALWAYS fires so that the UI is consistent
+            // from every load state.
             NotifyLibraryChanged(AudioCategory.Score);
             NotifyLibraryChanged(AudioCategory.Penalty);
             NotifyLibraryChanged(AudioCategory.Special);
@@ -1125,7 +1125,7 @@ public class AudioLibrary : MonoBehaviour
     }
 
     /// <summary>
-    /// Stellt File-Counter aus slot_index wieder her (kein Filename-Parsing).
+    /// Recovers file counter from slot_index (no filename parsing).
     /// </summary>
     private void RestoreCounters(List<SqliteDatabaseRepository.RecordedClipRow> rows)
     {
@@ -1170,18 +1170,18 @@ public class AudioLibrary : MonoBehaviour
         }
     }
 
-    /// <summary>Ergebnis eines einzelnen Clip-Loads (Coroutine-Rückgabe).</summary>
+    /// <summary>Result of a single clip load (coroutine return).</summary>
     private sealed class ClipLoadResult
     {
         public bool Ok;
     }
 
     /// <summary>
-    /// Lädt einen Clip ausfallsicher (wirft nie): Request-Fehler, korrupte
-    /// Dateien und Dict-Probleme werden geloggt + übersprungen, damit ein
-    /// einzelner fauler Clip den Gesamt-Load nicht abbricht.
-    /// HINWEIS: Kein yield innerhalb von try/catch (CS1626) — nur der
-    /// Request steht außerhalb, alles Abwehrende in sync-Blöcken.
+    /// Downloads a clip fail-proof (never throws): request errors, corrupt
+    /// Files and dict issues are logged + skipped to make a
+    /// A single lazy clip does not cancel the overall load.
+    /// NOTE: No yield within try/catch (CS1626) — only the
+    /// Request stands outside, all defensive in sync blocks.
     /// </summary>
     private IEnumerator LoadClip(RecordedAudioClipDto dto, ClipLoadResult result)
     {
@@ -1288,7 +1288,7 @@ public class AudioLibrary : MonoBehaviour
             }
             catch (PlatformNotSupportedException)
             {
-                // Fallback für Plattformen ohne atomaren Replace.
+                // Fallback for platforms without atomic replace.
                 File.Copy(tempPath, path, true);
                 TryDeleteFile(tempPath);
             }

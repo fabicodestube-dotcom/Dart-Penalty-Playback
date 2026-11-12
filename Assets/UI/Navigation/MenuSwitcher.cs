@@ -24,7 +24,7 @@ public class MenuSwitcher : MonoBehaviour
         ThemeManager.Instance.OnThemeChanged += ApplyTheme;
 
         // Default
-        _active = game; // ❗ nur State, kein Apply
+        _active = game; // Only state, not apply
 
         if (ThemeManager.Instance.ActiveTheme != null)
         {
@@ -101,7 +101,7 @@ public class MenuSwitcher : MonoBehaviour
         if (isActive)
         {
             item.image.color = ThemeManager.Instance.GetColor(ThemeColorRole.Accent1);
-            item.text.color  = ThemeManager.Instance.GetColor(ThemeColorRole.Accent1); // oder TextOnAccent1
+            item.text.color  = ThemeManager.Instance.GetColor(ThemeColorRole.Accent1); // or TextOnAccent1
         }
         else
         {

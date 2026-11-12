@@ -79,7 +79,7 @@ public class CricketTwoLayoutPlayerList : MonoBehaviour
 
             float target = isLocked ? LockedAlpha : DefaultAlpha;
 
-            // 🔥 Nur animieren wenn sich wirklich was ändert
+            // Only animate when something really changes
             if (!Mathf.Approximately(cg.alpha, target))
             {
                 FadeTo(cg, target);

@@ -36,7 +36,7 @@ public class PlayerDragHandler : MonoBehaviour,
 
     private ScrollRect currentScrollRect;
 
-    // 🔥 AUTO SCROLL STATE
+    // AUTO SCROLL STATE
     private bool isAutoScrolling;
     private float autoScrollDir;
 
@@ -82,7 +82,7 @@ public class PlayerDragHandler : MonoBehaviour,
 
             SimulateDrag(pointerPos);
 
-            ApplyAutoScroll(); // 🔥 FIX: controlled execution
+            ApplyAutoScroll(); // FIX: controlled execution
 
             if (!Pointer.current.press.isPressed)
                 EndDrag(pointerPos);
@@ -172,7 +172,7 @@ public class PlayerDragHandler : MonoBehaviour,
 
         RequestRebuild(placeholder.transform.parent as RectTransform);
 
-        HandleAutoScroll(fake); // 🔥 only sets STATE
+        HandleAutoScroll(fake); // only sets STATE
     }
 
     private void EndDrag(Vector2 pointerPos)
@@ -266,7 +266,7 @@ public class PlayerDragHandler : MonoBehaviour,
     }
 
     // =========================
-    // 🔥 FIXED AUTO SCROLL
+    // FIXED AUTO SCROLL
     // =========================
 
     private void HandleAutoScroll(PointerEventData eventData)

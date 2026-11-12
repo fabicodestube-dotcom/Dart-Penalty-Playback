@@ -40,8 +40,8 @@ public class Leg
     }
 
     /// <summary>
-    /// Gibt den letzten Turn zurück oder null, falls keine Turns existieren.
-    /// Nutzt Index-from-end Operator (^1).
+    /// Returns the last turn or null if no turns exist.
+    /// Uses index-from-end operator (^1).
     /// </summary>
     public Turn GetLastTurn()
     {

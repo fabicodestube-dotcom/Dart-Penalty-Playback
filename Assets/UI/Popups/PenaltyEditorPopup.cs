@@ -8,11 +8,11 @@ using UnityEngine.Localization.Components;
 using UnityEngine.UI;
 
 /// <summary>
-/// Editor-Popup für Penalties (Tab 2). Hauptpanel zeigt eine Liste aller
-/// Triggern (ScoreReached, TurnPattern, GameEvent, TargetArea). Über „Neu“
-/// und „Bearbeiten“ öffnet sich das Trigger-Panel (einzelner Trigger-Editor).
-/// Ein Penalty ohne Trigger wird beim Speichern automatisch deaktiviert.
-/// Built-ins haben eine feste Triggerliste (nur Name/Kosten/Enabled editierbar).
+/// Editor popup for penalties (Tab 2). main panel shows a list of all
+/// Triggers (ScoreReached, TurnPattern, GameEvent, TargetArea).
+/// and “Edit” opens the trigger panel (single trigger editor).
+/// A penalty without trigger is automatically deactivated when you save it.
+/// Built-ins have a fixed trigger list (name/cost/enabled editable only).
 /// </summary>
 public class PenaltyEditorPopup : UIScreen, IUIScreen
 {
@@ -696,7 +696,7 @@ public class PenaltyEditorPopup : UIScreen, IUIScreen
     {
         if (workingConditions == null || workingConditions.Count == 0)
         {
-            // Ohne Trigger: automatisch deaktivieren, aber trotzdem speichern.
+            // Without triggers: automatically deactivate, but still save.
         }
 
         string name = nameInput != null ? nameInput.text.Trim() : "";
@@ -727,7 +727,7 @@ public class PenaltyEditorPopup : UIScreen, IUIScreen
         if (shortName.Length > 16)
             shortName = shortName.Substring(0, 16);
 
-        // Built-ins: Triggerliste ist fix, nur Name/Kosten/Enabled editierbar.
+        // Built-ins: Trigger list is fixed, only name/cost/enabled editable.
         if (editingBuiltIn)
         {
             var existing = CustomizationStore.GetPenalties().Find(x => x != null && x.id == editingId);

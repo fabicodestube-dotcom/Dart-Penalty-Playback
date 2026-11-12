@@ -1,13 +1,13 @@
 using UnityEngine;
 
 /// <summary>
-/// Koordinator des Customization-Screens (BottomPanel-Button):
-/// Swipe-Reiter (Sektoren, Penalties, Audio Events). Hält Referenzen
-/// auf die Seiten und stößt Refresh nach Def-Änderungen an.
-/// Clips werden direkt über die Rows aufgenommen (kein eigener Tab).
-/// Implementiert IUIScreen (OnShow/OnHide via WindowHandler).
+/// Coordinator of the Customization Screen (BottomPanel button):
+/// Swipe riders (sectors, penalties, audio events).
+/// to the pages and triggers refresh after def changes.
+/// Clips are recorded directly via the rows (not their own tab).
+/// Implements IUIScreen (OnShow/OnHide via WindowHandler).
 /// </summary>
-public class CustomizationHandler : MonoBehaviour, IUIScreen
+public class CustomizationScreen : MonoBehaviour, IUIScreen
 {
     [Header("Control")]
     public WindowHandler windowHandler;
@@ -43,10 +43,10 @@ public class CustomizationHandler : MonoBehaviour, IUIScreen
     {
         RefreshAll();
 
-        // Race Library-Load vs. UI-Aufbau: Wurde die Liste geöffnet, bevor
-        // die Clips fertig geladen waren (Counts 0), kommt hier der
-        // garantierte Zweit-Refresh nach Load-Ende — auch wenn die
-        // Load-End-Events verpasst wurden (niemand subscribed o.ä.).
+        // Race Library Load vs. UI Building: Was the list opened before
+        // the clips were loaded (counts 0), comes here the
+        // guaranteed second refresh to load end – even if the
+        // Load-end events were missed (no one subscribed or similar).
         if (AudioLibrary.Instance == null || !AudioLibrary.Instance.IsReady)
         {
             StopRefreshAfterLoad();
@@ -59,7 +59,7 @@ public class CustomizationHandler : MonoBehaviour, IUIScreen
         StopRefreshAfterLoad();
     }
 
-    /// <summary>Wartet auf fertigen Library-Load, dann Listen neu aufbauen.</summary>
+    /// <summary>Wait for finished library load, then rebuild lists.</summary>
     private Coroutine refreshAfterLoad;
     private bool _librarySubscribed;
 
@@ -81,7 +81,7 @@ public class CustomizationHandler : MonoBehaviour, IUIScreen
         }
     }
 
-    /// <summary>Idempotent Abonnieren der AudioLibrary-Änderungs-Events.</summary>
+    /// <summary>Idempotent Subscribe to the AudioLibrary Change Events.</summary>
     private void EnsureLibrarySubscribed()
     {
         if (AudioLibrary.Instance == null)
@@ -98,7 +98,7 @@ public class CustomizationHandler : MonoBehaviour, IUIScreen
         _librarySubscribed = true;
     }
 
-    /// <summary>Reagiert auf AudioLibrary-Änderungen: alle Clip-Anzahlen neu einlesen.</summary>
+    /// <summary>Responds to AudioLibrary changes: re-read all clip counts.</summary>
     private void HandleLibraryChanged(AudioCategory category)
     {
         if (!gameObject.activeInHierarchy)
@@ -115,7 +115,7 @@ public class CustomizationHandler : MonoBehaviour, IUIScreen
         audioEventsPage?.RefreshScoreGridCounts();
     }
 
-    /// <summary>Aktiver Refresh aller Clip-Anzahlen (z. B. nach AudioLibrary-Load).</summary>
+    /// <summary>Active refresh of all clip counts (e.g. after AudioLibrary load).</summary>
     public void RefreshCustomizationCounts()
     {
         RefreshAll();
@@ -126,15 +126,15 @@ public class CustomizationHandler : MonoBehaviour, IUIScreen
         if (!gameObject.activeInHierarchy)
             return;
 
-        // Gezielt statt RefreshAll: Ein Penalty-Save baut nur die
-        // Penalty-Liste neu (~25 Rows), nicht alle 4 Seiten (~400 Objekte).
+        // Targeted instead of RefreshAll: A penalty save only builds the
+        // Penalty list new (~25 rows), not all 4 pages (~400 objects).
         switch (kind)
         {
             case CustomizationChangeKind.Penalties:
                 penaltiesPage?.Refresh();
                 break;
             case CustomizationChangeKind.Sectors:
-                // Sektor-Löschung kann Penalties kaskadieren → mit auffrischen.
+                // Sector Deletion Can Cascade Penalties → With Fresh Up.
                 sectorsPage?.Refresh();
                 penaltiesPage?.Refresh();
                 break;

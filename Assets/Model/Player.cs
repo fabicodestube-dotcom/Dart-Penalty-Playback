@@ -6,12 +6,12 @@ using System;
 public class Player : BasePlayer
 {
     // =========================================================
-    // Konstructor
+    // Constructor
     // =========================================================
 
     public Player(Guid id, string playerName) : base(id, playerName)
     {
-        // Hier ist kein weiterer Code nötig, da die Logik in BasePlayer steckt
+        // No more code is needed here, as the logic is in BasePlayer
     }
 
 

@@ -32,7 +32,7 @@ class ApplicationChrome
         // Original Android flags
         private const int VIEW_SYSTEM_UI_FLAG_VISIBLE = 0;                    // Added in API 14 (Android 4.0.x): Status bar visible (the default)
         private const int VIEW_SYSTEM_UI_FLAG_LOW_PROFILE = 1;                // Added in API 14 (Android 4.0.x): Low profile for games, book readers, and video players; the status bar and/or navigation icons are dimmed out (if visible)
-        private const int VIEW_SYSTEM_UI_FLAG_HIDE_NAVIGATION = 2;            // Added in API 14 (Android 4.0.x): Hides all navigation. Cleared when theres any user interaction.
+        private const int VIEW_SYSTEM_UI_FLAG_HIDE_NAVIGATION = 2;            // Added in API 14 (Android 4.0.x): hides all navigation. Cleared when there's any user interaction.
         private const int VIEW_SYSTEM_UI_FLAG_FULLSCREEN = 4;                // Added in API 16 (Android 4.1.x): Hides status bar. Does nothing in Unity (already hidden if "status bar hidden" is checked)
         private const int VIEW_SYSTEM_UI_FLAG_LAYOUT_STABLE = 256;            // Added in API 16 (Android 4.1.x): ?
         private const int VIEW_SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION = 512;    // Added in API 16 (Android 4.1.x): like HIDE_NAVIGATION, but for layouts? it causes the layout to be drawn like that, even if the whole view isn't (to avoid artifacts in animation)
@@ -291,7 +291,7 @@ class ApplicationChrome
         statusBarColor = darkMode ? 0xFF000000 : 0xFFFFFFFF;
         navigationBarColor = darkMode ? 0xFF000000 : 0xFFFFFFFF;
 
-        // STATES (wichtig stabil)
+        // STATES (important: stable)
         statusBarState = States.VisibleOverContent;
         navigationBarState = States.Visible;
 

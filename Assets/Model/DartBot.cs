@@ -111,7 +111,7 @@ public class DartBot : BasePlayer
 
     private static readonly BotSkillProfile[] SkillProfileAnchors =
     {
-        // Easy (Anfänger / Kneipenspieler)
+        // Easy (beginner/bar player)
         new BotSkillProfile(
             baseAccuracy: 0.35f,
             singleWrongRingChance: 0.15f,
@@ -137,7 +137,7 @@ public class DartBot : BasePlayer
             doubleBullSingleChance: 0.10f,
             doubleBullDoubleChance: 0.05f),
 
-        // Medium (Fortgeschrittener Hobbyspieler)
+        // Medium (advanced hobby player)
         new BotSkillProfile(
             baseAccuracy: 0.55f,
             singleWrongRingChance: 0.08f,
@@ -163,7 +163,7 @@ public class DartBot : BasePlayer
             doubleBullSingleChance: 0.30f,
             doubleBullDoubleChance: 0.20f),
 
-        // Hard (Lokaler Ligaspieler)
+        // Hard (local league player)
         new BotSkillProfile(
             baseAccuracy: 0.75f,
             singleWrongRingChance: 0.04f,
@@ -189,7 +189,7 @@ public class DartBot : BasePlayer
             doubleBullSingleChance: 0.45f,
             doubleBullDoubleChance: 0.40f),
 
-        // Pro (PDC Profi-Niveau)
+        // Pro (PDC professional level)
         new BotSkillProfile(
             baseAccuracy: 0.92f,
             singleWrongRingChance: 0.015f,
@@ -374,9 +374,9 @@ public class DartBot : BasePlayer
 
     private (int value, DartMultiplier multiplier) DetermineX01Target(int score, CheckoutType checkoutType)
     {
-        // 👉 Wie viele Darts sind noch im Turn?
-        // (Du hast das aktuell NICHT im Bot → brauchst du!)
-        int dartsLeft = 3; // TODO: vom Game übergeben wäre besser
+        // How many darts are still in the turn?
+        // (You don’t have this in the bot right now!)
+        int dartsLeft = 3; // TODO: handed over by the game would be better
 
         string checkout = CheckoutDatabase.GetCheckout(checkoutType, score, dartsLeft);
 
@@ -384,13 +384,13 @@ public class DartBot : BasePlayer
         {
             var parts = checkout.Split(' ');
 
-            // 👉 Ersten Dart der Route nehmen
+            // Take the first dart of the route
             var first = ParseDart(parts[0]);
 
             return first;
         }
 
-        // Fallback (dein bisheriges Verhalten)
+        // Fallback (your previous behavior)
         return (GetSkillRating() <= BotSkillScale.EasyMax)
             ? (20, DartMultiplier.Single)
             : (20, DartMultiplier.Triple);
@@ -399,7 +399,7 @@ public class DartBot : BasePlayer
     // Using Checkout Database to determine the best target based on current score and checkout type
     private (int val, DartMultiplier mult) ParseDart(string dart)
     {
-        // Nur Zahl -> Single
+        // Number only - Single
         if (int.TryParse(dart, out int value))
         {
             if (value == 50)
@@ -510,7 +510,7 @@ public class DartBot : BasePlayer
     }
 
     // =========================================================
-    // 🎯 PHYSICS
+    // PHYSICS
     // =========================================================
 
     private Throw SimulatePhysicalThrow((int val, DartMultiplier mult) target)
@@ -633,7 +633,7 @@ public class DartBot : BasePlayer
             return CreateThrow(RandomBoardNumber(), DartMultiplier.Single, target);
         }
 
-        // Ziel = Bullseye
+        // Target = Bullseye
         if (roll < profile.DoubleBullDoubleChance)
             return CreateThrow(25, DartMultiplier.Double, target);
 

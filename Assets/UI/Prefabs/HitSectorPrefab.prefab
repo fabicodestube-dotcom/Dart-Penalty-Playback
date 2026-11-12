@@ -38473,7 +38473,7 @@ MonoBehaviour:
   - {fileID: 5276824840597860902}
   - {fileID: 5365039026028748714}
   - {fileID: 272610877627169174}
-  barView: {fileID: 0}
+  barView: {fileID: 297190729066234818}
   heatmapView: {fileID: 0}
   startWithHeatmap: 0
 --- !u!1 &8013972069685224237

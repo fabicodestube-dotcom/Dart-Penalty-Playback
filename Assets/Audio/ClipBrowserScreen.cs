@@ -5,7 +5,7 @@ using System.IO;
 using System.Collections;
 using UnityEngine.EventSystems;
 
-public class ClipBrowser : MonoBehaviour
+public class ClipBrowserScreen : MonoBehaviour
 {
     [Header("Control")]
     public WindowHandler windowHandler;
@@ -250,7 +250,7 @@ public class ClipBrowser : MonoBehaviour
     }
 
     // =========================
-    // CLIPS SETZEN
+    // SET CLIPS
     // =========================
 
     public void SetScoreClips(int score, List<AudioClip> newClips)
@@ -278,7 +278,7 @@ public class ClipBrowser : MonoBehaviour
     }
 
     /// <summary>
-    /// Clips für Custom-Penalty oder Custom-Audio-Event (stabile String-ID).
+    /// Clips for custom penalty or custom audio event (stable string ID).
     /// </summary>
     public void SetCustomClips(string customKey, string label, List<AudioClip> newClips)
     {
@@ -468,7 +468,7 @@ public class ClipBrowser : MonoBehaviour
 
         if (!deleted)
         {
-            Debug.LogWarning("ClipBrowser: Löschen des Clips in AudioLibrary fehlgeschlagen.");
+            Debug.LogWarning("ClipBrowserScreen: Löschen des Clips in AudioLibrary fehlgeschlagen.");
             return;
         }
 
@@ -771,7 +771,7 @@ public class ClipBrowser : MonoBehaviour
 //     public TMP_Text clipLengthText;
 
 //     [TextArea]
-//     public string noClipText = "Kein Clip vorhanden";
+//     public string noClipText = "No clip available";
 
 //     [Header("Navigation Buttons")]
 //     public CanvasGroup previousButtonGroup;
@@ -817,7 +817,7 @@ public class ClipBrowser : MonoBehaviour
 //     }
 
 //     // =========================
-//     // CLIPS SETZEN
+//     // SET CLIPS
 //     // =========================
 
 //     public void SetScoreClips(int score, List<AudioClip> newClips)
@@ -939,7 +939,7 @@ public class ClipBrowser : MonoBehaviour
 
 //     private IEnumerator WatchPlayback(AudioClip clip)
 //     {
-//         // Warten bis Audio wirklich fertig ist
+//         // Wait until the audio has actually finished
 //         yield return new WaitUntil(() =>
 //             audioSource == null ||
 //             !audioSource.isPlaying
@@ -1018,7 +1018,7 @@ public class ClipBrowser : MonoBehaviour
 
 //         if (!deleted)
 //         {
-//             Debug.LogWarning("ClipBrowser: Löschen des Clips in AudioLibrary fehlgeschlagen.");
+//             Debug.LogWarning("ClipBrowser: Deleting the clip in AudioLibrary failed.");
 //             return;
 //         }
 
@@ -1135,7 +1135,7 @@ public class ClipBrowser : MonoBehaviour
 
 //     private IEnumerator RefreshViewDeferred()
 //     {
-//         // WICHTIG: Layout zuerst finalisieren lassen
+//         // IMPORTANT: finalize layout first
 //         yield return null;
 //         Canvas.ForceUpdateCanvases();
 
@@ -1247,7 +1247,7 @@ public class ClipBrowser : MonoBehaviour
 //                 break;
 //         }
 
-//         int displayIndex = currentIndex + 1;   // exakt gleiche Logik wie clipCountText
+//         int displayIndex = currentIndex + 1;   // exactly the same logic as clipCountText
 
 //         clipNameText.text = LocalizationText.Format("Clip_number_format", "{0} ({1}) - Clip {2}", categoryPart, specPart, displayIndex);
 

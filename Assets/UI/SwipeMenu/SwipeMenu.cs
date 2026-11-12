@@ -49,9 +49,9 @@ public class SwipeMenu : MonoBehaviour
         float target = pagePositions[currentPage];
         float current = scrollRect.horizontalNormalizedPosition;
 
-        // Nahe genug: exakt einrasten und danach idle bleiben. Der alte Code
-        // hat jedes Frame geschrieben und das ScrollRect damit dauerhaft dirty
-        // gehalten (Canvas-Rebuilds im Idle, auch bei statischer Anzeige).
+        // Close enough: snap in exactly and then remain idle.
+        // has written every frame and the ScrollRect is permanently dirty
+        // (Canvas rebuilds in the idle, even with static display).
         if (Mathf.Abs(current - target) < 0.0005f)
         {
             if (current != target)
@@ -122,7 +122,7 @@ public class SwipeMenu : MonoBehaviour
         OnPageChanged?.Invoke(index);
     }
 
-    // 👉 wird vom ScrollRectDragForwarder aufgerufen
+    // is accessed by ScrollRectDragForwarder
     public void SetDragging(bool dragging)
     {
         isDragging = dragging;
@@ -133,7 +133,7 @@ public class SwipeMenu : MonoBehaviour
         scrollRect.horizontalNormalizedPosition = Mathf.Clamp01(normalizedPos);
     }
 
-    // optional, falls du ihn noch nutzt
+    // Optional if you still use it
     public void OnDragEnded()
     {
         scrollRect.velocity = Vector2.zero;
@@ -151,9 +151,9 @@ public class SwipeMenu : MonoBehaviour
 
     public void ResetView()
     {
-        // Horizontal zurück auf erste Seite.
-        // Guards: Jeder Positions-Setter dirtied das Layout — nichts schreiben,
-        // was schon stimmt (sonst geballter Riesen-Rebuild beim Verlassen).
+        // Horizontally back to first page.
+        // Guards: Every position-setter dirtied the layout — write nothing,
+        // which is true (otherwise a concentrated giant rebuild when leaving).
         bool pageChanged = currentPage != 0;
         currentPage = 0;
 
@@ -171,13 +171,13 @@ public class SwipeMenu : MonoBehaviour
             indicator.SetActive(0);
         }
 
-        // Alle vertikalen ScrollViews zurück nach oben.
-        // Guard: Bereits oben stehende ScrollRects nicht anfassen.
+        // All vertical ScrollViews back up.
+        // Guard: Don't touch ScrollRects above.
         ScrollRect[] allScrollRects = scrollRect.content.GetComponentsInChildren<ScrollRect>(true);
 
         foreach (var sr in allScrollRects)
         {
-            // Haupt-Horizontal-ScrollRect ignorieren
+            // Ignore main horizontal ScrollRect
             if (sr == scrollRect)
                 continue;
 

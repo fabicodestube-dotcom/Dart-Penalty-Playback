@@ -13,7 +13,7 @@ public class RippleAnimation : MonoBehaviour
     private Coroutine _spawnCoroutine;
     private bool _isSpawning = false;
 
-    // Startet die Wellen-Produktion von außen
+    // Starts wave production from outside
     public void StartRipples()
     {
         Debug.Log($"START RIPPLES  frame={Time.frameCount}");
@@ -64,7 +64,7 @@ public class RippleAnimation : MonoBehaviour
         float timer = 0f;
         while (timer < 1f)
         {
-            // Verhindert Fehler, falls das Skript/Objekt mitten im Fade zerstört wird
+            // Prevents errors if the script/object is destroyed in the middle of the fade
             if (ripple == null) yield break; 
 
             timer += Time.deltaTime * speed;

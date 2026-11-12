@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using TMPro;
 using UnityEngine;
@@ -23,14 +23,14 @@ public class TableView : MonoBehaviour
     [Tooltip("Feste Breite je Daten-Spalte im Horizontal-Modus.")]
     public float fixedColumnWidth = 72f;
 
-    /// <summary>Kopfzeile des letzten Build()-Aufrufs (für Tap-Verdrahtung).</summary>
+    /// <summary>Header of last Build() call (for tap wiring).</summary>
     public DynamicTableRow HeaderRow { get; private set; }
 
     private float[] columnWidths;
     private string originalTitle;
     private TableCellData[] originalHeader;
 
-    /// <summary>Zuletzt gültige Spaltenbreiten (Fallback, siehe CalculateColumnWidths).</summary>
+    /// <summary>Last valid column widths (fallback, see CalculateColumnWidths).</summary>
     private float[] lastGoodColumnWidths;
     private ScrollRect horizontalScrollRect;
     private LayoutElement horizontalViewportLayout;
@@ -62,7 +62,7 @@ public class TableView : MonoBehaviour
         originalHeader = header;
         SetTitle(title);
 
-        // Perf (M1): Titel ist nie interaktiv.
+        // Perf (M1): Title is never interactive.
         if (headline != null && headline.raycastTarget)
             headline.raycastTarget = false;
 
@@ -74,8 +74,8 @@ public class TableView : MonoBehaviour
         var headerRow = Instantiate(headerPrefab, rowsContainer).GetComponent<DynamicTableRow>();
         headerRow.Setup(" ", LocalizeHeader(header), columnWidths, true);
         HeaderRow = headerRow;
-        // Explizit nach vorne: Clear() behält alte Kinder, Instantiate hängt
-        // hinten an, Pool-Reuse sortiert nicht um (SetParent behält Position).
+        // Explicit forward: Clear() retains old children, Instantiate hangs
+        // Back to, pool-reuse does not re-sort (SetParent retains position).
         headerRow.transform.SetAsFirstSibling();
 
         if (horizontalScroll)
@@ -173,9 +173,9 @@ public class TableView : MonoBehaviour
     }
 
     /// <summary>
-    /// Schaltet eine Zeile um. Gibt true zurück, wenn eine existierende Zeile
-    /// ihren Zustand WIRKLICH gewechselt hat (nur dann muss die Tabellenhöhe
-    /// via ApplyLayout neu berechnet werden).
+    /// Switches a line. Returns true if an existing line
+    /// has REALLY changed its state (only then the table height must be
+    /// recalculated via ApplyLayout.
     /// </summary>
     public bool SetRowActive(string key, bool active)
     {
@@ -324,7 +324,7 @@ public class TableView : MonoBehaviour
             ((activeRowCount + 1) * RowHeight) +
             (activeDividerCount * DividerHeight);
 
-        // Nur schreiben was sich ändert — jeder Setter dirtied das Layout.
+        // Just write what changes — each setter directs the layout.
         if (rootLayout != null)
         {
             if (!Mathf.Approximately(rootLayout.preferredHeight, totalHeight))
@@ -359,22 +359,22 @@ public class TableView : MonoBehaviour
         rowCount = 0;
     }
 
-    /// <summary>Anzahl derzeit gepoolter (inaktiver) Reserve-Rows.</summary>
+    /// <summary>Number of currently pooled (inactive) reserve rows.</summary>
     public int PooledSpareRows => rowPool.Count;
 
     /// <summary>
-    /// Stellt sicher, dass mindestens `desired` inaktive Reserve-Rows (mit
-    /// vollem Zell-Ausbau) im Pool liegen. Neue Spieler finden dadurch sofort
-    /// fertige Rows — kein Instantiate-Hitch im sichtbaren Betrieb. Spares
-    /// sind keine Entries: kein Einfluss auf sichtbare Zeilen oder
-    /// Layout-Höhen.
+    /// Ensures that at least `desired` inactive reserve rows (with
+    /// full cell expansion) are in the pool. New players therefore
+    /// immediately find finished rows — no instantiate hit in visible operation.
+    /// These are not entries: no influence on visible rows or
+    /// layout heights.
     /// </summary>
     public void EnsureSpareRows(int desired)
     {
         if (desired <= 0 || rowPrefab == null || rowsContainer == null)
             return;
         if (columnWidths == null)
-            return; // Erst nach dem ersten Build (braucht Spaltenbreiten).
+            return; // Only after the first build (needs column widths).
 
         int cellCount = Mathf.Max(1, columnWidths.Length - 1);
 
@@ -388,8 +388,8 @@ public class TableView : MonoBehaviour
                 return;
             }
 
-            // Voller Zell-Ausbau mit Dummy-Werten (einmalig), dann inaktiv
-            // in den Pool. Echte Werte kommen beim späteren Setup.
+            // Full cell expansion with dummy values (one time), then inactive
+            // Real values come in later setup.
             row.Setup(" ", new TableCellData[cellCount], columnWidths, false);
             row.ClearCellTaps();
             go.SetActive(false);
@@ -436,12 +436,12 @@ public class TableView : MonoBehaviour
     {
         float[] widths = new float[headerValues.Length + 1];
 
-        // Spieler-Spalte behält ihre Breite (Optik wie bisher).
+        // Player column retains its width (optics as before).
         widths[0] = 300f;
 
         if (horizontalScroll)
         {
-            // Feste Breiten: lange Namen blähen nichts auf (ShortLabel).
+            // Fixed widths: long names inflate nothing (ShortLabel ).
             for (int i = 0; i < headerValues.Length; i++)
                 widths[i + 1] = Mathf.Max(1f, fixedColumnWidth);
             return widths;
@@ -451,9 +451,9 @@ public class TableView : MonoBehaviour
             ? ((RectTransform)rowsContainer).rect.width
             : 0f;
 
-        // Ohne Live-Layout (inaktiv/vor erstem Rebuild) ist die Breite 0 —
-        // dann auf die zuletzt gültige Breite zurückfallen statt negative
-        // Spalten zu erzeugen.
+        // Without live layout (inactive/before first rebuild) the width is 0 —
+        // then fall back to the last valid width instead of creating negative
+        // column widths.
         if (totalWidth <= 0f
             && lastGoodColumnWidths != null
             && lastGoodColumnWidths.Length == headerValues.Length + 1)
@@ -474,8 +474,8 @@ public class TableView : MonoBehaviour
     }
 
     /// <summary>
-    /// Hängt den Rows-Bereich einmalig in einen horizontalen ScrollRect
-    /// (Viewport + RectMask2D, nur horizontal). Idempotent, nur im Horizontal-Modus.
+    /// Hangs the rows area uniquely in a horizontal ScrollRect
+    /// (Viewport + RectMask2D, horizontal only). Idempotent, horizontal only.
     /// </summary>
     private void EnsureHorizontalScroll()
     {
@@ -493,9 +493,9 @@ public class TableView : MonoBehaviour
         viewport.transform.SetParent(parent, false);
         viewport.transform.SetSiblingIndex(siblingIndex);
 
-        // Anker explizit: Viewport füllt die Tabellenbreite (gestreckt).
-        // (Frisch erzeugte RectTransforms haben Engine-Defaults — darauf
-        // verlassen wir uns nicht.)
+        // Anchor explicit: Viewport fills the table width (stretched).
+        // (Freshly created RectTransforms have engine defaults — on this
+        // Let us not leave ourselves.
         var viewportRect = viewport.transform as RectTransform;
         if (viewportRect != null)
         {
@@ -508,8 +508,8 @@ public class TableView : MonoBehaviour
         viewportLayout.flexibleWidth = 1f;
         viewportLayout.flexibleHeight = 1f;
 
-        // RectMask2D statt Mask: reines Rechteck-Clipping ohne Stencil und
-        // ohne Graphic (Stencil-Masken schlucken auf Mobile-GPUs gern alles).
+        // RectMask2D instead of mask: pure rectangular clipping without stencil and
+        // without graphics (Stencil masks like to swallow everything on mobile GPUs).
         viewport.AddComponent<RectMask2D>();
 
         var scroll = viewport.AddComponent<ScrollRect>();
@@ -521,10 +521,10 @@ public class TableView : MonoBehaviour
         rowsContainer.SetParent(viewport.transform, false);
         scroll.content = rowsContainer as RectTransform;
 
-        // Content-Geometrie explizit (einmalig): unten-links + Pivot (0,0) +
-        // Position (0,0) + Größe aus ApplyRowWidths. Mit Center-Pivot rendert
-        // der Content um die halbe Größe versetzt (unten-rechts) und das
-        // Scroll-Mapping läuft daneben — exakt das beobachtete Bild.
+        // Content geometry explicit (one-time): bottom-left + pivot (0,0) +
+        // Position (0.0) + size from ApplyRowWidths. rendered with Center Pivot
+        // The content is half-sized (bottom right) and the
+        // Scroll mapping runs next to it — exactly the image observed.
         var contentRectPre = rowsContainer as RectTransform;
         if (contentRectPre != null)
         {
@@ -540,22 +540,22 @@ public class TableView : MonoBehaviour
         var containerLayout = rowsContainer.GetComponent<VerticalLayoutGroup>();
         if (containerLayout != null)
         {
-            // Zeilen behalten ihre gesetzte Breite (nichts strecken/stauchen).
+            // Rows keep their set width (no stretching/compressing).
             containerLayout.childControlWidth = false;
             containerLayout.childForceExpandWidth = false;
         }
 
-        // Breite setzen wir explizit (ApplyRowWidths) — ein ggf. vorhandener
-        // Fitter darf horizontal nicht mitreden (vertikal bleibt wie im Prefab).
+        // We explicitly set width (ApplyRowWidths) — an existing one if applicable
+        // Fitter is not allowed to have a say horizontally (vertical remains as in the prefab).
         var existingFitter = rowsContainer.GetComponent<ContentSizeFitter>();
         if (existingFitter != null)
             existingFitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
     }
 
     /// <summary>
-    /// Fixiert Content-Größe (Breite = Spaltensumme, Höhe = Tabellenhöhe) und
-    /// Zeilenbreiten explizit. KEIN ContentSizeFitter hier: Der kämpft mit
-    /// dem Fitter weiter oben in der Hierarchie um die Größenberechnung.
+    /// Fixes content size (width = column sum, height = table height) and
+    /// No ContentSizeFitter here: He struggles with
+    /// the fitter further up in the hierarchy around the size calculation.
     /// </summary>
     private void ApplyRowWidths()
     {

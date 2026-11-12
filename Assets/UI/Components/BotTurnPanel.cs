@@ -61,6 +61,8 @@ public class BotTurnPanel : MonoBehaviour
     private GameObject _pausedContainer;
     private Sprite _dartSprite;
     private Sprite _boardSprite;
+    private Transform _botIconRow;
+    private Image _botIconSource;
 
     private bool _built;
 
@@ -104,13 +106,15 @@ public class BotTurnPanel : MonoBehaviour
 
     private ThemeManager _subscribedThemeManager;
 
-    public void Initialize(GameObject root, GameObject playingContainer, GameObject pausedContainer, Sprite dartSprite, Sprite boardSprite)
+    public void Initialize(GameObject root, GameObject playingContainer, GameObject pausedContainer, Sprite dartSprite, Sprite boardSprite, Transform botIconRow = null, Image botIcon = null)
     {
         _root = root;
         _playingContainer = playingContainer;
         _pausedContainer = pausedContainer;
         _dartSprite = dartSprite;
         _boardSprite = boardSprite;
+        _botIconRow = botIconRow;
+        _botIconSource = botIcon;
 
         EnsureBuilt();
     }
@@ -529,8 +533,19 @@ public class BotTurnPanel : MonoBehaviour
         nameRect.offsetMin = new Vector2(0f, -NameTextHeight);
         nameRect.offsetMax = Vector2.zero;
 
-        Transform iconRow = FindChild(_root.transform, "BotIconRow");
-        Transform botIcon = iconRow != null ? FindChild(iconRow, "BotIcon") : null;
+        Transform iconRow = _botIconRow;
+        if (iconRow == null)
+        {
+            Debug.LogWarning("[BotTurnPanel] botIconRow nicht verdrahtet; Fallback-Suche nach 'BotIconRow'.", this);
+            iconRow = FindChild(_root.transform, "BotIconRow");
+        }
+
+        Transform botIcon = _botIconSource != null ? _botIconSource.transform : null;
+        if (botIcon == null && iconRow != null)
+        {
+            Debug.LogWarning("[BotTurnPanel] botIcon nicht verdrahtet; Fallback-Suche nach 'BotIcon'.", this);
+            botIcon = FindChild(iconRow, "BotIcon");
+        }
 
         if (botIcon != null)
         {

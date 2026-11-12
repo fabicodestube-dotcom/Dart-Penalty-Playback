@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using TMPro;
@@ -59,9 +59,9 @@ public class HistoryItem : MonoBehaviour
     }
 
     /// <summary>
-    /// Bereitet das Item für die Wiederverwendung aus dem Pool vor.
-    /// Lässt gepoolte Player-Rows/Divider bestehen (nur deaktiviert),
-    /// damit der nächste Setup-Aufruf ohne Instantiate auskommt.
+    /// Prepares the item for reuse from the pool.
+    /// Allows pooled player rows/dividers (only deactivated),
+    /// so that the next setup call does not require instantiations.
     /// </summary>
     public void PrepareForPool()
     {
@@ -183,8 +183,8 @@ public class HistoryItem : MonoBehaviour
             lostGame = entry.LostGameCount
         };
 
-        // Custom-Anteil der Gesamtkosten aus dem Spiel-Snapshot (Kosten zum
-        // Spielzeitpunkt) — sonst zeigte GetTotalPenaltyCosts() nur Legacy.
+        // Custom share of the total cost from the game snapshot (cost to the game)
+        // Time of play) — otherwise GetTotalPenaltyCosts() showed only Legacy.
         if (entry.CustomPenaltyCounts != null && summary?.CustomPenaltySnapshot != null)
         {
             foreach (var kvp in entry.CustomPenaltyCounts)

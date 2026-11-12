@@ -9,36 +9,36 @@ using UnityEngine;
 public class GameStats
 {
     // =========================================================
-    // IDENTIFIKATION
+    // IDENTIFICATION
     // =========================================================
     [JsonProperty] public Guid playerID;
 
     // =========================================================
-    // GAME STATE (laufender Spielstand innerhalb eines Matches)
+    // GAME STATE (current score within a match)
     // =========================================================
     [JsonProperty] public int gameCount = 0;
     [JsonProperty] public int gamesWon = 0;
-    [JsonProperty] public int currentLegCount = 0; // Anzahl der gewonnenen Legs im aktuellen Set (wird nach Set-Win auf 0 gesetzt)
-    [JsonProperty] public int totalLegsCount = 0; // Gesamtzahl der gespielten Legs (über alle gespielten Matches)
-    [JsonProperty] public int totalLegsWon = 0; // Gesamtzahl der gewonnenen Legs (über alle gespielten Matches)
-    [JsonProperty] public float totalLegWinRate = 0f; // wird aus won/count berechnet (gerundet)
+    [JsonProperty] public int currentLegCount = 0; // Number of legs won in the current set (set to 0 after set-win)
+    [JsonProperty] public int totalLegsCount = 0; // Total number of legs played (over all matches played)
+    [JsonProperty] public int totalLegsWon = 0; // Total number of legs won (over all matches played)
+    [JsonProperty] public float totalLegWinRate = 0f; // is calculated from won/count (rounded)
 
     [JsonProperty] public int totalSetsCount = 0;
     [JsonProperty] public int totalSetsWon = 0;
-    [JsonProperty] public float totalSetWinRate = 0f; // wird aus won/count berechnet (gerundet)
+    [JsonProperty] public float totalSetWinRate = 0f; // is calculated from won/count (rounded)
 
     // =========================================================
-    // PENALTIES (Fehler / Regelverstöße / Spezialereignisse)
+    // PENALTIES (error / rule violations / special events)
     // =========================================================
     [JsonProperty] public int wallCount = 0;
     [JsonProperty] public int ceilingCount = 0;
     [JsonProperty] public int allMissCount = 0;
     [JsonProperty] public int tripleOnesCount = 0;
-    [JsonProperty] public int tripleDigitCount; // Nur X01 + Cricket
+    [JsonProperty] public int tripleDigitCount; // only X01 + cricket
     [JsonProperty] public int lostGame = 0;
 
     // =========================================================
-    // THROWS (Dart-Wurf Statistik / Trefferquoten)
+    // THROWS (dart throw statistics / hit rates)
     // =========================================================
     [JsonProperty] public int totalThrowsCount = 0;
     [JsonProperty] public int totalDoubleCount = 0;
@@ -71,9 +71,9 @@ public class GameStats
 
         gamesWon += Math.Min(stats.gamesWon, 1);
 
-        // Penalty-Kosten zentral aus den Counterständen berechnen: Die Caller
-        // übergeben stats.totalPenaltyCost, das bei Einzelspiel-Stats immer 0 ist
-        // (wird nur in Aggregaten gesetzt). Fallback: übergebener Wert.
+        // Calculate penalty costs centrally from the counter stands: The callers
+        // handed over stats.totalPenaltyCost which is always 0 for single-game stats
+        // (is set only in aggregates). Fallback: value passed.
         float resolvedCost = penaltyCost;
         try { resolvedCost = stats.GetTotalPenaltyCosts(); }
         catch { resolvedCost = penaltyCost; }
@@ -104,7 +104,7 @@ public class GameStats
         UpdateSetWinRate();
     }
 
-    /// <summary>Addiert fremde Per-Def-Counts (Aggregation über Spiele).</summary>
+    /// <summary>Adds foreign per-def counts (aggregation via games).</summary>
     protected void MergeCustomPenaltyCounts(GameStats stats)
     {
         if (stats?.customPenaltyCounts == null)
@@ -120,7 +120,7 @@ public class GameStats
         }
     }
 
-    /// <summary>Zieht fremde Per-Def-Counts ab (Delete-Pfad, symmetrisch).</summary>
+    /// <summary>Subtracts foreign per-def counts (delete path, symmetrical).</summary>
     protected void SubtractCustomPenaltyCounts(GameStats stats)
     {
         if (stats?.customPenaltyCounts == null)
@@ -291,17 +291,17 @@ public class GameStats
     }
 
     /// <summary>
-    /// Separates Strafkonto für Custom-Penalties (Tab 2): gebuchte
-    /// def.cost-Beträge, pro Spiel. Aggregiert über gamePenaltyCosts.
+    /// Separate penalty account for custom penalties (Tab 2): booked
+    /// def.cost -Amounts, per game. Aggregated via gamePenaltyCosts.
     /// </summary>
     [JsonProperty] public float customPenaltyCost = 0f;
 
     /// <summary>
-    /// Pro Custom-Def gebuchte Anzahl (Def-ID → Count). Persistiert im
-    /// player_game_stats-JSON und in Aggregaten mitgeführt, damit History,
-    /// GameDetail und Statistik je Penalty-ID auflösen können — auch wenn
-    /// die Def längst gelöscht/umbenannt ist (Namen kommen aus dem
-    /// Spiel-Snapshot, nicht aus dem Live-Store).
+    /// Number booked per custom def (Def-ID → Count).
+    /// Persisted in player_game_stats JSON and in aggregates so that History,
+    /// GameDetail and statistics can resolve each penalty ID – even if
+    /// the def has long since been deleted/renamed (names come from the
+    /// game snapshot, not from the live store).
     /// </summary>
     [JsonProperty] public Dictionary<string, int> customPenaltyCounts = new Dictionary<string, int>();
 
@@ -313,7 +313,7 @@ public class GameStats
         customPenaltyCost += cost;
     }
 
-    /// <summary>Bucht EINE Custom-Buchung (Kosten + Zähler, symmetrisch zu Remove).</summary>
+    /// <summary>Bay ONE custom booking (cost + counter, symmetrical to Remove).</summary>
     public virtual void AddCustomPenaltyBooking(string penaltyId, float cost)
     {
         AddCustomPenaltyCost(cost);
@@ -352,10 +352,10 @@ public class GameStats
         triplePercentage = 0f;
 
         // Legacy-Penalty-Counter (wall/ceiling/allMiss/tripleOnes/
-        // tripleDigit/lostGame) werden NICHT genullt: Das Legacy-System ist
-        // stillgelegt (kein Rebuild mehr); alte Spiele behalten ihre Werte
-        // aus der persistierten Zeile (RestorePersistedLegacyPenalties),
-        // neue Spiele starten bei 0 (InitializeStats).
+        // tripleDigit / lostGame ) will NOT be zeroed: The legacy system is
+        // decommissioned (no more rebuild); old games retain their values
+        // from the persistent line (RestorePersistedLegacyPenalties),
+        // New games start at 0 (InitializeStats).
     }
 
 
@@ -465,10 +465,10 @@ public class GameStats
         total += GetPenaltyCost(settings, PenaltyType.ThreeOnes, tripleOnesCount);
         total += GetPenaltyCost(settings, PenaltyType.LostGame, lostGame);
 
-        // Achtung: existiert nicht in AddPenalty, aber in Stats vorhanden
+        // Note: does not exist in AddPenalty but exists in stats
         total += GetPenaltyCost(settings, PenaltyType.Schnapszahl, tripleDigitCount);
 
-        // Separates Custom-Konto (Tab 2, def.cost-Buchungen).
+        // Separate custom account (Tab 2, def.cost bookings).
         total += customPenaltyCost;
 
         return total;

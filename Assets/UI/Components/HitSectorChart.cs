@@ -33,7 +33,7 @@ public class HitSectorChart : MonoBehaviour
     private void Awake()
     {
         heatmapActive = startWithHeatmap;
-        // Perf (M1): Headline + Y-Labels sind nie interaktiv.
+        // Perf (M1): Headline + Y labels are never interactive.
         if (headline != null && headline.raycastTarget)
             headline.raycastTarget = false;
 
@@ -51,14 +51,14 @@ public class HitSectorChart : MonoBehaviour
         ApplyView();
     }
 
-    /// <summary>Button-Methode: Balken-Ansicht anzeigen (für OnClick verdrahten).</summary>
+    /// <summary>Button method: Show bar view (wire for OnClick).</summary>
     public void ShowBars()
     {
         heatmapActive = false;
         ApplyView();
     }
 
-    /// <summary>Button-Methode: Heatmap-Ansicht anzeigen (für OnClick verdrahten).</summary>
+    /// <summary>Button method: Show heatmap view (wire for OnClick).</summary>
     public void ShowHeatmap()
     {
         heatmapActive = true;
@@ -76,7 +76,9 @@ public class HitSectorChart : MonoBehaviour
         if (barView != null)
             return;
 
-        // Primär: Balken-Container des Prefabs (heißt dort "Graphic").
+        Debug.LogWarning("[HitSectorChart] barView nicht verdrahtet; Fallback-Suche nach 'Graphic'/'Graphics'.", this);
+
+        // Primary: bar container of the prefab (is called "Graphic").
         var graphicChild = transform.Find("Graphic") ?? transform.Find("Graphics");
         if (graphicChild != null)
         {
@@ -99,6 +101,9 @@ public class HitSectorChart : MonoBehaviour
         }
 
         var existing = transform.Find("HeatmapView");
+        if (existing != null)
+            Debug.LogWarning("[HitSectorChart] heatmapView nicht verdrahtet; vorhandene 'HeatmapView' per Fallback gefunden.", this);
+
         GameObject go = existing != null ? existing.gameObject : null;
 
         if (go != null)
@@ -106,9 +111,9 @@ public class HitSectorChart : MonoBehaviour
 
         if (go == null)
         {
-            // CanvasRenderer steht explizit in der Liste: RequireComponent-
-            // Heilung per AddComponent greift nicht in jedem Pfad
-            // (Prefab-Merge, manuell angelegte Objekte).
+            // CanvasRenderer is explicitly in the list: RequireComponent-
+            // Healing via AddComponent does not occur in every path
+            // (Prefab merge, manually created objects).
             go = new GameObject("HeatmapView", typeof(RectTransform), typeof(CanvasRenderer));
             go.transform.SetParent(transform, false);
 
@@ -151,7 +156,7 @@ public class HitSectorChart : MonoBehaviour
         }
 
         // -------------------------------------------------
-        // Name setzen
+        // Setting up name
         // -------------------------------------------------
         if (headline != null)
         {
@@ -159,7 +164,7 @@ public class HitSectorChart : MonoBehaviour
         }
 
         // -------------------------------------------------
-        // Maximum bestimmen
+        // Determine the maximum
         // -------------------------------------------------
 
         int max = 0;
@@ -173,7 +178,7 @@ public class HitSectorChart : MonoBehaviour
         }
 
         // -------------------------------------------------
-        // Auf nächste durch 4 teilbare Zahl aufrunden
+        // Rounded up to the nearest by 4 divisible numbers
         // -------------------------------------------------
 
         int axisMax = Mathf.Max(4, max);
@@ -182,7 +187,7 @@ public class HitSectorChart : MonoBehaviour
             axisMax++;
 
         // -------------------------------------------------
-        // Y-Achsen Labels setzen
+        // Set Y-axis labels
         // -------------------------------------------------
 
         if (yAxisLabels != null && yAxisLabels.Length >= 5)
@@ -194,7 +199,7 @@ public class HitSectorChart : MonoBehaviour
             }
         }
 
-        // Balken (Prefab-Objekte) füttern.
+        // Feeding bars (prefab objects).
         if (bars == null || bars.Count == 0)
         {
             ForwardHeatmap(counts);

@@ -12,7 +12,7 @@ public abstract class GameEngine : MonoBehaviour
     public AppHandler appHandler;
     public WindowHandler windowHandler;
     public AudioManager audioManager;
-    public Summary summary;
+    public SummaryScreen summary;
     public InputHandler inputHandler;
 
     [Header("UI")]
@@ -53,7 +53,7 @@ public abstract class GameEngine : MonoBehaviour
 
     protected virtual void InitializeGame(Game game)
     {
-        // Absicherung
+        // Safeguard
         if (game == null)
         {
             Debug.LogError("X01GameEngine: Game Objekt ist null");
@@ -70,8 +70,8 @@ public abstract class GameEngine : MonoBehaviour
 
         isPaused = false;
 
-        // Erst abonnieren, damit Game Start (manuelles Event) über den
-        // Spiel-Snapshot gefiltert und abgespielt werden kann.
+        // Subscribe first, so that Game Start (manual event) via the
+        // Game snapshot can be filtered and played.
         SubscribeToGameEvents();
         game.OnSectorHit += HandleSectorHit;
 
@@ -155,12 +155,12 @@ public abstract class GameEngine : MonoBehaviour
 
     protected virtual void BeforeSave()
     {
-        // z.B. X01 überschreibt das
+        // e.g. X01 overwrites this
     }
 
     protected void StartBotTurn(DartBot bot)
     {
-        StopBotTurn(); // defensive: nie doppelt laufen lassen
+        StopBotTurn(); // defensive: never double-run
         botCoroutine = StartCoroutine(HandleBotTurn(bot));
     }
 
@@ -248,9 +248,9 @@ public abstract class GameEngine : MonoBehaviour
             summary.PlayerEntries.Add(entry);
         }
 
-        // Snapshot für transiente Anzeige (Summary-Screen): Spielstart-Stand
-        // aus dem Game (nicht Live-Store), damit Namen + enabled-Stand zum
-        // Spielzeitpunkt stehen.
+        // Snapshot for transient display (summary screen): Game start state
+        // from the game (not live store), so that name + enabled stand to
+        // at game time.
         try
         {
             summary.CustomPenaltySnapshot = game.GetPenaltySnapshot();
@@ -335,10 +335,10 @@ public abstract class GameEngine : MonoBehaviour
 
         if (player is DartBot bot)
         {
-            // Immer Bot-UI anzeigen
+            // Always show bot UI
             inputHandler.ShowBotPlayingState(bot);
 
-            // Bot wurde durch Undo oder Pause angehalten
+            // Bot stopped by Undo or Pause
             if (botUndoPending || isPaused)
             {
                 inputHandler.ShowBotPausedState();
@@ -358,8 +358,8 @@ public abstract class GameEngine : MonoBehaviour
     }
 
     /// <summary>
-    /// Custom-Penalty ausgelöst: nur Audio (Zähler/Kosten folgen separat).
-    /// Turn-Parameter für spätere Counter-Anbindung.
+    /// Custom penalty triggered: only audio (counter/cost follow separately).
+    /// Turn parameters for later counter-connection.
     /// </summary>
     protected void HandleCustomPenaltyAudio(string penaltyId, Guid playerId, Turn turn)
     {
@@ -367,7 +367,7 @@ public abstract class GameEngine : MonoBehaviour
             audioManager.PlayCustomPenaltyClip(penaltyId);
     }
 
-    /// <summary>Custom-Audio-Event ausgelöst: nur Abspielen.</summary>
+    /// <summary>Custom audio event triggered: play only.</summary>
     protected void HandleCustomAudioEvent(string eventId)
     {
         if (audioManager != null)
@@ -375,9 +375,9 @@ public abstract class GameEngine : MonoBehaviour
     }
 
     /// <summary>
-    /// Sektor-Eingabe (Wall/Ceiling/Custom): spielt den Sektor-eigenen Clip
-    /// (Key = Sektor-ID). Der Penalty-Sound folgt separat über
-    /// OnCustomPenaltyTriggered, die Queue hält die Reihenfolge ein.
+    /// Sector input (Wall/Ceiling/Custom): plays the sector-owned clip
+    /// (Key = sector ID) The penalty sound follows separately over
+    /// OnCustomPenaltyTriggered, the queue keeps the order.
     /// </summary>
     protected virtual void HandleSectorHit(Guid playerId, string sectorId)
     {
@@ -386,8 +386,8 @@ public abstract class GameEngine : MonoBehaviour
     }
 
     /// <summary>
-    /// Manuelles Audio-Event nur abspielen, wenn es im Spiel-Snapshot aktiv
-    /// und für den Modus freigegeben ist (disabled = stumm).
+    /// Play manual audio event only when it is active in the game snapshot
+    /// and is released for mode (disabled = mute).
     /// </summary>
     protected void PlayManualAudioEvent(string eventId)
     {

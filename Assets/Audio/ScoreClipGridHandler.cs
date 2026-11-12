@@ -4,14 +4,14 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// Score-Clip-Grid (0–180) als eigenes Popup/Seite: Wird über die
-/// Score-Sammel-Row der AudioEventsPage geöffnet. Buttons pro Row: 5
-/// (HorizontalLayoutGroup-Rows in einem VerticalLayoutGroup-Parent,
-/// volle Breite, auflösungsunabhängig).
-/// Jeder Button zeigt die Clip-Anzahl und öffnet den ClipBrowser.
-/// Verdrahtung (Szene, macht der UI-Umbau): scoresParent + buttonPrefab
-/// (AudioClipButton-Prefab mit CustomClipButton) + windowHandler +
-/// clipBrowser zuweisen.
+/// Score-Clip-Grid (0–180) as its own popup/page:
+/// Score rack row of AudioEventsPage open. buttons per row: 5
+/// (HorizontalLayoutGroup rows in a VerticalLayoutGroup parent,
+/// full width, independent of resolution.
+/// Each button shows the clip count and opens the ClipBrowserScreen.
+/// Wiring (scene, makes the UI conversion): scoresParent + buttonPrefab
+/// (AudioClipButton -Prefab with CustomClipButton ) + windowHandler+
+/// assign clipBrowser.
 /// </summary>
 public class ScoreClipGridHandler : MonoBehaviour
 {
@@ -19,7 +19,7 @@ public class ScoreClipGridHandler : MonoBehaviour
     public WindowHandler windowHandler;
 
     [Header("Clip Browser")]
-    public ClipBrowser clipBrowser;
+    public ClipBrowserScreen clipBrowser;
 
     [Header("Grid")]
     public Transform scoresParent;
@@ -42,7 +42,7 @@ public class ScoreClipGridHandler : MonoBehaviour
         if (windowHandler == null)
             windowHandler = FindAnyObjectByType<WindowHandler>();
         if (clipBrowser == null)
-            clipBrowser = FindAnyObjectByType<ClipBrowser>();
+            clipBrowser = FindAnyObjectByType<ClipBrowserScreen>();
     }
 
     private void OnEnable()
@@ -50,7 +50,7 @@ public class ScoreClipGridHandler : MonoBehaviour
         EnsureSubscribed();
         EnsureThemeSubscribed();
 
-        // Während versteckt ggf. verpasst: Counts auffrischen.
+        // While hidden may be missed: refresh counts.
         RefreshCounts();
     }
 
@@ -65,7 +65,7 @@ public class ScoreClipGridHandler : MonoBehaviour
         themeSubscribed = false;
     }
 
-    /// <summary>Idempotent subscriben (Doppel-Subscription vermeiden).</summary>
+    /// <summary>Subscribe idempotently (avoid double subscription).</summary>
     private void EnsureSubscribed()
     {
         if (AudioLibrary.Instance == null)
@@ -107,7 +107,7 @@ public class ScoreClipGridHandler : MonoBehaviour
         }
     }
 
-    /// <summary>Grid einblenden (Page ruft auf): baut einmalig, frischt Counts auf.</summary>
+    /// <summary>Grid (page calls): builds unique, refreshes counts.</summary>
     public void Show()
     {
         EnsureSubscribed();
@@ -132,7 +132,7 @@ public class ScoreClipGridHandler : MonoBehaviour
         if (windowHandler == null)
             windowHandler = FindAnyObjectByType<WindowHandler>();
         if (clipBrowser == null)
-            clipBrowser = FindAnyObjectByType<ClipBrowser>();
+            clipBrowser = FindAnyObjectByType<ClipBrowserScreen>();
         if (windowHandler == null || clipBrowser == null)
             return;
 
@@ -199,7 +199,7 @@ public class ScoreClipGridHandler : MonoBehaviour
     }
 
     // =========================
-    // ROW-CHUNKING (5 pro Row, volle Breite → auflösungsunabhängig)
+    // ROW-CHUNKING (5 per row, full width → resolution independent)
     // =========================
 
     private Transform gridParent;

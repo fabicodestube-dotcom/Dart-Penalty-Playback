@@ -3,10 +3,10 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// Editor-Popup für Treffer-Bereiche (Tab 1): neu + custom-edit + built-in-edit
-/// (Name/Enabled; Custom-Sektoren haben immer Value 0 / Multiplier Single).
-/// Ist ein UIScreen mit id Popup und wird über den WindowHandler
-/// (ShowPopup/HidePopup) angezeigt, analog zu den übrigen Popups.
+/// Editor pop-up for hit areas (Tab 1): new + custom-edit + built-in-edit
+/// (Name/Enabled; custom sectors always have value 0 / multiplier Single).
+/// Is a UIScreen with id popup and is sent to the WindowHandler
+/// (ShowPopup / HidePopup) is displayed, analogous to the other popups.
 /// Buttons: Save → OnClickSave(), Cancel → OnClickCancel(),
 /// Toggle → ToggleEnabled().
 /// </summary>
@@ -127,8 +127,8 @@ public class SectorEditorPopup : UIScreen, IUIScreen
     }
 
     /// <summary>
-    /// Öffnet nur die Löschbestätigung (z. B. aus der Listen-Row), ohne den
-    /// Editor-Hauptbereich zu zeigen.
+    /// Opens only the deletion confirmation (e.g. from the list row), without
+    /// to show the editor main area.
     /// </summary>
     public void ShowDeleteConfirm(CustomizationSectorsPage page, string id)
     {
@@ -150,8 +150,8 @@ public class SectorEditorPopup : UIScreen, IUIScreen
         RefreshDeleteButton();
         HideError();
 
-        // ShowPopup ruft OnShow() synchron auf und setzt den Zustand zurück.
-        // Deshalb Bestätigungszustand erst danach setzen.
+        // ShowPopup calls OnShow() in sync and resets the state.
+        // Therefore, only after that set confirmation state.
         ShowViaWindowHandler();
 
         pendingDeleteId = def.id;
@@ -181,7 +181,7 @@ public class SectorEditorPopup : UIScreen, IUIScreen
 
         if (valueDropdown != null)
         {
-            // Optionen: 0-20 + 25. Index 0..20 = Wert 0..20, Index 21 = 25.
+            // Options: 0-20 + 25. Index 0..20 = value 0..20, index 21 = 25.
             valueDropdown.ClearOptions();
             var vOpts = new System.Collections.Generic.List<string>();
             for (int v = 0; v <= 20; v++)
@@ -336,8 +336,8 @@ public class SectorEditorPopup : UIScreen, IUIScreen
     }
 
     /// <summary>
-    /// Speichert den aktuellen Stand, ohne das Popup zu schließen. Wird auch
-    /// vom Recorder genutzt, damit neue Einträge vor dem ClipBrowser existieren.
+    /// Saves the current status without closing the popup.
+    /// used by the recorder so that new entries exist before the ClipBrowser.
     /// </summary>
     private bool TrySave()
     {
@@ -350,7 +350,7 @@ public class SectorEditorPopup : UIScreen, IUIScreen
         string name = nameInput != null ? nameInput.text.Trim() : "";
         bool enabled = enabledToggle == null || enabledToggle.IsActive();
 
-        // Wert/Multiplier nur für Custom-Sektoren (built-ins bleiben 0/Single).
+        // Value/multiplier only for custom sectors (built-ins remain 0/single).
         int value = 0;
         DartMultiplier multiplier = DartMultiplier.Single;
         if (!editingBuiltIn)
@@ -373,7 +373,7 @@ public class SectorEditorPopup : UIScreen, IUIScreen
                     _ => DartMultiplier.Single
                 };
             }
-            // Triple nicht auf 25.
+            // Don't triple to 25.
             if (multiplier == DartMultiplier.Triple && value == 25)
                 value = 20;
         }
@@ -404,14 +404,14 @@ public class SectorEditorPopup : UIScreen, IUIScreen
         HideError();
         editingName = name;
 
-        // Direkt-Refresh der eigenen Liste (sofort sichtbar, siehe PenaltyEditorPopup).
+        // Direct refresh of its own list (immediately visible, see PenaltyEditorPopup).
         sectorsPage?.Refresh();
         return true;
     }
 
     /// <summary>
-    /// Recorder-Button: speichert zunächst den aktuellen Stand (neue Einträge
-    /// inklusive), schließt das Popup und öffnet den ClipBrowser für diese ID.
+    /// Recorder button: first saves the current status (new entries)
+    /// closes the popup and opens the ClipBrowser for this ID.
     /// </summary>
     public void OnClickOpenClips()
     {
@@ -527,7 +527,7 @@ public class SectorEditorPopup : UIScreen, IUIScreen
         if (windowHandler != null)
             windowHandler.HidePopup();
 
-        // Kein explizites Refresh: Save feuert CustomizationStore.Changed,
-        // das die Sektor-Liste bereits aktualisiert (Cancel ändert nichts).
+        // No explicit refresh: Save fires CustomizationStore.Changed,
+        // that already updates the sector list (Cancel does not change anything).
     }
 }

@@ -26,11 +26,11 @@ public class SetupPlayerList : MonoBehaviour
     {
         items = new List<GameObject>();
 
-        // 🔥 Wichtig:
-        // UI Aufbau wird NICHT direkt gemacht,
-        // sondern um 1 Frame verzögert.
+        // Important:
+        // UI construction is NOT made directly,
+        // It is delayed by 1 frame.
         //
-        // Grund: Verhindert Race Conditions mit
+        // Reason: Prevents Race Conditions with
         // - Layout System
         // - Theme Events
         // - Drag / UI Updates
@@ -38,24 +38,24 @@ public class SetupPlayerList : MonoBehaviour
     }
 
     /// <summary>
-    /// Baut die Player-Liste neu auf (frame-sicher).
+    /// Rebuilds the player list (frame-safe).
     /// </summary>
     private IEnumerator ShowPlayersNextFrame()
     {
-        // 🔥 1 Frame warten, damit Unity intern
-        // alle Start/OnEnable/Layout Updates fertig macht
+        // Wait one frame for Unity to finish
+        // all start/OnEnable/layout updates internally
         yield return null;
 
         ShowPlayers();
     }
 
     /// <summary>
-    /// Baut die UI-Liste komplett neu auf.
+    /// Completely rebuild the UI list.
     /// </summary>
     public void ShowPlayers()
     {
-        // 🔥 1. Alte Items zerstören (sauber & eindeutig)
-        // Kein SetActive(false) nötig → vermeidet Side Effects im UI System
+        // Destroy Old Items (Clean & Clear)
+        // No SetActive (false) necessary → avoids side effects in the UI system
         if (items != null)
         {
             foreach (var item in items)
@@ -67,13 +67,13 @@ public class SetupPlayerList : MonoBehaviour
             items.Clear();
         }
 
-        // 🔥 2. Neue Daten holen
+        // 2. Fetch new data
         var players = GetPlayers();
 
         if (players == null)
             return;
 
-        // 🔥 3. Neue UI Elemente erzeugen
+        // 3. Create new UI elements
         foreach (var player in players)
         {
             GameObject template = prefab;
@@ -102,7 +102,7 @@ public class SetupPlayerList : MonoBehaviour
     }
 
     /// <summary>
-    /// Holt die passende Player-Liste je nach Modus.
+    /// Get the appropriate player list depending on the mode.
     /// </summary>
     private IEnumerable<BasePlayer> GetPlayers()
     {
@@ -120,11 +120,11 @@ public class SetupPlayerList : MonoBehaviour
     }
 
     /// <summary>
-    /// Übernimmt Reihenfolge aus UI Drag & Drop.
+    /// Takes order from UI Drag & Drop.
     /// </summary>
     public void UpdateOrderFromUI()
     {
-        // Nur Active sinnvoll
+        // Only Active is Useful
         if (listType != PlayerListType.Active)
             return;
 

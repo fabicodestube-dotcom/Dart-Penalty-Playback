@@ -26,9 +26,9 @@ public class ExpandablePanel : MonoBehaviour
 
         sectionExpanded[index] = !sectionExpanded[index];
         
-        // WICHTIG: Das GameObject muss SOFORT aktiviert werden, 
-        // damit es sichtbar wird, während das Panel smooth aufbreitet wird.
-        // Beim Schließen deaktivieren wir es erst NACH der Animation (siehe Coroutine).
+        // IMPORTANT: The GameObject must be activated IMMEDIATELY,
+        // so that it becomes visible while the panel is spread smoothly.
+        // When we close, we deactivate it only AFTER the animation (see Coroutine).
         if (sectionExpanded[index])
         {
             sectionContents[index].SetActive(true);
@@ -62,7 +62,7 @@ public class ExpandablePanel : MonoBehaviour
         float time = 0;
         float startHeight = layoutElement.preferredHeight;
         
-        // 1. Berechne die finale Zielhöhe (deine bestehende Logik)
+        // Calculate the final target height (your existing logic)
         float maxExtra = 0f;
         for (int i = 0; i < sectionHeights.Count; i++)
         {
@@ -74,7 +74,7 @@ public class ExpandablePanel : MonoBehaviour
         }
         float targetHeight = collapsedHeight + maxExtra;
 
-        // 2. Die flüssige Animationsschleife
+        // The Liquid Animation Loop
         RectTransform rectTransform = transform as RectTransform;
         RectTransform parentRect = transform.parent as RectTransform;
 
@@ -84,23 +84,23 @@ public class ExpandablePanel : MonoBehaviour
             float progress = time / animationDuration;
             float evaluatedProgress = animationCurve.Evaluate(progress);
 
-            // Höhe flüssig interpolieren
+            // Height liquid interpolation
             layoutElement.preferredHeight = Mathf.Lerp(startHeight, targetHeight, evaluatedProgress);
 
-            // Layout-Rebuild erzwingen, damit die UI live mitwächst
+            // Force layout rebuild so that the UI grows live
             if (rectTransform != null) LayoutRebuilder.ForceRebuildLayoutImmediate(rectTransform);
             if (parentRect != null) LayoutRebuilder.ForceRebuildLayoutImmediate(parentRect);
 
             yield return null;
         }
 
-        // 3. Exakten Endwert setzen
+        // 3. Set exact final value
         layoutElement.preferredHeight = targetHeight;
         if (rectTransform != null) LayoutRebuilder.ForceRebuildLayoutImmediate(rectTransform);
         if (parentRect != null) LayoutRebuilder.ForceRebuildLayoutImmediate(parentRect);
 
-        // 4. SAUBERES SCHLIESSEN: Erst wenn die Animation komplett vorbei ist,
-        // schalten wir die GameObjects geschlossener Sektionen hart aus.
+        // Clean Closure: Only when the animation is completely over,
+        // We will turn off the GameObjects of closed sections.
         for (int i = 0; i < sectionExpanded.Count; i++)
         {
             if (!sectionExpanded[i])

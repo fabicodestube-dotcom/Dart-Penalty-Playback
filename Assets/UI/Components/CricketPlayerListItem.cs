@@ -44,7 +44,7 @@ public class CricketPlayerListItem : MonoBehaviour
         if (glowAnimator == null)
             glowAnimator = GetComponentInChildren<BorderGlowAnimator>(true);
 
-        // Reine Anzeige-Texte: aus dem Touch-Raycast nehmen.
+        // Pure display texts: take from the touch raycast.
         foreach (var text in GetComponentsInChildren<TMP_Text>(true))
             text.raycastTarget = false;
     }
@@ -141,13 +141,13 @@ public class CricketPlayerListItem : MonoBehaviour
 
             float targetAlpha = locked ? LockedAlpha : UnlockedAlpha;
 
-            // 🔥 nur animieren wenn nötig
+            // Only animate when necessary
             if (!Mathf.Approximately(cell.lockCanvasGroup.alpha, targetAlpha))
             {
                 FadeTo(cell.lockCanvasGroup, targetAlpha);
             }
 
-            // Interaktion kannst du direkt setzen (kein Fade nötig)
+            // You can set interaction directly (no fade necessary)
             cell.lockCanvasGroup.interactable = !locked;
             cell.lockCanvasGroup.blocksRaycasts = !locked;
         }

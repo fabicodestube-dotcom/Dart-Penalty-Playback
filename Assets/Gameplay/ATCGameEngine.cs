@@ -76,10 +76,10 @@ public class ATCGameEngine : GameEngine
     // EVENT HANDLERS
     // =========================
 
-    // Hinweis: Streak + Hits feuern als Custom-Events (atc_streak /
-    // atc_hits) über die Turn-Auswertung — bewusst KEINE expliziten
-    // OnStreakStarted-Hooks mehr, die würden pro Turn doppelt spielen.
-    // Ein perfekter Visit erreicht Streak ≥ 3 und ist damit abgedeckt.
+    // Note: Streak + Hits fire as custom events (atc_streak /)
+    // atc_hits ) about the turn evaluation — consciously NOT explicit
+    // OnStreakStarted -Hooks more, which would play twice per turn.
+    // A perfect visit reaches Streak ≥ 3 and is therefore covered.
 
     private void HandleLegWon(Guid playerId)
     {
@@ -111,9 +111,9 @@ public class ATCGameEngine : GameEngine
     private void HandleTurnCompleted(Guid playerId, int validThrows)
     {
         audioManager.PlayScore(validThrows);
-        // Kein expliziter Hits-Sound hier: Hits feuert als Custom-Event
-        // (atc_hits, Default ≥ 1) in der Visit-Auswertung NACH dieser Zahl.
-        // Miss-Turns (0 Hits) bleiben stumm — per Schwelle 0 rückholbar.
+        // No explicit hits sound here: Hits fires as a custom event
+        // (atc_hits, Default ≥ 1) in the visit evaluation AFTER this number.
+        // Miss turns (0 hits) remain mute — retrieved by threshold 0.
     }
 
     public void OnClickContinueFromPause()
@@ -134,7 +134,7 @@ public class ATCGameEngine : GameEngine
     {
         inputHandler.SetInputEnabled(false);
 
-        // Endlose Schleife, die nur abbricht, wenn der Bot nicht mehr dran ist
+        // Endless loop that cancels only when the bot is no longer on
         while (!isPaused && game.GetCurrentPlayerId() == bot.GetID() && !game.IsFinished())
         {
             yield return new WaitUntil(() => !isPaused);
@@ -142,8 +142,8 @@ public class ATCGameEngine : GameEngine
             Throw t = GetNextATCBotThrow(bot);
             yield return inputHandler.PlayBotThrow(t, () => AddThrow(t));
 
-            // Nach AddThrow hat die Engine evtl. NextPlayer() gerufen (bei Miss oder Turn-Ende ohne Carry)
-            // Wir prüfen also sofort, ob wir noch dran sind
+            // After AddThrow the engine may have called NextPlayer() (at miss or turn-end without carry)
+            // So we're going to check immediately if we're still on.
             if (game.GetCurrentPlayerId() != bot.GetID() || game.IsFinished())
                 break;
         }

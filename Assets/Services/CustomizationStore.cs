@@ -1,18 +1,18 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
 /// <summary>
-/// SQLite-gestützter Speicher für Custom-Penalties und Audio-Events
-/// (Customization-Screens). Cached im RAM, Write-Through bei Save/Delete,
-/// Changed-Event für UI-Refresh. Seeds werden beim ersten Start angelegt:
-/// Penalties und freie Sektoren sind löschbar (builtIn=false). Wall/Ceiling
-/// sowie die meisten Audio-Seeds sind nicht löschbar (builtIn=true),
-/// einzelne user-ähnliche Seeds werden einmalig im Custom-Paket angelegt.
+/// SQLite-powered storage for custom penalties and audio events
+/// Cached in RAM, write-through at Save/Delete,
+/// Changed event for UI-Refresh. Seeds are created at the first launch:
+/// Penalties and free sectors are erasable (builtIn =false).
+/// as well as most audio seeds are not erasable (builtIn =true),
+/// Individual user-like seeds are created once in the custom package.
 /// </summary>
 /// <summary>
-/// Was sich geändert hat (für gezielte UI-Refreshes statt Komplett-Rebuild).
+/// What has changed (for targeted UI refreshes instead of complete rebuild).
 /// </summary>
 public enum CustomizationChangeKind
 {
@@ -25,8 +25,8 @@ public enum CustomizationChangeKind
 public static class CustomizationStore
 {
     /// <summary>
-    /// Feuert pro Save/Delete genau einmal, mit der betroffenen Kategorie.
-    /// Subscriber bauen nur ihre eigene Liste neu (kein RefreshAll mehr).
+    /// Fires once per save/delete, with the affected category.
+    /// Subscribers only rebuild their own list (no more RefreshAll).
     /// </summary>
     public static event Action<CustomizationChangeKind> Changed;
 
@@ -53,7 +53,7 @@ public static class CustomizationStore
         return hitSectors;
     }
 
-    /// <summary>True, wenn die Sektor-ID eingebaut oder im Store vorhanden ist.</summary>
+    /// <summary>True, if the sector ID is built-in or present in the store.</summary>
     public static bool IsKnownHitSector(string sectorId)
     {
         if (string.IsNullOrEmpty(sectorId))
@@ -73,7 +73,7 @@ public static class CustomizationStore
         return false;
     }
 
-    /// <summary>Zählt, wie viele (Custom-)Penalties den Sektor referenzieren.</summary>
+    /// <summary>Counts how many (custom) penalties reference the sector.</summary>
     public static int GetPenaltyUsageCount(string sectorId)
     {
         if (string.IsNullOrEmpty(sectorId))
@@ -96,7 +96,7 @@ public static class CustomizationStore
         if (def?.conditions == null || def.conditions.Count == 0 || string.IsNullOrEmpty(sectorId))
             return false;
 
-        // Instant-Penalty (HitTypeMiss) auf genau diesen Custom-Sektor.
+        // Instant penalty (HitTypeMiss) on this very custom sector.
         foreach (var c in def.conditions)
         {
             if (c == null)
@@ -126,7 +126,7 @@ public static class CustomizationStore
         return false;
     }
 
-    /// <summary>Löscht alle Penalties, die den Sektor referenzieren. Gibt die Anzahl zurück.</summary>
+    /// <summary>Deletes all the penalties that reference the sector. Returns the number.</summary>
     public static int DeletePenaltiesUsingSector(string sectorId)
     {
         var ids = GetPenaltyIdsUsingSector(sectorId);
@@ -137,7 +137,7 @@ public static class CustomizationStore
         return ids.Count;
     }
 
-    /// <summary>IDs aller Penalties, die den Sektor referenzieren.</summary>
+    /// <summary>IDs of all penalties referencing the sector.</summary>
     public static List<string> GetPenaltyIdsUsingSector(string sectorId)
     {
         var ids = new List<string>();
@@ -156,7 +156,7 @@ public static class CustomizationStore
         return ids;
     }
 
-    /// <summary>Alle Penalties, die den Sektor referenzieren.</summary>
+    /// <summary>All penalties referencing the sector.</summary>
     public static List<CustomPenaltyDef> GetPenaltiesUsingSector(string sectorId)
     {
         var result = new List<CustomPenaltyDef>();
@@ -175,7 +175,7 @@ public static class CustomizationStore
         return result;
     }
 
-    /// <summary>Anzeigenamen aller Penalties, die den Sektor referenzieren.</summary>
+    /// <summary>Display names of all penalties that reference the sector.</summary>
     public static List<string> GetPenaltyNamesUsingSector(string sectorId)
     {
         var names = new List<string>();
@@ -192,9 +192,9 @@ public static class CustomizationStore
     }
 
     /// <summary>
-    /// True, wenn der Penalty-Name (getrimmt, case-insensitiv) bereits von
-    /// einer ANDEREN Def belegt ist. Die eigene ID ist ausgenommen, damit
-    /// Editieren ohne Umbenennen funktioniert.
+    /// True, if the penalty name (trimmed, case-insensitive) already
+    /// OTHER Def is used. The own ID is excluded, so that
+    /// Editing without renaming works.
     /// </summary>
     public static bool IsPenaltyNameTaken(string name, string excludeId)
     {
@@ -216,7 +216,7 @@ public static class CustomizationStore
         return false;
     }
 
-    /// <summary>Analog für Treffer-Bereiche (Tab 1).</summary>
+    /// <summary>Analogue for hit areas (Tab 1).</summary>
     public static bool IsHitSectorNameTaken(string name, string excludeId)
     {
         if (string.IsNullOrWhiteSpace(name))
@@ -237,7 +237,7 @@ public static class CustomizationStore
         return false;
     }
 
-    /// <summary>Analog für Audio-Events (Tab 3).</summary>
+    /// <summary>Analogue for audio events (Tab 3).</summary>
     public static bool IsAudioEventNameTaken(string name, string excludeId)
     {
         if (string.IsNullOrWhiteSpace(name))
@@ -258,7 +258,7 @@ public static class CustomizationStore
         return false;
     }
 
-    /// <summary>False, wenn der Name bereits vergeben ist (kein Speichern).</summary>
+    /// <summary>False if the name is already assigned (no saving).</summary>
     public static bool SavePenalty(CustomPenaltyDef def)
     {
         if (def == null || string.IsNullOrEmpty(def.id))
@@ -299,7 +299,7 @@ public static class CustomizationStore
         return removed;
     }
 
-    /// <summary>False, wenn der Name bereits vergeben ist (kein Speichern).</summary>
+    /// <summary>False if the name is already assigned (no saving).</summary>
     public static bool SaveHitSector(CustomHitDef def)
     {
         if (def == null || string.IsNullOrEmpty(def.id))
@@ -347,8 +347,8 @@ public static class CustomizationStore
     }
 
     /// <summary>
-    /// Löscht einen Custom-Sektor zusammen mit allen Penalties, die ihn
-    /// referenzieren, und deren aufgenommenen Audio-Clips.
+    /// Deletes a custom sector along with any penalties that
+    /// and their recorded audio clips.
     /// </summary>
     public static bool DeleteHitSectorWithPenalties(string id)
     {
@@ -364,13 +364,13 @@ public static class CustomizationStore
         foreach (var penaltyId in GetPenaltyIdsUsingSector(id))
             DeletePenalty(penaltyId);
 
-        // Clips der Area selbst (Recorder in der Sektor-Zeile).
+        // Clips of the area itself (recorder in the sector line).
         AudioLibrary.Instance?.DeleteAllCustomClips(id);
 
         return DeleteHitSector(id);
     }
 
-    /// <summary>False, wenn der Name bereits vergeben ist (kein Speichern).</summary>
+    /// <summary>False if the name is already assigned (no saving).</summary>
     public static bool SaveAudioEvent(AudioEventDef def)
     {
         if (def == null || string.IsNullOrEmpty(def.id))
@@ -427,9 +427,9 @@ public static class CustomizationStore
         audioEvents = SqliteDatabaseRepository.LoadAudioEvents();
         hitSectors = SqliteDatabaseRepository.LoadCustomHitSectors();
 
-        // Flag VOR dem Seeden setzen: Seed-Changed-Events können synchron
-        // Subscriber-Refreshes auslösen, die GetPenalties() aufrufen — ohne
-        // gesetztes Flag würden die Listen dabei neu gebunden (Reentrancy).
+        // Set flag BEFORE the seed: Seed-Changed events can be synchronized
+        // Trigger subscriber refreshes that call GetPenalties() — without
+        // The flags would be rebounded (reentrancy).
         loaded = true;
 
         if (penalties.Count == 0)
@@ -477,11 +477,11 @@ public static class CustomizationStore
     }
 
     /// <summary>
-    /// Legt fehlende Audio-Event-Seeds an. Built-in-Seeds sind nicht löschbar
-    /// (builtIn=true); user-ähnliche Seeds sind löschbar, werden nur im
-    /// Custom-Paket einmalig angelegt und über einen app_meta-Marker vor
-    /// Wiederanlage geschützt. Ein Changed pro Seed wäre Rebuild-Spam beim
-    /// ersten Start, daher ein Sammel-Event am Ende.
+    /// Creates missing audio event seeds. Built-in seeds are not erasable
+    /// (builtIn =true); user-like seeds are erasable, are only in the
+    /// Custom package created once and presented via an app_meta marker
+    /// A changed per seed would be rebuild spam if
+    /// First start, therefore a collecting event at the end.
     /// </summary>
     private static void SeedMissingAudioEvents()
     {
@@ -586,12 +586,12 @@ public static class CustomizationStore
     private static void SeedBuiltInPenalties()
     {
         // Starter-Set (Tab 2): Turn-Patterns (3x1, No board hit), Schnapszahl
-        // (Alle Repdigit-Rest-Scores 111–999 als einzelne Seed mit mehreren
-        // Bedingungen, Kosten 50), LegLost (Kosten 50) sowie die
-        // Sofort-Typen Wall (10) / Ceiling (20), die die Sektor-Kosten tragen.
-        // Alle Seeds sind evaluierbar und löschbar (builtIn=false); gelöschte
-        // Seeds werden nie wiederhergestellt (Seeding nur bei leerer Tabelle,
-        // Erststart).
+        // (All Repdigit rest scores 111–999 as single seed with several
+        // Conditions, costs 50), LegLost (cost 50) and the
+        // Instant types of Wall (10) / Ceiling (20) that bear the sector costs.
+        // All seeds are evaluable and erasable (builtIn =false); deleted
+        // Seeds are never restored (seeding only when the table is empty),
+        // first start).
         var seeds = new List<CustomPenaltyDef>
         {
             SeedPenalty("builtin:threeones", "Three Ones", 100, PenaltyConditionKind.TurnPattern,
@@ -633,11 +633,11 @@ public static class CustomizationStore
     }
 
     /// <summary>
-    /// Stellt Seeds builtin:score* (111–999) von Turn- auf Rest-Semantik um
-    /// (RemainingExactScore). Name/Kosten/enabled bleiben (User-Werte), nur
-    /// die Bedingung wird ersetzt + zurückgespeichert. Idempotent (greift
-    /// nur bei kind==ExactScore). User-Customs haben GUID-IDs und sind nie
-    /// betroffen. Nur aus EnsureLoaded aufrufen.
+    /// Changes Seeds builtin:score* (111–999) from turn-to-remain semantics
+    /// (RemainingExactScore). Name/cost/enabled remain (user values), only
+    /// the condition is replaced + saved back. idempotent (applies)
+    /// only at child== ExactScore. User Customs have GUID-IDs and are never
+    /// Appearance only from EnsureLoaded.
     /// </summary>
     private static void MigrateScoreSeedsToRemaining()
     {
@@ -668,9 +668,9 @@ public static class CustomizationStore
     }
 
     /// <summary>
-    /// True, wenn ein AKTIVES Custom-Penalty (Sofort-Typ) diesen Fehlwurf
-    /// abdeckt. Läuft über den enabled-Stand im Store (reine Anzeige-Hilfe
-    /// für gedimmte Input-Buttons).
+    /// True, if an ACTIVIAL Custom-Penalty (Immediate-Type) misses this misthrow
+    /// Runs from the enabled stand in the store (only display help)
+    /// for dimmed input buttons.
     /// </summary>
     public static bool HasActiveInstantPenalty(HitType hitType)
     {
@@ -693,9 +693,9 @@ public static class CustomizationStore
     }
 
     /// <summary>
-    /// True, wenn ein AKTIVES Custom-Penalty (Sofort-Typ) diesen Sektor
-    /// abdeckt. Für Wall/Ceiling zählen deren HitTypes; freie Sektoren
-    /// matchen über customHitId (leer = jeder Custom-Sektor).
+    /// True, if an ACTIVIAL Custom-Penalty (Immediate-Type) this sector
+    /// For Wall/Ceiling, their HitTypes; free sectors
+    /// Match via customHitId (empty = any custom sector).
     /// </summary>
     public static bool HasActiveInstantPenalty(string sectorId)
     {
@@ -762,7 +762,7 @@ public static class CustomizationStore
         return def;
     }
 
-    /// <summary>Seed-Bereiche Wand/Decke (built-in, nicht löschbar).</summary>
+    /// <summary>Seed areas wall/ceiling (built-in, non-erasable).</summary>
     private static void SeedBuiltInHitSectors()
     {
         var seeds = new List<CustomHitDef>

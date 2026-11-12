@@ -16,17 +16,17 @@ public class X01InputHandler : InputHandler
     private DartMultiplier currentMultiplier = DartMultiplier.Single;
 
     
-    // ========== FARBEN =========
-    // Gelb
-    private static readonly Color YellowLight  = new Color(200f / 255f, 180f / 255f, 70f  / 255f); // heller Gelbton, gut auf dunklem Hintergrund
-    private static readonly Color YellowSolid  = new Color(180f / 255f, 150f / 255f, 20f  / 255f); // deckendes Gelb
+    // ========== COLORS =========
+    // Yellow
+    private static readonly Color YellowLight  = new Color(200f / 255f, 180f / 255f, 70f  / 255f); // Light yellow, good on a dark background
+    private static readonly Color YellowSolid  = new Color(180f / 255f, 150f / 255f, 20f  / 255f); // opaque yellow
 
     // Orange
     private static readonly Color OrangeLight  = new Color(220f / 255f, 120f / 255f, 40f  / 255f); // heller Orange-Ton
-    private static readonly Color OrangeSolid  = new Color(200f / 255f, 90f  / 255f, 0f   / 255f); // deckendes Orange
+    private static readonly Color OrangeSolid  = new Color(200f / 255f, 90f  / 255f, 0f   / 255f); // opaque orange
 
     // Rot
-    private static readonly Color RedSolid     = new Color(180f / 255f, 40f  / 255f, 40f  / 255f); // klares, dunkleres Rot
+    private static readonly Color RedSolid     = new Color(180f / 255f, 40f  / 255f, 40f  / 255f); // clear, darker red
 
 
 
@@ -70,7 +70,7 @@ public class X01InputHandler : InputHandler
     }
 
     // =========================
-    // ZAHLEN
+    // NUMBERS
     // =========================
 
     public void OnNumberPressed(int value)
@@ -80,7 +80,7 @@ public class X01InputHandler : InputHandler
             TriggerHaptic();
             var multiplierToUse = currentMultiplier;
 
-            // Triple Bull verhindern
+            // Prevent triple bull
             if (value == 25 && multiplierToUse == DartMultiplier.Triple)
             {
                 Debug.Log("Triple Bull nicht erlaubt");
@@ -93,7 +93,7 @@ public class X01InputHandler : InputHandler
     }
 
     // =========================
-    // SPEZIAL
+    // SPECIAL
     // =========================
 
     public void OnBoardMiss()
@@ -128,17 +128,17 @@ public class X01InputHandler : InputHandler
         // Double Button
         if (currentMultiplier == DartMultiplier.Double)
         {
-            doubleButton.image.color = YellowSolid; // aktiv → solid yellow
-            tripleButton.image.color = OrangeLight;  // inaktiv → light orange
+            doubleButton.image.color = YellowSolid; // active → solid yellow
+            tripleButton.image.color = OrangeLight;  // inactive → light orange
         }
         else if (currentMultiplier == DartMultiplier.Triple)
         {
-            doubleButton.image.color = YellowLight;  // inaktiv → light yellow
-            tripleButton.image.color = OrangeSolid;  // aktiv → solid orange
+            doubleButton.image.color = YellowLight;  // inactive → light yellow
+            tripleButton.image.color = OrangeSolid;  // active → solid orange
         }
         else
         {
-            // Beide inaktiv
+            // Both are inactive
             doubleButton.image.color = YellowLight;
             tripleButton.image.color = OrangeLight;
         }

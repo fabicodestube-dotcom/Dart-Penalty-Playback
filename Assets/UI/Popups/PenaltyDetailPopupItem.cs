@@ -2,8 +2,8 @@ using TMPro;
 using UnityEngine;
 
 /// <summary>
-/// Eine Zeile im Penalty-Detail-Popup: (Name | Kosten | Anzahl | Zeilensumme).
-/// Befüllung ausschließlich über Bind() (Popup-Code); Felder im Prefab verdrahtet.
+/// One line in the penalty detail popup: (Name | Cost | Number | Line Total).
+/// Filling exclusively via Bind() (pop-up code); fields wired in the prefab.
 /// </summary>
 public class PenaltyDetailPopupItem : MonoBehaviour
 {
@@ -13,7 +13,7 @@ public class PenaltyDetailPopupItem : MonoBehaviour
     public TMP_Text penaltyCosts;
     public TMP_Text penaltySum;
 
-    /// <summary>Beschreibt die Zeile. Alle Werte bereits als Anzeige-Strings.</summary>
+    /// <summary>Describes the line. All values already in display strings.</summary>
     public void Bind(string name, string cost, string count, string rowTotal)
     {
         if (penaltyName != null)

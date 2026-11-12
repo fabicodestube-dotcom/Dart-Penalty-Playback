@@ -1,7 +1,7 @@
 using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
-using TMPro; // Wichtig für TextMeshPro
+using TMPro; // Important for TextMeshPro
 
 public class PatchNoteRow : MonoBehaviour
 {
@@ -17,7 +17,7 @@ public class PatchNoteRow : MonoBehaviour
     private bool isOpened = false;
     private Coroutine toggleCoroutine;
 
-    // Referenzen auf mögliche Text-Komponenten
+    // References to possible text components
     private TMP_Text tmpText;
     private Text textOld;
 
@@ -31,14 +31,14 @@ public class PatchNoteRow : MonoBehaviour
 
         panelLayoutElement.flexibleHeight = 0;
 
-        // Text-Komponenten direkt auf oder innerhalb des Panels suchen
+        // Search text components directly on or within the panel
         tmpText = patchNotesPanel.GetComponentInChildren<TMP_Text>();
         if (tmpText == null)
         {
             textOld = patchNotesPanel.GetComponentInChildren<Text>();
         }
 
-        // Startzustand: Geschlossen
+        // Initial state: closed
         panelLayoutElement.preferredHeight = 0f;
     }
 
@@ -62,8 +62,8 @@ public class PatchNoteRow : MonoBehaviour
 
         if (isOpened)
         {
-            // Wir berechnen die Zielhöhe direkt über die Text-Komponente.
-            // Das umgeht den Fehler, bei dem das Panel '0' meldet.
+            // We calculate the target height directly via the text component.
+            // This bypasses the error where the panel reports '0'.
             if (tmpText != null)
             {
                 endHeight = tmpText.preferredHeight;
@@ -74,12 +74,12 @@ public class PatchNoteRow : MonoBehaviour
             }
             else
             {
-                // Fallback, falls es kein reiner Text ist, sondern ein komplexes GO
+                // Fallback, if it is not a pure text, but a complex GO
                 endHeight = LayoutUtility.GetPreferredHeight(patchNotesPanel);
             }
 
-            // Falls zusätzliche Paddings/Abstände in deiner Row-Layoutgruppe sind,
-            // kannst du hier einen kleinen Puffer addieren (z.B. + 20f);
+            // If there are additional paddings/spaces in your row layout group,
+            // you can add a small buffer here (e.g. + 20f);
         }
 
         Quaternion startRotation = arrowIndicator.localRotation;
@@ -97,7 +97,7 @@ public class PatchNoteRow : MonoBehaviour
             panelLayoutElement.preferredHeight = Mathf.Lerp(startHeight, endHeight, evaluatedProgress);
             arrowIndicator.localRotation = Quaternion.Lerp(startRotation, endRotation, evaluatedProgress);
 
-            // Zwinge das Layout zum Update
+            // Force the layout to the update
             LayoutRebuilder.ForceRebuildLayoutImmediate(rowRect);
             LayoutRebuilder.ForceRebuildLayoutImmediate(contentRect);
 

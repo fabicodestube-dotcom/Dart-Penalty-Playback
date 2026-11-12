@@ -4,10 +4,10 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// Anbindung einer Customization-Liste (Sektoren, Penalties, Audio-Events
-/// inkl. Score-Sammel-Row) an das einheitliche Listen-Item.
-/// Die Page liefert Navigation, Toggle-Speicherung und Clip-Anzahl.
-/// Das Item übernimmt Anzeige und Klicks.
+/// Connection of a customization list (sectors, penalties, audio events)
+/// incl. score summary row) to the uniform list item.
+/// The page provides navigation, toggle storage and clip count.
+/// The item takes over display and clicks.
 /// </summary>
 public interface ICustomizationRowOwner
 {
@@ -22,8 +22,8 @@ public interface ICustomizationRowOwner
 }
 
 /// <summary>
-/// Einheitliche Zeile für alle Customization-Listen.
-/// Aktualisiert Anzeige, Clip-Anzahl, Icons und Theme-Farben zentral.
+/// A single line for all customization lists.
+/// Updated display, clip number, icons and theme colors centrally.
 /// </summary>
 public class CustomizationListItem : MonoBehaviour
 {
@@ -74,8 +74,8 @@ public class CustomizationListItem : MonoBehaviour
 
     private void Start()
     {
-        // Erneuter Versuch, falls die AudioLibrary beim OnEnable
-        // noch nicht initialisiert war.
+        // Try again if the AudioLibrary at OnEnable
+        // It was not initialized yet.
         EnsureSubscribed();
         EnsureThemeSubscribed();
 
@@ -149,7 +149,7 @@ public class CustomizationListItem : MonoBehaviour
     }
 
     /// <summary>
-    /// Aktualisiert die gesamte UI anhand des aktuellen Clip-Zustands.
+    /// Update the entire UI based on the current clip state.
     /// </summary>
     public void RefreshClipState()
     {
@@ -212,8 +212,8 @@ public class CustomizationListItem : MonoBehaviour
     }
 
     /// <summary>
-    /// Färbt ausschließlich countText und das jeweils aktive Clip-Icon.
-    /// nameText behält seine konfigurierte Farbe.
+    /// Colours exclusively countText and the respective active clip icon.
+    /// nameText keeps its configured color.
     /// </summary>
     private void ApplyClipColors(int count)
     {

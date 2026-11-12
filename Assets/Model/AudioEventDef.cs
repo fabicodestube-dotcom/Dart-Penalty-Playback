@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using Newtonsoft.Json;
 
 /// <summary>
-/// Kategorie eines Audio-Events (Seite 2 des Customization-Screens).
+/// Category of an audio event (page 2 of the customization screen).
 /// </summary>
 public enum AudioEventCategory
 {
@@ -13,8 +13,8 @@ public enum AudioEventCategory
 }
 
 /// <summary>
-/// Auslöser-Art eines Audio-Events.
-/// Manual = direkter Aufruf im Code (Undo, MatchWon, ...), keine Auto-Auswertung.
+/// Trigger type of an audio event.
+/// Manual = direct call in the code (Undo, MatchWon,...), no auto-evaluation.
 /// </summary>
 public enum AudioEventTriggerKind
 {
@@ -28,8 +28,8 @@ public enum AudioEventTriggerKind
 }
 
 /// <summary>
-/// Auslöser-Parameter. Je nach Kind werden score / pattern+matchOrder /
-/// threshold ausgewertet. Schwellen sind >= (exakt: ScoreReached).
+/// Trigger parameters. Depending on the child, score / pattern+ matchOrder /
+/// threshold evaluated. Thresholds are >= (exact: ScoreReached).
 /// </summary>
 [System.Serializable]
 public class AudioEventTrigger
@@ -39,9 +39,9 @@ public class AudioEventTrigger
     [JsonProperty] public List<TurnPatternEntry> pattern = new List<TurnPatternEntry>();
 
     /// <summary>
-    /// Turn-Pattern: true = Reihenfolge muss stimmen (Slot i entspricht
-    /// Wurf i), false = Reihenfolge egal. In beiden Fällen muss die Anzahl
-    /// der Würfe der Slot-Anzahl entsprechen — identisch zur Semantik der
+    /// Turn patterns: true = order must be correct (slot i corresponds to
+    /// Throw i, false = order no matter.
+    /// The number of slots is equal to the number of slots – identical to the semantics of the
     /// Custom-Penalties (PenaltyCondition.matchOrder).
     /// </summary>
     [JsonProperty] public bool matchOrder = false;
@@ -50,11 +50,11 @@ public class AudioEventTrigger
 }
 
 /// <summary>
-/// Audio-Event: auslösbarer Sound-Anlass, Clip direkt über die Row.
-/// Built-in-Seeds (Undo, Bust, Marks, ...) sind nicht löschbar (builtIn),
-/// aber enabled-/trigger-editierbar und werden von der Engine ausgewertet.
-/// User-ähnliche Seeds sind löschbar (builtIn=false) und haben keinen
-/// eingebauten Clip-Fallback.
+/// Audio event: triggerable sound event, clip directly over the row.
+/// Built-in seeds (Undo, Bust, Marks,...) are not erasable (builtIn ),
+/// but enabled-/trigger-editable and are evaluated by the engine.
+/// User-like seeds are erasable (builtIn =false) and have no
+/// built-in clip fallback.
 /// </summary>
 [System.Serializable]
 public class AudioEventDef
@@ -89,20 +89,20 @@ public class AudioEventDef
 }
 
 /// <summary>
-/// Fest eingebaute Events (Anzeige-Fallback, falls der Store leer ist).
-/// Maßgeblich sind die Seeds in SeededAudioEvents (IDs identisch).
-/// Hinweis: ScoreReached meint den nach dem Turn erreichten Score — in X01 den
-/// Restscore, in Cricket das Gesamt-Total. Der geseedete 420-Trigger ist global
-/// und feuert in beiden Modi. Score-Ansagen laufen über die Score-Sammel-Row
-/// und AudioLibrary.GetScoreClip.
+/// Fixed events (display fallback if the store is empty).
+/// The seeds in SeededAudioEvents (IDs are identical) are decisive.
+/// Note: ScoreReached means the score reached after the turn — in X01 the
+/// The total total in cricket, the seeded 420 trigger is global
+/// And you'll fire in both modes.
+/// and AudioLibrary.GetScoreClip.
 /// </summary>
 public static class AudioEventCatalog
 {
     private static List<AudioEventDef> cachedBuiltIns;
 
     /// <summary>
-    /// Gibt die gecachten Built-ins zurück (nur Specials, keine Scores).
-    /// Wird pro Refresh aufgerufen — ohne Cache unnötige Allokationen je Save.
+    /// Returns the cached build-ins (specials only, no scores).
+    /// Called per refresh — no cache unnecessary allocations per save.
     /// </summary>
     public static List<AudioEventDef> BuildBuiltIns()
     {

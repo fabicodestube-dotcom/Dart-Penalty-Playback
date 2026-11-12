@@ -14,21 +14,21 @@ public class Turn
     [JsonProperty] public int CheckinThrowIndex = -1;
     [JsonProperty] public Guid PlayerId { get; }
 
-    // Maximal 3 Darts pro Turn (klassisches X01 Verhalten)
+    // Maximum 3 darts per turn (classic X01 behavior)
     [JsonProperty] private List<Throw> throws = new List<Throw>(3);
 
     [JsonProperty] public bool IsBust { get; private set; } = false;
 
-    // Snapshot des Scores vor dem Turn (z.B. für UI / Undo / Validation)
+    // Snapshot of the score before the turn (e.g. for UI / Undo / Validation)
     [JsonProperty] public int ScoreBeforeTurn { get; set; }
 
-    // Snapshot ALLER Spieler-Scores bei Turn-Start (Cricket: Cutthroat prüft
-    // Gegner-Totals; nur veränderte Totals können neu erreicht worden sein).
-    // Null bei alten Saves -> Fallback auf Legacy-Verhalten.
+    // Snapshot of ALL Player Scores at Turn Start (Cricket: Cutthroat Checks)
+    // Opponent totals; only changed totals can have been newly reached.
+    // null on old saves -> Fallback on legacy behavior.
     [JsonProperty] public Dictionary<Guid, int> TurnStartScores { get; set; }
 
-    // Exakt die Turn-Penalties, die beim Finalize dieses Turns gebucht wurden.
-    // Undo nimmt nur diese zurück (kein Doppelzählen bei Nachwurf).
+    // Exactly the turn penalties that were booked at the finalize of this turn.
+    // And then, they will return the boots to the boots.
     [JsonProperty] public List<TurnPenaltyRecord> RecordedPenalties { get; set; }
 
 
@@ -49,7 +49,7 @@ public class Turn
 
     public void AddThrow(Throw t)
     {
-        // Hard Limit: maximal 3 Würfe pro Turn
+        // Hard Limit: maximum 3 throws per turn
         if (throws.Count < 3)
             throws.Add(t);
     }
@@ -81,13 +81,13 @@ public class Turn
     // =========================================================
 
     /// <summary>
-    /// Berechnet den Gesamt-Score des Turns.
-    /// Optional kann ein Bust ignoriert werden (z.B. für UI Anzeige anderer Spieler).
+    /// Calculates the total score of the turn.
+    /// Optionally, a bust can be ignored (e.g. for UI display of other players).
     /// </summary>
     public int GetTurnScore(bool includeBustDarts = true)
     {
         if (!includeBustDarts && IsBust)
-            return 0; // Bei Bust wird der Turn als 0 gewertet (nur visuell/logisch getrennt)
+            return 0; // At Bust, the turn is counted as 0 (only visually/logically separated)
 
         return throws.Sum(t => t.GetScore());
     }
@@ -103,8 +103,8 @@ public class Turn
 }
 
 /// <summary>
-/// Ein beim Turn-Finalize gebuchtes Turn-Penalty (ThreeOnes/AllMiss/Schnapszahl).
-/// Wird beim Undo exakt zurückgenommen.
+/// A turn penalty booked at the turn finalize (ThreeOnes / AllMiss /repdigit).
+/// It is exactly taken back at Undo.
 /// </summary>
 [System.Serializable]
 public struct TurnPenaltyRecord
@@ -113,8 +113,8 @@ public struct TurnPenaltyRecord
     [JsonProperty] public PenaltyType Type;
 
     /// <summary>
-    /// Custom-Penalty (Tab 2): Def-ID + gebuchte Kosten. Null/0 = Built-in.
-    /// Instant=true: beim Wurf gebucht (Legacy HitTypeMiss), sonst beim Finalize.
+    /// Custom penalty (Tab 2): def ID + booked costs. null/0 = built-in.
+    /// Instant=true: booked at the throw (Legacy HitTypeMiss ), otherwise at the finalize.
     /// </summary>
     [JsonProperty] public string CustomPenaltyId;
     [JsonProperty] public float CustomCost;

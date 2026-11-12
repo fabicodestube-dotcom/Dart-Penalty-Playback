@@ -193,8 +193,8 @@ public class X01Game : Game
         {
             Debug.Log("Player war noch nicht eingecheckt");
 
-            // Falls es der erste Dart der Aufnahme ist,
-            // merken wir uns den Score vor dem gesamten Turn
+            // If it's the first dart of the recording,
+            // Remember the score before the entire turn
             if (currentTurn.GetThrows().Count == 0)
             {
                 currentTurn.ScoreBeforeTurn = playerScores[playerId];
@@ -212,15 +212,15 @@ public class X01Game : Game
 
                 playerCheckedIn[playerId] = true;
 
-                // Check-In Dart zählt sofort voll
+                // Check-in darts counts immediately
                 playerScores[playerId] -= t.GetScore();
 
-                // WICHTIG:
-                // ScoreBeforeTurn NICHT verändern!
-                // Er bleibt der Score VOR dem ersten Dart der Aufnahme.
+                // IMPORTANT:
+                // ScoreBeforeTurn do NOT change!
+                // He remains the score BEFORE the first dart of recording.
             }
 
-            // Aufnahme beendet?
+            // Recording finished?
             if (!currentTurn.HasSpace())
             {
                 OnTurnCompleted?.Invoke(playerId, currentTurn);
@@ -233,33 +233,33 @@ public class X01Game : Game
             return;
         }
 
-        // 1. Initialisiere den Turn-Snapshot beim ALLERERSTEN Dart der Aufnahme
+        // Initialize the turn-snapshot on the ALL FIRST dart of the recording
         if (currentTurn.GetThrows().Count == 0)
             currentTurn.ScoreBeforeTurn = playerScores[playerId];
 
-        // 2. Berechne die Restpunkte, auf die dieser AKTULLE Dart geworfen wird
-        // (Punkte vor dem Turn minus das, was in DIESEM Turn bisher getroffen wurde)
+        // Calculate the remaining points on which this ACTUAL dart is thrown
+        // (Points before the turn minus what was hit in THIS turn so far)
         int pointsBeforeThisThrow = currentTurn.ScoreBeforeTurn - currentTurn.GetTurnScore(includeBustDarts: true);
 
-        // 3. JETZT prüfen wir, ob dieser spezifische Pfeil auf ein Checkout geworfen werden kann
+        // NOW we check if this specific arrow can be thrown on a checkout
         bool isCheckable = IsCheckable(pointsBeforeThisThrow, GetSettingsAsX01().checkoutType);
         if (isCheckable)
         {
             RegisterCheckoutAttempt(playerId);
         }
 
-        // 4. Füge den Wurf dem Turn hinzu (wichtig für Penalties und spätere Berechnungen)
+        // Add the throw to the turn (important for penalties and later calculations)
         currentTurn.AddThrow(t);
 
-        // Sektor-Sound direkt bei der Eingabe (vor Instant-Penalties).
+        // Sector sound right at input (before instant penalties).
         NotifySectorHit(playerId, t);
 
-        // 5. Berechne den neuen Punktestand NACH dem Wurf
+        // Calculate the new score AFTER the throw
         int newScore = currentTurn.ScoreBeforeTurn - currentTurn.GetTurnScore(includeBustDarts: true);
 
         var x01Settings = settings as X01GameSettings;
 
-        // 6. Bust-Validierung
+        // 6. Bust validation
         bool bust = false;
 
         if (newScore < 0)
@@ -271,12 +271,12 @@ public class X01Game : Game
         if (newScore == 0 && x01Settings.checkoutType == CheckoutType.Double && !t.IsDouble())
             bust = true;
 
-        // (Zusätzliche Bust-Prüfung für deine neue Triple-Regel, falls gewünscht)
+        // (Additional Bust check for your new triple rule, if desired)
         if (newScore == 0 && x01Settings.checkoutType == CheckoutType.Triple && !t.IsTriple())
             bust = true;
 
-        // Custom-Penalties (Sofort-Typ) pro Wurf; Legacy-Pfade sind
-        // stillgelegt (alles über Customization-Snapshots).
+        // Custom penalties (instant type) per throw; legacy paths are
+        // decommissioned (all about customization snapshots).
         CheckCustomInstantPenalties(playerId, t, currentTurn);
 
         if (bust)
@@ -286,7 +286,7 @@ public class X01Game : Game
 
             OnTurnCompleted?.Invoke(playerId, currentTurn);
 
-            // Bei Bust fällt der Score auf den Stand VOR dem gesamten Turn zurück
+            // At Bust, the score falls back to the status BEFORE the entire turn
             playerScores[playerId] = currentTurn.ScoreBeforeTurn;
 
             NextPlayer();
@@ -359,8 +359,8 @@ public class X01Game : Game
             createNewSet = true;
         }
 
-        // Leg-Wechsel ansagen, aber nicht am Match-Ende. Läuft nach
-        // Set-/Penalty-Events und vor dem neuen Leg.
+        // Leg changes, but not at the end of the match.
+        // Set/Penalty events and before the new leg.
         if (legWinner != Guid.Empty)
         {
             OnTurnCompleted?.Invoke(legWinner, currentTurn);
@@ -375,7 +375,7 @@ public class X01Game : Game
             sets.Add(currentSet);
         }
 
-        // Dieser Block gilt nun für BEIDE Fälle (neues Set oder neues Leg im alten Set)
+        // This block now applies to BOTH cases (new set or new leg in the old set)
         var nextLeg = new Leg();
         currentSet.AddLeg(nextLeg);
 
@@ -402,15 +402,15 @@ public class X01Game : Game
         if (isEmpty)
             return;
 
-        // 1. Basis-Struktur zurückrollen (Legs, Sets, Win-Stats & Counter)
+        // Roll back basic structure (legs, sets, win-stats & counter)
         var undoInfo = base.UndoBase();
 
-        // 3. X01-spezifische Korrekturen bei Sieg-Rücknahme
+        // X01-specific corrections for victory withdrawal
         if (undoInfo.LegWinnerUndone && undoInfo.PreviousWinnerId != null)
         {
             if (playerStats.TryGetValue(undoInfo.PreviousWinnerId, out var s))
             {
-                // Nur das Checkout unregistrieren (Counters wurden in base erledigt)
+                // Only unregister the checkout (counters were done in base)
                 var finishingTurn = undoInfo.UndoneLeg?.GetTurns().LastOrDefault(t => t.GetThrows().Count > 0);
                 if (finishingTurn != null)
                 {
@@ -419,10 +419,10 @@ public class X01Game : Game
             }
         }
 
-        // 4. Den eigentlichen Turn-Inhalt (Score & Averages) zurücksetzen
+        // Reset the actual turn content (score & averages)
         var leg = GetCurrentLeg();
 
-        // Leeren Platzhalter-Turn am Ende entfernen
+        // Remove Empty Placeholder Turn at the End
         var turns = leg.GetTurns();
 
         if (turns.Count > 0)
@@ -443,18 +443,18 @@ public class X01Game : Game
 
             if (playerStats.TryGetValue(undoPlayerId, out var stats))
             {
-                // Averages/Darts-Zähler im X01-Stat-Objekt korrigieren
+                // Correct Averages/Darts counters in the X01 Stat object
                 ((GameStatsX01)stats).UnregisterTurn(lastTurn);
             }
 
-            // --- LOGIK FÜR CHECKOUT ATTEMPT UNDO ---
-            // 1. Wir merken uns, ob der Turn vor dem Undo ein Bust war
+            // ---- CHECKOUT ATTEMPT UNDO LOGIC ----
+            // We remember if the turn before the Undo was a bust
             bool wasBustBeforeUndo = lastTurn.IsBust;
 
-            // 2. Jetzt löschen wir den letzten Wurf aus dem Turn-Objekt
+            // Now let's delete the last throw from the Turn object
             Throw removedThrow = lastTurn.RemoveLastThrow();
             
-            // 2a. Prüfen, ob der entfernte Dart ein Check-In Dart war
+            // 2a. check if the removed dart was a check-in dart
             if (lastTurn.CheckinThrowIndex >= 0)
             {
                 if (lastTurn.GetThrows().Count == lastTurn.CheckinThrowIndex)
@@ -466,21 +466,21 @@ public class X01Game : Game
             
             lastTurn.ClearBust();
 
-            // 3. Punktestand berechnen, den der Spieler VOR diesem gelöschten Wurf hatte
-            // (Punkte vor dem Turn minus die Summe aller Darts, die davor in diesem Turn geworfen wurden)
+            // Calculate the player’s score BEFORE this deleted throw
+            // (Points before the turn minus the sum of all darts thrown before that turn)
             int pointsBeforeThisThrow = lastTurn.ScoreBeforeTurn - lastTurn.GetTurnScore(includeBustDarts: true);
 
 
             var x01Settings = GetSettingsAsX01();
-            // 4. War dieser gelöschte Wurf ein valider Checkout-Versuch?
-            // Wichtig: Wenn es ein Bust war, stand der Spieler mathematisch IMMER auf einem checkbaren Feld.
+            // Was this deleted throw a valid checkout attempt?
+            // Important: If it was a bust, the player was mathematically ALWAYS on a checkable field.
             if (wasBustBeforeUndo || IsCheckable(pointsBeforeThisThrow, x01Settings.checkoutType))
             {
                 UnregisterCheckoutAttempt(undoPlayerId);
             }
             // ----------------------------------------
 
-            // Score im Game-State für den Spieler wiederherstellen
+            // Recover score in game state for the player
             playerScores[undoPlayerId] = lastTurn.ScoreBeforeTurn - lastTurn.GetTurnScore();
 
             CheckSuddenDeathAfterUndo();
@@ -569,8 +569,8 @@ public class X01Game : Game
         stats.highestCheckout = 0;
         stats.checkoutAttemptCount = 0f;
 
-        // tripleDigitCount (Legacy) wird nicht mehr rebuildet, sondern aus der
-        // persistierten Zeile restauriert (alte Spiele behalten ihre Werte).
+        // tripleDigitCount (Legacy) is no longer rebuilt, but from the
+        // restored persisted row (old games keep their values).
         stats.hitSectorCounts = new Dictionary<string, int>();
         stats.hitSectorCounts["0"] = 0;
         for (int i = 1; i <= 20; i++)
@@ -661,7 +661,7 @@ public class X01Game : Game
     // PENALTY SYSTEM (X01 EXTENSIONS)
     // =========================================================
 
-    /// <summary>Remaining-Auswertung: eigener Rest (ScoreBeforeTurn → aktuell).</summary>
+    /// <summary>Remaining evaluation: own rest (ScoreBeforeTurn → current).</summary>
     protected override Dictionary<Guid, (int before, int after)> GetRemainingTotals(Guid playerId, Turn turn)
     {
         if (turn == null || !playerScores.TryGetValue(playerId, out int after))
@@ -797,13 +797,13 @@ public class X01Game : Game
 
     private static bool IsCheckable(int remainingPoints, CheckoutType checkoutType)
     {
-        // Absoluter Schutz gegen fehlerhafte Werte (z.B. nach einem Überwerfen/Bust im Minusbereich)
+        // Absolute protection against defective values (e.g. after a throwover/bust in the minus area)
         if (remainingPoints <= 0) return false;
 
         switch (checkoutType)
         {
             case CheckoutType.Single:
-                // Single Out: Jedes Segment von 1-20, alle Doppel/Triple und Single/Double Bull
+                // Single Out: Each segment from 1-20, all doubles/triples and singles/double bull
                 if (remainingPoints <= 20) return true;
                 if (remainingPoints == 25 || remainingPoints == 50) return true;
                 
@@ -812,18 +812,18 @@ public class X01Game : Game
                 return isValidDoubleSO || isValidTripleSO;
 
             case CheckoutType.Double:
-                // Double Out: Mindestens 2 Punkte (D1), maximal 40 (D20) oder Bullseye (50)
+                // Double Out: At least 2 points (D1), maximum 40 (D20) or Bullseye (50)
                 if (remainingPoints < 2) return false;
                 if (remainingPoints == 50) return true;
                 return remainingPoints <= 40 && remainingPoints % 2 == 0;
 
             case CheckoutType.Triple:
-                // Triple Out: Mindestens 3 Punkte (T1), maximal 60 (T20)
+                // Triple Out: at least 3 points (T1), maximum 60 (T20)
                 if (remainingPoints < 3) return false;
                 return remainingPoints <= 60 && remainingPoints % 3 == 0;
 
             case CheckoutType.Master:
-                // Master Out: Mindestens 2 Punkte (D1), maximal 60 (T20) oder Bullseye (50)
+                // Master Out: At least 2 points (D1), maximum 60 (T20) or Bullseye (50)
                 if (remainingPoints < 2) return false;
                 if (remainingPoints == 50) return true;
                 

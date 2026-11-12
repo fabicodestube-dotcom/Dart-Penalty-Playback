@@ -58,7 +58,7 @@ public class TMPTextSearchWindow : EditorWindow
 
         if (foundObjects.Count > 0)
         {
-            // Setzt die aktive Auswahl im Unity-Editor auf alle gefundenen GameObjects
+            // Sets the active selection in the Unity editor on all found GameObjects
             Selection.objects = foundObjects.ToArray();
             
             Debug.Log($"Suche abgeschlossen. {foundObjects.Count} Objekte selektiert. Du kannst jetzt die Localization-Komponente im Inspector hinzufügen!");
@@ -66,7 +66,7 @@ public class TMPTextSearchWindow : EditorWindow
         else
         {
             Debug.LogWarning($"Keine TMP-Texte mit dem Begriff '{searchTerm}' gefunden.");
-            Selection.objects = new Object[0]; // Auswahl leeren, wenn nichts gefunden wurde
+            Selection.objects = new Object[0]; // Empty selection if nothing was found
         }
     }
 }

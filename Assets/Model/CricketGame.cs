@@ -162,9 +162,9 @@ public class CricketGame : Game
         if (currentTurn.GetThrows().Count == 0)
             currentTurn.ScoreBeforeTurn = 0; 
 
-        // Turn-Start-Snapshot aller Totals (für Schnapszahl-Übergangsregel:
-        // nur veränderte Totals können neu erreicht worden sein).
-        // Bleibt bei Undo/Reopen erhalten, neue Turns bekommen frische Snapshots.
+        // Turn-Start snapshot of all totals (for the repdigit transition rule):
+        // Only changed totals can have been reached new.
+        // Stay with Undo/Reopen, new turns get fresh snapshots.
         if (currentTurn.GetThrows().Count == 0 && currentTurn.TurnStartScores == null)
         {
             currentTurn.TurnStartScores = playerIDs.ToDictionary(
@@ -174,24 +174,24 @@ public class CricketGame : Game
 
         currentTurn.AddThrow(t);
 
-        // Sektor-Sound direkt bei der Eingabe (vor Instant-Penalties).
+        // Sector sound right at input (before instant penalties).
         NotifySectorHit(playerId, t);
 
         TouchActivity();
 
         // =====================================================
-        // CUSTOM PENALTIES (Sofort-Typ pro Wurf; Legacy stillgelegt)
+        // CUSTOM PENALTIES (instant type per throw; legacy disabled)
         // =====================================================
         CheckCustomInstantPenalties(playerId, t, currentTurn);
 
-        // Custom-Sektoren mit Wert>0 zählen wie Board-Treffer (Marks).
+        // Custom sectors with value > 0 count as board hits (marks).
         bool isScoringCustom = t.HitType == HitType.Custom
             && t.Value > 0
             && !(t.Value == 25 && t.Multiplier == DartMultiplier.Triple);
 
         if (t.HitType != HitType.Board && !isScoringCustom)
         {
-            // Wichtig: Auch Fehlwürfe müssen registriert werden (0 Marks)
+            // Important: Mistakes must also be registered (0 marks)
             stats?.RegisterThrow(t, 0);
             HandleTurnEnd(playerId);
             return;
@@ -205,10 +205,10 @@ public class CricketGame : Game
 
         if (value == 50) { value = 25; multiplier = 2; }
 
-        // Ungültige Treffer (Triple Bull oder Zahlen außerhalb 15-20/Bull)
+        // Invalid hits (triple bull or numbers outside 15-20/bull)
         if ((value == 25 && t.Multiplier == DartMultiplier.Triple) || !numbers.Contains(value))
         {
-            stats?.RegisterThrow(t, 0); // Dart zählt, aber 0 Marks
+            stats?.RegisterThrow(t, 0); // Dart counts, but 0 Marks
             HandleTurnEnd(playerId);
             return;
         }
@@ -246,7 +246,7 @@ public class CricketGame : Game
 
         int totalMarks = marksUsedToClose + marksEffectiveFromOverflow;
 
-        // Regulären Treffer registrieren
+        // Regular hits registered
         stats?.RegisterThrow(t, totalMarks);
 
         // =====================================================
@@ -336,7 +336,7 @@ public class CricketGame : Game
 
         result.Hits.AddRange(currentTurnHitEvents);
 
-        // 🔥 FIX: TurnScore korrekt aggregieren
+        // FIX: aggregate TurnScore correctly
         result.TurnScore = currentTurnHitEvents.Sum(h => h.ScoreGained);
 
         return result;
@@ -359,12 +359,12 @@ public class CricketGame : Game
     {
         if (stats == null) return;
 
-        int turnIndex = stats.turnCount; // Nutze den aktuellen Turn-Index
+        int turnIndex = stats.turnCount; // Use the current turn index
         int turnScore = result.TurnScore;
         int totalMarks = 0;
         int totalOverkills = 0;
 
-        // Summiere Marks und Overkills aus den Hit-Events
+        // Sum Marks and Overkills from Hit Events
         foreach (var hit in result.Hits)
         {
             totalMarks += hit.EffectiveMarks;
@@ -372,13 +372,13 @@ public class CricketGame : Game
                 totalOverkills += hit.ScoreGained;
         }
 
-        // Aktualisiere TurnStats
+        // Update TurnStats
         stats.UpdateTurnStats(turnIndex, turnScore, totalMarks, totalOverkills);
 
-        // Erkenne Highscores
+        // Detect high scores
         CheckHighscores(playerId, stats, result);
 
-        // Aktualisiere Field Preferences
+        // Update field preferences
         CheckFieldPreferences(playerId, stats, result);
     }
 
@@ -386,12 +386,12 @@ public class CricketGame : Game
     {
         if (result.Hits.Count == 0) return;
 
-        // 9 Marks: Check wenn genau 9 Marks in dieser Turn
+        // 9 Marks: Check if exactly 9 Marks in this turn
         int totalMarks = result.Hits.Sum(h => h.EffectiveMarks);
         if (totalMarks == 9)
             stats.nineMarkTurns++;
 
-        // White Horse: 3x verschiedene Triple in einer Runde
+        // White Horse: 3x different triples in one round
         if (result.Hits.Count >= 3)
         {
             var triples = result.Hits.Where(h => h.Multiplier == 3).ToList();
@@ -403,7 +403,7 @@ public class CricketGame : Game
             }
         }
 
-        // Same Triple: 3x dasselbe Triple mit Punkte-Wertung
+        // Same Triple: 3x same triple with points scoring
         if (result.Hits.Count == 3)
         {
             var firstNumber = result.Hits[0].Number;
@@ -489,7 +489,7 @@ public class CricketGame : Game
                 : true);
     }
 
-    /// <summary>Marks (EffectiveMarks-Summe) + Punkte des Turns für Audio-Trigger.</summary>
+    /// <summary>Marks (EffectiveMarks -sum) + points of turn for audio trigger.</summary>
     protected override void CollectAudioTriggerValues(System.Guid playerId, Turn turn, AudioTriggerValues values)
     {
         base.CollectAudioTriggerValues(playerId, turn, values);
@@ -543,15 +543,15 @@ public class CricketGame : Game
             if (IsMatchFinished(setWinner))
             {
                 HandleMatchEnd(setWinner);
-                // Hier müsste eig. nochmal CheckFieldPreferences aufgerufen werden
+                // Here you should call again CheckFieldPreferences
                 return;
             }
 
             createNewSet = true;
         }
 
-        // Leg-Wechsel ansagen, aber nicht am Match-Ende. Läuft nach
-        // Set-/Penalty-Events und vor dem neuen Leg.
+        // Leg changes, but not at the end of the match.
+        // Set/Penalty events and before the new leg.
         if (legResult != null)
         {
             OnTurnCompleted?.Invoke(legResult);
@@ -566,7 +566,7 @@ public class CricketGame : Game
             sets.Add(currentSet);
         }
 
-        // Dieser Block gilt nun für BEIDE Fälle (neues Set oder neues Leg im alten Set)
+        // This block now applies to BOTH cases (new set or new leg in the old set)
         var nextLeg = new Leg();
         currentSet.AddLeg(nextLeg);
 
@@ -612,7 +612,7 @@ public class CricketGame : Game
     //         IdentifyNextLegStarter();
     //         TouchActivity();
             
-    //         // Nach Set-Wechsel Bot prüfen
+    //         // Check bot after set change
     //         TriggerBotCheck();
     //         return;
     //     }
@@ -636,29 +636,29 @@ public class CricketGame : Game
         if (IsEmpty())
             return;
             
-        // 1. Basis-Logik nutzen (Löscht leere Legs/Sets, setzt Winner zurück, dekrementiert totalLegsCount/Won etc.)
+        // Use basic logic (Deletes empty legs/sets, resets winner, decrements totalLegsCount /Won, etc.)
         var undoInfo = base.UndoBase();
 
-        // 2. Spezial-Logik für Match-Ende
+        // Special logic for match ending
         // if (undoInfo.MatchWinnerUndone)
         // {
         //     base.UndoMatchEnd();
         // }
 
-        // 3. Den eigentlichen Wurf löschen
-        // Hinweis: Block 3 aus deinem alten Code (Sieg-Zähler korrigieren) ist jetzt komplett weg, 
-        // da base.UndoBase() das über UndoLegPlayed/Won erledigt.
+        // 3 Delete the actual litter
+        // Note: Block 3 from your old code (correct winning counter) is now completely gone,
+        // da base.UndoBase() do this via UndoLegPlayed /Won.
 
         var leg = GetCurrentLeg();
         var allTurns = leg.GetTurns();
         
-        // Den letzten Turn finden, der tatsächlich Würfe enthält
+        // Finding the Last Turn That Actually Contains Throws
         Turn lastTurn = allTurns.LastOrDefault(t => t.GetThrows().Count > 0);
         
         if (lastTurn != null)
         {
-            // Custom-Buchungen des Turns stornieren (Nachwurf + Re-Finalize
-            // buchen danach sauber neu -> kein Doppelzählen).
+            // Cancel custom bookings of the turn (re-finalize)
+            // Book clean new afterwards -> no double counting.
             if (lastTurn.RecordedPenalties != null)
             {
                 foreach (var rec in lastTurn.RecordedPenalties)
@@ -669,20 +669,20 @@ public class CricketGame : Game
                 lastTurn.RecordedPenalties.Clear();
             }
 
-            // Custom-Instant-Buchungen der verbleibenden Würfe still neu buchen
-            // (der letzte Wurf fliegt gleich; seine Buchung ist oben storniert).
+            // Custom instant bookings of the remaining throws silently rebook
+            // (the last throw is about to be removed; its booking was canceled above).
             var remainingThrows = lastTurn.GetThrows();
             for (int i = 0; i < remainingThrows.Count - 1; i++)
                 CheckCustomInstantPenalties(lastTurn.PlayerId, remainingThrows[i], lastTurn, true);
 
-            // Den letzten Wurf entfernen
+            // Remove the last throw
             lastTurn.RemoveLastThrow();
 
-            // Pointer synchronisieren
+            // Synchronize pointers
             currentPlayerIndex = playerIDs.IndexOf(lastTurn.PlayerId);
             currentTurn = lastTurn;
 
-            // Leere Folge-Turns im Leg löschen
+            // Delete empty follow-up turns in the leg
             int lastTurnIndex = allTurns.IndexOf(lastTurn);
             if (lastTurnIndex < allTurns.Count - 1)
             {
@@ -690,9 +690,9 @@ public class CricketGame : Game
             }
         }
 
-        // 4. ALLES NEU BERECHNEN
-        // WICHTIG: Da base.UndoBase bereits die totalLegsWon etc. korrigiert hat,
-        // stellt RebuildEverything jetzt den korrekten Spielfeld-Zustand (Marks/Scores) wieder her.
+        // 4 - Calculate everything new
+        // IMPORTANT: Since base.UndoBase has already corrected the totalLegsWon etc.,
+        // restores RebuildEverything the correct playing field state (marks/scores).
         RebuildEverything();
         
         TouchActivity();
@@ -713,18 +713,18 @@ public class CricketGame : Game
             Guid pid = turn.PlayerId;
             foreach (var thr in turn.GetThrows())
             {
-                // 1. Initialisierung für diesen Wurf
+                // Initialization for this pitch
                 int totalMarks = 0;
                 int pts = 0;
 
-                // 2. Nur wenn es ein Board-Treffer oder ein Custom-Sektor mit Wert ist
+                // Only if it is a board hit or a custom sector with value
                 if (thr.HitType == HitType.Board || (thr.HitType == HitType.Custom && thr.Value > 0))
                 {
                     int value = thr.Value;
                     int mult = ConvertMultiplier(thr.Multiplier);
                     if (value == 50) { value = 25; mult = 2; }
 
-                    // Prüfen, ob es eine gültige Cricket-Zahl ist (15-20, Bull)
+                    // Check if it is a valid cricket number (15-20, Bull)
                     if (numbers.Contains(value) && !(value == 25 && thr.Multiplier == DartMultiplier.Triple))
                     {
                         int hitsBefore = playerHits[pid][value];
@@ -742,7 +742,7 @@ public class CricketGame : Game
                                 pts = overflow * value;
                         }
 
-                        // State Update für Spiellogik
+                        // State Update for Game Logic
                         playerHits[pid][value] = newHitsClamped;
                         if (pts > 0)
                         {
@@ -752,7 +752,7 @@ public class CricketGame : Game
                                 playerScores[pid] += pts;
                         }
 
-                        // Events für UI (nur wenn aktiver Turn)
+                        // Events for UI (only if active turn)
                         if (turn == activeTurn)
                         {
                             currentTurnHitEvents.Add(new CricketHitEvent {
@@ -764,41 +764,41 @@ public class CricketGame : Game
                     }
                 }
 
-                // 3. WICHTIG: JEDEN Wurf in den Stats registrieren (egal ob Hit, Miss, Wall)
-                // Bei ungültigem Treffer werden einfach 0 Marks gebucht, aber der Dart gezählt.
+                // IMPORTANT: EVERY roll to register in the stats (whether Hit, Miss, Wall)
+                // If the hit is invalid, 0 marks are booked, but the dart is counted.
                 (playerStats[pid] as GameStatsCricket)?.RegisterThrow(thr, totalMarks);
             }
 
-            // 4. Turn-Abschluss (MPR)
+            // 4. Turn completion (MPR)
             if (turn != activeTurn && (turn.GetThrows().Count == 3 || turn == leg.GetTurns().LastOrDefault(t => t.GetThrows().Count > 0 && leg.WinnerPlayerId != null)))
             {
                 var stats = playerStats[pid] as GameStatsCricket;
                 stats?.RegisterTurn();
                 
-                // Auch neue Statistiken aufbauen falls während Rebuild
+                // Also build up new statistics if during rebuild
                 if (turn == activeTurn || turn == leg.GetTurns().LastOrDefault(t => t.GetThrows().Count > 0 && leg.WinnerPlayerId != null))
                 {
-                    // Während Rebuild können wir nicht die CricketTurnResult rekonstruieren,
-                    // daher nur einfache Max MPR Aktualisierung
+                    // While rebuild we cannot reconstruct the CricketTurnResult
+                    // Therefore, only simple Max MPR update
                     stats?.UpdateMaxMPR();
                 }
             }
         }
         
-        // Rebuild der Highscores und Preferences aus den aktuellen Spielfeld-Zuständen
+        // Rebuild the high scores and preferences from the current playing field states
         foreach (var pid in playerIDs)
         {
             var stats = playerStats[pid] as GameStatsCricket;
             if (stats != null)
             {
-                // Preferences aus Spielfeld neu aufbauen
+                // Rebuilding preferences from playing field
                 for (int i = 0; i < leg.GetTurns().Count; i++)
                 {
                     var turn = leg.GetTurns()[i];
                     if (turn.PlayerId == pid)
                     {
-                        // Hierfür bräuchten wir die CricketTurnResult Daten, die wir nicht mehr haben
-                        // Deshalb lassen wir die komplexen Statistiken beim Rebuild weg
+                        // For this we would need the CricketTurnResult data that we no longer have
+                        // That's why we leave out the complex statistics in the rebuild
                     }
                 }
             }
@@ -820,7 +820,7 @@ public class CricketGame : Game
             sets.Add(set);
         }
 
-        // currentTurn validieren / rekonstruieren
+        // Validate / reconstruct currentTurn
         var legNow = GetCurrentLeg();
 
         if (currentTurn == null ||
@@ -836,7 +836,7 @@ public class CricketGame : Game
             }
         }
 
-        // Derived state vollständig rekonstruieren
+        // Derived state fully reconstructed
         RebuildEverything();
     }
 
@@ -846,10 +846,10 @@ public class CricketGame : Game
     // =========================================================
 
     /// <summary>
-    /// Remaining-Auswertung über Totals: normal das eigene Total,
-    /// Cutthroat die Gegner-Totals (Buchung an den Total-Inhaber —
-    /// wie die frühere Schnapszahl-Regel). Vorher-Stand aus dem
-    /// TurnStartScores-Snapshot des Turns (Übergangsregel).
+    /// Remaining evaluation via totals: normal your own total,
+    /// Cutthroat the opponent totals (booking to the total holder —)
+    /// like the previous shot number rule.
+    /// TurnStartScores -Snapshot of the turn (transitional rule).
     /// </summary>
     protected override Dictionary<Guid, (int before, int after)> GetRemainingTotals(Guid playerId, Turn turn)
     {
@@ -993,7 +993,7 @@ public class CricketGame : Game
             }
         }
 
-        // alle Turns neu durchgehen
+        // Re-running all turns
         foreach (var set in sets)
         {
             foreach (var leg in set.GetLegs())
@@ -1005,7 +1005,7 @@ public class CricketGame : Game
                     if (!(playerStats[pid] is GameStatsCricket stats))
                         continue;
 
-                    // nur volle Turns zählen (wie bei MPR üblich)
+                    // Only full turns count (as usual with MPR)
                     if (turn.GetThrows().Count == 0)
                         continue;
 
@@ -1050,7 +1050,7 @@ public class CricketGame : Game
             }
         }
 
-        // MPR neu berechnen
+        // Recalculate MPR
         foreach (var pid in playerIDs)
         {
             if (playerStats[pid] is GameStatsCricket stats)
@@ -1065,7 +1065,7 @@ public class CricketGame : Game
 
     public override void CalculatePlayerStatsOnSave()
     {
-        // Base recomputet Legs/Sets/Games/Throws (idempotent).
+        // Base recomputes legs/sets/games/throws (idempotent).
         base.CalculatePlayerStatsOnSave();
 
         if (playerStats == null || playerIDs == null)
@@ -1075,17 +1075,17 @@ public class CricketGame : Game
         bool pointsEnabled = cricketSettings == null || cricketSettings.pointsEnabled;
         bool cutThroat = cricketSettings != null && cricketSettings.cutThroatEnabled;
 
-        // Cricket-Felder resetten (Base setzt nur Legs/Sets/Throws zurück).
-        // Dart-Zähler (totalThrows/Double/Triple) und Penalties bleiben von der Base.
+        // Reset cricket fields (base only resets legs/sets/throws).
+        // Dart counters (totalThrows /Double/Triple) and penalties remain off base.
         foreach (var pid in playerIDs)
         {
             if (playerStats.TryGetValue(pid, out var s) && s is GameStatsCricket cs)
                 ResetCricketStatsForRebuild(cs);
         }
 
-        // Chronologische Simulation über alle Sets/Legs/Turns.
-        // playerHits werden pro Leg zurückgesetzt (wie ResetLegState im Live-Spiel),
-        // damit Marks/Overflow/Scores exakt wie in AddThrow berechnet werden.
+        // Chronological simulation over all sets/legs/turns.
+        // playerHits are reset per leg (like ResetLegState in live play),
+        // so that marks/overflow/scores are calculated exactly as in AddThrow.
         foreach (var set in sets)
         {
             foreach (var leg in set.GetLegs())
@@ -1123,14 +1123,14 @@ public class CricketGame : Game
                         });
                     }
 
-                    // 🔥 FIX: TurnScore korrekt aggregieren
+                    // FIX: aggregate TurnScore correctly
                     result.TurnScore = turnScore;
 
-                    // Nutzt bewusst die Live-Methoden (UpdateTurnStats, Highscores,
-                    // FieldPreferences), damit Aggregate und Time-Ranges konsistent sind.
-                    // Marks werden hier direkt addiert: live passiert das pro Dart via
-                    // RegisterThrow (hier nicht aufrufbar, da die Base die Darts bereits
-                    // zählt) – vor RegisterTurn, damit die MPR stimmt.
+                    // Uses the live methods consciously (UpdateTurnStats, high scores,
+                    // FieldPreferences) so that aggregates and time ranges are consistent.
+                    // Marks are added here directly: live this happens per dart via
+                    // RegisterThrow (not available here, as the base already has the darts)
+                    // counts) – before RegisterTurn so that the MPR is right.
                     RegisterTurnStats(pid, stats, result);
                     stats.markCount += result.Hits.Sum(h => h.EffectiveMarks);
                     stats.RegisterTurn();
@@ -1153,8 +1153,8 @@ public class CricketGame : Game
         stats.turnMarks.Clear();
         stats.turnOverkills.Clear();
 
-        // tripleDigitCount (Legacy) wird nicht mehr rebuildet, sondern aus der
-        // persistierten Zeile restauriert (alte Spiele behalten ihre Werte).
+        // tripleDigitCount (Legacy) is no longer rebuilt, but from the
+        // restored persisted row (old games keep their values).
         stats.nineMarkTurns = 0;
         stats.whiteHorseTurns = 0;
         stats.sameTripleTurns = 0;
@@ -1166,9 +1166,9 @@ public class CricketGame : Game
     }
 
     /// <summary>
-    /// Simuliert einen Wurf wie AddThrow (Marks/Overflow/Scoring), ohne State zu mutieren.
-    /// Gibt null zurück für ungültige Würfe (Miss/Wall/falsche Zahl) – wie im Live-Spiel
-    /// erzeugen diese kein Hit-Event (nur 0 Marks via RegisterThrow, was die Base abdeckt).
+    /// Simulate a roll like AddThrow (Marks/Overflow/Scoring) without mutating State.
+    /// Returns null for invalid rolls (Miss/Wall/Wrong number) – as in live game
+    /// They do not generate a hit event (only 0 marks via RegisterThrow, which covers the base).
     /// </summary>
     private SimulatedCricketThrow SimulateCricketThrow(
         Throw thr,
@@ -1201,8 +1201,8 @@ public class CricketGame : Game
         {
             if (cutThroat)
             {
-                // Punkte landen bei den offenen Gegnern (live-identisch) + pro
-                // Gegner merken (für Schnapszahl-Übergangsregel im Rebuild).
+                // Points land at the open opponents (live-identical) + per
+                // Remember opponents (for the repdigit transition rule in the rebuild).
                 foreach (var opp in playerIDs.Where(p => p != playerId && simHits[p][value] < 3))
                 {
                     int given = overflow * value;
@@ -1252,7 +1252,7 @@ public class CricketGame : Game
         playerHits = new Dictionary<Guid, Dictionary<int, int>>();
         playerScores = new Dictionary<Guid, int>();
 
-        InitializeStats(); // nur Container, keine Logik
+        InitializeStats(); // Only containers, no logic
 
         foreach (var pid in playerIDs)
         {
@@ -1290,7 +1290,7 @@ public class CricketTurnResult
 
     public int TurnScore;
 
-    public bool IsBust; // optional, falls du sowas hast
+    public bool IsBust; // Optional if you have something like this
 
     public List<CricketHitEvent> Hits = new();
 }
@@ -1299,8 +1299,8 @@ public class CricketHitEvent
 {
     public int Number;        // z.B. 20, 19, 25
     public int Multiplier;    // 1,2,3
-    public int ScoreGained;   // tatsächliche Punkte
-    public bool WasClose;     // hat Feld geschlossen?
+    public int ScoreGained;   // Actual points
+    public bool WasClose;     // Has field closed?
     public bool WasOverflow;  // overflow scoring
     public int EffectiveMarks;
 }

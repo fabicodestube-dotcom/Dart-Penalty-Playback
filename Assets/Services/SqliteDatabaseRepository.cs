@@ -118,8 +118,8 @@ public static class SqliteDatabaseRepository
 
             RestoreSetupState(connection, database);
 
-            // Custom-Penalty-Snapshots einmalig für alle Spiele laden
-            // (eine Query statt N) und an die Summary-Erstellung reichen.
+            // Load custom penalty snapshots once for all games
+            // (one query instead of N) and the summary creation.
             var penaltySnapshots = ReadCustomPenaltySnapshots(connection);
 
             foreach (var gameRow in ReadGames(connection))
@@ -153,19 +153,19 @@ public static class SqliteDatabaseRepository
             RestoreRuntimeGameState(connection, gameRow.Id, game);
             game.InitializeAfterLoad();
 
-            // playerStats werden nicht persistiert (nur Struktur + Runtime-Meta),
-            // daher aus der Struktur recomputen (idempotent). Verhindert, dass ein
-            // Reload+Save die player_game_stats-Zeile mit Nullen überschreibt.
+            // playerStats will not persist (only structure + runtime meta),
+            // Therefore, recomputing from the structure (idempotent) prevents a
+            // Reload+Save overwrites the player_game_stats line with zeros.
             game.CalculatePlayerStatsOnSave();
 
-            // Turn-Records (pro Buchung) werden nicht persistiert — nach Reload
-            // ist die Struktur ohne Records. Custom-Summen/Counts aus der
-            // gespeicherten Zeile übernehmen, sonst gingen sie bei
-            // Reload+Save verloren (leere Live-Werte überschreiben nichts).
+            // Turn records (per booking) are not persistent — after reload
+            // is the structure without records. Custom sums/counts from the
+            // They will take the saved line, otherwise they will go to
+            // Reload+Save lost (empty live values do not overwrite anything).
             RestorePersistedCustomPenalties(connection, gameRow.Id, game);
 
-            // Legacy-Counter (alte Spiele) dito: kein Rebuild mehr, daher aus
-            // der Zeile übernehmen, sonst gingen sie bei Reload+Save verloren.
+            // Legacy counter (old games) likewise: no more rebuild, therefore from
+            // Then they would be lost to Reload+Save.
             RestorePersistedLegacyPenalties(connection, gameRow.Id, game);
 
             return game;
@@ -258,9 +258,9 @@ public static class SqliteDatabaseRepository
 
         SaveRuntimeGameState(connection, game);
 
-        // Alte Struktur-Zeilen löschen, sonst bleiben nach erneutem
-        // Speichern verwaiste Legs/Turns/Throws übrig (neue IDs pro
-        // Save) und Restore hängt sie fälschlich ans aktuelle Set.
+        // Delete old structure lines, otherwise remain after re-examination
+        // Save leftover orphaned legs/turns/throws (new IDs per)
+        // Save) and Restore wrongly hang them on the current set.
         DeleteGameStructure(connection, game.GetID().ToString());
         for (int i = 0; i < game.GetSets().Count; i++)
         {
@@ -409,8 +409,8 @@ public static class SqliteDatabaseRepository
     }
 
     /// <summary>
-    /// Lädt die Pro-Spiel-Stats EINes Spiels (eine Connection, eine Query).
-    /// Für Delete-Pfade: VOR dem Löschen aufrufen, da die Zeilen danach weg sind.
+    /// Loads the Pro-Game Stats of ONE game (one connection, one query).
+    /// For Delete Paths: Call before deletion, as the lines are gone afterwards.
     /// </summary>
     public static Dictionary<Guid, GameStats> LoadPlayerGameStatsForGame(Guid gameId)
     {
@@ -952,8 +952,8 @@ public static class SqliteDatabaseRepository
     }
 
     /// <summary>
-    /// Lädt alle Custom-Penalty-Snapshots (pro Spiel die beim Speichern
-    /// aktiven Defs) in einer Query. Alt-Saves ohne Snapshot → kein Eintrag.
+    /// Downloads all custom penalty snapshots (per game, those saved when you play)
+    /// active Defs) in a query. Alt-Saves without snapshot → no entry.
     /// </summary>
     private static Dictionary<string, List<CustomPenaltyDef>> ReadCustomPenaltySnapshots(SQLiteConnection connection)
     {
@@ -1053,8 +1053,8 @@ public static class SqliteDatabaseRepository
     }
 
     /// <summary>
-    /// Übernimmt persistierte Custom-Summen/Counts in frisch recomputete
-    /// Live-Stats (nur wenn live leer — Live-Buchungen gewinnen immer).
+    /// Takes over persistent custom sums/counts in freshly recomputed
+    /// Live stats (only if live empty — live bookings always win).
     /// </summary>
     private static void RestorePersistedCustomPenalties(SQLiteConnection connection, string gameId, Game game)
     {
@@ -1101,8 +1101,8 @@ public static class SqliteDatabaseRepository
             if (kvp.Value == null)
                 continue;
 
-            // Nur übernehmen, wenn live noch nichts gebucht wurde (neue Spiele
-            // buchen Legacy nie; alte Spiele behalten ihre Zeilen-Werte).
+            // Only take over if nothing has been booked live (new games)
+            // legacy is never booked; old games keep their row values).
             bool liveEmpty = liveStats.wallCount == 0 && liveStats.ceilingCount == 0
                 && liveStats.allMissCount == 0 && liveStats.tripleOnesCount == 0
                 && liveStats.tripleDigitCount == 0 && liveStats.lostGame == 0;
@@ -1896,24 +1896,24 @@ public static class SqliteDatabaseRepository
 
     private static void SetGameDates(SQLiteConnection connection, Game game)
     {
-        // 1. Abfrage an die 'games' Tabelle senden, um die Daten zur Game-ID zu laden
+        // Send query to the 'games' table to load the data to the game ID
         var gameRows = connection.Query<GameRow>(@"
             SELECT id AS Id, created_at AS CreatedAt, last_activity_at AS LastActivityAt, finished_at AS FinishedAt
             FROM games
             WHERE id = ?;
         ", game.GetID().ToString());
 
-        // 2. Prüfen, ob überhaupt ein Datensatz gefunden wurde
+        // Check if a data set has been found at all
         if (gameRows != null && gameRows.Count > 0)
         {
             var row = gameRows[0];
 
-            // 3. Werte im Game-Objekt setzen (Nutze deine entsprechenden Setter-Methoden)
+            // Set values in the game object (use your corresponding setter methods)
             game.SetCreatedAt(DateTime.Parse(row.CreatedAt));
             game.SetLastActivityAt(DateTime.Parse(row.LastActivityAt));
             game.SetFinishedAt(string.IsNullOrEmpty(row.FinishedAt) ? (DateTime?)null : DateTime.Parse(row.FinishedAt));
             
-            // 4. Deine Validierungslogik nach dem Laden triggern
+            // Trigger your validation logic after loading
             game.InitializeAfterLoad();
         }
         else
@@ -2271,7 +2271,7 @@ public static class SqliteDatabaseRepository
     }
 
     // =========================================================
-    // CUSTOM HIT SECTORS (Tab 1 „Bereiche“)
+    // CUSTOM HIT SECTORS (Tab 1 “Areas”)
     // =========================================================
 
     private class CustomHitSectorRow
@@ -2398,14 +2398,14 @@ public static class SqliteDatabaseRepository
     }
 
     /// <summary>
-    /// Liest den Trigger eines Audio-Events aus params_json.
+    /// Read the trigger of an audio event from params_json.
     ///
-    /// Legacy: Das Feld hieß früher "matchExact" und steuerte faktisch nur die
-    /// Anzahl der Würfe — der UI-Toggle war aber als "Match order"
-    /// beschriftet, die Absicht war also die Reihenfolge. Deshalb wird der
-    /// alte Wert als "matchOrder" übernommen. Sobald das Event gespeichert
-    /// wird, verschwindet "matchExact" aus dem JSON und die Zuordnung greift
-    /// nicht mehr (die neue Wahl des Users bleibt dann erhalten).
+    /// Legacy: The field used to be called "matchExact" and actually only controlled the
+    /// Number of throws — the UI toggle was but as a "match order"
+    /// So the intention was the order.
+    /// old value taken as "matchOrder ".
+    /// "matchExact" disappears from the JSON and the assignment takes effect
+    /// no more (the new choice of the user is then preserved).
     /// </summary>
     private static AudioEventTrigger DeserializeAudioEventTrigger(string paramsJson)
     {
@@ -2480,7 +2480,7 @@ public static class SqliteDatabaseRepository
     }
 
     // =========================================================
-    // RECORDED CLIPS (AudioLibrary-Index, ersetzt audio_library.json)
+    // RECORDED CLIPS (AudioLibrary index, replaces audio_library.json)
     // =========================================================
 
     public class RecordedClipRow

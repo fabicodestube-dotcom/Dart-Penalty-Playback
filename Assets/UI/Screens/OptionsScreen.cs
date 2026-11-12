@@ -6,7 +6,7 @@ using UnityEngine.Localization;
 using UnityEngine.Localization.Settings;
 using UnityEngine.UI;
 
-public class OptionsHandler : MonoBehaviour
+public class OptionsScreen : MonoBehaviour
 {
     public WindowHandler windowHandler;
     //public AppHandler appHandler;
@@ -46,7 +46,7 @@ public class OptionsHandler : MonoBehaviour
         // Fallback: If no locale string is passed, load the one saved in your AppSettings
         if (string.IsNullOrEmpty(locale))
         {
-            Debug.LogWarning("[OptionsHandler] No locale provided to UpdateLanguageText. Falling back to saved locale.");
+            Debug.LogWarning("[OptionsScreen] No locale provided to UpdateLanguageText. Falling back to saved locale.");
             locale = AppSettingsManager.Instance.Settings.Language.lastLocaleCode;
         }
 
@@ -101,8 +101,8 @@ public class OptionsHandler : MonoBehaviour
                 binder.Initialize(this);
         }
 
-        // Härtung: alle UiSwitchBinder in Children initialisieren, auch wenn
-        // sie nicht in der binders-Liste stehen.
+        // Hardening: initialize all UISwitchBinder in Children, even if
+        // They are not on the binders list.
         foreach (var binder in GetComponentsInChildren<UISwitchBinder>(true))
         {
             if (binder != null && !binders.Contains(binder))
@@ -229,7 +229,7 @@ public class OptionsHandler : MonoBehaviour
 
     private void SetColorScheme(ThemeColorScheme scheme)
     {
-        // zentrale Stelle für Theme-Wechsel (Single Point of Truth)
+        // Central location for the theme change (Single Point of Truth)
         AppSettingsManager.Instance.SetTheme(scheme);
     }
 
@@ -241,20 +241,20 @@ public class OptionsHandler : MonoBehaviour
 
     public void SetSound(bool soundEnabled)
     {
-        // Persistiert Sound-Setting im AppHandler
+        // Persists the sound setting in AppHandler
         AppSettingsManager.Instance.SetSoundEnabled(soundEnabled);
     }
 
     public void SetCustomSound(bool customSoundEnabled)
     {
-        // Speichert Einstellung für Custom Sounds
+        // Saves settings for custom sounds
         AppSettingsManager.Instance.SetCustomSoundsEnabled(customSoundEnabled);
     }
 
     /// <summary>
-    /// Eingebaute Clips (Default-/Custom-Set) als Fallback verwenden, wenn der
-    /// User für eine ID noch nichts aufgenommen hat. false → nur eigene
-    /// Aufnahmen, sonst stumm.
+    /// Use built-in clips (default/custom set) as fallback if the
+    /// User for an ID has not recorded anything yet. false → only own
+    /// Recordings, otherwise mute.
     /// </summary>
     public void SetDefaultClipsFallback(bool fallbackEnabled)
     {

@@ -5,7 +5,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class PlayerHandler : MonoBehaviour
+public class PlayersScreen : MonoBehaviour
 {
     public AppHandler appHandler;
     public WindowHandler windowHandler;
@@ -22,19 +22,19 @@ public class PlayerHandler : MonoBehaviour
     public TMP_Text renameHeadline;
     public TMP_Text deleteText;
 
-    // Fehler-Texte
+    // Error texts
     public TMP_Text addErrorText;
     public TMP_Text renameErrorText;
 
     public Image addOutline;
     public Image renameOutline;
 
-    // Buttons für Interaktions-Logik
+    // Buttons for interaction logic
     public Button addConfirmButton;
     public Button renameConfirmButton;
 
     private Guid currentPlayerID;
-    private bool isResetting; // Verhindert rotes Aufflackern beim Leeren
+    private bool isResetting; // Prevents red flare-up when emptying
 
 
     void Start()
@@ -108,7 +108,7 @@ public class PlayerHandler : MonoBehaviour
         renameHeadline.text = LocalizationText.Format("Rename_player", "Rename player {0}", name);
         renameInput.text = name;
         
-        // Initial prüfen (da der aktuelle Name gültig ist)
+        // Initial check (since the current name is valid)
         renameConfirmButton.interactable = TryValidate(name, out _, out _);
         
         isResetting = false;
@@ -175,7 +175,7 @@ public class PlayerHandler : MonoBehaviour
             outline.color = ThemeManager.Instance.GetColor(ThemeColorRole.Accent1));
 
         input.onDeselect.AddListener(_ => {
-            // Nur auf Inaktiv-Farbe zurücksetzen, wenn die Eingabe valide ist
+            // Reset to Inactive Color only if the input is valid
             if (TryValidate(input.text, out _, out _))
                 outline.color = ThemeManager.Instance.GetColor(ThemeColorRole.SingleSelectionButtonInactive);
         });
@@ -201,11 +201,11 @@ public class PlayerHandler : MonoBehaviour
     {
         errorMessage = "";
         
-        // 1. Bereinigung
+        // 1. Cleanup
         result = Regex.Replace(input.Trim(), @"\s+", " ");
         result = Regex.Replace(result, @"[^\w\säöüÄÖÜß]", "");
 
-        // 2. Längenprüfung
+        // 2. Longitudinal test
         if (string.IsNullOrWhiteSpace(result) || result.Length < 2)
         {
             errorMessage = "Name is too short (min. 2 characters).";
@@ -218,14 +218,14 @@ public class PlayerHandler : MonoBehaviour
             return false;
         }
 
-        // 3. Prüfung auf mindestens einen Buchstaben
+        // Check for at least one letter
         if (!Regex.IsMatch(result, @"\p{L}"))
         {
             errorMessage = "Name must contain at least one letter.";
             return false;
         }
 
-        // 4. Eindeutigkeits-Check
+        // 4. Uniqueness check
         string cleanedName = result;
         bool isDuplicate = appHandler.GetPlayers()
             .Any(p => p.GetName().Equals(cleanedName, System.StringComparison.OrdinalIgnoreCase) 

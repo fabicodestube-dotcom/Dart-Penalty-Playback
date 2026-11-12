@@ -16,9 +16,9 @@ public class ATCGame : Game
     [JsonProperty] private List<int> targets = new List<int>();
 
     /// <summary>
-    /// Geforderter Multiplikator pro Schritt (parallel zu targets).
-    /// Kombi-Modi wiederholen Zahlen (z.B. 1S,1D,2S,2D...).
-    /// Alte Saves ohne diese Liste werden aus targetType abgeleitet.
+    /// Required multiplier per step (parallel to targets).
+    /// Combo modes repeat numbers (e.g. 1S,1D,2S,2D...).
+    /// Old saves without this list are derived from targetType.
     /// </summary>
     [JsonProperty] private List<DartMultiplier> targetMultipliers = new List<DartMultiplier>();
     [JsonProperty] private Dictionary<Guid, int> playerCurrentIndex = new Dictionary<Guid, int>();
@@ -31,9 +31,9 @@ public class ATCGame : Game
 
     [JsonProperty] private Dictionary<Guid, int> lastVisitHits = new();
 
-    // Dartboard-Reihenfolge im Uhrzeigersinn (20 → 1 → 18 → 4 → …)
+    // Dartboard order clockwise (20 → 1 → 18 → 4 →...)
     private static readonly int[] DartboardOrderRight = { 20, 1, 18, 4, 13, 6, 10, 15, 2, 17, 3, 19, 7, 16, 8, 11, 14, 9, 12, 5 };
-    // Dartboard-Reihenfolge gegen den Uhrzeigersinn (20 → 5 → 12 → …)
+    // Dartboard order in an anticlockwise direction (20 → 5 → 12 →...)
     private static readonly int[] DartboardOrderLeft = { 20, 5, 12, 9, 14, 11, 8, 16, 7, 19, 3, 17, 2, 15, 10, 6, 13, 4, 18, 1 };
 
     public ATCGameSettings GetSettingsAsATC() => settings as ATCGameSettings;
@@ -60,7 +60,7 @@ public class ATCGame : Game
             InitializeTargets();
         }
 
-        // Alte Saves kennen nur targets (ohne Wiederholungen/Multiplikatoren).
+        // Old saves only know targets (without repetitions/multipliers).
         EnsureTargetMultipliers();
 
         foreach (var pid in playerIDs)
@@ -93,8 +93,8 @@ public class ATCGame : Game
     }
 
     /// <summary>
-    /// Füllt targetMultipliers aus targetType auf, falls die Liste fehlt oder
-    /// kürzer ist (alte Savegames ohne Wiederholungen/Kombi-Modi).
+    /// Fill in targetMultipliers from targetType if the list is missing or
+    /// shorter (old savegames without repetitions/combi modes).
     /// </summary>
     private void EnsureTargetMultipliers()
     {
@@ -106,12 +106,12 @@ public class ATCGame : Game
     }
 
     /// <summary>
-    /// Stellt nach LoadGameById den Zielfortschritt wieder her.
-    /// Hintergrund: playerCurrentIndex/targets/targetMultipliers wurden nie
-    /// persistiert — nach Load lief jedes Spiel auf frischen Singles-Defaults
-    /// (falsche Targets nach Undo/Continue, z.B. Single20 statt T20).
-    /// Mit gespeicherten Listen (neue Saves) exakt, sonst deterministisch neu
-    /// aufgebaut + Fortschritt des aktuellen Legs aus den Turns replayt.
+    /// Recovers the progress after LoadGameById.
+    /// Background: playerCurrentIndex /targets/ targetMultipliers have never been
+    /// Persistent — after load, every game ran on fresh singles defaults
+    /// (wrong targets after Undo/Continue, e.g. Single20 instead of T20).
+    /// With saved lists (new saves) exact, otherwise deterministically new
+    /// built + progress of the current leg from the turns replays.
     /// </summary>
     public void RestoreProgressAfterLoad(
         List<int> savedTargets,
@@ -152,8 +152,8 @@ public class ATCGame : Game
             RebuildATCProgressStateFromTurns(GetCurrentLeg());
         }
 
-        // currentTurn zeigt nach relationalem Load ggf. auf einen verworfenen
-        // Turn (Sets wurden neu aufgebaut): nur dann neu anhängen, sonst alles lassen.
+        // currentTurn points to a discarded load after relational load
+        // Turn (sets have been rebuilt): only then reattach, otherwise leave everything.
         var legNow = sets != null && sets.Count > 0 ? GetCurrentLeg() : null;
         if (legNow != null && (currentTurn == null || !legNow.GetTurns().Contains(currentTurn)))
         {
@@ -181,7 +181,7 @@ public class ATCGame : Game
         };
     }
 
-    /// <summary>Zahlenfolge je Order (Bull-Position wie bisher: Asc Ende, Desc Anfang, Right/Left Ende, Random gemischt).</summary>
+    /// <summary>Number string per order (bull position as before: Asc end, Desc beginning, Right/Left end, Random mixed).</summary>
     private static List<int> BuildNumberOrder(ATCGameSettings s, bool withBull, bool shuffleRandom = true)
     {
         var baseTargets = Enumerable.Range(1, 20).ToList();
@@ -225,9 +225,9 @@ public class ATCGame : Game
     }
 
     /// <summary>
-    /// Expandiert Zahlen zu Schritten in Block-Reihenfolge: erst alle Singles
-    /// (1..20 + 25S), dann alle Doubles (D1..D20 + D25), dann alle Triples
-    /// (T1..T20, nie T25) — jeweils nur die aktivierten Sets, Zahlenfolge je Order.
+    /// Expands numbers to steps in block order: first all singles
+    /// (1..20 + 25S), then all doubles (D1..D20 + D25), then all triples
+    /// (T1..T20, never T25) — only the activated sets, number string per order.
     /// </summary>
     private static void ExpandSteps(List<int> numbers, ATCGameSettings s, List<int> outNumbers, List<DartMultiplier> outMultipliers)
     {
@@ -249,7 +249,7 @@ public class ATCGame : Game
         foreach (int n in numbers)
         {
             if (n == 25 && mult == DartMultiplier.Triple)
-                continue; // nie T25
+                continue; // never T25
 
             outNumbers.Add(n);
             outMultipliers.Add(mult);
@@ -262,7 +262,7 @@ public class ATCGame : Game
         var newLeg = new Leg();
         currentSet.AddLeg(newLeg);
 
-        // Startspieler rotiert IMMER nach Leg-Win (auch wenn das Leg in Bonusphase endet)
+        // Starting player ALWAYS rotates to Leg-Win (even if the Leg ends in bonus phase)
         RotateStartingPlayer();
         ResetToStartingPlayer();
         currentTurn = new Turn(GetCurrentPlayerId());
@@ -276,9 +276,9 @@ public class ATCGame : Game
             playerStarted[pid] = false;
         }
 
-        // Neuer Startspieler steht fest (ggf. ein Bot) → Bot-Check wie X01/Cricket.
-        // Ohne das bleibt ein Bot nach Leg-Gewinn untätig, weil der Engine-
-        // Handler zum LegWon-Event noch den alten Spieler sieht.
+        // New starting player is fixed (possibly a bot) → Bot-Check like X01/Cricket.
+        // Without that, a bot will remain idle after leg gain because of the engine-
+        // Handler to the LegWon event still sees the old player.
         TriggerBotCheck();
     }
 
@@ -303,7 +303,7 @@ public class ATCGame : Game
         return index < targets.Count ? targets[index] : -1;
     }
 
-    /// <summary>Geforderter Multiplikator des aktuellen Schritts (Kombi-Modi).</summary>
+    /// <summary>Required multiplier of the current step (combi modes).</summary>
     public DartMultiplier GetCurrentTargetMultiplier(Guid playerId)
     {
         int index = playerCurrentIndex[playerId];
@@ -328,13 +328,13 @@ public class ATCGame : Game
         return targets.Count;
     }
 
-    /// <summary>Kopien für die Persistenz (game_meta): Schrittliste + Fortschritt.</summary>
+    /// <summary>Copies for persistence (game_meta): Step list + progress.</summary>
     public List<int> GetTargetNumbers() => new List<int>(targets);
 
-    /// <summary>Kopien für die Persistenz (game_meta): Schritt-Multiplikatoren.</summary>
+    /// <summary>Copies for persistence (game_meta): step multipliers.</summary>
     public List<DartMultiplier> GetTargetMultipliers() => new List<DartMultiplier>(targetMultipliers);
 
-    /// <summary>Kopien für die Persistenz (game_meta): Zielfortschritt pro Spieler.</summary>
+    /// <summary>Copies for persistence (game_meta): Target progress per player.</summary>
     public Dictionary<Guid, int> GetTargetIndices() => new Dictionary<Guid, int>(playerCurrentIndex);
 
     public int GetWonSetsTotal(Guid playerId)
@@ -410,7 +410,7 @@ public class ATCGame : Game
         int currentIndex = playerCurrentIndex[undoPlayerId];
         bool isValid = lastThrow.IsTargetHit;
 
-        // Ziel zur Wurfzeit rekonstruieren
+        // Reconstructing the goal for throw time
         int targetAtTimeOfThrow = isValid && currentIndex > 0 && currentIndex <= targets.Count
             ? targets[currentIndex - 1]
             : GetCurrentTarget(undoPlayerId);
@@ -423,17 +423,17 @@ public class ATCGame : Game
 
             Debug.Log("ATCGame  targetAtTimeOfThrow: " + targetAtTimeOfThrow);
 
-            // Stats korrigieren
+            // Correct stats
             sATC.RemoveThrow(lastThrow, targetAtTimeOfThrow, isValid, wasFirstOfVisit, streakBefore);
         }
 
-        // 3. Fortschritt im Spiel-State zurückdrehen
+        // Turn back progress in the game state
         if (isValid)
         {
             playerCurrentIndex[undoPlayerId] = Math.Max(0, currentIndex - 1);
         }
 
-        // --- KORREKTUR ENDE ---
+        // --- END OF CORRECTION ---
 
         lastTurnWithThrows.RemoveLastThrow();
         CleanupTrailingEmptyTurns(leg, keepPlayerId: undoPlayerId);
@@ -447,9 +447,9 @@ public class ATCGame : Game
     }
 
     /// <summary>
-    /// Entfernt am Ende des Legs alle leeren Turns, die nicht zum keepPlayerId gehören.
-    /// Diese Turns entstehen typischerweise durch NextPlayer() und müssen bei Undo wieder weg,
-    /// wenn wir eigentlich vor dem Spielerwechsel zurückspringen.
+    /// Removes at the end of the leg all empty turns that do not belong to the keepPlayerId.
+    /// These turns are typically made by NextPlayer() and have to go away at Undo,
+    /// When we actually jump back before the change of players.
     /// </summary>
     private void CleanupTrailingEmptyTurns(Leg leg, Guid keepPlayerId)
     {
@@ -461,18 +461,18 @@ public class ATCGame : Game
             var last = turns[^1];
             if (last == null) break;
 
-            // niemals den einzigen Turn entfernen
+            // Never remove the single turn
             if (turns.Count == 1) break;
 
-            // nur leere Turns sind Kandidaten
+            // Only empty turns are candidates
             if (last.GetThrows().Count > 0) break;
 
             if (last.PlayerId == keepPlayerId)
             {
-                // Sonderfall: Ein leerer Turn des selben Spielers kann ein "synthetischer" Slot sein,
-                // der durch CompleteTurn(..., switchPlayer:false) erzeugt wurde.
-                // Wenn wir nun in den vorherigen Turn hinein-undoen (und der damit wieder <3 Darts hat),
-                // muss dieser leere Slot wieder entfernt werden, sonst stimmt die Bonusphase nicht mehr.
+                // Special case: An empty turn of the same player can be a "synthetic" slot,
+                // generated by CompleteTurn (..., switchPlayer:false).
+                // If we now go into the previous turn (and which has <3 darts again),
+                // This empty slot must be removed again, otherwise the bonus phase is no longer correct.
                 var prev = turns[^2];
                 if (prev.PlayerId == keepPlayerId && prev.GetThrows().Count < 3)
                 {
@@ -480,7 +480,7 @@ public class ATCGame : Game
                     continue;
                 }
 
-                // ansonsten ist es ein legitimer Bonus-Slot (Spieler bleibt dran)
+                // otherwise it is a legitimate bonus slot (player stay tuned)
                 break;
             }
 
@@ -489,8 +489,8 @@ public class ATCGame : Game
     }
 
     /// <summary>
-    /// Rekonstruiert playerCurrentIndex, playerStarted und validThrowsInTurn ausschließlich aus den Turns
-    /// des aktuellen Legs (ohne PlayerStats neu zu initialisieren).
+    /// Reconstructed playerCurrentIndex, playerStarted and validThrowsInTurn exclusively from the turns
+    /// of the current leg (without re-initializing PlayerStats).
     /// </summary>
     private void RebuildATCProgressStateFromTurns(Leg leg)
     {
@@ -510,9 +510,9 @@ public class ATCGame : Game
                 playerCarryOn[pid] = false;
         }
 
-        // Replay: wir müssen Validität gegen das Target "zur Wurfzeit" prüfen.
-        // Zusätzlich bestimmen wir validThrowsInTurn als die Anzahl gültiger Treffer im aktuellen Visit
-        // (= Summe gültiger Treffer über alle aufeinanderfolgenden Turns des letzten Spielers).
+        // Replay: we need to check validity against the target "at throw time".
+        // In addition, we determine validThrowsInTurn as the number of valid hits in the current visit
+        // (= sum of valid hits over all consecutive turns of the last player).
         Guid? visitPlayerId = null;
         int visitValidHits = 0;
 
@@ -551,12 +551,12 @@ public class ATCGame : Game
         if (playerThrows.Count <= 1)
             return 0;
 
-        // letzten Wurf ignorieren
+        // Ignore last throw
         playerThrows.RemoveAt(playerThrows.Count - 1);
 
         int targetIndex = 0;
 
-        // Vorwärts rekonstruieren
+        // Forward reconstruction
         foreach (var thr in playerThrows)
         {
             if (targetIndex >= targets.Count)
@@ -566,7 +566,7 @@ public class ATCGame : Game
                 targetIndex++;
         }
 
-        // Jetzt rückwärts streak zählen
+        // Now counting backwards streak
         int streak = 0;
 
         for (int i = playerThrows.Count - 1; i >= 0 && targetIndex > 0; i--)
@@ -615,12 +615,12 @@ public class ATCGame : Game
 
         currentTurn.AddThrow(t);
 
-        // Sektor-Sound direkt bei der Eingabe (vor Instant-Penalties).
+        // Sector sound right at input (before instant penalties).
         NotifySectorHit(playerId, t);
 
         if (isValidThrow)
         {
-            playerStarted[playerId] = true;   // 🔥 MISSING LINE
+            playerStarted[playerId] = true;   // MISSING LINE
             if (playerStarted[playerId])
             {
                 playerCurrentIndex[playerId]++;
@@ -628,8 +628,8 @@ public class ATCGame : Game
             validThrowsInTurn++;
         }
 
-        // Custom-Penalties (Sofort-Typ) pro Wurf; Legacy-Pfade sind
-        // stillgelegt (alles über Customization-Snapshots).
+        // Custom penalties (instant type) per throw; legacy paths are
+        // decommissioned (all about customization snapshots).
         CheckCustomInstantPenalties(playerId, t, currentTurn);
 
         if (IsPlayerFinished(playerId))
@@ -665,7 +665,7 @@ public class ATCGame : Game
                 newLeg.AddTurn(currentTurn);
                 foreach (var pid in playerIDs) { playerCurrentIndex[pid] = 0; playerStarted[pid] = false; }
                 
-                // Nach Set-Wechsel Bot prüfen
+                // Check for Set-Change Bot
                 TriggerBotCheck();
             }
             else
@@ -684,12 +684,12 @@ public class ATCGame : Game
         // =========================================================
         int throwCountInCurrentSlot = currentTurn.GetThrows().Count;
         
-        // Logik: Wenn wir schon 3 Treffer im aktuellen Besuch haben, sind wir im Bonus.
-        // Ausnahme: Wenn wir exakt 3 Darts geworfen haben UND der 3. Dart gerade zum 3. Treffer führte, 
-        // befinden wir uns technisch noch im Übergang zum Bonus-Slot.
+        // Logic: If we already have 3 hits in the current visit, we are in the bonus.
+        // Exception: If we threw exactly 3 darts AND the 3rd dart just led to the 3rd hit,
+        // We are still technically in the transition to the bonus slot.
         bool isBonusPhase = validThrowsInTurn >= 3 && throwCountInCurrentSlot <= 3 && !(validThrowsInTurn == 3 && throwCountInCurrentSlot == 3);
         
-        // Einfachere, stabilere Prüfung: Waren wir vor diesem Wurf schon im Bonus oder sind wir über Dart 3 hinaus?
+        // Simpler, more stable testing: Were we already in the bonus before this throw or are we beyond Dart 3?
         if (validThrowsInTurn > 3 || (validThrowsInTurn == 3 && throwCountInCurrentSlot > 0 && throwCountInCurrentSlot < 3))
         {
             isBonusPhase = true;
@@ -698,11 +698,11 @@ public class ATCGame : Game
         if (isBonusPhase)
         {
             if (!isValidThrow)
-                CompleteTurn(playerId, true); // Fehlwurf im Bonus -> WECHSEL
+                CompleteTurn(playerId, true); // Mistake in the bonus -> CHANGE
             else
             {
                 if (throwCountInCurrentSlot == 3)
-                    CompleteTurn(playerId, false); // Slot voll -> NEUER SLOT
+                    CompleteTurn(playerId, false); // Slot full -> NEW SLOT
                 else
                     TouchActivity();
             }
@@ -746,7 +746,7 @@ public class ATCGame : Game
         }
     }
 
-    /// <summary>Treffer des Visits + wurfübergreifender Streak für Audio-Trigger.</summary>
+    /// <summary>Hit of the visit + cross-throw streak for audio trigger.</summary>
     protected override void CollectAudioTriggerValues(System.Guid playerId, Turn turn, AudioTriggerValues values)
     {
         base.CollectAudioTriggerValues(playerId, turn, values);
@@ -770,8 +770,8 @@ public class ATCGame : Game
     }
 
     /// <summary>
-    /// Zahl → Hits-Sound. Läuft beim Spielerwechsel und beim Leg-Wechsel
-    /// (nicht am Match-Ende), damit der Hits-Sound nie vor der Zahl liegt.
+    /// Number → Hits sound. Runs on player change and leg change
+    /// (not at the end of the match) so that the hits sound is never ahead of the number.
     /// </summary>
     private void AnnounceVisitCompleted(Guid playerId, int hits)
     {
@@ -795,8 +795,8 @@ public class ATCGame : Game
     }
 
     /// <summary>
-    /// Prüft einen Wurf gegen (Zahl + geforderter Multiplikator) eines Schritts.
-    /// Single-Schritte akzeptieren jeden Board-Treffer (alte Singles-Semantik).
+    /// Checks a roll against (number + required multiplier) of a step.
+    /// Single steps accept any board hit (old singles semantics).
     /// </summary>
     private static bool IsValidThrowForStep(Throw thr, int target, DartMultiplier required)
     {
@@ -852,7 +852,7 @@ public class ATCGame : Game
 
     public override void CalculatePlayerStatsOnSave()
     {
-        // Base recomputet Legs/Sets/Games/Throws (idempotent).
+        // Base recomputes legs/sets/games/throws (idempotent).
         base.CalculatePlayerStatsOnSave();
 
         if (playerStats == null || playerIDs == null)
@@ -866,18 +866,18 @@ public class ATCGame : Game
         if (targetList == null || targetList.Count == 0)
             return;
 
-        // ATC-Felder resetten (Base setzt nur Legs/Sets/Throws zurück).
-        // Dart-Zähler (totalThrows/Double/Triple) und Penalties bleiben von der Base.
+        // Reset ATC fields (base only resets legs/sets/throws).
+        // Dart counters (totalThrows /Double/Triple) and penalties remain off base.
         foreach (var pid in playerIDs)
         {
             if (playerStats.TryGetValue(pid, out var s) && s is GameStatsATC atc)
                 ResetATCStatsForRebuild(atc);
         }
 
-        // Chronologische Simulation über alle Sets/Legs/Turns.
-        // Ziel-Index wird pro Leg zurückgesetzt (wie StartNewLeg im Live-Spiel).
-        // Ein "Visit" sind aufeinanderfolgende Turns desselben Spielers
-        // (Bonus-Slots behalten validThrowsInTurn – wie RebuildATCProgressStateFromTurns).
+        // Chronological simulation over all sets/legs/turns.
+        // Target index is reset per leg (like StartNewLeg in live play).
+        // A "visit" is a successive turn of the same player
+        // (Bonus slots keep validThrowsInTurn – like RebuildATCProgressStateFromTurns).
         foreach (var set in sets)
         {
             foreach (var leg in set.GetLegs())
@@ -909,7 +909,7 @@ public class ATCGame : Game
 
                         int idx = simIndex[pid];
                         if (idx >= targetList.Count)
-                            continue; // Spieler hatte alle Targets – wie Live-Early-Return bei -1.
+                            continue; // Players had all targets – like live-early return at -1.
 
                         int target = targetList[idx];
                         bool valid = IsValidThrowForTarget(thr, target, targetMults[idx]);
@@ -927,9 +927,9 @@ public class ATCGame : Game
             }
         }
 
-        // Trailing Streaks flush-en: Eine durchgespielte End-Streak (kein
-        // Fehlwurf mehr bis Spielende) würde sonst nie registriert.
-        // Nutzt exakt die Miss-Branch-Logik (kein Live-Verhalten geändert).
+        // Trailing Streaks flush-en: A played-through end-streak (no)
+        // Misthrow more until end of play would never be registered otherwise.
+        // Uses the exact miss branch logic (no live behavior changed).
         foreach (var pid in playerIDs)
         {
             if (!playerStats.TryGetValue(pid, out var s) || s is not GameStatsATC stats)
@@ -961,7 +961,7 @@ public class ATCGame : Game
             foreach (var k in stats.throwsPerTarget.Keys.ToList())
                 stats.throwsPerTarget[k] = 0;
 
-        // Sektor-Zähler werden per Simulation (AddThrow) neu aufgebaut
+        // Sector counters are rebuilt by simulation (AddThrow )
         stats.throwSectorCounts?.Clear();
 
         if (stats.hitsPerTarget != null)
@@ -975,14 +975,14 @@ public class ATCGame : Game
     }
 
     /// <summary>
-    /// Baut die Target-Reihenfolge aus den Settings (wie InitializeTargets).
-    /// Random ist nicht aus den Settings rekonstruierbar (wird nicht persistiert)
-    /// und fällt auf die gespeicherte Liste zurück.
+    /// Builds the Target order from the settings (like InitializeTargets).
+    /// Random is not reconstructable from the settings (is not persisted)
+    /// and falls back to the stored list.
     /// </summary>
     private void BuildStepListsForRebuild(ATCGameSettings s, out List<int> numbers, out List<DartMultiplier> multipliers)
     {
-        // Random ist nicht aus den Settings rekonstruierbar (wird nicht
-        // persistiert) und fällt auf die gespeicherte Liste zurück.
+        // Random is not reconstructable from the settings (will not be)
+        // persists) and falls back to the stored list.
         if (s.order == ATCOrder.Random
             && targets != null && targets.Count > 0
             && targetMultipliers != null && targetMultipliers.Count == targets.Count)
@@ -1000,8 +1000,8 @@ public class ATCGame : Game
     }
 
     /// <summary>
-    /// Wie IsValidThrow, aber gegen das Target zur Wurfzeit (Rebuild-Simulation),
-    /// nicht gegen das live-aktuelle Target.
+    /// Like IsValidThrow, but against the target at throw time (rebuild simulation),
+    /// Not against the live current target.
     /// </summary>
     private bool IsValidThrowForTarget(Throw thr, int target, DartMultiplier required)
     {

@@ -4,7 +4,7 @@ using Newtonsoft.Json;
 [System.Serializable]
 public class X01GamePlayerStats
 {
-    [JsonProperty] public int GamesPlayed = 1; // Immer 1 für dieses Spiel
+    [JsonProperty] public int GamesPlayed = 1; // Always 1 for this game
     [JsonProperty] public int GamesWon = 0;
     [JsonProperty] public int LegsPlayed = 0;
     [JsonProperty] public int LegsWon = 0;

@@ -14,7 +14,7 @@ public class AppSettingsManager : MonoBehaviour
 
     private void Awake()
     {
-        // Singleton absichern
+        // Guard singleton
         if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
@@ -162,7 +162,7 @@ public class AppSettingsManager : MonoBehaviour
 
     public void SetTheme(ThemeColorScheme scheme)
     {
-        // Aktualisiert aktiv das Theme im laufenden System
+        // Actively updates the theme in the running system
         ThemeManager.Instance.SetTheme(scheme, Settings.ThemeMode);
         Settings.Theme = scheme;
         Save();
@@ -193,9 +193,9 @@ public class AppSettingsManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Eingebaute Clips (Default-/Custom-Set) als Fallback verwenden, wenn der
-    /// User für eine ID noch nichts aufgenommen hat. false → nur eigene
-    /// Aufnahmen, sonst stumm.
+    /// Use built-in clips (default/custom set) as fallback if the
+    /// User for an ID has not recorded anything yet. false → only own
+    /// Recordings, otherwise mute.
     /// </summary>
     public void SetUseDefaultClipsAsFallback(bool enabled)
     {
@@ -260,13 +260,13 @@ public class AppSettingsManager : MonoBehaviour
         Settings = new AppSettings();
 
         // =========================
-        // 🎨 THEME DEFAULT
+        // THEME DEFAULT
         // =========================
         Settings.Theme = ThemeColorScheme.Green;
         Settings.ThemeMode = ThemeMode.Dark;
 
         // =========================
-        // 🔊 SOUND DEFAULT
+        // SOUND DEFAULT
         // =========================
         Settings.Sound = new SoundSettings
         {
@@ -278,7 +278,7 @@ public class AppSettingsManager : MonoBehaviour
         };
 
         // =========================
-        // 📳 VIBRATION DEFAULT
+        // VIBRATION DEFAULT
         // =========================
         Settings.Vibration = new VibrationSettings
         {
@@ -287,7 +287,7 @@ public class AppSettingsManager : MonoBehaviour
         };
 
         // =========================
-        // 🎯 PENALTIES DEFAULT
+        // PENALTIES DEFAULT
         // =========================
         Settings.Penalties.Settings = new System.Collections.Generic.List<PenaltySetting>
         {
@@ -301,7 +301,7 @@ public class AppSettingsManager : MonoBehaviour
     }
 
     // =========================================================
-    // SAFETY: fehlende Einträge ergänzen
+    // SAFETY: Complete missing entries
     // =========================================================
     private void EnsureDefaults()
     {
@@ -370,7 +370,7 @@ public class AppSettingsManager : MonoBehaviour
         // Start a coroutine to wait for the localization system before applying the language
         StartCoroutine(InitializeLanguageRoutine());
 
-        // 🎨 Apply theme (themes can usually be applied instantly)
+        // Apply theme (themes can usually be applied instantly)
         ThemeManager.Instance.Initialize(Settings.Theme, Settings.ThemeMode);
     }
 

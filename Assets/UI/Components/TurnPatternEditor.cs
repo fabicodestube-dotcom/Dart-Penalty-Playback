@@ -3,19 +3,19 @@ using TMPro;
 using UnityEngine;
 
 /// <summary>
-/// Geteilter Pattern-Editor für Penalty- und AudioEvent-Popup.
+/// Shared pattern editor for penalty and AudioEvent popup.
 /// Slots: 1-3 Darts (slotCount), je Slot 3 Dropdowns (Value/Multiplier/Hit)
 /// + Reihenfolge-CustomToggle (OnClick → ToggleMatchOrder()).
-/// - Hit-Optionen füllt der Code dynamisch: Any, Board, Wall, Ceiling, Miss
-///   (kein Boardtreffer: Wall/Ceiling/Custom-Sektor, z.B. für No-board-hit)
-///   + Sektoren aus Tab 1 (Index 5+i). Bei Sektor-/Miss-Wahl sind Value/
-///   Multiplier bedeutungslos (dimmen via Interactable + CanvasGroup).
-/// - Triple 25 gibt es nicht: Value 25 blendet Triple aus der Mult-Liste aus
-///   und umgekehrt (Options-Rebuild, Auswahl bleibt logisch erhalten).
-/// - Der Reihenfolge-Toggle steuert matchOrder: true = Slots müssen in dieser
-///   Reihenfolge vorkommen, false = Reihenfolge egal. Zusätzliche Würfe im
-///   Turn sind erlaubt. Penalty- und AudioEvent-Popup teilen sich Toggle und
-///   Semantik.
+/// - Hit options fill the code dynamically: Any, Board, Wall, Ceiling, Miss
+/// (no board hit: Wall/Ceiling/Custom sector, e.g. for no-board hit)
+/// + sectors from Tab 1 (index 5+i).
+/// Multiplier meaningless (dim via Interactable + CanvasGroup).
+/// - Triple 25 does not exist: Value 25 hides Triple from the Mult list
+/// and vice versa (option rebuild, selection remains logically preserved).
+/// - The order toggle controls matchOrder: true = Slots must be in this
+/// If you have a sequence, false = order no matter.
+/// Penalty and AudioEvent popup share toggle and
+/// Semantics.
 /// Index-Mapping Value: [Any,0..25], Mult: [Any,Single,Double,Triple],
 /// Hit: [Any,Board,Wall,Ceiling,Miss,Custom...].
 /// </summary>
@@ -39,7 +39,7 @@ public class TurnPatternEditor : MonoBehaviour
     private bool updating;
     private bool initialized;
 
-    /// <summary>Feuert, wenn der Nutzer eine Slot-Auswahl ändert.</summary>
+    /// <summary>Fires when the user changes a slot selection.</summary>
     public event System.Action SelectionChanged;
 
     private List<string> valueOptionsFull;
@@ -161,8 +161,8 @@ public class TurnPatternEditor : MonoBehaviour
     {
         EnsureInitialized();
 
-        // Hit-Optionen neu aufbauen (Custom-Sektoren können sich geändert haben).
-        // Geladene, inzwischen gelöschte Sektor-IDs bleiben als Orphan wählbar.
+        // Rebuild hit options (custom sectors may have changed).
+        // Loaded, now deleted sector IDs remain selectable as Orphan.
         FillHitDropdowns(entries);
 
         for (int i = 0; i < 3; i++)
@@ -218,7 +218,7 @@ public class TurnPatternEditor : MonoBehaviour
             else if (h == 3) slot.hitType = HitType.Ceiling;
             else if (h == 4)
             {
-                // Miss-Slot (No board hit): Value/Multiplier sind Wildcards.
+                // Miss-Slot (No board hit): Value/Multiplier are wild cards.
                 slot.hitType = HitType.Board;
                 slot.anyHitType = false;
                 slot.anyValue = true;
@@ -244,8 +244,8 @@ public class TurnPatternEditor : MonoBehaviour
     }
 
     /// <summary>
-    /// True, wenn ein sichtbarer Slot auf eine inzwischen gelöschte
-    /// Custom-Target-Area zeigt. Speichern wird dann blockiert.
+    /// True, if a visible slot on a now deleted
+    /// Custom Target Area. Save is blocked.
     /// </summary>
     public bool HasUnresolvedSector()
     {
@@ -322,7 +322,7 @@ public class TurnPatternEditor : MonoBehaviour
         if (updating)
             return;
 
-        // Triple gewählt + Value 25 -> Value auf Any zurücksetzen (kein Triple Bull).
+        // Triple selected + Value 25 -> Reset value to Any (no Triple Bull).
         int multIndex = multDropdowns != null && slot < multDropdowns.Length && multDropdowns[slot] != null
             ? multDropdowns[slot].value : 0;
         int valueIndex = valueDropdowns != null && slot < valueDropdowns.Length && valueDropdowns[slot] != null
@@ -334,7 +334,7 @@ public class TurnPatternEditor : MonoBehaviour
         RefreshSlotConstraints(slot);
     }
 
-    /// <summary>Hält Value-/Mult-Optionen T25-frei (Auswahl bleibt logisch erhalten).</summary>
+    /// <summary>Keeps Value/Mult options T25 free (selection remains logical).</summary>
     private void RefreshSlotConstraints(int slot)
     {
         if (updating)
@@ -373,8 +373,8 @@ public class TurnPatternEditor : MonoBehaviour
     }
 
     /// <summary>
-    /// Bei Sektor-Wahl (Wall/Ceiling/Custom) sind Value/Multiplier bedeutungslos
-    /// und werden deaktiviert (Interactable + CanvasGroup-Dimmung).
+    /// In sector choice (wall/ceiling/custom) value/multiplier are meaningless
+    /// and are deactivated (Interactable + CanvasGroup dimming).
     /// </summary>
     private void ApplySlotDimming(int slot)
     {
@@ -427,7 +427,7 @@ public class TurnPatternEditor : MonoBehaviour
             if (def == null || string.IsNullOrEmpty(def.id))
                 continue;
 
-            // Wand/Decke haben feste Einträge oben (kein Duplikat).
+            // Wall/ceiling have fixed entries above (no duplicate).
             if (CustomHitDef.IsBuiltInSector(def.id))
                 continue;
 

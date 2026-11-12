@@ -15,8 +15,8 @@ public enum HitType
     [JsonProperty] Wall,
     [JsonProperty] Ceiling,
     /// <summary>
-    /// Benutzerdefinierter Treffer-Bereich (Tab 1 „Bereiche“).
-    /// Die Sektor-ID steht in Throw.CustomHitId. Score hängt von Value/Multiplier ab
+    /// Custom hit area (Tab 1 “Areas”).
+    /// The sector ID is in Throw.CustomHitId. Score depends on Value/Multiplier
     /// (0 = Miss).
     /// </summary>
     [JsonProperty] Custom

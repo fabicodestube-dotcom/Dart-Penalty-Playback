@@ -11,7 +11,7 @@ using UnityEngine.Localization.Components;
 using UnityEngine.Localization.Settings;
 using UnityEngine.UI;
 
-public class HistoryHandler : MonoBehaviour, IUIScreen
+public class HistoryScreen : MonoBehaviour, IUIScreen
 {
     [Header("Handler")]
     public AppHandler appHandler;
@@ -36,7 +36,7 @@ public class HistoryHandler : MonoBehaviour, IUIScreen
     [Tooltip("Ab welcher Scroll-Position (0=unten, 1=oben) die nächste Seite nachgeladen wird.")]
     [SerializeField] private float infiniteScrollThreshold = 0.15f;
 
-    // Tab-Index: 0=All, 1=X01, 2=Cricket, 3=ATC (entspricht ConfirmDelete-Mapping + SwipeMenu-Pages)
+    // Tab index: 0=All, 1=X01, 2=Cricket, 3=ATC (matches ConfirmDelete mapping + SwipeMenu pages)
     private class TabState
     {
         public Transform parent;
@@ -81,7 +81,7 @@ public class HistoryHandler : MonoBehaviour, IUIScreen
         }
         else
         {
-            // Fallback ohne SwipeMenu: nur All-Tab sofort, Rest lazy bei Bedarf.
+            // Fallback without SwipeMenu: only all-tab immediately, rest lazy if needed.
             EnsureTabBuilt(0);
         }
 
@@ -92,7 +92,7 @@ public class HistoryHandler : MonoBehaviour, IUIScreen
     }
 
     // =========================================================
-    // AUFBAU (lazy + gechunkt + Infinite Scroll)
+    // BUILD (lazy + chunked + infinite scroll)
     // =========================================================
 
     private void InitTabs()
@@ -134,8 +134,8 @@ public class HistoryHandler : MonoBehaviour, IUIScreen
             cachedSummaries.Add(summary);
         }
 
-        // Eigene Listen pro Tab (keine geteilten Referenzen), damit
-        // Insert/Remove in Handlern nicht doppelt wirken.
+        // Own lists per tab (no shared references), so
+        // Insert/remove in traders do not double act.
         tabs[0].source = new List<GameSummary>(cachedSummaries);
         tabs[1].source = cachedSummaries.Where(s => s.GameMode == GameMode.X01).ToList();
         tabs[2].source = cachedSummaries.Where(s => s.GameMode == GameMode.Cricket).ToList();
@@ -180,8 +180,8 @@ public class HistoryHandler : MonoBehaviour, IUIScreen
             if (tab.parent == null)
                 continue;
 
-            // Nächstgelegener ScrollRect ist der vertikale Tab-Scroller
-            // (nicht der äußere horizontale SwipeMenu-Scroller).
+            // The nearest ScrollRect is the vertical tab scroller
+            // (not the outer horizontal SwipeMenu scroller).
             ScrollRect found = null;
             if (swipeMenu != null && swipeMenu.scrollRect != null)
             {
@@ -218,9 +218,9 @@ public class HistoryHandler : MonoBehaviour, IUIScreen
     }
 
     /// <summary>
-    /// True, sobald der initiale sichtbare Tab einmal aufgebaut ist (Rest läuft
-    /// per Infinite Scroll bei Bedarf). Der BootLoader wartet darauf, bevor der
-    /// Ladebildschirm ausgeblendet wird.
+    /// True, once the initial visible tab is set up (rest runs)
+    /// by Infinite Scroll if needed. BootLoaderwaits for this before the
+    /// The loading screen is hidden.
     /// </summary>
     public bool IsInitialBuildDone
     {
@@ -271,7 +271,7 @@ public class HistoryHandler : MonoBehaviour, IUIScreen
         if (tab.builtCount >= tab.source.Count)
             return;
 
-        // Bei 1 ist man oben, bei 0 unten.
+        // At 1 you are at the top, at 0 at the bottom.
         if (tab.scrollRect.verticalNormalizedPosition <= infiniteScrollThreshold)
             LoadMore(tabIndex, initialPageSize);
     }
@@ -281,7 +281,7 @@ public class HistoryHandler : MonoBehaviour, IUIScreen
         var tab = tabs[tabIndex];
         tab.isBuilding = true;
 
-        // Ersten Frame der Transition (Fade) nicht blockieren.
+        // First frame of transition (fade) not blocked.
         yield return null;
 
         DisableLayoutGroup(tab.parent);
@@ -291,9 +291,9 @@ public class HistoryHandler : MonoBehaviour, IUIScreen
             int target = Math.Min(tab.source.Count, tab.builtCount + Math.Max(1, pageSize));
             int createdThisFrame = 0;
 
-            // Hinweis: Die Source kann sich während des Builds ändern
-            // (Add/Delete während Hintergrundaufbau). Daher zusätzlich
-            // gegen tab.source.Count prüfen, nicht nur gegen target.
+            // Note: Source may change during build
+            // (Add/Delete during background buildup).
+            // Check against tab.source.Count, not just against target.
             while (tab.builtCount < target && tab.builtCount < tab.source.Count)
             {
                 var summary = tab.source[tab.builtCount];
@@ -318,8 +318,8 @@ public class HistoryHandler : MonoBehaviour, IUIScreen
         tab.isBuilding = false;
         tab.buildRoutine = null;
 
-        // Layout einen Frame setzen lassen, dann prüfen ob der Inhalt
-        // noch nicht scrollbar ist (kleine Liste) -> direkt weiterladen.
+        // Set a frame, then check if the content
+        // is not yet scrollable (small list) -> reload directly.
         yield return null;
         if (tab.builtCount < tab.source.Count && ShouldAutoFill(tab))
             LoadMore(tabIndex, initialPageSize);
@@ -415,15 +415,15 @@ public class HistoryHandler : MonoBehaviour, IUIScreen
 
         if (tmp != null)
         {
-            // Sofort sinnvoller Text, damit nie das Prefab-Default ("Titel") steht.
+            // Immediately meaningful text, so that the prefab default ("title") is never written.
             tmp.text = fallbackText;
             tmp.raycastTarget = false;
 
             var localizeEvent = go.GetComponent<LocalizeStringEvent>()
                 ?? go.AddComponent<LocalizeStringEvent>();
 
-            // Listener VOR dem Setzen der Referenz anhängen, sonst kann das
-            // (asynchrone) Update verloren gehen.
+            // Attach listeners BEFORE setting the reference, otherwise the
+            // (Asynchronous) update is lost.
             localizeEvent.OnUpdateString.RemoveAllListeners();
             localizeEvent.OnUpdateString.AddListener(localizedValue =>
             {
@@ -463,7 +463,7 @@ public class HistoryHandler : MonoBehaviour, IUIScreen
     }
 
     // =========================================================
-    // INTERAKTION
+    // INTERACTION
     // =========================================================
 
     private void OnGameClicked(Guid gameId)
@@ -506,13 +506,13 @@ public class HistoryHandler : MonoBehaviour, IUIScreen
         }
         else
         {
-            Debug.Log("[HistoryHandler] Unbekannter Index beim Löschen!");
+            Debug.Log("[HistoryScreen] Unbekannter Index beim Löschen!");
             return;
         }
 
         if (!deleted)
         {
-            Debug.LogError("[HistoryHandler] Löschen fehlgeschlagen.");
+            Debug.LogError("[HistoryScreen] Löschen fehlgeschlagen.");
             return;
         }
 
@@ -594,25 +594,25 @@ public class HistoryHandler : MonoBehaviour, IUIScreen
             foreach (var id in idsToRemove)
                 existingGameIds.Remove(id);
 
-            // Modus-Tab komplett leeren (in den Pool).
+            // Clear mode tab completely (into the pool).
             foreach (var item in modeTab.items)
                 ReleaseItem(item);
             modeTab.items.Clear();
             modeTab.lookup.Clear();
             modeTab.source.Clear();
             modeTab.builtCount = 0;
-            modeTab.buildRequested = true; // leerer Zustand ist final, kein Rebuild nötig
+            modeTab.buildRequested = true; // empty state is final, no rebuild necessary
             if (modeTab.headline == null)
                 modeTab.headline = CreateHeadline(modeTab.parent, modeTab.emptyKey, modeTab.emptyFallback);
 
-            // All-Tab: nur die Items dieses Modus entfernen, Rest behalten.
+            // All-Tab: remove only the items of this mode, keep the rest.
             foreach (var id in idsToRemove.ToList())
                 RemoveGameFromTab(allTab, id);
 
             RefreshEmptyHeadline(allTab);
 
-            // Falls der All-Tab mitten im Chunk-Aufbau gestoppt wurde,
-            //Rest wieder aufnehmen (sonst bliebe er teilaufgebaut stehen).
+            // If the all-tab was stopped in the middle of the chunk setup,
+            //The rest will be resumed (otherwise he will remain partly built).
             if (allTab.buildRequested && !allTab.isBuilding && allTab.builtCount < allTab.source.Count)
                 allTab.buildRoutine = StartCoroutine(BuildTabIncremental(0, initialPageSize));
         }
@@ -644,7 +644,7 @@ public class HistoryHandler : MonoBehaviour, IUIScreen
                 tab.lookup.Clear();
                 tab.source.Clear();
                 tab.builtCount = 0;
-                tab.buildRequested = true; // leerer Zustand ist final
+                tab.buildRequested = true; // The empty state is final
                 if (tab.headline == null)
                     tab.headline = CreateHeadline(tab.parent, tab.emptyKey, tab.emptyFallback);
             }
@@ -674,7 +674,7 @@ public class HistoryHandler : MonoBehaviour, IUIScreen
         if (summary == null) return;
 
         EnsurePlayerNameCache(new[] { summary });
-        // Namen frisch halten (z.B. nach Rename vor dem letzten Save).
+        // Keep names fresh (e.g. after rename before last save).
         foreach (var pid in summary.PlayerIds)
         {
             var player = appHandler.GetPlayerByID(pid);
@@ -687,7 +687,7 @@ public class HistoryHandler : MonoBehaviour, IUIScreen
 
         if (existingGameIds.Contains(summary.Id))
         {
-            // Bereits vorhanden -> aktualisieren und nach oben schieben.
+            // Already present -> update and move up.
             MoveSourceToTop(cachedSummaries, summary.Id);
 
             DisableLayoutGroup(allTab.parent);
@@ -775,9 +775,9 @@ public class HistoryHandler : MonoBehaviour, IUIScreen
     }
 
     /// <summary>
-    /// Fügt eine neue Summary oben in einen Tab ein. Funktioniert auch während
-    /// ein Chunk-Build läuft oder der Tab noch gar nicht gebaut wurde:
-    /// Solange der Tab noch lädt, wird der Zähler konsistent mitgeführt.
+    /// Add a new summary to the top of a tab. Works even while
+    /// A chunk build is running or the tab has not been built yet:
+    /// As long as the tab still loads, the counter is carried consistently.
     /// </summary>
     private void PrependSummaryToTab(TabState tab, GameSummary summary)
     {
@@ -793,8 +793,8 @@ public class HistoryHandler : MonoBehaviour, IUIScreen
             RemoveHeadline(ref tab.headline);
 
             CreatePooledItem(tab, summary, insertAtTop: true);
-            // Manuell erstellt -> als gebaut zählen, damit der laufende
-            // Chunk-Build danach korrekt beim ersten ungeöffneten Index fortfährt.
+            // Manually created -> count as built so that the current
+            // Chunk build will then continue correctly on the first unopened index.
             tab.builtCount++;
         }
         finally
@@ -847,8 +847,8 @@ public class HistoryHandler : MonoBehaviour, IUIScreen
 
     public void OnShow()
     {
-        // Nicht blockieren: nur sicherstellen, dass der sichtbare Tab
-        // (gechunkt, über Frames verteilt) aufgebaut wird.
+        // Do not block: just make sure that the visible tab
+        // (chunked, distributed over frames) is set up.
         if (tabs == null)
             return;
 

@@ -32,21 +32,21 @@ public class SoundSettings
     [JsonProperty] public bool UseCustomSounds = true;
 
     /// <summary>
-    /// Eingebaute Clips (Default-/Custom-Set) als Fallback verwenden, wenn der
-    /// User für eine ID noch nichts aufgenommen hat.
-    /// false → es laufen nur eigene Aufnahmen, sonst bleibt es stumm.
-    /// Default true (Altsaves ohne Feld ebenfalls).
+    /// Use built-in clips (default/custom set) as fallback if the
+    /// User for an ID has not recorded anything yet.
+    /// false → only own recordings run, otherwise it remains mute.
+    /// Default true (old saves without field too).
     /// </summary>
     [JsonProperty] public bool UseDefaultClipsAsFallback = true;
 
     /// <summary>
-    /// Turn-Score-Ansagen (0–180 + Marks-Zahlen via PlayScore). Toggle in der
-    /// Score-Sammel-Row (Tab 3). Default true (Altsaves ohne Feld ebenfalls).
+    /// Turn score announcements (0–180 + marks numbers via PlayScore). Toggle in the
+    /// customization screen. Default true (old saves without field too).
     /// </summary>
     [JsonProperty] public bool ScoreAnnouncementsEnabled = true;
 
     [Range(0f, 1f)]
-    [JsonProperty] public float Volume = 1f; // 🔥 DAS ist neu
+    [JsonProperty] public float Volume = 1f; // THIS is new
 }
 
 [System.Serializable]
@@ -66,9 +66,9 @@ public enum VibrationStrength
 [System.Serializable]
 public class PenaltySettings
 {
-    // HINWEIS: Legacy-System stillgelegt. IsEnabled/GetCost dienen nur noch
-    // der Kosten-Anzeige alter Spiele (History/Statistik). Neue Buchungen
-    // laufen ausschließlich über CustomPenaltyDefs (Customization-Screen).
+    // NOTE: Legacy system decommissioned. IsEnabled / GetCost only serve
+    // the cost display of old games (history/statistics).
+    // Bookings run exclusively via CustomPenaltyDefs (customization screen).
     [JsonProperty] public List<PenaltySetting> Settings = new List<PenaltySetting>();
 
     public PenaltySettings Clone()

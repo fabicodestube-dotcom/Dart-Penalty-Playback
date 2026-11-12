@@ -9,8 +9,8 @@ public class ScrollRectEx : ScrollRect {
     private bool routeToParent = false;
 
     /// <summary>
-    /// Sendet das Event NUR an die Komponenten des ALLERNÄCHSTEN Parents,
-    /// der das Interface T implementiert. Höhere Parents werden ignoriert.
+    /// Send the event ONLY to the components of the ONLY parent,
+    /// The interface T is implemented by the higher parents.
     /// </summary>
     private void DoForClosestParent<T>(Action<T> action) where T : IEventSystemHandler
     {
@@ -20,12 +20,12 @@ public class ScrollRectEx : ScrollRect {
             foreach (var component in parent.GetComponents<Component>()) {
                 if (component is T) {
                     action((T)(IEventSystemHandler)component);
-                    foundComponent = true; // Komponente auf dieser Ebene gefunden
+                    foundComponent = true; // Component found at this level
                 }
             }
             
-            // WICHTIG: Sobald wir auf einer Ebene fündig wurden, brechen wir ab!
-            // Das verhindert, dass das Event weiter hoch zu Parent C wandert.
+            // IMPORTANT: Once we have found something on a level, we break off!
+            // This prevents the event from moving further up to Parent C.
             if (foundComponent) {
                 break; 
             }
@@ -35,14 +35,14 @@ public class ScrollRectEx : ScrollRect {
     }
 
     /// <summary>
-    /// Filtert das Event rigoros. Wenn wir an den vertikalen Parent (B) routen,
-    /// schneiden wir jegliche horizontale Bewegung (X) radikal ab.
+    /// If we route to the vertical parent (B), we can do this.
+    /// we radically cut off any horizontal movement (X).
     /// </summary>
     private PointerEventData GetFilteredEventData(PointerEventData originalData)
     {
         PointerEventData filteredData = new PointerEventData(EventSystem.current);
         
-        // Basisdaten kopieren
+        // Copy base data
         filteredData.position = originalData.position;
         filteredData.pressPosition = originalData.pressPosition;
         filteredData.dragging = originalData.dragging;
@@ -50,14 +50,14 @@ public class ScrollRectEx : ScrollRect {
 
         Vector2 filteredDelta = originalData.delta;
 
-        // Wenn dieses Child (A) horizontal scrollt und das Event weiterleitet,
-        // bedeutet das, der User wischt VERTIKAL. Der Parent (B) darf also 
-        // absolut KEINE X-Bewegung sehen.
+        // If this Child (A) scrolls horizontally and forwards the Event,
+        // This means that the user wipes VERTICAL.
+        // I absolutely do not see any X movement.
         if (horizontal && !vertical)
         {
             filteredDelta.x = 0; 
         }
-        // Falls du das Skript umgekehrt nutzt (Vertikales Child leitet horizontal weiter)
+        // If you use the script in reverse (vertical child forwards horizontally)
         else if (vertical && !horizontal)
         {
             filteredDelta.y = 0;
@@ -88,8 +88,8 @@ public class ScrollRectEx : ScrollRect {
 
     public override void OnBeginDrag (UnityEngine.EventSystems.PointerEventData eventData)
     {
-        // Erkennung der Richtung: Wenn wir horizontal konfiguriert sind, 
-        // aber die vertikale Bewegung (y) überwiegt, routen wir an den Parent.
+        // Direction recognition: If we are configured horizontally,
+        // But if the vertical movement (y) is predominant, we route to the parent.
         if (!horizontal && Math.Abs(eventData.delta.x) > Math.Abs(eventData.delta.y))
             routeToParent = true;
         else if (!vertical && Math.Abs(eventData.delta.x) < Math.Abs(eventData.delta.y))
@@ -134,122 +134,122 @@ public class ScrollRectEx : ScrollRect {
 
 // public class ScrollRectEx : ScrollRect {
 
-//     private bool routeToParent = false;
+// private bool routeToParent = false;
 
-//     /// <summary>
-//     /// Do action for all parents
-//     /// </summary>
-//     private void DoForParents<T>(Action<T> action) where T:IEventSystemHandler
-//     {
-//         Transform parent = transform.parent;
-//         while(parent != null) {
-//             foreach(var component in parent.GetComponents<Component>()) {
-//                 if(component is T)
-//                     action((T)(IEventSystemHandler)component);
-//             }
-//             parent = parent.parent;
-//         }
-//     }
+// /// <summary>
+// /// Do action for all parents
+// /// </summary>
+// private void DoForParents<T>(Action<T> action) where T:IEventSystemHandler
+// {
+// Transform parent = transform.parent;
+// while(parent != null) {
+// foreach(var component in parent.GetComponents<Component>()) {
+// if(component is T)
+// action((T)(IEventSystemHandler)component);
+// }
+// parent = parent.parent;
+// }
+// }
 
-//     /// <summary>
-//     /// Erstellt eine modifizierte Kopie der EventData, die nur die erlaubte Achse weitergibt
-//     /// </summary>
-//     private PointerEventData GetFilteredEventData(PointerEventData originalData)
-//     {
-//         // Wir kopieren die originalen Event-Daten
-//         PointerEventData filteredData = new PointerEventData(EventSystem.current);
+// /// <summary>
+// /// Creates a modified copy of the EventData that only passes the allowed axis
+// /// </summary>
+// private PointerEventData GetFilteredEventData(PointerEventData originalData)
+// {
+// // We copy the original event data
+// PointerEventData filteredData = new PointerEventData(EventSystem.current);
         
-//         // Wichtige Basisdaten kopieren
-//         filteredData.position = originalData.position;
-//         filteredData.pressPosition = originalData.pressPosition;
-//         filteredData.dragging = originalData.dragging;
-//         filteredData.button = originalData.button;
+// // Copy important base data
+// filteredData.position = originalData.position;
+// filteredData.pressPosition = originalData.pressPosition;
+// filteredData.dragging = originalData.dragging;
+// filteredData.button = originalData.button;
 
-//         // Achsen-Filterung basierend auf der Konfiguration des Child-ScrollRects
-//         Vector2 filteredDelta = originalData.delta;
+// // Axis filtering based on the configuration of the child- ScrollRects
+// Vector2 filteredDelta = originalData.delta;
 
-//         if (!horizontal && vertical)
-//         {
-//             // Wenn dieses Child NUR vertikal scrollt, darf es an den Parent 
-//             // AUCH NUR vertikale Bewegungen (Y) senden. X wird genullt.
-//             filteredDelta.x = 0;
-//         }
-//         else if (!vertical && horizontal)
-//         {
-//             // Wenn dieses Child NUR horizontal scrollt, darf es an den Parent 
-//             // AUCH NUR horizontale Bewegungen (X) senden. Y wird genullt.
-//             filteredDelta.y = 0;
-//         }
+// if (!horizontal && vertical)
+// {
+// // If this child ONLY scrolls vertically, it may be sent to the parent
+// // ALSO ONLY send vertical movements (Y). X is zeroed.
+// filteredDelta.x = 0;
+// }
+// else if (!vertical && horizontal)
+// {
+// // If this child ONLY scrolls horizontally, it may be sent to the parent
+// // ALSO Send ONLY horizontal movements (X). Y is zeroed.
+// filteredDelta.y = 0;
+// }
 
-//         filteredData.delta = filteredDelta;
-//         return filteredData;
-//     }
+// filteredData.delta = filteredDelta;
+// return filteredData;
+// }
 
-//     /// <summary>
-//     /// Always route initialize potential drag event to parents
-//     /// </summary>
-//     public override void OnInitializePotentialDrag (PointerEventData eventData)
-//     {
-//         DoForParents<IInitializePotentialDragHandler>((parent) => { parent.OnInitializePotentialDrag(eventData); });
-//         base.OnInitializePotentialDrag (eventData);
-//     }
+// /// <summary>
+// /// Always route initialize potential drag event to parents
+// /// </summary>
+// public override void OnInitializePotentialDrag (PointerEventData eventData)
+// {
+// DoForParents<IInitializePotentialDragHandler>((parent) => { parent.OnInitializePotentialDrag(eventData); });
+// base.OnInitializePotentialDrag (eventData);
+// }
 
-//     /// <summary>
-//     /// Drag event
-//     /// </summary>
-//     public override void OnDrag (UnityEngine.EventSystems.PointerEventData eventData)
-//     {
-//         if(routeToParent)
-//         {
-//             // Nutze die gefilterten Event-Daten für den Parent
-//             PointerEventData filteredData = GetFilteredEventData(eventData);
-//             DoForParents<IDragHandler>((parent) => { parent.OnDrag(filteredData); });
-//         }
-//         else
-//         {
-//             base.OnDrag (eventData);
-//         }
-//     }
+// /// <summary>
+// /// Drag event
+// /// </summary>
+// public override void OnDrag (UnityEngine.EventSystems.PointerEventData eventData)
+// {
+// if(routeToParent)
+// {
+// // Use the filtered event data for the parent
+// PointerEventData filteredData = GetFilteredEventData(eventData);
+// DoForParents<IDragHandler>((parent) => { parent.OnDrag(filteredData); });
+// }
+// else
+// {
+// base.OnDrag (eventData);
+// }
+// }
 
-//     /// <summary>
-//     /// Begin drag event
-//     /// </summary>
-//     public override void OnBeginDrag (UnityEngine.EventSystems.PointerEventData eventData)
-//     {
-//         if(!horizontal && Math.Abs (eventData.delta.x) > Math.Abs (eventData.delta.y))
-//             routeToParent = true;
-//         else if(!vertical && Math.Abs (eventData.delta.x) < Math.Abs (eventData.delta.y))
-//             routeToParent = true;
-//         else
-//             routeToParent = false;
+// /// <summary>
+// /// Begin drag event
+// /// </summary>
+// public override void OnBeginDrag (UnityEngine.EventSystems.PointerEventData eventData)
+// {
+// if(!horizontal && Math.Abs (eventData.delta.x) > Math.Abs (eventData.delta.y))
+// routeToParent = true;
+// else if(!vertical && Math.Abs (eventData.delta.x) < Math.Abs (eventData.delta.y))
+// routeToParent = true;
+// else
+// routeToParent = false;
 
-//         if(routeToParent)
-//         {
-//             // Nutze die gefilterten Event-Daten für den Parent
-//             PointerEventData filteredData = GetFilteredEventData(eventData);
-//             DoForParents<IBeginDragHandler>((parent) => { parent.OnBeginDrag(filteredData); });
-//         }
-//         else
-//         {
-//             base.OnBeginDrag (eventData);
-//         }
-//     }
+// if(routeToParent)
+// {
+// // Use the filtered event data for the parent
+// PointerEventData filteredData = GetFilteredEventData(eventData);
+// DoForParents<IBeginDragHandler>((parent) => { parent.OnBeginDrag(filteredData); });
+// }
+// else
+// {
+// base.OnBeginDrag (eventData);
+// }
+// }
 
-//     /// <summary>
-//     /// End drag event
-//     /// </summary>
-//     public override void OnEndDrag (UnityEngine.EventSystems.PointerEventData eventData)
-//     {
-//         if(routeToParent)
-//         {
-//             // Nutze die gefilterten Event-Daten für den Parent
-//             PointerEventData filteredData = GetFilteredEventData(eventData);
-//             DoForParents<IEndDragHandler>((parent) => { parent.OnEndDrag(filteredData); });
-//         }
-//         else
-//         {
-//             base.OnEndDrag (eventData);
-//         }
-//         routeToParent = false;
-//     }
+// /// <summary>
+// /// End drag event
+// /// </summary>
+// public override void OnEndDrag (UnityEngine.EventSystems.PointerEventData eventData)
+// {
+// if(routeToParent)
+// {
+// // Use the filtered event data for the parent
+// PointerEventData filteredData = GetFilteredEventData(eventData);
+// DoForParents<IEndDragHandler>((parent) => { parent.OnEndDrag(filteredData); });
+// }
+// else
+// {
+// base.OnEndDrag (eventData);
+// }
+// routeToParent = false;
+// }
 // }

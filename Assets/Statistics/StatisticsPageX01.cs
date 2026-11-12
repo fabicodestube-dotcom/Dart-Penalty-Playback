@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -40,12 +40,12 @@ public class StatisticsPageX01 : MonoBehaviour
     }
 
     [Header("Penalty-Resolver (TEMP-DIAG)")]
-    [Tooltip("Löst Penalty-Stats zum Tap-Zeitpunkt frisch auf (statt Build-Zeit-Closure). Wird vom StatisticsHandler gesetzt.")]
+    [Tooltip("Löst Penalty-Stats zum Tap-Zeitpunkt frisch auf (statt Build-Zeit-Closure). Wird vom StatisticsScreen gesetzt.")]
     public Func<string, GameStats> penaltyStatsResolver;
 
     /// <summary>
-    /// Tap-Handler mit frischem Lookup (Stale-Closure-Fix): Stats werden erst
-    /// beim Antippen aus BasePlayer/currentRange geholt, Closure nur Fallback.
+    /// Tap handlers with fresh lookup (Stale-Closure-Fix): stats are only now
+    /// When tapping brought in BasePlayer / currentRange, Closure only Fallback.
     /// </summary>
     private void ShowPenaltyDetails(PenaltyDetailPopup popup, string playerName, GameStats fallbackStats)
     {
@@ -86,8 +86,8 @@ public class StatisticsPageX01 : MonoBehaviour
     }
 
     /// <summary>
-    /// Gezieltes Refresh EINER Spielerzeile (alle Tabellen + Chart dieser Page).
-    /// Kein Neuaufbau, kein Clear — nutzt gecachte Tabellen/Charts.
+    /// Targeted refresh of ONE player line (all tables + chart of this page).
+    /// No rebuild, no clear — use cached tables/charts.
     /// </summary>
     public void UpsertPlayerRow(GameStatsX01 stats, string playerName)
     {
@@ -222,11 +222,11 @@ public class StatisticsPageX01 : MonoBehaviour
     }
 
     /// <summary>
-    /// Blendet alle Zeilen + Chart eines Spielers auf dieser Page um.
-    /// Legt nichts an — nur Bestehendes.
-    /// Gibt true zurück, wenn mindestens eine Zeile / der Chart WIRKLICH
-    /// umgeschaltet hat (nur dann muss das Layout via RefreshLayout neu
-    /// berechnet werden).
+    /// Re-fades all rows + chart of a player on this page.
+    /// Don't put anything on — just existing.
+    /// Returns true if at least one row/chart REALLY
+    /// switched (only then the layout must be changed via RefreshLayout)
+    /// are calculated.
     /// </summary>
     public bool SetPlayerRowVisible(string playerName, bool visible)
     {
@@ -253,10 +253,10 @@ public class StatisticsPageX01 : MonoBehaviour
     }
 
     /// <summary>
-    /// Rechnet alle Tabellenhöhen dieser Page aus den SICHTBAREN Zeilen neu
-    /// (Divider + LayoutElement.preferredHeight). Nur aufrufen, wenn sich die
-    /// sichtbare Zeilenzahl wirklich geändert hat. Charts kollabieren von
-    /// selbst übers Layout (inaktiv = ignoriert).
+    /// Recalculates all table heights of this page from the visible lines
+    /// (Divider + LayoutElement.preferredHeight).
+    /// The visible number of lines has really changed.
+    /// even over the layout (inactive = ignored).
     /// </summary>
     public void RefreshLayout()
     {
@@ -264,7 +264,7 @@ public class StatisticsPageX01 : MonoBehaviour
     }
 
     /// <summary>
-    /// True, wenn irgendeine Tabelle weniger als `desired` Reserve-Rows hat.
+    /// True if any table has less than `desired` reserve rows.
     /// </summary>
     public bool SpareShortage(int desired)
     {
@@ -278,7 +278,7 @@ public class StatisticsPageX01 : MonoBehaviour
     }
 
     /// <summary>
-    /// Füllt Reserve-Rows aller Tabellen auf (gechunkt, eine Tabelle pro Frame).
+    /// Fills up reserve rows of all tables (chunked, one table per frame).
     /// </summary>
     public IEnumerator PreallocateSpareRowsAsync(int desired)
     {
@@ -310,7 +310,7 @@ public class StatisticsPageX01 : MonoBehaviour
         if (tmp != null)
         {
             tmp.text = LocalizationText.GetByEnglish(text, text);
-            // Perf (M1): Headline ist nie interaktiv.
+            // Perf (M1): Headline is never interactive.
             if (tmp.raycastTarget)
                 tmp.raycastTarget = false;
         }
@@ -433,12 +433,12 @@ public class StatisticsPageX01 : MonoBehaviour
             if (!activePlayerKeys.Contains(existingKey))
                 playerTable.SetRowActive(existingKey, false);
 
-        // Frame abgeben: N Spieler-Setups am Stück würden sonst einen
-        // sichtbaren Hitch erzeugen (gilt für alle Tabellen-Sektionen).
+        // Make a frame: N player setups at a time would otherwise
+        // create visible Hitch (applies to all table sections).
         yield return null;
 
         // =====================================================
-        // PENALTIES (einfach: Anzahl | Kosten | Details → Popup)
+        // PENALTIES (simple: count | cost | details → popup)
         // =====================================================
         var penaltyTable = GetOrCreateCachedTable(
             X01PenaltiesKey,
@@ -664,7 +664,7 @@ public class StatisticsPageX01 : MonoBehaviour
                 chart.SetData(key, aggregated);
                 activeChartKeys.Add(key);
 
-                // Perf (M6): Chart-Instantiate + 63-Bar-Setup pro Spieler abgeben.
+                // Perf (M6): hand off chart instantiate + 63 bar setup per player.
                 if ((i & 1) == 1)
                     yield return null;
             }

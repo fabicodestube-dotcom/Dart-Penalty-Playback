@@ -3,11 +3,11 @@ using TMPro;
 using UnityEngine;
 
 /// <summary>
-/// Tab 2 des Customization-Screens: Penalties (Turn-Patterns, exakte Scores,
-/// Leg-/Set-/Game-Events). Einheitliche Rows (CustomizationListItem): Name,
-/// Clip-Anzahl/-Icon, Recorder, Edit, Delete, Toggle direkt in der Zeile.
-/// Neu/Edit/Delete laufen über den Editor (PenaltyEditorPopup); Löschen nur
-/// wenn nicht builtIn, mit Warnung bei Clips.
+/// Tab 2 of the customization screen: penalties (turn patterns, exact scores,
+/// leg/set/game events). Uniform rows (CustomizationListItem): name,
+/// clip count/icon, recorder, edit, delete, toggle directly in the row.
+/// New/edit/delete run through the editor (PenaltyEditorPopup); delete only
+/// if not builtIn, with a warning on clips.
 /// </summary>
 public class CustomizationPenaltiesPage : MonoBehaviour, ICustomizationRowOwner
 {
@@ -34,9 +34,9 @@ public class CustomizationPenaltiesPage : MonoBehaviour, ICustomizationRowOwner
     private string pendingDeleteId;
 
     /// <summary>
-    /// Lebende Rows pro Penalty-ID. Refresh gleicht ab statt alles neu zu
-    /// bauen: Neue sind im selben Frame sichtbar, Bestehende werden nur
-    /// aktualisiert, Verschwundene fliegen raus. Kein Flackern, kein Warten.
+    /// Living rows per penalty ID. Refresh rebalances instead of everything
+    /// build: new ones are visible in the same frame, existing ones will only
+    /// Updated, disappeared people fly out. No flicker, no waiting.
     /// </summary>
     private readonly System.Collections.Generic.Dictionary<string, CustomizationListItem> rowsById =
         new System.Collections.Generic.Dictionary<string, CustomizationListItem>();
@@ -99,7 +99,7 @@ public class CustomizationPenaltiesPage : MonoBehaviour, ICustomizationRowOwner
             }
         }
 
-        // Verschwundene Rows entfernen.
+        // Remove missing rows.
         var gone = new System.Collections.Generic.List<string>();
         foreach (var kvp in rowsById)
         {
@@ -163,8 +163,8 @@ public class CustomizationPenaltiesPage : MonoBehaviour, ICustomizationRowOwner
 
     public void OnClickNewPenalty()
     {
-        // Der Editor ist ein UIScreen (id Popup) und zeigt sich selbst
-        // über den WindowHandler an (analog zu deletePopup).
+        // The editor is a UIScreen (id popup) and shows itself
+        // via WindowHandler (analogous to deletePopup ).
         if (editor == null)
             editor = FindAnyObjectByType<PenaltyEditorPopup>();
 
@@ -181,7 +181,7 @@ public class CustomizationPenaltiesPage : MonoBehaviour, ICustomizationRowOwner
             editor.ShowNew(this, PenaltyConditionKind.ExactScore);
     }
 
-    /// <summary>Neu-Buttons Game-Events (OnClick mit int: 0=Leg, 1=Set, 2=Game).</summary>
+    /// <summary>New buttons Game events (OnClick with int: 0=Leg, 1=Set, 2=Game).</summary>
     public void OnClickNewGameEvent(int kindIndex)
     {
         if (editor == null)
@@ -207,7 +207,7 @@ public class CustomizationPenaltiesPage : MonoBehaviour, ICustomizationRowOwner
             editor.ShowEdit(this, id);
     }
 
-    // ---- ICustomizationRowOwner (einheitliches Listen-Item) ----
+    // ---- ICustomizationRowOwner (uniform list item) ----
 
     public void OnRowEdit(string id) => OnClickEditPenalty(id);
 
@@ -237,7 +237,7 @@ public class CustomizationPenaltiesPage : MonoBehaviour, ICustomizationRowOwner
         return CustomizationInfo.LocalizeInfo(string.IsNullOrEmpty(def.info) ? CustomizationInfo.BuildPenalty(def) : def.info);
     }
 
-    /// <summary>Toggle direkt in der Zeile: enabled speichern (Changed → Refresh).</summary>
+    /// <summary>Toggle directly in the row: save enabled (Changed → Refresh).</summary>
     public void OnRowToggle(string id, bool enabled)
     {
         if (string.IsNullOrEmpty(id))
@@ -250,11 +250,11 @@ public class CustomizationPenaltiesPage : MonoBehaviour, ICustomizationRowOwner
         def.enabled = enabled;
         CustomizationStore.SavePenalty(def);
 
-        // Direkt-Refresh (sofort sichtbar; Changed-Event aktualisiert ggf. zusätzlich).
+        // Direct refresh (immediately visible; changed event updated if necessary).
         Refresh();
     }
 
-    /// <summary>Clip-Button einer Penalty-Row: öffnet den ClipBrowser für diese ID.</summary>
+    /// <summary>Clip button of a penalty row: open the ClipBrowser for this ID.</summary>
     public void OnClickOpenClips(string id, string labelOverride = null)
     {
         if (string.IsNullOrEmpty(id))
@@ -273,7 +273,7 @@ public class CustomizationPenaltiesPage : MonoBehaviour, ICustomizationRowOwner
         clipNav.OpenCustomClips(id, label);
     }
 
-    /// <summary>Clip-Anzahl für den Row-Indikator.</summary>
+    /// <summary>Clip number for the row indicator.</summary>
     public int GetClipCount(string id)
     {
         if (string.IsNullOrEmpty(id) || AudioLibrary.Instance == null)
@@ -316,8 +316,8 @@ public class CustomizationPenaltiesPage : MonoBehaviour, ICustomizationRowOwner
         if (windowHandler != null)
             windowHandler.HidePopup();
 
-        // Direkt-Refresh (sofort sichtbar; Changed-Event aktualisiert ggf.
-        // zusätzlich — dank Abgleich praktisch gratis).
+        // Direct refresh (immediately visible; Changed event updates if needed.
+        // Then it is virtually free thanks to the match.
         Refresh();
     }
 

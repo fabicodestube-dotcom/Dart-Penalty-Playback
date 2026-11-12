@@ -2017,7 +2017,7 @@ MonoBehaviour:
           m_BoolArgument: 0
         m_CallState: 2
       - m_Target: {fileID: 2147002963}
-        m_TargetAssemblyTypeName: SetupHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: SetupScreen, Assembly-CSharp
         m_MethodName: CricketModeCutThroat
         m_Mode: 1
         m_Arguments:
@@ -2503,7 +2503,7 @@ GameObject:
   - component: {fileID: 15898978}
   - component: {fileID: 15898982}
   m_Layer: 0
-  m_Name: TitelText
+  m_Name: TitleText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -4373,7 +4373,7 @@ MonoBehaviour:
           m_BoolArgument: 0
         m_CallState: 2
       - m_Target: {fileID: 2147002963}
-        m_TargetAssemblyTypeName: SetupHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: SetupScreen, Assembly-CSharp
         m_MethodName: CricketPointsOff
         m_Mode: 1
         m_Arguments:
@@ -5005,7 +5005,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 1124065835}
-        m_TargetAssemblyTypeName: AboutHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: AboutScreen, Assembly-CSharp
         m_MethodName: OpenGithub
         m_Mode: 1
         m_Arguments:
@@ -6825,7 +6825,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 246448185}
-        m_TargetAssemblyTypeName: HistoryHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: HistoryScreen, Assembly-CSharp
         m_MethodName: ConfirmDelete
         m_Mode: 1
         m_Arguments:
@@ -8095,7 +8095,7 @@ MonoBehaviour:
           m_BoolArgument: 0
         m_CallState: 2
       - m_Target: {fileID: 1167347519}
-        m_TargetAssemblyTypeName: StatisticsHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: StatisticsScreen, Assembly-CSharp
         m_MethodName: TimeMonth
         m_Mode: 1
         m_Arguments:
@@ -14932,7 +14932,7 @@ MonoBehaviour:
           m_BoolArgument: 0
         m_CallState: 2
       - m_Target: {fileID: 2147002963}
-        m_TargetAssemblyTypeName: SetupHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: SetupScreen, Assembly-CSharp
         m_MethodName: SetLegCount
         m_Mode: 3
         m_Arguments:
@@ -17427,7 +17427,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 246448185}
-        m_TargetAssemblyTypeName: HistoryHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: HistoryScreen, Assembly-CSharp
         m_MethodName: AbortDelete
         m_Mode: 1
         m_Arguments:
@@ -17586,7 +17586,7 @@ MonoBehaviour:
           m_BoolArgument: 0
         m_CallState: 2
       - m_Target: {fileID: 2147002963}
-        m_TargetAssemblyTypeName: SetupHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: SetupScreen, Assembly-CSharp
         m_MethodName: SetSetCount
         m_Mode: 3
         m_Arguments:
@@ -17906,7 +17906,7 @@ GameObject:
   - component: {fileID: 161110460}
   - component: {fileID: 161110459}
   m_Layer: 0
-  m_Name: TitelText
+  m_Name: TitleText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -18986,7 +18986,7 @@ MonoBehaviour:
           m_BoolArgument: 0
         m_CallState: 2
       - m_Target: {fileID: 2147002963}
-        m_TargetAssemblyTypeName: SetupHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: SetupScreen, Assembly-CSharp
         m_MethodName: SetLegCount
         m_Mode: 3
         m_Arguments:
@@ -22425,7 +22425,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 1330990381}
-        m_TargetAssemblyTypeName: Summary, Assembly-CSharp
+        m_TargetAssemblyTypeName: SummaryScreen, Assembly-CSharp
         m_MethodName: OnClickBackButton
         m_Mode: 1
         m_Arguments:
@@ -22566,7 +22566,7 @@ MonoBehaviour:
           m_BoolArgument: 0
         m_CallState: 2
       - m_Target: {fileID: 2147002963}
-        m_TargetAssemblyTypeName: SetupHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: SetupScreen, Assembly-CSharp
         m_MethodName: ATCTargetEverything
         m_Mode: 1
         m_Arguments:
@@ -22725,7 +22725,7 @@ MonoBehaviour:
           m_BoolArgument: 0
         m_CallState: 2
       - m_Target: {fileID: 2147002963}
-        m_TargetAssemblyTypeName: SetupHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: SetupScreen, Assembly-CSharp
         m_MethodName: SetLegCount
         m_Mode: 3
         m_Arguments:
@@ -23056,7 +23056,7 @@ GameObject:
   - component: {fileID: 208353045}
   - component: {fileID: 208353049}
   m_Layer: 0
-  m_Name: TitelText
+  m_Name: TitleText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -23686,7 +23686,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 457217085}
-        m_TargetAssemblyTypeName: ClipBrowser, Assembly-CSharp
+        m_TargetAssemblyTypeName: ClipBrowserScreen, Assembly-CSharp
         m_MethodName: ConfirmDeleteCurrentClip
         m_Mode: 1
         m_Arguments:
@@ -24482,7 +24482,7 @@ MonoBehaviour:
   listLayoutElement: {fileID: 0}
   listContentRect: {fileID: 0}
   windowRect: {fileID: 0}
-  backgroundRect: {fileID: 0}
+  backgroundRect: {fileID: 939393009}
   windowMarginY: 200
 --- !u!225 &227041334
 CanvasGroup:
@@ -25329,7 +25329,7 @@ MonoBehaviour:
           m_BoolArgument: 0
         m_CallState: 2
       - m_Target: {fileID: 2147002963}
-        m_TargetAssemblyTypeName: SetupHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: SetupScreen, Assembly-CSharp
         m_MethodName: SetSetCount
         m_Mode: 3
         m_Arguments:
@@ -25967,7 +25967,7 @@ GameObject:
   - component: {fileID: 241587299}
   - component: {fileID: 241587298}
   m_Layer: 0
-  m_Name: PopupCancleGameAbortButton
+  m_Name: PopupCancelGameAbortButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -26432,7 +26432,7 @@ GameObject:
   - component: {fileID: 246448179}
   - component: {fileID: 246448185}
   m_Layer: 0
-  m_Name: HistoryHandler
+  m_Name: HistoryScreen
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -26552,7 +26552,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 18149b31ad7720d57a03271b56ffbe53, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::HistoryHandler
+  m_EditorClassIdentifier: Assembly-CSharp::HistoryScreen
   appHandler: {fileID: 635271790}
   windowHandler: {fileID: 635271792}
   swipeMenu: {fileID: 519515398}
@@ -26680,7 +26680,7 @@ MonoBehaviour:
           m_BoolArgument: 0
         m_CallState: 2
       - m_Target: {fileID: 2147002963}
-        m_TargetAssemblyTypeName: SetupHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: SetupScreen, Assembly-CSharp
         m_MethodName: SetLegCount
         m_Mode: 3
         m_Arguments:
@@ -28624,7 +28624,7 @@ MonoBehaviour:
           m_BoolArgument: 0
         m_CallState: 2
       - m_Target: {fileID: 1167347519}
-        m_TargetAssemblyTypeName: StatisticsHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: StatisticsScreen, Assembly-CSharp
         m_MethodName: TimeToday
         m_Mode: 1
         m_Arguments:
@@ -30697,7 +30697,7 @@ GameObject:
   - component: {fileID: 284630474}
   - component: {fileID: 284630473}
   m_Layer: 0
-  m_Name: TitelText
+  m_Name: TitleText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -31460,7 +31460,7 @@ GameObject:
   - component: {fileID: 289371181}
   - component: {fileID: 289371180}
   m_Layer: 0
-  m_Name: UiSwitch
+  m_Name: UISwitch
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -32793,7 +32793,7 @@ MonoBehaviour:
       m_PersistentCalls:
         m_Calls:
         - m_Target: {fileID: 457217085}
-          m_TargetAssemblyTypeName: ClipBrowser, Assembly-CSharp
+          m_TargetAssemblyTypeName: ClipBrowserScreen, Assembly-CSharp
           m_MethodName: OnDrag
           m_Mode: 0
           m_Arguments:
@@ -32809,7 +32809,7 @@ MonoBehaviour:
       m_PersistentCalls:
         m_Calls:
         - m_Target: {fileID: 457217085}
-          m_TargetAssemblyTypeName: ClipBrowser, Assembly-CSharp
+          m_TargetAssemblyTypeName: ClipBrowserScreen, Assembly-CSharp
           m_MethodName: BeginDragRight
           m_Mode: 0
           m_Arguments:
@@ -32825,7 +32825,7 @@ MonoBehaviour:
       m_PersistentCalls:
         m_Calls:
         - m_Target: {fileID: 457217085}
-          m_TargetAssemblyTypeName: ClipBrowser, Assembly-CSharp
+          m_TargetAssemblyTypeName: ClipBrowserScreen, Assembly-CSharp
           m_MethodName: EndDrag
           m_Mode: 1
           m_Arguments:
@@ -33648,7 +33648,7 @@ MonoBehaviour:
           m_BoolArgument: 0
         m_CallState: 2
       - m_Target: {fileID: 2147002963}
-        m_TargetAssemblyTypeName: SetupHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: SetupScreen, Assembly-CSharp
         m_MethodName: SetLegCount
         m_Mode: 3
         m_Arguments:
@@ -34737,7 +34737,7 @@ GameObject:
   - component: {fileID: 312890196}
   - component: {fileID: 312890195}
   m_Layer: 0
-  m_Name: PopupDeletePlayerCancleButton
+  m_Name: PopupDeletePlayerCancelButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -34808,8 +34808,8 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 1100852473}
-        m_TargetAssemblyTypeName: GameDetail, Assembly-CSharp
-        m_MethodName: CancleDeleteGame
+        m_TargetAssemblyTypeName: GameDetailScreen, Assembly-CSharp
+        m_MethodName: CancelDeleteGame
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -34868,7 +34868,7 @@ GameObject:
   - component: {fileID: 316397225}
   - component: {fileID: 316397224}
   m_Layer: 0
-  m_Name: ClipVizualiser
+  m_Name: ClipVisualizer
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -38160,7 +38160,7 @@ MonoBehaviour:
           m_BoolArgument: 0
         m_CallState: 2
       - m_Target: {fileID: 2147002963}
-        m_TargetAssemblyTypeName: SetupHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: SetupScreen, Assembly-CSharp
         m_MethodName: X01SetCheckinTypeDouble
         m_Mode: 1
         m_Arguments:
@@ -39522,7 +39522,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 1901605756}
-        m_TargetAssemblyTypeName: OptionsHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: OptionsScreen, Assembly-CSharp
         m_MethodName: ReturnFromPopupLanguages
         m_Mode: 1
         m_Arguments:
@@ -41286,7 +41286,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 1100852473}
-        m_TargetAssemblyTypeName: GameDetail, Assembly-CSharp
+        m_TargetAssemblyTypeName: GameDetailScreen, Assembly-CSharp
         m_MethodName: ConfirmDeleteGame
         m_Mode: 1
         m_Arguments:
@@ -45664,7 +45664,7 @@ GameObject:
   - component: {fileID: 434587510}
   - component: {fileID: 434587509}
   m_Layer: 0
-  m_Name: PopupDeletePlayerCancleButton
+  m_Name: PopupDeletePlayerCancelButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -45735,7 +45735,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 1996913089}
-        m_TargetAssemblyTypeName: PlayerHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: PlayersScreen, Assembly-CSharp
         m_MethodName: CloseDeletePopup
         m_Mode: 1
         m_Arguments:
@@ -47023,7 +47023,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 1901605756}
-        m_TargetAssemblyTypeName: OptionsHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: OptionsScreen, Assembly-CSharp
         m_MethodName: GoBack
         m_Mode: 1
         m_Arguments:
@@ -47348,7 +47348,7 @@ MonoBehaviour:
           m_BoolArgument: 0
         m_CallState: 2
       - m_Target: {fileID: 2147002963}
-        m_TargetAssemblyTypeName: SetupHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: SetupScreen, Assembly-CSharp
         m_MethodName: SetSetCount
         m_Mode: 3
         m_Arguments:
@@ -47563,7 +47563,7 @@ GameObject:
   - component: {fileID: 9198924833649473438}
   - component: {fileID: 588250692}
   m_Layer: 0
-  m_Name: TitelText
+  m_Name: TitleText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -47989,7 +47989,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f78633ccacf15235db1f8b76cdd8afc8, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ClipBrowser
+  m_EditorClassIdentifier: Assembly-CSharp::ClipBrowserScreen
   windowHandler: {fileID: 635271792}
   headline: {fileID: 1428966120}
   clipCountText: {fileID: 1564735404}
@@ -48502,7 +48502,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 246448185}
-        m_TargetAssemblyTypeName: HistoryHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: HistoryScreen, Assembly-CSharp
         m_MethodName: ConfirmDelete
         m_Mode: 1
         m_Arguments:
@@ -52212,7 +52212,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 2147002963}
-        m_TargetAssemblyTypeName: SetupHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: SetupScreen, Assembly-CSharp
         m_MethodName: AddBot
         m_Mode: 1
         m_Arguments:
@@ -52311,7 +52311,7 @@ GameObject:
   - component: {fileID: 498405086}
   - component: {fileID: 498405085}
   m_Layer: 0
-  m_Name: PopupRenamePlayerCancleButton
+  m_Name: PopupRenamePlayerCancelButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -52382,7 +52382,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 1996913089}
-        m_TargetAssemblyTypeName: PlayerHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: PlayersScreen, Assembly-CSharp
         m_MethodName: CloseRenamePopup
         m_Mode: 1
         m_Arguments:
@@ -52477,7 +52477,7 @@ MonoBehaviour:
   listLayoutElement: {fileID: 0}
   listContentRect: {fileID: 0}
   windowRect: {fileID: 0}
-  backgroundRect: {fileID: 0}
+  backgroundRect: {fileID: 703402623}
   windowMarginY: 200
 --- !u!225 &500169420
 CanvasGroup:
@@ -52594,7 +52594,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 246448185}
-        m_TargetAssemblyTypeName: HistoryHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: HistoryScreen, Assembly-CSharp
         m_MethodName: ConfirmDelete
         m_Mode: 1
         m_Arguments:
@@ -53248,7 +53248,7 @@ MonoBehaviour:
           m_BoolArgument: 0
         m_CallState: 2
       - m_Target: {fileID: 2147002963}
-        m_TargetAssemblyTypeName: SetupHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: SetupScreen, Assembly-CSharp
         m_MethodName: SetLegCount
         m_Mode: 3
         m_Arguments:
@@ -54428,7 +54428,7 @@ GameObject:
   - component: {fileID: 517214405}
   - component: {fileID: 517214404}
   m_Layer: 0
-  m_Name: PopupCancleGameSaveButton
+  m_Name: PopupCancelGameSaveButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -55789,7 +55789,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 1996913089}
-        m_TargetAssemblyTypeName: PlayerHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: PlayersScreen, Assembly-CSharp
         m_MethodName: CloseRenamePopup
         m_Mode: 1
         m_Arguments:
@@ -57251,7 +57251,7 @@ GameObject:
   - component: {fileID: 547180867}
   - component: {fileID: 547180868}
   m_Layer: 0
-  m_Name: PopupDeleteAllCancleButton
+  m_Name: PopupDeleteAllCancelButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -57322,7 +57322,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 246448185}
-        m_TargetAssemblyTypeName: HistoryHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: HistoryScreen, Assembly-CSharp
         m_MethodName: AbortDelete
         m_Mode: 1
         m_Arguments:
@@ -60263,7 +60263,7 @@ GameObject:
   - component: {fileID: 581744817}
   - component: {fileID: 581744816}
   m_Layer: 0
-  m_Name: PopupAddBott
+  m_Name: PopupAddBot
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -62150,7 +62150,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 1167347519}
-        m_TargetAssemblyTypeName: StatisticsHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: StatisticsScreen, Assembly-CSharp
         m_MethodName: ShowPopup
         m_Mode: 1
         m_Arguments:
@@ -67674,7 +67674,7 @@ GameObject:
   - component: {fileID: 644342427}
   - component: {fileID: 644342428}
   m_Layer: 0
-  m_Name: HitEditorPopupCancleButton
+  m_Name: HitEditorPopupCancelButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -68702,7 +68702,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 1100852473}
-        m_TargetAssemblyTypeName: GameDetail, Assembly-CSharp
+        m_TargetAssemblyTypeName: GameDetailScreen, Assembly-CSharp
         m_MethodName: OnClickDeleteGame
         m_Mode: 1
         m_Arguments:
@@ -68977,7 +68977,7 @@ GameObject:
   - component: {fileID: 663019701}
   - component: {fileID: 663019700}
   m_Layer: 0
-  m_Name: PopupCancleGameBackground
+  m_Name: PopupCancelGameBackground
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -69048,7 +69048,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 994428009}
         m_TargetAssemblyTypeName: X01GameEngine, Assembly-CSharp
-        m_MethodName: OnClickAbortCancle
+        m_MethodName: OnClickAbortCancel
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -69111,7 +69111,7 @@ GameObject:
   - component: {fileID: 663583336}
   - component: {fileID: 663583337}
   m_Layer: 0
-  m_Name: PopupCancleGameHeadlineText
+  m_Name: PopupCancelGameHeadlineText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -70105,7 +70105,7 @@ GameObject:
   - component: {fileID: 674029676}
   - component: {fileID: 674029677}
   m_Layer: 0
-  m_Name: TitelText
+  m_Name: TitleText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -70413,7 +70413,7 @@ MonoBehaviour:
           m_BoolArgument: 0
         m_CallState: 2
       - m_Target: {fileID: 2147002963}
-        m_TargetAssemblyTypeName: SetupHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: SetupScreen, Assembly-CSharp
         m_MethodName: SetLegCount
         m_Mode: 3
         m_Arguments:
@@ -71052,7 +71052,7 @@ MonoBehaviour:
           m_BoolArgument: 0
         m_CallState: 2
       - m_Target: {fileID: 2147002963}
-        m_TargetAssemblyTypeName: SetupHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: SetupScreen, Assembly-CSharp
         m_MethodName: SetLegCount
         m_Mode: 3
         m_Arguments:
@@ -72363,8 +72363,8 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 1100852473}
-        m_TargetAssemblyTypeName: GameDetail, Assembly-CSharp
-        m_MethodName: CancleDeleteGame
+        m_TargetAssemblyTypeName: GameDetailScreen, Assembly-CSharp
+        m_MethodName: CancelDeleteGame
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -73150,7 +73150,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 1996913089}
-        m_TargetAssemblyTypeName: PlayerHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: PlayersScreen, Assembly-CSharp
         m_MethodName: CloseDeletePopup
         m_Mode: 1
         m_Arguments:
@@ -74314,7 +74314,7 @@ MonoBehaviour:
           m_BoolArgument: 0
         m_CallState: 2
       - m_Target: {fileID: 2147002963}
-        m_TargetAssemblyTypeName: SetupHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: SetupScreen, Assembly-CSharp
         m_MethodName: ATCTargetSinglesDoubles
         m_Mode: 1
         m_Arguments:
@@ -75530,7 +75530,7 @@ GameObject:
   - component: {fileID: 740422266}
   - component: {fileID: 740422265}
   m_Layer: 0
-  m_Name: PopupDeleteClipCancleButton
+  m_Name: PopupDeleteClipCancelButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -75639,7 +75639,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 457217085}
-        m_TargetAssemblyTypeName: ClipBrowser, Assembly-CSharp
+        m_TargetAssemblyTypeName: ClipBrowserScreen, Assembly-CSharp
         m_MethodName: CancelDelete
         m_Mode: 1
         m_Arguments:
@@ -77295,7 +77295,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 1996913089}
-        m_TargetAssemblyTypeName: PlayerHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: PlayersScreen, Assembly-CSharp
         m_MethodName: ConfirmAdd
         m_Mode: 1
         m_Arguments:
@@ -78265,7 +78265,7 @@ GameObject:
   - component: {fileID: 765986818}
   - component: {fileID: 765986817}
   m_Layer: 0
-  m_Name: SilenceTrimChecbox
+  m_Name: SilenceTrimCheckbox
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -79504,7 +79504,7 @@ GameObject:
   - component: {fileID: 774558921}
   - component: {fileID: 774558922}
   m_Layer: 0
-  m_Name: PopupDeleteATCCancleButton
+  m_Name: PopupDeleteATCCancelButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -79575,7 +79575,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 246448185}
-        m_TargetAssemblyTypeName: HistoryHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: HistoryScreen, Assembly-CSharp
         m_MethodName: AbortDelete
         m_Mode: 1
         m_Arguments:
@@ -82428,7 +82428,7 @@ MonoBehaviour:
           m_BoolArgument: 0
         m_CallState: 2
       - m_Target: {fileID: 2147002963}
-        m_TargetAssemblyTypeName: SetupHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: SetupScreen, Assembly-CSharp
         m_MethodName: SetSetCount
         m_Mode: 3
         m_Arguments:
@@ -84364,7 +84364,7 @@ GameObject:
   - component: {fileID: 826599720}
   - component: {fileID: 826599719}
   m_Layer: 0
-  m_Name: PopupCancleGameCancleButton
+  m_Name: PopupCancelGameCancelButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -84436,7 +84436,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 994428009}
         m_TargetAssemblyTypeName: X01GameEngine, Assembly-CSharp
-        m_MethodName: OnClickAbortCancle
+        m_MethodName: OnClickAbortCancel
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -84719,7 +84719,7 @@ MonoBehaviour:
       m_PersistentCalls:
         m_Calls:
         - m_Target: {fileID: 457217085}
-          m_TargetAssemblyTypeName: ClipBrowser, Assembly-CSharp
+          m_TargetAssemblyTypeName: ClipBrowserScreen, Assembly-CSharp
           m_MethodName: BeginDragLeft
           m_Mode: 0
           m_Arguments:
@@ -84735,7 +84735,7 @@ MonoBehaviour:
       m_PersistentCalls:
         m_Calls:
         - m_Target: {fileID: 457217085}
-          m_TargetAssemblyTypeName: ClipBrowser, Assembly-CSharp
+          m_TargetAssemblyTypeName: ClipBrowserScreen, Assembly-CSharp
           m_MethodName: EndDrag
           m_Mode: 1
           m_Arguments:
@@ -84751,7 +84751,7 @@ MonoBehaviour:
       m_PersistentCalls:
         m_Calls:
         - m_Target: {fileID: 457217085}
-          m_TargetAssemblyTypeName: ClipBrowser, Assembly-CSharp
+          m_TargetAssemblyTypeName: ClipBrowserScreen, Assembly-CSharp
           m_MethodName: OnDrag
           m_Mode: 0
           m_Arguments:
@@ -86568,7 +86568,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 1330990381}
-        m_TargetAssemblyTypeName: Summary, Assembly-CSharp
+        m_TargetAssemblyTypeName: SummaryScreen, Assembly-CSharp
         m_MethodName: OnClickShowStatistic
         m_Mode: 1
         m_Arguments:
@@ -88517,7 +88517,7 @@ GameObject:
   - component: {fileID: 872569006}
   - component: {fileID: 9198924833649473442}
   m_Layer: 0
-  m_Name: PopupPenaltiesDeletelHeadlineText
+  m_Name: PopupPenaltiesDeleteHeadlineText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -89886,7 +89886,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 246448185}
-        m_TargetAssemblyTypeName: HistoryHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: HistoryScreen, Assembly-CSharp
         m_MethodName: ConfirmDelete
         m_Mode: 1
         m_Arguments:
@@ -90246,7 +90246,7 @@ MonoBehaviour:
           m_BoolArgument: 0
         m_CallState: 2
       - m_Target: {fileID: 2147002963}
-        m_TargetAssemblyTypeName: SetupHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: SetupScreen, Assembly-CSharp
         m_MethodName: SetLegCount
         m_Mode: 3
         m_Arguments:
@@ -90453,7 +90453,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 1167347519}
-        m_TargetAssemblyTypeName: StatisticsHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: StatisticsScreen, Assembly-CSharp
         m_MethodName: HidePopup
         m_Mode: 1
         m_Arguments:
@@ -91736,7 +91736,7 @@ GameObject:
   - component: {fileID: 893191726}
   - component: {fileID: 9198924833649473447}
   m_Layer: 0
-  m_Name: PopupPenaltiesDeletelHeadlineText
+  m_Name: PopupPenaltiesDeleteHeadlineText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -92357,7 +92357,7 @@ GameObject:
   - component: {fileID: 895116965}
   - component: {fileID: 895116966}
   m_Layer: 0
-  m_Name: TitelText
+  m_Name: TitleText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -93321,7 +93321,7 @@ MonoBehaviour:
           m_BoolArgument: 0
         m_CallState: 2
       - m_Target: {fileID: 2147002963}
-        m_TargetAssemblyTypeName: SetupHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: SetupScreen, Assembly-CSharp
         m_MethodName: ATCTargetDoublesTriples
         m_Mode: 1
         m_Arguments:
@@ -93950,7 +93950,7 @@ GameObject:
   - component: {fileID: 911429208}
   - component: {fileID: 911429207}
   m_Layer: 0
-  m_Name: PopupAddPlayerCancleButton
+  m_Name: PopupAddPlayerCancelButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -94021,7 +94021,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 1996913089}
-        m_TargetAssemblyTypeName: PlayerHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: PlayersScreen, Assembly-CSharp
         m_MethodName: CloseAddPopup
         m_Mode: 1
         m_Arguments:
@@ -94511,7 +94511,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 1901605756}
-        m_TargetAssemblyTypeName: OptionsHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: OptionsScreen, Assembly-CSharp
         m_MethodName: ShowPopupLanguages
         m_Mode: 1
         m_Arguments:
@@ -95300,7 +95300,7 @@ GameObject:
   - component: {fileID: 921935967}
   - component: {fileID: 921935968}
   m_Layer: 0
-  m_Name: 'ATCSetup '
+  m_Name: ATCSetup
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -96328,7 +96328,7 @@ GameObject:
   - component: {fileID: 933383693}
   - component: {fileID: 933383692}
   m_Layer: 0
-  m_Name: PopupPenaltiesDeleteCancleButton
+  m_Name: PopupPenaltiesDeleteCancelButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -96838,7 +96838,7 @@ MonoBehaviour:
           m_BoolArgument: 0
         m_CallState: 2
       - m_Target: {fileID: 2147002963}
-        m_TargetAssemblyTypeName: SetupHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: SetupScreen, Assembly-CSharp
         m_MethodName: SetSetCount
         m_Mode: 3
         m_Arguments:
@@ -96970,8 +96970,8 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 1100852473}
-        m_TargetAssemblyTypeName: GameDetail, Assembly-CSharp
-        m_MethodName: CancleDeleteGame
+        m_TargetAssemblyTypeName: GameDetailScreen, Assembly-CSharp
+        m_MethodName: CancelDeleteGame
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -97555,7 +97555,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 457217085}
-        m_TargetAssemblyTypeName: ClipBrowser, Assembly-CSharp
+        m_TargetAssemblyTypeName: ClipBrowserScreen, Assembly-CSharp
         m_MethodName: CancelDelete
         m_Mode: 1
         m_Arguments:
@@ -97663,7 +97663,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 1901605756}
-        m_TargetAssemblyTypeName: OptionsHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: OptionsScreen, Assembly-CSharp
         m_MethodName: SetCyan
         m_Mode: 1
         m_Arguments:
@@ -97914,8 +97914,8 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 1100852473}
-        m_TargetAssemblyTypeName: GameDetail, Assembly-CSharp
-        m_MethodName: CancleDeleteGame
+        m_TargetAssemblyTypeName: GameDetailScreen, Assembly-CSharp
+        m_MethodName: CancelDeleteGame
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -99179,7 +99179,7 @@ MonoBehaviour:
           m_BoolArgument: 0
         m_CallState: 2
       - m_Target: {fileID: 1167347519}
-        m_TargetAssemblyTypeName: StatisticsHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: StatisticsScreen, Assembly-CSharp
         m_MethodName: TimeAll
         m_Mode: 1
         m_Arguments:
@@ -101638,6 +101638,8 @@ MonoBehaviour:
   botPausePanelPlay: {fileID: 1783382956}
   botDartSprite: {fileID: 21300000, guid: 20e6daedf1646846c8e4acbf0dcfac05, type: 3}
   botDartboardSprite: {fileID: 21300000, guid: a01295db2d44fb06eacbc22837c46546, type: 3}
+  botIconRow: {fileID: 1680551820}
+  botIcon: {fileID: 1161441233}
   quickSelectButton: {fileID: 818046105}
   quickSelectLabel: {fileID: 1020427763}
   sectorPanel: {fileID: 1274533446}
@@ -101719,7 +101721,7 @@ GameObject:
   - component: {fileID: 981948736}
   - component: {fileID: 981948735}
   m_Layer: 0
-  m_Name: CutCancleButton
+  m_Name: CutCancelButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -101873,7 +101875,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 457217085}
-        m_TargetAssemblyTypeName: ClipBrowser, Assembly-CSharp
+        m_TargetAssemblyTypeName: ClipBrowserScreen, Assembly-CSharp
         m_MethodName: ConfirmDeleteCurrentClip
         m_Mode: 1
         m_Arguments:
@@ -104669,7 +104671,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 1901605756}
-        m_TargetAssemblyTypeName: OptionsHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: OptionsScreen, Assembly-CSharp
         m_MethodName: SetBlue
         m_Mode: 1
         m_Arguments:
@@ -107168,7 +107170,7 @@ MonoBehaviour:
           m_BoolArgument: 0
         m_CallState: 2
       - m_Target: {fileID: 2147002963}
-        m_TargetAssemblyTypeName: SetupHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: SetupScreen, Assembly-CSharp
         m_MethodName: SetLegCount
         m_Mode: 3
         m_Arguments:
@@ -108228,7 +108230,7 @@ MonoBehaviour:
           m_BoolArgument: 0
         m_CallState: 2
       - m_Target: {fileID: 2147002963}
-        m_TargetAssemblyTypeName: SetupHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: SetupScreen, Assembly-CSharp
         m_MethodName: SetSetCount
         m_Mode: 3
         m_Arguments:
@@ -108961,7 +108963,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 1901605756}
-        m_TargetAssemblyTypeName: OptionsHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: OptionsScreen, Assembly-CSharp
         m_MethodName: SetVibrationStrong
         m_Mode: 1
         m_Arguments:
@@ -111495,7 +111497,7 @@ GameObject:
   - component: {fileID: 1070016005}
   - component: {fileID: 1070016006}
   m_Layer: 0
-  m_Name: TitelText
+  m_Name: TitleText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -112842,7 +112844,7 @@ GameObject:
   - component: {fileID: 1081428893}
   - component: {fileID: 1081428892}
   m_Layer: 0
-  m_Name: PopupCancleGameCancleButton
+  m_Name: PopupCancelGameCancelButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -113541,7 +113543,7 @@ MonoBehaviour:
           m_BoolArgument: 0
         m_CallState: 2
       - m_Target: {fileID: 2147002963}
-        m_TargetAssemblyTypeName: SetupHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: SetupScreen, Assembly-CSharp
         m_MethodName: SetLegCount
         m_Mode: 3
         m_Arguments:
@@ -114345,7 +114347,7 @@ GameObject:
   - component: {fileID: 1095637294}
   - component: {fileID: 1095637293}
   m_Layer: 0
-  m_Name: PopupCancleGameAbortButton
+  m_Name: PopupCancelGameAbortButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -115196,7 +115198,7 @@ GameObject:
   - component: {fileID: 1100852473}
   - component: {fileID: 1100852477}
   m_Layer: 0
-  m_Name: GameDetail
+  m_Name: GameDetailScreen
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -115827,7 +115829,7 @@ GameObject:
   - component: {fileID: 1103668688}
   - component: {fileID: 1103668689}
   m_Layer: 0
-  m_Name: FinishCuttonPanel
+  m_Name: FinishButtonPanel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -116478,7 +116480,7 @@ MonoBehaviour:
           m_BoolArgument: 0
         m_CallState: 2
       - m_Target: {fileID: 2147002963}
-        m_TargetAssemblyTypeName: SetupHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: SetupScreen, Assembly-CSharp
         m_MethodName: SetSetCount
         m_Mode: 3
         m_Arguments:
@@ -117508,7 +117510,7 @@ GameObject:
   - component: {fileID: 1124065836}
   - component: {fileID: 1124065835}
   m_Layer: 0
-  m_Name: AboutHandler
+  m_Name: AboutScreen
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -118390,7 +118392,7 @@ GameObject:
   - component: {fileID: 1132263808}
   - component: {fileID: 1132263807}
   m_Layer: 0
-  m_Name: PopupCancleGameAbortButton
+  m_Name: PopupCancelGameAbortButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -121363,7 +121365,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 1996913089}
-        m_TargetAssemblyTypeName: PlayerHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: PlayersScreen, Assembly-CSharp
         m_MethodName: ConfirmDelete
         m_Mode: 1
         m_Arguments:
@@ -122312,7 +122314,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 1901605756}
-        m_TargetAssemblyTypeName: OptionsHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: OptionsScreen, Assembly-CSharp
         m_MethodName: SetOrange
         m_Mode: 1
         m_Arguments:
@@ -122566,7 +122568,7 @@ MonoBehaviour:
           m_BoolArgument: 0
         m_CallState: 2
       - m_Target: {fileID: 2147002963}
-        m_TargetAssemblyTypeName: SetupHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: SetupScreen, Assembly-CSharp
         m_MethodName: SetSetsAndLegsModeFirstTo
         m_Mode: 1
         m_Arguments:
@@ -122980,7 +122982,7 @@ GameObject:
   - component: {fileID: 1167015929}
   - component: {fileID: 1167015928}
   m_Layer: 0
-  m_Name: UiSwitch
+  m_Name: UISwitch
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -123088,7 +123090,7 @@ GameObject:
   - component: {fileID: 1167347518}
   - component: {fileID: 1167347519}
   m_Layer: 0
-  m_Name: StatisticsHandler
+  m_Name: StatisticsScreen
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -123813,7 +123815,7 @@ MonoBehaviour:
           m_BoolArgument: 0
         m_CallState: 2
       - m_Target: {fileID: 2147002963}
-        m_TargetAssemblyTypeName: SetupHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: SetupScreen, Assembly-CSharp
         m_MethodName: SetSetCount
         m_Mode: 3
         m_Arguments:
@@ -125075,7 +125077,7 @@ MonoBehaviour:
           m_BoolArgument: 0
         m_CallState: 2
       - m_Target: {fileID: 2147002963}
-        m_TargetAssemblyTypeName: SetupHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: SetupScreen, Assembly-CSharp
         m_MethodName: SetSetCount
         m_Mode: 3
         m_Arguments:
@@ -127592,7 +127594,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 1901605756}
-        m_TargetAssemblyTypeName: OptionsHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: OptionsScreen, Assembly-CSharp
         m_MethodName: SetRed
         m_Mode: 1
         m_Arguments:
@@ -127958,7 +127960,7 @@ MonoBehaviour:
           m_BoolArgument: 0
         m_CallState: 2
       - m_Target: {fileID: 2147002963}
-        m_TargetAssemblyTypeName: SetupHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: SetupScreen, Assembly-CSharp
         m_MethodName: SetLegCount
         m_Mode: 3
         m_Arguments:
@@ -128886,7 +128888,7 @@ MonoBehaviour:
           m_BoolArgument: 0
         m_CallState: 2
       - m_Target: {fileID: 1167347519}
-        m_TargetAssemblyTypeName: StatisticsHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: StatisticsScreen, Assembly-CSharp
         m_MethodName: TimeYear
         m_Mode: 1
         m_Arguments:
@@ -129844,7 +129846,7 @@ GameObject:
   - component: {fileID: 1230384954}
   - component: {fileID: 1230384953}
   m_Layer: 0
-  m_Name: PopupPenaltiesDeleteCancleButton
+  m_Name: PopupPenaltiesDeleteCancelButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -130315,7 +130317,7 @@ GameObject:
   - component: {fileID: 1236402952}
   - component: {fileID: 1236402951}
   m_Layer: 0
-  m_Name: PopupCancleGameBackground
+  m_Name: PopupCancelGameBackground
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -130386,7 +130388,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 1818097487}
         m_TargetAssemblyTypeName: CricketGameEngine, Assembly-CSharp
-        m_MethodName: OnClickAbortCancle
+        m_MethodName: OnClickAbortCancel
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -131657,7 +131659,7 @@ GameObject:
   - component: {fileID: 1249201807}
   - component: {fileID: 1249201808}
   m_Layer: 0
-  m_Name: TitelText
+  m_Name: TitleText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -133727,7 +133729,7 @@ GameObject:
   - component: {fileID: 1269336002}
   - component: {fileID: 9198924833649473446}
   m_Layer: 0
-  m_Name: TitelText
+  m_Name: TitleText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -133896,7 +133898,7 @@ GameObject:
   - component: {fileID: 1269942399}
   - component: {fileID: 1269942400}
   m_Layer: 0
-  m_Name: TitelContainer
+  m_Name: TitleContainer
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -135946,7 +135948,7 @@ GameObject:
   - component: {fileID: 1294238030}
   - component: {fileID: 1294238035}
   m_Layer: 0
-  m_Name: CustomizationHandler
+  m_Name: CustomizationScreen
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -136541,7 +136543,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 457217085}
-        m_TargetAssemblyTypeName: ClipBrowser, Assembly-CSharp
+        m_TargetAssemblyTypeName: ClipBrowserScreen, Assembly-CSharp
         m_MethodName: Play
         m_Mode: 1
         m_Arguments:
@@ -138705,7 +138707,7 @@ MonoBehaviour:
           m_BoolArgument: 0
         m_CallState: 2
       - m_Target: {fileID: 2147002963}
-        m_TargetAssemblyTypeName: SetupHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: SetupScreen, Assembly-CSharp
         m_MethodName: SetSetCount
         m_Mode: 3
         m_Arguments:
@@ -138908,7 +138910,7 @@ GameObject:
   - component: {fileID: 1330990381}
   - component: {fileID: 1330990386}
   m_Layer: 0
-  m_Name: Summary
+  m_Name: SummaryScreen
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -139802,7 +139804,7 @@ GameObject:
   - component: {fileID: 1337708099}
   - component: {fileID: 1337708098}
   m_Layer: 0
-  m_Name: PopupDeletePlayerCancleButton
+  m_Name: PopupDeletePlayerCancelButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -141579,7 +141581,7 @@ GameObject:
   - component: {fileID: 1353375825}
   - component: {fileID: 1353375824}
   m_Layer: 0
-  m_Name: CancleButton
+  m_Name: CancelButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -141688,7 +141690,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 1167347519}
-        m_TargetAssemblyTypeName: StatisticsHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: StatisticsScreen, Assembly-CSharp
         m_MethodName: HidePopup
         m_Mode: 1
         m_Arguments:
@@ -141937,7 +141939,7 @@ GameObject:
   - component: {fileID: 1358140730}
   - component: {fileID: 1358140729}
   m_Layer: 0
-  m_Name: UiSwitch
+  m_Name: UISwitch
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -143455,7 +143457,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 457217085}
-        m_TargetAssemblyTypeName: ClipBrowser, Assembly-CSharp
+        m_TargetAssemblyTypeName: ClipBrowserScreen, Assembly-CSharp
         m_MethodName: EnterCutMode
         m_Mode: 1
         m_Arguments:
@@ -145106,7 +145108,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 246448185}
-        m_TargetAssemblyTypeName: HistoryHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: HistoryScreen, Assembly-CSharp
         m_MethodName: AbortDelete
         m_Mode: 1
         m_Arguments:
@@ -145329,7 +145331,7 @@ MonoBehaviour:
           m_BoolArgument: 0
         m_CallState: 2
       - m_Target: {fileID: 2147002963}
-        m_TargetAssemblyTypeName: SetupHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: SetupScreen, Assembly-CSharp
         m_MethodName: SetSetCount
         m_Mode: 3
         m_Arguments:
@@ -146948,7 +146950,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 1996913089}
-        m_TargetAssemblyTypeName: PlayerHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: PlayersScreen, Assembly-CSharp
         m_MethodName: CloseDeletePopup
         m_Mode: 1
         m_Arguments:
@@ -147474,7 +147476,7 @@ MonoBehaviour:
           m_BoolArgument: 0
         m_CallState: 2
       - m_Target: {fileID: 2147002963}
-        m_TargetAssemblyTypeName: SetupHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: SetupScreen, Assembly-CSharp
         m_MethodName: X01SetCheckinTypeMaster
         m_Mode: 1
         m_Arguments:
@@ -147633,7 +147635,7 @@ MonoBehaviour:
           m_BoolArgument: 0
         m_CallState: 2
       - m_Target: {fileID: 2147002963}
-        m_TargetAssemblyTypeName: SetupHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: SetupScreen, Assembly-CSharp
         m_MethodName: SetSetCount
         m_Mode: 3
         m_Arguments:
@@ -148661,7 +148663,7 @@ GameObject:
   - component: {fileID: 1426948804}
   - component: {fileID: 1426948803}
   m_Layer: 0
-  m_Name: PopupCancleGameSaveButton
+  m_Name: PopupCancelGameSaveButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -150258,7 +150260,7 @@ MonoBehaviour:
           m_BoolArgument: 0
         m_CallState: 2
       - m_Target: {fileID: 2147002963}
-        m_TargetAssemblyTypeName: SetupHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: SetupScreen, Assembly-CSharp
         m_MethodName: SetLegCount
         m_Mode: 3
         m_Arguments:
@@ -151387,7 +151389,7 @@ MonoBehaviour:
           m_BoolArgument: 0
         m_CallState: 2
       - m_Target: {fileID: 2147002963}
-        m_TargetAssemblyTypeName: SetupHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: SetupScreen, Assembly-CSharp
         m_MethodName: SetSetCount
         m_Mode: 3
         m_Arguments:
@@ -151614,7 +151616,7 @@ MonoBehaviour:
           m_BoolArgument: 0
         m_CallState: 2
       - m_Target: {fileID: 2147002963}
-        m_TargetAssemblyTypeName: SetupHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: SetupScreen, Assembly-CSharp
         m_MethodName: SetLegCount
         m_Mode: 3
         m_Arguments:
@@ -151773,7 +151775,7 @@ MonoBehaviour:
           m_BoolArgument: 0
         m_CallState: 2
       - m_Target: {fileID: 2147002963}
-        m_TargetAssemblyTypeName: SetupHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: SetupScreen, Assembly-CSharp
         m_MethodName: SetSetCount
         m_Mode: 3
         m_Arguments:
@@ -152436,7 +152438,7 @@ GameObject:
   - component: {fileID: 1452843598}
   - component: {fileID: 1452843601}
   m_Layer: 0
-  m_Name: PopupCancleGameExplanationText
+  m_Name: PopupCancelGameExplanationText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -155338,7 +155340,7 @@ GameObject:
   - component: {fileID: 1487250456}
   - component: {fileID: 1487250459}
   m_Layer: 0
-  m_Name: PopupCancleGameExplanationText
+  m_Name: PopupCancelGameExplanationText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -155762,6 +155764,8 @@ MonoBehaviour:
   botPausePanelPlay: {fileID: 1031723724}
   botDartSprite: {fileID: 21300000, guid: 20e6daedf1646846c8e4acbf0dcfac05, type: 3}
   botDartboardSprite: {fileID: 21300000, guid: a01295db2d44fb06eacbc22837c46546, type: 3}
+  botIconRow: {fileID: 1671117870}
+  botIcon: {fileID: 114161449}
   quickSelectButton: {fileID: 1208232585}
   quickSelectLabel: {fileID: 1963131862}
   sectorPanel: {fileID: 1544899136}
@@ -157578,7 +157582,7 @@ GameObject:
   - component: {fileID: 1505912008}
   - component: {fileID: 1505912007}
   m_Layer: 0
-  m_Name: TitelText
+  m_Name: TitleText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -158035,7 +158039,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 1996913089}
-        m_TargetAssemblyTypeName: PlayerHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: PlayersScreen, Assembly-CSharp
         m_MethodName: ConfirmRename
         m_Mode: 1
         m_Arguments:
@@ -158206,7 +158210,7 @@ MonoBehaviour:
           m_BoolArgument: 0
         m_CallState: 2
       - m_Target: {fileID: 2147002963}
-        m_TargetAssemblyTypeName: SetupHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: SetupScreen, Assembly-CSharp
         m_MethodName: SetSetCount
         m_Mode: 3
         m_Arguments:
@@ -158365,7 +158369,7 @@ MonoBehaviour:
           m_BoolArgument: 0
         m_CallState: 2
       - m_Target: {fileID: 2147002963}
-        m_TargetAssemblyTypeName: SetupHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: SetupScreen, Assembly-CSharp
         m_MethodName: SetSetCount
         m_Mode: 3
         m_Arguments:
@@ -160349,6 +160353,7 @@ MonoBehaviour:
   triggerRowPrefab: {fileID: 6824950762779577178, guid: bab078b5ef04f94e79a7a2577b05b4cb, type: 3}
   newTriggerButton: {fileID: 1464559767}
   triggerPanel: {fileID: 233644593}
+  triggerEditorContent: {fileID: 825373350}
   triggerHeadlineLocalize: {fileID: 0}
   triggerKindDropdown: {fileID: 1097153755}
   scoreInput: {fileID: 2075689694}
@@ -161541,7 +161546,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 457217085}
-        m_TargetAssemblyTypeName: ClipBrowser, Assembly-CSharp
+        m_TargetAssemblyTypeName: ClipBrowserScreen, Assembly-CSharp
         m_MethodName: NextClip
         m_Mode: 1
         m_Arguments:
@@ -161756,7 +161761,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 246448185}
-        m_TargetAssemblyTypeName: HistoryHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: HistoryScreen, Assembly-CSharp
         m_MethodName: AbortDelete
         m_Mode: 1
         m_Arguments:
@@ -162234,7 +162239,7 @@ MonoBehaviour:
           m_BoolArgument: 0
         m_CallState: 2
       - m_Target: {fileID: 0}
-        m_TargetAssemblyTypeName: HistoryHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: HistoryScreen, Assembly-CSharp
         m_MethodName: ShowCurrentHistory
         m_Mode: 1
         m_Arguments:
@@ -166409,7 +166414,7 @@ GameObject:
   - component: {fileID: 1580513955}
   - component: {fileID: 1580513954}
   m_Layer: 0
-  m_Name: UiSwitch
+  m_Name: UISwitch
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -166611,7 +166616,7 @@ MonoBehaviour:
           m_BoolArgument: 0
         m_CallState: 2
       - m_Target: {fileID: 2147002963}
-        m_TargetAssemblyTypeName: SetupHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: SetupScreen, Assembly-CSharp
         m_MethodName: CricketModeNormal
         m_Mode: 1
         m_Arguments:
@@ -168025,7 +168030,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 1124065835}
-        m_TargetAssemblyTypeName: AboutHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: AboutScreen, Assembly-CSharp
         m_MethodName: OpenPrivacyPolicy
         m_Mode: 1
         m_Arguments:
@@ -168883,7 +168888,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 1124065835}
-        m_TargetAssemblyTypeName: AboutHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: AboutScreen, Assembly-CSharp
         m_MethodName: OnGoBackClicked
         m_Mode: 1
         m_Arguments:
@@ -169239,6 +169244,8 @@ MonoBehaviour:
   botPausePanelPlay: {fileID: 1931039920}
   botDartSprite: {fileID: 21300000, guid: 20e6daedf1646846c8e4acbf0dcfac05, type: 3}
   botDartboardSprite: {fileID: 21300000, guid: a01295db2d44fb06eacbc22837c46546, type: 3}
+  botIconRow: {fileID: 80399933}
+  botIcon: {fileID: 641240475}
   quickSelectButton: {fileID: 1071323928}
   quickSelectLabel: {fileID: 1872538587}
   sectorPanel: {fileID: 278174083}
@@ -170411,7 +170418,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 1100852473}
-        m_TargetAssemblyTypeName: GameDetail, Assembly-CSharp
+        m_TargetAssemblyTypeName: GameDetailScreen, Assembly-CSharp
         m_MethodName: OnClickContinueGame
         m_Mode: 1
         m_Arguments:
@@ -171343,7 +171350,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 246448185}
-        m_TargetAssemblyTypeName: HistoryHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: HistoryScreen, Assembly-CSharp
         m_MethodName: OnClickDeleteButton
         m_Mode: 1
         m_Arguments:
@@ -172119,7 +172126,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 1901605756}
-        m_TargetAssemblyTypeName: OptionsHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: OptionsScreen, Assembly-CSharp
         m_MethodName: SetPurple
         m_Mode: 1
         m_Arguments:
@@ -173695,7 +173702,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 1901605756}
-        m_TargetAssemblyTypeName: OptionsHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: OptionsScreen, Assembly-CSharp
         m_MethodName: SetVibrationMedium
         m_Mode: 1
         m_Arguments:
@@ -175039,7 +175046,7 @@ GameObject:
   - component: {fileID: 1652869305}
   - component: {fileID: 1652869304}
   m_Layer: 0
-  m_Name: PopupAddBotCancleButton
+  m_Name: PopupAddBotCancelButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -176992,7 +176999,7 @@ MonoBehaviour:
           m_BoolArgument: 0
         m_CallState: 2
       - m_Target: {fileID: 2147002963}
-        m_TargetAssemblyTypeName: SetupHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: SetupScreen, Assembly-CSharp
         m_MethodName: SetSetCount
         m_Mode: 3
         m_Arguments:
@@ -177332,7 +177339,7 @@ GameObject:
   - component: {fileID: 1675692535}
   - component: {fileID: 1675692534}
   m_Layer: 0
-  m_Name: PopupCancleGameSaveButton
+  m_Name: PopupCancelGameSaveButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -177467,7 +177474,7 @@ GameObject:
   - component: {fileID: 1677685140}
   - component: {fileID: 1677685141}
   m_Layer: 0
-  m_Name: PopupCancleGameHeadlineText
+  m_Name: PopupCancelGameHeadlineText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -178134,7 +178141,7 @@ MonoBehaviour:
           m_BoolArgument: 0
         m_CallState: 2
       - m_Target: {fileID: 2147002963}
-        m_TargetAssemblyTypeName: SetupHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: SetupScreen, Assembly-CSharp
         m_MethodName: SetLegCount
         m_Mode: 3
         m_Arguments:
@@ -178275,7 +178282,7 @@ GameObject:
   - component: {fileID: 1687283240}
   - component: {fileID: 1687283241}
   m_Layer: 0
-  m_Name: TitelText
+  m_Name: TitleText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -179387,7 +179394,7 @@ MonoBehaviour:
           m_BoolArgument: 0
         m_CallState: 2
       - m_Target: {fileID: 2147002963}
-        m_TargetAssemblyTypeName: SetupHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: SetupScreen, Assembly-CSharp
         m_MethodName: SetLegCount
         m_Mode: 3
         m_Arguments:
@@ -180285,7 +180292,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 1167347519}
-        m_TargetAssemblyTypeName: StatisticsHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: StatisticsScreen, Assembly-CSharp
         m_MethodName: UnselectAll
         m_Mode: 1
         m_Arguments:
@@ -180969,7 +180976,7 @@ GameObject:
   - component: {fileID: 1707172229}
   - component: {fileID: 1707172228}
   m_Layer: 0
-  m_Name: TitelText
+  m_Name: TitleText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -183343,7 +183350,7 @@ MonoBehaviour:
           m_BoolArgument: 0
         m_CallState: 2
       - m_Target: {fileID: 2147002963}
-        m_TargetAssemblyTypeName: SetupHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: SetupScreen, Assembly-CSharp
         m_MethodName: X01SetCheckinTypeStraightIn
         m_Mode: 1
         m_Arguments:
@@ -185093,7 +185100,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 1124065835}
-        m_TargetAssemblyTypeName: AboutHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: AboutScreen, Assembly-CSharp
         m_MethodName: OpenKoFi
         m_Mode: 1
         m_Arguments:
@@ -185347,7 +185354,7 @@ GameObject:
   - component: {fileID: 1739770903}
   - component: {fileID: 1739770904}
   m_Layer: 0
-  m_Name: PopupDeleteX01CancleButton
+  m_Name: PopupDeleteX01CancelButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -185418,7 +185425,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 246448185}
-        m_TargetAssemblyTypeName: HistoryHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: HistoryScreen, Assembly-CSharp
         m_MethodName: AbortDelete
         m_Mode: 1
         m_Arguments:
@@ -186346,7 +186353,7 @@ MonoBehaviour:
           m_BoolArgument: 0
         m_CallState: 2
       - m_Target: {fileID: 2147002963}
-        m_TargetAssemblyTypeName: SetupHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: SetupScreen, Assembly-CSharp
         m_MethodName: SetLegCount
         m_Mode: 3
         m_Arguments:
@@ -190877,7 +190884,7 @@ GameObject:
   - component: {fileID: 1788546991}
   - component: {fileID: 1788546992}
   m_Layer: 0
-  m_Name: TitelContainer
+  m_Name: TitleContainer
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -192286,7 +192293,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 457217085}
-        m_TargetAssemblyTypeName: ClipBrowser, Assembly-CSharp
+        m_TargetAssemblyTypeName: ClipBrowserScreen, Assembly-CSharp
         m_MethodName: ConfirmCut
         m_Mode: 1
         m_Arguments:
@@ -192949,7 +192956,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 1996913089}
-        m_TargetAssemblyTypeName: PlayerHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: PlayersScreen, Assembly-CSharp
         m_MethodName: CloseAddPopup
         m_Mode: 1
         m_Arguments:
@@ -195732,7 +195739,7 @@ MonoBehaviour:
           m_BoolArgument: 0
         m_CallState: 2
       - m_Target: {fileID: 2147002963}
-        m_TargetAssemblyTypeName: SetupHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: SetupScreen, Assembly-CSharp
         m_MethodName: SetLegCount
         m_Mode: 3
         m_Arguments:
@@ -196464,7 +196471,7 @@ GameObject:
   - component: {fileID: 1844997696}
   - component: {fileID: 1844997695}
   m_Layer: 0
-  m_Name: PopupCancleGameCancleButton
+  m_Name: PopupCancelGameCancelButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -196536,7 +196543,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 1818097487}
         m_TargetAssemblyTypeName: CricketGameEngine, Assembly-CSharp
-        m_MethodName: OnClickAbortCancle
+        m_MethodName: OnClickAbortCancel
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -197176,7 +197183,7 @@ MonoBehaviour:
           m_BoolArgument: 0
         m_CallState: 2
       - m_Target: {fileID: 2147002963}
-        m_TargetAssemblyTypeName: SetupHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: SetupScreen, Assembly-CSharp
         m_MethodName: ATCTargetSinglesTriples
         m_Mode: 1
         m_Arguments:
@@ -198897,7 +198904,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 457217085}
-        m_TargetAssemblyTypeName: ClipBrowser, Assembly-CSharp
+        m_TargetAssemblyTypeName: ClipBrowserScreen, Assembly-CSharp
         m_MethodName: CancelDelete
         m_Mode: 1
         m_Arguments:
@@ -199520,7 +199527,7 @@ MonoBehaviour:
           m_BoolArgument: 0
         m_CallState: 2
       - m_Target: {fileID: 2147002963}
-        m_TargetAssemblyTypeName: SetupHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: SetupScreen, Assembly-CSharp
         m_MethodName: SetLegCount
         m_Mode: 3
         m_Arguments:
@@ -200347,7 +200354,7 @@ MonoBehaviour:
           m_BoolArgument: 0
         m_CallState: 2
       - m_Target: {fileID: 2147002963}
-        m_TargetAssemblyTypeName: SetupHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: SetupScreen, Assembly-CSharp
         m_MethodName: SetSetCount
         m_Mode: 3
         m_Arguments:
@@ -201472,7 +201479,7 @@ GameObject:
   - component: {fileID: 1886731784}
   - component: {fileID: 1886731785}
   m_Layer: 0
-  m_Name: PopupCancleGameHeadlineText
+  m_Name: PopupCancelGameHeadlineText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -202134,7 +202141,7 @@ GameObject:
   - component: {fileID: 1895413625}
   - component: {fileID: 1895413624}
   m_Layer: 0
-  m_Name: CustomizationButtonIon
+  m_Name: CustomizationButtonIcon
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -203066,7 +203073,7 @@ GameObject:
   - component: {fileID: 1901605756}
   - component: {fileID: 1901605757}
   m_Layer: 0
-  m_Name: OptionsHandler
+  m_Name: OptionsScreen
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -203574,7 +203581,7 @@ MonoBehaviour:
           m_BoolArgument: 0
         m_CallState: 2
       - m_Target: {fileID: 2147002963}
-        m_TargetAssemblyTypeName: SetupHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: SetupScreen, Assembly-CSharp
         m_MethodName: SetSetCount
         m_Mode: 3
         m_Arguments:
@@ -204176,7 +204183,7 @@ GameObject:
   - component: {fileID: 1909733679}
   - component: {fileID: 1909733678}
   m_Layer: 0
-  m_Name: PopupDeletePlayerCancleButton
+  m_Name: PopupDeletePlayerCancelButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -205153,7 +205160,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 1996913089}
-        m_TargetAssemblyTypeName: PlayerHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: PlayersScreen, Assembly-CSharp
         m_MethodName: OpenAddPopup
         m_Mode: 1
         m_Arguments:
@@ -205605,7 +205612,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 2147002963}
-        m_TargetAssemblyTypeName: SetupHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: SetupScreen, Assembly-CSharp
         m_MethodName: OnClickAddBotConfirm
         m_Mode: 1
         m_Arguments:
@@ -206445,7 +206452,7 @@ MonoBehaviour:
           m_BoolArgument: 0
         m_CallState: 2
       - m_Target: {fileID: 2147002963}
-        m_TargetAssemblyTypeName: SetupHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: SetupScreen, Assembly-CSharp
         m_MethodName: SetSetsAndLegsModeBestOf
         m_Mode: 1
         m_Arguments:
@@ -206505,7 +206512,7 @@ GameObject:
   - component: {fileID: 1925016025}
   - component: {fileID: 1925016026}
   m_Layer: 0
-  m_Name: PopupDeleteCricketCancleButton
+  m_Name: PopupDeleteCricketCancelButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -206576,7 +206583,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 246448185}
-        m_TargetAssemblyTypeName: HistoryHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: HistoryScreen, Assembly-CSharp
         m_MethodName: AbortDelete
         m_Mode: 1
         m_Arguments:
@@ -206724,7 +206731,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 1901605756}
-        m_TargetAssemblyTypeName: OptionsHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: OptionsScreen, Assembly-CSharp
         m_MethodName: SetVibrationWeak
         m_Mode: 1
         m_Arguments:
@@ -210479,7 +210486,7 @@ GameObject:
   - component: {fileID: 1962743912}
   - component: {fileID: 1962743911}
   m_Layer: 0
-  m_Name: PopupHitDeleteCancleButton
+  m_Name: PopupHitDeleteCancelButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -211190,7 +211197,7 @@ MonoBehaviour:
           m_BoolArgument: 0
         m_CallState: 2
       - m_Target: {fileID: 2147002963}
-        m_TargetAssemblyTypeName: SetupHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: SetupScreen, Assembly-CSharp
         m_MethodName: ATCOrderRight
         m_Mode: 1
         m_Arguments:
@@ -211697,7 +211704,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 246448185}
-        m_TargetAssemblyTypeName: HistoryHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: HistoryScreen, Assembly-CSharp
         m_MethodName: AbortDelete
         m_Mode: 1
         m_Arguments:
@@ -212993,7 +213000,7 @@ MonoBehaviour:
           m_BoolArgument: 0
         m_CallState: 2
       - m_Target: {fileID: 2147002963}
-        m_TargetAssemblyTypeName: SetupHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: SetupScreen, Assembly-CSharp
         m_MethodName: SetLegCount
         m_Mode: 3
         m_Arguments:
@@ -213530,7 +213537,7 @@ GameObject:
   - component: {fileID: 1985806531}
   - component: {fileID: 1985806535}
   m_Layer: 0
-  m_Name: TitelText
+  m_Name: TitleText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -214584,7 +214591,7 @@ MonoBehaviour:
           m_BoolArgument: 0
         m_CallState: 2
       - m_Target: {fileID: 1167347519}
-        m_TargetAssemblyTypeName: StatisticsHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: StatisticsScreen, Assembly-CSharp
         m_MethodName: TimeWeek
         m_Mode: 1
         m_Arguments:
@@ -214798,7 +214805,7 @@ MonoBehaviour:
           m_BoolArgument: 0
         m_CallState: 2
       - m_Target: {fileID: 2147002963}
-        m_TargetAssemblyTypeName: SetupHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: SetupScreen, Assembly-CSharp
         m_MethodName: ATCOrderLeft
         m_Mode: 1
         m_Arguments:
@@ -215527,7 +215534,7 @@ GameObject:
   - component: {fileID: 1996913088}
   - component: {fileID: 1996913089}
   m_Layer: 0
-  m_Name: PlayerHandler
+  m_Name: PlayersScreen
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -215867,7 +215874,7 @@ GameObject:
   - component: {fileID: 1998008627}
   - component: {fileID: 1998008628}
   m_Layer: 0
-  m_Name: TitelContainer
+  m_Name: TitleContainer
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -216799,7 +216806,7 @@ GameObject:
   - component: {fileID: 2008644041}
   - component: {fileID: 2008644040}
   m_Layer: 0
-  m_Name: PopupCancleGameBackground
+  m_Name: PopupCancelGameBackground
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -221544,7 +221551,7 @@ GameObject:
   - component: {fileID: 2051809663}
   - component: {fileID: 2051809662}
   m_Layer: 0
-  m_Name: CircketModeHeadline
+  m_Name: CricketModeHeadline
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -222963,7 +222970,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 1901605756}
-        m_TargetAssemblyTypeName: OptionsHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: OptionsScreen, Assembly-CSharp
         m_MethodName: SetGreen
         m_Mode: 1
         m_Arguments:
@@ -223514,7 +223521,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 1167347519}
-        m_TargetAssemblyTypeName: StatisticsHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: StatisticsScreen, Assembly-CSharp
         m_MethodName: SetPlayers
         m_Mode: 1
         m_Arguments:
@@ -223803,7 +223810,7 @@ MonoBehaviour:
           m_BoolArgument: 0
         m_CallState: 2
       - m_Target: {fileID: 2147002963}
-        m_TargetAssemblyTypeName: SetupHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: SetupScreen, Assembly-CSharp
         m_MethodName: CricketPointsOn
         m_Mode: 1
         m_Arguments:
@@ -225098,7 +225105,7 @@ MonoBehaviour:
           m_BoolArgument: 0
         m_CallState: 2
       - m_Target: {fileID: 2147002963}
-        m_TargetAssemblyTypeName: SetupHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: SetupScreen, Assembly-CSharp
         m_MethodName: SetSetCount
         m_Mode: 3
         m_Arguments:
@@ -225321,7 +225328,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 1167347519}
-        m_TargetAssemblyTypeName: StatisticsHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: StatisticsScreen, Assembly-CSharp
         m_MethodName: SelectAll
         m_Mode: 1
         m_Arguments:
@@ -225973,7 +225980,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 1124065835}
-        m_TargetAssemblyTypeName: AboutHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: AboutScreen, Assembly-CSharp
         m_MethodName: OpenLicense
         m_Mode: 1
         m_Arguments:
@@ -226299,7 +226306,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 457217085}
-        m_TargetAssemblyTypeName: ClipBrowser, Assembly-CSharp
+        m_TargetAssemblyTypeName: ClipBrowserScreen, Assembly-CSharp
         m_MethodName: DeleteCurrentClip
         m_Mode: 1
         m_Arguments:
@@ -231831,7 +231838,7 @@ GameObject:
   - component: {fileID: 2144833655}
   - component: {fileID: 2144833658}
   m_Layer: 0
-  m_Name: PopupCancleGameExplanationText
+  m_Name: PopupCancelGameExplanationText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -232254,7 +232261,7 @@ GameObject:
   - component: {fileID: 2147002965}
   - component: {fileID: 2147002966}
   m_Layer: 0
-  m_Name: SetupHandler
+  m_Name: SetupScreen
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -233843,7 +233850,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 1901605756}
-        m_TargetAssemblyTypeName: OptionsHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: OptionsScreen, Assembly-CSharp
         m_MethodName: SetPink
         m_Mode: 1
         m_Arguments:
@@ -234221,7 +234228,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 1901605756}
-        m_TargetAssemblyTypeName: OptionsHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: OptionsScreen, Assembly-CSharp
         m_MethodName: SetTeal
         m_Mode: 1
         m_Arguments:
@@ -234548,7 +234555,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 1901605756}
-        m_TargetAssemblyTypeName: OptionsHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: OptionsScreen, Assembly-CSharp
         m_MethodName: SetIndigo
         m_Mode: 1
         m_Arguments:
@@ -234906,7 +234913,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 1901605756}
-        m_TargetAssemblyTypeName: OptionsHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: OptionsScreen, Assembly-CSharp
         m_MethodName: SetBlueGrey
         m_Mode: 1
         m_Arguments:
@@ -235253,7 +235260,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 1901605756}
-        m_TargetAssemblyTypeName: OptionsHandler, Assembly-CSharp
+        m_TargetAssemblyTypeName: OptionsScreen, Assembly-CSharp
         m_MethodName: SetDeepOrange
         m_Mode: 1
         m_Arguments:

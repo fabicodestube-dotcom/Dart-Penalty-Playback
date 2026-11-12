@@ -8,14 +8,14 @@ public enum SwitchBindingType
     VibrationEnabled,
 
     /// <summary>
-    /// Eingebaute Clips als Fallback verwenden. NEU — immer am Ende anhängen:
-    /// Unity serialisiert Enums als int, ein Einfügen in der Mitte würde die
-    /// bestehenden bindingType-Werte in der Szene verschieben.
+    /// Use built-in clips as fallback. NEW — always attach to the end:
+    /// Unity serializes enums as int, so an insertion in the middle would then
+    /// Move existing bindingType values in the scene.
     /// </summary>
     UseDefaultClipsAsFallback,
 
     /// <summary>
-    /// Dark-Modus (true = Dark, false = Light). NEU — immer am Ende anhängen.
+    /// Dark mode (true = dark, false = light). NEW — always attach to the end.
     /// </summary>
     DarkMode
 }
@@ -24,11 +24,11 @@ public class UISwitchBinder : MonoBehaviour
 {
     public UISwitch uiSwitch;
     public SwitchBindingType bindingType;
-    public List<CanvasGroup> groupsToEnableOnTrue; // Optionale Gruppen, die bei true aktiviert und bei false deaktiviert werden
+    public List<CanvasGroup> groupsToEnableOnTrue; // Optional groups that are activated at true and deactivated at false
 
-    private OptionsHandler options;
+    private OptionsScreen options;
 
-    public void Initialize(OptionsHandler optionsHandler)
+    public void Initialize(OptionsScreen optionsHandler)
     {
         options = optionsHandler;
 
@@ -52,7 +52,7 @@ public class UISwitchBinder : MonoBehaviour
                 value = AppSettingsManager.Instance.Settings.Sound.UseCustomSounds;
                 break;
 
-            case SwitchBindingType.VibrationEnabled: // NEU
+            case SwitchBindingType.VibrationEnabled: // NEW
                 value = AppSettingsManager.Instance.Settings.Vibration.Enabled;
                 break;
 
@@ -82,7 +82,7 @@ public class UISwitchBinder : MonoBehaviour
                 options.SetCustomSound(value);
                 break;
 
-            case SwitchBindingType.VibrationEnabled: // NEU
+            case SwitchBindingType.VibrationEnabled: // NEW
                 options.SetVibration(value);
                 break;
 

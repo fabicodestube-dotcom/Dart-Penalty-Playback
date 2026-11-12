@@ -35,10 +35,10 @@ public class SwipeMenuTopBar : MonoBehaviour
 
     private System.Collections.IEnumerator WaitForThemeAndApply()
     {
-        // wartet bis ThemeManager existiert UND ready ist
+        // wait until ThemeManager exists AND ready
         while (ThemeManager.Instance == null || !ThemeManager.Instance.IsReady)
         {
-            yield return null; // wartet 1 Frame
+            yield return null; // waits 1 frame
         }
 
         SetActive(currentActiveIndex);

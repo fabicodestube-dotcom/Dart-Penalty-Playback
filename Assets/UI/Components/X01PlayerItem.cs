@@ -17,20 +17,20 @@ public class X01PlayerItem : MonoBehaviour
     public List<Image> imagesDarts;
 
     [Header("Glow Animation Setup")]
-    public Image glowFrameImage;          // Das innere Image (das du per Code färbst)
-    public BorderGlowAnimator glowAnimator; // Referenz auf den Animator am Glow-Image
+    public Image glowFrameImage;          // The inner image (which you color by code)
+    public BorderGlowAnimator glowAnimator; // Reference to the animator on the Glow image
 
     private static readonly Color colorBlack = new Color(20f/255f, 20f/255f, 20f/255f);
     private static readonly Color colorRed = new Color(165f/255f, 42f/255f, 42f/255f);
 
     private void Awake()
     {
-        // Fallback: Animator am Glow-Image selbst finden, falls im Prefab nicht verdrahtet
+        // Fallback: Find animator on the Glow image itself if not wired in the prefab
         if (glowAnimator == null && glowFrameImage != null)
             glowAnimator = glowFrameImage.GetComponent<BorderGlowAnimator>();
 
-        // Reine Anzeige-Texte: aus dem Touch-Raycast nehmen (Klicks laufen
-        // über die Button-Grafik des Items, nicht über einzelne Texte).
+        // Pure display texts: take from the touch raycast (run clicks)
+        // about the button graphic of the item, not about individual texts.
         foreach (var text in GetComponentsInChildren<TMP_Text>(true))
             text.raycastTarget = false;
     }
@@ -39,7 +39,7 @@ public class X01PlayerItem : MonoBehaviour
     {
         highlightPanel.gameObject.SetActive(stats.isActive);
 
-        // --- Glow nur beim aktiven Spieler, gesteuert über den Animator ---
+        // --- Glow only with the active player, controlled by the animator ---
         if (stats.isActive)
         {
             if (glowFrameImage != null)

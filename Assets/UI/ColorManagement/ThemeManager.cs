@@ -72,7 +72,7 @@ public class ThemeManager : MonoBehaviour
     {
         if (!_map.TryGetValue((scheme, mode), out var theme))
         {
-            // Fallback: gleiche Scheme, anderer Mode, dann beliebiger.
+            // Fallback: same scheme, different fashion, then any.
             if (!_map.TryGetValue((scheme, ThemeMode.Dark), out theme))
             {
                 foreach (var kv in _map)

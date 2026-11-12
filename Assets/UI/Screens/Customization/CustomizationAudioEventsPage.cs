@@ -4,17 +4,17 @@ using TMPro;
 using UnityEngine;
 
 /// <summary>
-/// Tab 3 des Customization-Screens: Audio-Events je Kategorie
-/// (Global/X01/Cricket/ATC). Einheitliche Rows (CustomizationListItem):
-/// Name, Clip-Anzahl/-Icon, Recorder, Edit, Delete, Toggle direkt in der
-/// Zeile. Seed-Events sind nicht löschbar (builtIn), aber enabled-/trigger-
-/// editierbar; Customs anlegen/editieren/löschen (mit Clip-Warnung). Dazu eine
-/// Score-Sammel-Row (0–180, gleiches Prefab, Toggle = Ansagen an/aus, nie
-/// löschbar), die das Score-Grid öffnet. Clips direkt über die Row.
+/// Tab 3 of the customization screen: audio events per category
+/// (Global/X01/Cricket/ATC). Uniform rows (CustomizationListItem):
+/// name, clip count/icon, recorder, edit, delete, toggle directly in the
+/// row. Seed events are not deletable (builtIn), but enabled/trigger-
+/// editable; create/edit/delete customs (with clip warning). Plus a
+/// score collection row (0–180, same prefab, toggle = announcements on/off, never
+/// deleted), which opens the score grid. Clips directly from the row.
 /// </summary>
 public class CustomizationAudioEventsPage : MonoBehaviour, ICustomizationRowOwner
 {
-    /// <summary>Pseudo-ID der Score-Sammel-Row (kein AudioEventDef).</summary>
+    /// <summary>Pseudo-ID of the Score-Collect-Row (no AudioEventDef ).</summary>
     public const string ScoreRowId = "__scores__";
 
     [Header("Control")]
@@ -41,10 +41,10 @@ public class CustomizationAudioEventsPage : MonoBehaviour, ICustomizationRowOwne
     private string pendingDeleteId;
 
     /// <summary>
-    /// Lebende Rows pro Event-ID (Parent-übergreifend). Refresh gleicht ab:
-    /// Einträge werden einmalig aufgebaut und danach nur aktualisiert,
-    /// Customs erscheinen im selben Frame wie der Save. Kein Flackern,
-    /// kein verzögertes Auffüllen.
+    /// Live rows per event ID (cross-parent).
+    /// Entries are built once and then only updated,
+    /// Customs appear in the same frame as the save.
+    /// No delayed filling.
     /// </summary>
     private readonly Dictionary<string, CustomizationListItem> rowsById =
         new Dictionary<string, CustomizationListItem>();
@@ -72,9 +72,9 @@ public class CustomizationAudioEventsPage : MonoBehaviour, ICustomizationRowOwne
         var wanted = new HashSet<string>();
         var siblingByParent = new Dictionary<Transform, int>();
 
-        // Store-Defs (Seeds + Customs): Built-in-Seeds sind nicht löschbar,
-        // user-ähnliche Seeds schon; beide werden normal angezeigt, editiert
-        // und von der Engine ausgewertet.
+        // Store defs (seeds + customs): Built-in seeds are not erasable,
+        // user-like seeds already; both are displayed normally, edited
+        // And it's evaluated by the engine.
         var defs = CustomizationStore.GetAudioEvents();
         if (defs != null)
         {
@@ -97,7 +97,7 @@ public class CustomizationAudioEventsPage : MonoBehaviour, ICustomizationRowOwne
             }
         }
 
-        // Fallback für leeren Store (sollte nach Seeding nicht vorkommen).
+        // Fallback for empty store (should not occur after seeding).
         if (wanted.Count == 0)
         {
             foreach (var def in AudioEventCatalog.BuildBuiltIns()
@@ -119,11 +119,11 @@ public class CustomizationAudioEventsPage : MonoBehaviour, ICustomizationRowOwne
             }
         }
 
-        // Score-Sammel-Row (Sonderregelung 0–180) in Global.
-        // UpsertScoreRow(wanted); — entfernt, da Score-Ansagen nur über
-        // das separate Score-Grid erreichbar sein sollen, nicht in der Global-Liste.
+        // Score summary row (special rule 0–180) in Global.
+        // UpsertScoreRow(wanted); — removed, since score announcements are only handled via
+        // the separate score grid, not in the Global list.
 
-        // Verschwundene Rows entfernen.
+        // Remove missing rows.
         var gone = new List<string>();
         foreach (var kvp in rowsById)
         {
@@ -139,9 +139,9 @@ public class CustomizationAudioEventsPage : MonoBehaviour, ICustomizationRowOwne
     }
 
     /// <summary>
-    /// Score-Sammel-Row (0–180, gleiches Prefab): Toggle = Ansagen an/aus
-    /// (persistiert in den Sound-Settings), nie löschbar. Edit + Recorder
-    /// öffnen das Score-Grid.
+    /// Score summary row (0–180, same prefab): toggle = announcements on/off
+    /// (persistent in the sound settings), never erasable. edit + recorder
+    /// Open the score grid.
     /// </summary>
     private void UpsertScoreRow(HashSet<string> wanted)
     {
@@ -181,8 +181,8 @@ public class CustomizationAudioEventsPage : MonoBehaviour, ICustomizationRowOwne
     }
 
     /// <summary>
-    /// Legt die Row an (sofort sichtbar) oder aktualisiert sie.
-    /// Gibt false zurück, wenn nichts zu tun war (null/ohne ID).
+    /// Create the row (immediately visible) or update it.
+    /// Returns false if nothing was to be done (null/without ID).
     /// </summary>
     private bool UpsertRow(AudioEventDef def, bool deletable, HashSet<string> wanted)
     {
@@ -212,7 +212,7 @@ public class CustomizationAudioEventsPage : MonoBehaviour, ICustomizationRowOwne
         }
         else
         {
-            // Kategorie kann sich geändert haben → umhängen.
+            // Category may have changed → reassigning.
             Transform parent = ParentFor(def.category);
             if (parent != null && row.transform.parent != parent)
                 row.transform.SetParent(parent, false);
@@ -234,14 +234,14 @@ public class CustomizationAudioEventsPage : MonoBehaviour, ICustomizationRowOwne
         };
     }
 
-    /// <summary>Neu-Button (Single-Einstieg, Szene): Kategorie wählt man im Popup.</summary>
+    /// <summary>New button (Single entry, scene): Category to choose in popup.</summary>
     public void OnClickNewAudioEvent()
     {
         if (editor != null)
             editor.ShowNew(this);
     }
 
-    /// <summary>Neu-Buttons mit Kategorie-Vorbelegung (OnClick mit int: 1=X01, 2=Cricket, 3=ATC).</summary>
+    /// <summary>New buttons with category pre-assignment (OnClick with int: 1=X01, 2=Cricket, 3=ATC).</summary>
     public void OnClickNewAudioEvent(int categoryIndex)
     {
         var category = (AudioEventCategory)Mathf.Clamp(categoryIndex, 1, 3);
@@ -265,7 +265,7 @@ public class CustomizationAudioEventsPage : MonoBehaviour, ICustomizationRowOwne
             editor.ShowEdit(this, id);
     }
 
-    // ---- ICustomizationRowOwner (einheitliches Listen-Item) ----
+    // ---- ICustomizationRowOwner (uniform list item) ----
 
     public void OnRowEdit(string id) => OnClickEditAudioEvent(id);
 
@@ -293,8 +293,8 @@ public class CustomizationAudioEventsPage : MonoBehaviour, ICustomizationRowOwne
     }
 
     /// <summary>
-    /// Toggle direkt in der Zeile: Score-Row → Sound-Setting, sonst
-    /// enabled speichern (Changed → Refresh).
+    /// Toggle right in line: Score-Row → Sound-Setting, otherwise
+    /// Save enabled (Changed → Refresh).
     /// </summary>
     public void OnRowToggle(string id, bool enabled)
     {
@@ -309,7 +309,7 @@ public class CustomizationAudioEventsPage : MonoBehaviour, ICustomizationRowOwne
 
             AppSettingsManager.Instance.SetScoreAnnouncementsEnabled(enabled);
 
-            // Direkt-Refresh (Toggle-Stand sofort sichtbar).
+            // Direct refresh (toggle state immediately visible).
             Refresh();
             return;
         }
@@ -321,11 +321,11 @@ public class CustomizationAudioEventsPage : MonoBehaviour, ICustomizationRowOwne
         def.enabled = enabled;
         CustomizationStore.SaveAudioEvent(def);
 
-        // Direkt-Refresh (sofort sichtbar; Changed-Event aktualisiert ggf. zusätzlich).
+        // Direct refresh (immediately visible; changed event updated if necessary).
         Refresh();
     }
 
-    /// <summary>Clip-Button einer Event-Row: Score-Row → Grid, sonst Browser für die ID.</summary>
+    /// <summary>Clip button of an event row: Score-Row → Grid, otherwise browser for the ID.</summary>
     public void OnClickOpenClips(string id, string labelOverride = null)
     {
         if (string.IsNullOrEmpty(id))
@@ -350,7 +350,7 @@ public class CustomizationAudioEventsPage : MonoBehaviour, ICustomizationRowOwne
         clipNav.OpenCustomClips(id, label);
     }
 
-    /// <summary>Clip-Anzahl für den Row-Indikator (Score-Row: Summe 0–180).</summary>
+    /// <summary>Clip number for the row indicator (score row: sum 0–180).</summary>
     public int GetClipCount(string id)
     {
         if (string.IsNullOrEmpty(id) || AudioLibrary.Instance == null)
@@ -422,7 +422,7 @@ public class CustomizationAudioEventsPage : MonoBehaviour, ICustomizationRowOwne
         if (windowHandler != null)
             windowHandler.HidePopup();
 
-        // Direkt-Refresh (sofort sichtbar; siehe PenaltiesPage).
+        // Direct refresh (immediately visible; see PenaltiesPage).
         Refresh();
     }
 

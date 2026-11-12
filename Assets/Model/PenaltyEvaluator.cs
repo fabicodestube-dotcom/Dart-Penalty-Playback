@@ -3,12 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 
 /// <summary>
-/// Wertet CustomPenaltyDef-Bedingungen aus (rein, testbar, keine Unity-Abhängigkeit).
-/// Built-in-Typen (Enum) laufen weiter über die bestehenden Checks.
+/// Evaluates CustomPenaltyDef conditions (pure, testable, no Unity dependency).
+/// Built-in types (enum) continue to run over the existing checks.
 /// </summary>
 public static class PenaltyEvaluator
 {
-    /// <summary>Instant-Prüfung eines einzelnen Wurfs (nur HitTypeMiss sinnvoll).</summary>
+    /// <summary>Instant check of a single litter (only HitTypeMiss useful).</summary>
     public static bool MatchesInstant(PenaltyCondition condition, Throw throwItem)
     {
         if (condition == null || throwItem == null)
@@ -18,8 +18,8 @@ public static class PenaltyEvaluator
             || throwItem.HitType != condition.hitType)
             return false;
 
-        // Custom-Sektor: leere customHitId = jeder Custom-Sektor (analog
-        // zu den TurnPattern-Slots).
+        // Custom sector: empty customHitId = any custom sector (analogous
+        // to the TurnPattern slots.
         if (condition.hitType == HitType.Custom
             && !string.IsNullOrEmpty(condition.customHitId))
         {
@@ -30,7 +30,7 @@ public static class PenaltyEvaluator
         return true;
     }
 
-    /// <summary>Turn-Ende-Prüfung (ExactScore, RepdigitScore, TurnPattern).</summary>
+    /// <summary>Turn-end check (ExactScore, RepdigitScore, TurnPattern).</summary>
     public static bool MatchesTurn(PenaltyCondition condition, List<Throw> throws, int turnScore)
     {
         if (condition == null || throws == null)
@@ -53,7 +53,7 @@ public static class PenaltyEvaluator
         }
     }
 
-    /// <summary>Gibt true zurück, wenn JEDE der Bedingungen zutrifft (OR-Logik).</summary>
+    /// <summary>Returns true if EVERY of the terms apply (OR logic).</summary>
     public static bool MatchesAnyTurn(List<PenaltyCondition> conditions, List<Throw> throws, int turnScore)
     {
         if (conditions == null || throws == null)
@@ -70,7 +70,7 @@ public static class PenaltyEvaluator
         return false;
     }
 
-    /// <summary>Gibt true zurück, wenn JEDE der Rest-Bedingungen zutrifft (OR-Logik).</summary>
+    /// <summary>Returns true if EVERY of the rest conditions applies (OR logic).</summary>
     public static bool MatchesAnyRemaining(List<PenaltyCondition> conditions, int beforeTotal, int afterTotal)
     {
         if (conditions == null)
@@ -87,7 +87,7 @@ public static class PenaltyEvaluator
         return false;
     }
 
-    /// <summary>Gibt true zurück, wenn JEDE der Instant-Bedingungen zutrifft (OR-Logik).</summary>
+    /// <summary>Returns true if EVERY of the instant conditions applies (OR logic).</summary>
     public static bool MatchesAnyInstant(List<PenaltyCondition> conditions, Throw throwItem)
     {
         if (conditions == null || throwItem == null)
@@ -105,16 +105,16 @@ public static class PenaltyEvaluator
     }
 
     /// <summary>
-    /// Pattern-Match über die Würfe eines Turns.
+    /// Pattern match about the throws of a turn.
     ///
-    /// matchOrder = true  → geordnet: die Slots müssen in dieser Reihenfolge
-    ///                      im Turn vorkommen.
-    /// matchOrder = false → ungeordnet: die Slots müssen im Turn vorkommen,
-    ///                      die Reihenfolge ist egal.
+    /// matchOrder = true → ordered: the slots must be in this order
+    /// occurring in the turn.
+    /// matchOrder = false → disordered: the slots must occur in the turn,
+    /// The order does not matter.
     ///
-    /// In beiden Fällen sind zusätzliche Würfe im Turn erlaubt; das Pattern
-    /// darf nur nicht mehr Slots als der Turn Würfe haben.
-    /// Einheitlich für Custom-Penalties und Custom-Audio-Events.
+    /// In both cases, additional throws in the turn are allowed; the pattern
+    /// Just don’t have more slots than the turn throws.
+    /// Uniform for custom penalties and custom audio events.
     /// </summary>
     public static bool MatchesPattern(List<TurnPatternEntry> pattern, List<Throw> throws, bool matchOrder)
     {
@@ -184,8 +184,8 @@ public static class PenaltyEvaluator
         if (!slot.anyHitType && !slot.anyMissHitType && throwItem.HitType != slot.hitType)
             return false;
 
-        // Custom-Sektor (Tab 1 „Bereiche“): Wurf muss Custom sein, ggf. mit
-        // gleicher Sektor-ID. Leere customHitId = jeder Custom-Sektor.
+        // Custom sector (Tab 1 “Areas”): Throw must be custom, if necessary with
+        // same sector ID. Empty customHitId = any custom sector.
         if (!slot.anyHitType && !slot.anyMissHitType && slot.hitType == HitType.Custom)
         {
             if (throwItem.HitType != HitType.Custom)
@@ -203,9 +203,9 @@ public static class PenaltyEvaluator
     }
 
     /// <summary>
-    /// Rest-Prüfung (RemainingExactScore): feuert nur bei neu erreichtem
-    /// Total (afterTotal != beforeTotal) — analog der früheren
-    /// Schnapszahl-Übergangsregel. RepdigitScore bleibt turn-basiert.
+    /// Rest check (RemainingExactScore): fires only when newly reached
+    /// Total (afterTotal!=beforeTotal) — analogous to the previous
+    /// Booze Number Transition Rule. RepdigitScore remains turn-based.
     /// </summary>
     public static bool MatchesRemaining(PenaltyCondition condition, int beforeTotal, int afterTotal)
     {
@@ -218,7 +218,7 @@ public static class PenaltyEvaluator
         return afterTotal == condition.score && afterTotal != beforeTotal;
     }
 
-    /// <summary>Repdigit wie X01-IsSchnapszahl (alle Ziffern gleich).</summary>
+    /// <summary>Repdigit like X01- IsSchnapszahl (all digits the same).</summary>
     public static bool IsRepdigit(int value)
     {
         if (value < 0)

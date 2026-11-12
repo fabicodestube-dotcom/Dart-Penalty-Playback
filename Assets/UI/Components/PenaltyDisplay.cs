@@ -1,9 +1,9 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
 /// <summary>
-/// Anzeige-Texte für Penalty-Bedingungen (Seite 1) und Trigger (Seite 2).
+/// Display texts for penalty conditions (page 1) and triggers (page 2).
 /// </summary>
 public static class PenaltyDisplay
 {
@@ -50,7 +50,7 @@ public static class PenaltyDisplay
         }
     }
 
-    /// <summary>Fasst alle Bedingungen eines Penalties zu einer Anzeige zusammen.</summary>
+    /// <summary>Summarizes all terms of a penalty into an advertisement.</summary>
     public static string SummarizeConditions(List<PenaltyCondition> conditions)
     {
         if (conditions == null || conditions.Count == 0)
@@ -63,7 +63,7 @@ public static class PenaltyDisplay
         return string.Join("; ", parts);
     }
 
-    /// <summary>Fasst alle Trigger eines Audio-Events zu einer Anzeige zusammen.</summary>
+    /// <summary>Summarizes all triggers of an audio event into one ad.</summary>
     public static string SummarizeTriggers(List<AudioEventTrigger> triggers)
     {
         if (triggers == null || triggers.Count == 0)
@@ -102,7 +102,7 @@ public static class PenaltyDisplay
         return string.Join("; ", parts);
     }
 
-    /// <summary>Sektor-Name aus Tab 1 (Fallback: Kurz-ID).</summary>
+    /// <summary>Sector name from Tab 1 (fallback: short ID).</summary>
     public static string SectorName(string sectorId)
     {
         if (string.IsNullOrEmpty(sectorId))
@@ -121,7 +121,7 @@ public static class PenaltyDisplay
         }
         catch (System.Exception)
         {
-            // Store/DB nicht bereit -> Fallback unten
+            // Store/DB not ready -> Fallback below
         }
 
         string shortId = sectorId.Length > 6 ? sectorId.Substring(0, 6) : sectorId;
@@ -215,8 +215,8 @@ public static class PenaltyDisplay
     }
 
     /// <summary>
-    /// Kurze Spaltenüberschrift für ein Custom-Penalty (fixe Breite!).
-    /// shortName wenn gesetzt, sonst Name auf ~12 Zeichen gekürzt.
+    /// Short column heading for a custom penalty (fixed width!).
+    /// shortName if set, otherwise name shortened to ~12 characters.
     /// </summary>
     public static string ShortLabel(CustomPenaltyDef def)
     {
@@ -229,7 +229,7 @@ public static class PenaltyDisplay
         return Truncate(def.name, 12);
     }
 
-    /// <summary>Kurze Überschriften der 6 Legacy-Spalten (statt Icons).</summary>
+    /// <summary>Short headlines of the 6 Legacy columns (instead of icons).</summary>
     public static string ShortLabel(PenaltyType type)
     {
         return type switch
@@ -253,8 +253,8 @@ public static class PenaltyDisplay
     }
 
     /// <summary>
-    /// Kompaktzeile für History-Rows: Top-N Customs als "Name ×n", Rest als
-    /// "+k weitere". Leer wenn keine Customs. Daten aus Snapshot-Resolve.
+    /// Compact line for history rows: Top-N Customs as "Name ×n", rest as
+    /// "+k more." Empty if no custom. Data from snapshot resolve.
     /// </summary>
     public static string CompactCustomSummary(GameSummary summary, System.Guid playerId, int topN = 3)
     {
@@ -276,10 +276,10 @@ public static class PenaltyDisplay
         return text;
     }
 
-    /// <summary>Stabile Spalten-ID für Legacy-Typen (z.B. "legacy:Wall").</summary>
+    /// <summary>Stable column ID for legacy types (e.g. "legacy:Wall").</summary>
     public static string LegacyColumnId(PenaltyType type) => "legacy:" + type;
 
-    /// <summary>True, wenn die Spalten-ID ein Legacy-Typ ist.</summary>
+    /// <summary>True if the column ID is a legacy type.</summary>
     public static bool TryParseLegacyColumnId(string columnId, out PenaltyType type)
     {
         type = default;
@@ -317,7 +317,7 @@ public static class PenaltyDisplay
         };
     }
 
-    /// <summary>Gesamt-Anzahl kassierter Penalties (Legacy + Customs).</summary>
+    /// <summary>Total number of incurred penalties (legacy + custom).</summary>
     public static int TotalPenaltyCount(GameStats stats)
     {
         if (stats == null)
@@ -338,7 +338,7 @@ public static class PenaltyDisplay
         return total;
     }
 
-    /// <summary>Gesamt-Anzahl kassierter Penalties aus einem Summary-Eintrag.</summary>
+    /// <summary>Total number of penalties collected from a summary entry.</summary>
     public static int TotalPenaltyCount(PlayerSummaryEntry entry)
     {
         if (entry == null)
@@ -360,10 +360,10 @@ public static class PenaltyDisplay
     }
 
     /// <summary>
-    /// Verhängte Summe EINES Spielers: Legacy-Counts × Settings-Kosten plus
-    /// Custom-Counts × Snapshot-Kosten. Deckt ein Snapshot-Custom Wall oder
-    /// Ceiling ab (Suppression), zählt der Legacy-Typ nicht extra mit.
-    /// Rein snapshot-basiert — überlebt Löschen/Ändern der Def.
+    /// A Player's Total Charged: Legacy Counts × Settings Costs Plus
+    /// Custom Counts × Snapshot Cost. Covers a Snapshot Custom Wall or
+    /// Ceiling off (suppression), the legacy type does not count extra.
+    /// Purely snapshot-based — survives deletion/change of the Def.
     /// </summary>
     public static float PlayerImposedTotal(
         GameSummary summary, PlayerSummaryEntry entry, GameSettings settings)
@@ -409,8 +409,8 @@ public static class PenaltyDisplay
     }
 
     /// <summary>
-    /// True, wenn der Snapshot ein aktiviertes Sofort-Custom für diesen
-    /// Fehlwurf enthält (dann läuft alles über das Custom, Legacy schweigt).
+    /// True, if the snapshot has an activated instant custom for this
+    /// Mistake (then everything runs over the custom, Legacy is silent).
     /// </summary>
     public static bool SnapshotCoversHitType(GameSummary summary, HitType hitType)
     {
@@ -430,7 +430,7 @@ public static class PenaltyDisplay
         return false;
     }
 
-    /// <summary>Eine Custom-Zeile mit aufgelöstem Namen (für Popups/Tabellen).</summary>
+    /// <summary>A custom line with a resolved name (for popups/tables).</summary>
     public struct CustomCountEntry
     {
         public string Id;
@@ -440,9 +440,9 @@ public static class PenaltyDisplay
     }
 
     /// <summary>
-    /// Custom-Counts eines Entries mit Snapshot-Namen, sortiert nach
-    /// Zeilensumme ( relevanteste zuerst), dann Name. Nur Counts > 0.
-    /// Unbekannte IDs erscheinen mit ID als Name und Kosten 0.
+    /// Custom counts of an entry with snapshot names, sorted by
+    /// Line sum (most relevant first), then name. Counts > 0 only.
+    /// Unknown IDs appear with ID as name and cost 0.
     /// </summary>
     public static List<CustomCountEntry> OrderedCustomEntries(GameSummary summary, PlayerSummaryEntry entry)
     {
@@ -484,9 +484,9 @@ public static class PenaltyDisplay
     }
 
     /// <summary>
-    /// Löst die Custom-Counts eines Spielers gegen den Spiel-Snapshot auf.
-    /// Ausschließlich Snapshot-Daten (delete-/rename-sicher); unbekannte IDs
-    /// erscheinen mit ID als Name und Trigger "-".
+    /// Reverses a player's custom counts against the game snapshot.
+    /// Only snapshot data (delete/rename-safe); unknown IDs
+    /// appear with ID as name and trigger "-".
     /// </summary>
     public static List<CustomPenaltyDisplayEntry> ResolveCustomEntries(GameSummary summary, System.Guid playerId)
     {
@@ -524,7 +524,7 @@ public static class PenaltyDisplay
     }
 
     /// <summary>
-    /// Alle im Spiel aktiven Custom-Defs (für Snapshot-Tabellen wie GameDetail).
+    /// All custom defs active in the game (for snapshot tables like GameDetail).
     /// </summary>
     public static List<CustomPenaltyDisplayEntry> ResolveSnapshotDefs(GameSummary summary)
     {

@@ -5,7 +5,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class SetupHandler : MonoBehaviour, IUIScreen
+public class SetupScreen : MonoBehaviour, IUIScreen
 {   
     [Header("Control")]
     public AppHandler appHandler;
@@ -198,8 +198,8 @@ public class SetupHandler : MonoBehaviour, IUIScreen
     {
         setsAndLegsMode = appHandler.GetSetsAndLegsMode();
         setsAndLegsLabel.text = setsAndLegsMode.ToDescription();
-        setCount = Mathf.Max(1, appHandler.GetSetCount()); // Default 1, falls ungültig
-        legCount = Mathf.Max(1, appHandler.GetLegCount()); // Default 1, falls ungültig
+        setCount = Mathf.Max(1, appHandler.GetSetCount()); // Default 1 if invalid
+        legCount = Mathf.Max(1, appHandler.GetLegCount()); // Default 1 if invalid
         setCountLabel.text = setCount.ToString();
         legCountLabel.text = legCount.ToString();
         setsScrollView.ShowEvenButtons(setsAndLegsMode != SetsAndLegs.BestOf);
@@ -382,7 +382,7 @@ public class SetupHandler : MonoBehaviour, IUIScreen
     {
         setsAndLegsMode = SetsAndLegs.FirstTo;
         setsAndLegsLabel.text = setsAndLegsMode.ToDescription();
-        // Bei FirstTo auch gerade Werte erlauben
+        // At FirstTo also allow values
         setsScrollView.ShowEvenButtons(true);
         legsScrollView.ShowEvenButtons(true);
         appHandler.SetSetupState(appHandler.GetLastGameMode(), setsAndLegsMode, setCount, legCount);
@@ -392,7 +392,7 @@ public class SetupHandler : MonoBehaviour, IUIScreen
     {
         setsAndLegsMode = SetsAndLegs.BestOf;
         setsAndLegsLabel.text = setsAndLegsMode.ToDescription();
-        // Bei BestOf nur ungerade Werte erlauben
+        // Allow only odd values at BestOf
         if (setCount % 2 == 0)
             SetSetCount(setCount - 1);
         if (legCount % 2 == 0)
@@ -609,24 +609,24 @@ public class SetupHandler : MonoBehaviour, IUIScreen
     // =========================
 
     /// <summary>
-    /// Wechselt einen Spieler zwischen Active und Reserve.
+    /// Switch a player between Active and Reserve.
     /// </summary>
     public void TogglePlayerBetweenLists(Guid playerID)
     {
-        // Hole aktuelle Listen
+        // Fetch current lists
         List<Guid> activeIDs = new List<Guid>(appHandler.GetActivePlayers().Select(p => p.GetID()));
         List<Guid> reserveIDs = new List<Guid>(appHandler.GetReservePlayers().Select(p => p.GetID()));
 
-        // Prüfe, in welcher Liste der Spieler ist
+        // Check which list of players is in
         if (activeIDs.Contains(playerID))
         {
-            // Spieler ist in Active → in Reserve verschieben
+            // Player is in Active → Move to Reserve
             activeIDs.Remove(playerID);
             reserveIDs.Add(playerID);
         }
         else if (reserveIDs.Contains(playerID))
         {
-            // Spieler ist in Reserve → in Active verschieben
+            // Player is in Reserve → Move to Active
             reserveIDs.Remove(playerID);
             activeIDs.Add(playerID);
         }
@@ -636,10 +636,10 @@ public class SetupHandler : MonoBehaviour, IUIScreen
             return;
         }
 
-        // Speichere die neue Anordnung
+        // Save the new arrangement
         appHandler.SetPlayers(activeIDs, reserveIDs);
 
-        // Aktualisiere beide Listen
+        // Update both lists
         activeList.ShowPlayers();
         reserveList.ShowPlayers();
     }

@@ -46,8 +46,8 @@ public static class SqliteDatabaseService
 
     public static void EnsureSchema()
     {
-        // Einmal pro Prozess: Schema steht nach dem Boot-Gate. Alle
-        // Schema-Änderungen laufen ausschließlich über den MigrationRunner.
+        // Once per process: scheme is after the boot gate.
+        // Scheme changes are made exclusively via MigrationRunner.
         lock (schemaLock)
         {
             if (schemaEnsured)
@@ -96,8 +96,8 @@ public static class SqliteDatabaseService
             {
                 Debug.LogWarning("[SQLiteSettings] Failed to parse saved settings: " + e.Message);
 
-                // Defekten Rohwert quarantänen, statt ihn beim nächsten Save
-                // stillschweigend zu überschreiben.
+                // Quarantine defective raw value instead of it on the next save
+                // To be silently overwritten.
                 try
                 {
                     string quarantineKey = "app_settings_corrupt_" + DateTime.UtcNow.ToString("yyyyMMddHHmmss");
@@ -200,7 +200,7 @@ public static class SqliteDatabaseService
         connection.Execute("UPDATE throws SET is_target_hit = CASE WHEN COALESCE(target_value, 0) > 0 OR COALESCE(segment, 0) > 0 THEN 1 ELSE 0 END WHERE is_target_hit IS NULL OR is_target_hit = 0;");
     }
 
-    /// <summary>short_name-Spalte für Bestands-DBs nachrüsten.</summary>
+    /// <summary>2@@ -Re-fit column for existing DBs.</summary>
     private static void EnsurePenaltyShortName(SQLiteConnection connection)
     {
         var columns = connection.Query<ColumnInfo>("PRAGMA table_info(custom_penalties);");
@@ -211,7 +211,7 @@ public static class SqliteDatabaseService
             connection.Execute("ALTER TABLE custom_penalties ADD COLUMN short_name TEXT NOT NULL DEFAULT '';");
     }
 
-    /// <summary>enabled-Spalte für Bestands-DBs nachrüsten (Default an).</summary>
+    /// <summary>enabled-Column for existing DBs retrofit (default).</summary>
     private static void EnsureAudioEventEnabled(SQLiteConnection connection)
     {
         var columns = connection.Query<ColumnInfo>("PRAGMA table_info(audio_events);");
@@ -222,7 +222,7 @@ public static class SqliteDatabaseService
             connection.Execute("ALTER TABLE audio_events ADD COLUMN enabled INTEGER NOT NULL DEFAULT 1;");
     }
 
-    /// <summary>info-Spalten für Bestands-DBs nachrüsten (Customization-Rows).</summary>
+    /// <summary>info-columns for existing DBs retrofit (customization-rows).</summary>
     private static void EnsureCustomizationInfo(SQLiteConnection connection)
     {
         EnsureInfoColumn(connection, "custom_penalties");
@@ -240,7 +240,7 @@ public static class SqliteDatabaseService
             connection.Execute($"ALTER TABLE {table} ADD COLUMN info TEXT NOT NULL DEFAULT '';");
     }
 
-    /// <summary>value/multiplier-Spalten für Bestands-DBs nachrüsten.</summary>
+    /// <summary>value/multiplier columns for existing DBs.</summary>
     private static void EnsureCustomHitSectorValueMultiplier(SQLiteConnection connection)
     {
         var columns = connection.Query<ColumnInfo>("PRAGMA table_info(custom_hit_sectors);");
@@ -254,7 +254,7 @@ public static class SqliteDatabaseService
             connection.Execute("ALTER TABLE custom_hit_sectors ADD COLUMN multiplier INTEGER NOT NULL DEFAULT 0;");
     }
 
-    /// <summary>stats_schema_version-Spalte für Bestands-DBs nachrüsten.</summary>
+    /// <summary>2@@ -Re-fit column for existing DBs.</summary>
     private static void EnsureStatsSchemaVersion(SQLiteConnection connection)
     {
         var columns = connection.Query<ColumnInfo>("PRAGMA table_info(player_game_stats);");

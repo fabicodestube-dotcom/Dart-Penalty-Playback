@@ -3,18 +3,18 @@ using UnityEditor;
 using UnityEngine;
 
 /// <summary>
-/// Prüft die eingebauten Audio-Clips (Default-/Custom-Set) und ihre
-/// Verdrahtung im AudioLibrary der App-Szene.
+/// Checks the built-in audio clips (default/custom set) and their
+/// Wiring in the AudioLibrary of the app scene.
 ///
-/// - Beide Sets sind vollständig verdrahtet (keine "Missing"-Referenzen).
-/// - WillBePublished == false → das Custom-Set liefert die Fallback-Clips.
-/// - WillBePublished == true  → das Default-Set liefert die Fallback-Clips.
-/// - Die eingebauten Clips erscheinen NICHT in den Clip-Counts
-///   (sie sind kein User-Recording) — der Customization-Screen zeigt 0.
-/// - Die Option "Default-Clips als Fallback" schaltet den eingebauten
-///   Rückfall ab (nur eigene Aufnahmen, sonst stumm).
+/// - Both sets are fully wired (no "missing" references).
+/// - WillBePublished == false → the custom set delivers the fallback clips.
+/// - WillBePublished == true → the default set delivers the fallback clips.
+/// - The built-in clips do NOT appear in the clip counts
+/// (they are not user recording) — the customization screen shows 0.
+/// - The option "Default clips as fallback" switches the built-in
+/// fallback (only own recordings, otherwise mute).
 ///
-/// Menü: Darts/Tests/Audio Fallback.
+/// Menu: Darts/Tests/Audio Fallback.
 /// Batchmode: -executeMethod AudioLibraryFallbackTest.Run
 /// </summary>
 public static class AudioLibraryFallbackTest
@@ -58,7 +58,7 @@ public static class AudioLibraryFallbackTest
 
         try
         {
-            // ---------- Verdrahtung vollständig? ----------
+            // ---------- Wiring complete? ----------
             Check(lib.numberClips != null && lib.numberClips.Length == 181,
                 "default-score-clips-181", $"len={(lib.numberClips?.Length ?? -1)}");
             Check(lib.customNumberClips != null && lib.customNumberClips.Length == 181,
@@ -90,7 +90,7 @@ public static class AudioLibraryFallbackTest
             // ---------- WillBePublished == false → Custom-Set ----------
             lib.WillBePublished = false;
 
-            // Die drei user-ähnlichen X01-Events haben reine Custom-Set-Listen.
+            // The three user-like X01 events have pure custom set lists.
             lib.customBahClip = new List<AudioClip> { lib.numberClips[0] };
             lib.customThreeTwentiesClip = new List<AudioClip> { lib.numberClips[0] };
             lib.customThreeNineteensClip = new List<AudioClip> { lib.numberClips[0] };
@@ -118,7 +118,7 @@ public static class AudioLibraryFallbackTest
             Check(InList(lib.GetBuiltInClipForKey(SeededAudioEvents.ThreeTwentiesId), lib.customThreeTwentiesClip), "custom-set-3x20");
             Check(InList(lib.GetBuiltInClipForKey(SeededAudioEvents.ThreeNineteensId), lib.customThreeNineteensClip), "custom-set-3x19");
 
-            // Ohne eingebauten Clip: eigene Events/Sektoren bleiben stumm.
+            // Without built-in clip: own events / sectors remain mute.
             Check(lib.GetBuiltInClipForKey("eigene-event-id") == null, "custom-set-unknown-id-null");
             Check(lib.GetBuiltInClipForKey("builtin:wall") == null, "custom-set-sector-id-null");
 
@@ -147,15 +147,15 @@ public static class AudioLibraryFallbackTest
             Check(lib.GetBuiltInClipForKey(SeededAudioEvents.ThreeTwentiesId) == null, "default-set-3x20-null");
             Check(lib.GetBuiltInClipForKey(SeededAudioEvents.ThreeNineteensId) == null, "default-set-3x19-null");
 
-            // ---------- Eingebaute Clips erscheinen NICHT in den Counts ----------
+            // ---------- Built-in clips do NOT appear in the counts ----------
             Check(lib.GetCustomClipCount("custom_wall") == 0, "count-wall-0");
             Check(lib.GetCustomClipCount("menu_undo") == 0, "count-undo-0");
             Check(lib.GetCustomClipCount("x01_420") == 0, "count-420-0");
             Check(lib.GetRuntimeScoreList(42) == null, "runtime-score-42-empty");
             Check(lib.GetRuntimeCustomList("custom_wall") == null, "runtime-custom-wall-empty");
 
-            // ---------- Option: Default-Clips als Fallback ----------
-            // Kette: eigene Aufnahme → eingebauter Fallback → null.
+            // ---------- Option: Default clips as fallback ----------
+            // Chain: own recording → built-in fallback → null.
             var defaultClip = lib.numberClips[42];
             var customClip = lib.customNumberClips[42];
 

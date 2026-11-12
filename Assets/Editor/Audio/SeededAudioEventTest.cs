@@ -5,10 +5,10 @@ using UnityEditor;
 using UnityEngine;
 
 /// <summary>
-/// Prüft die user-ähnlichen X01-Seeds (Bah, 3x20, 3x19) sowie die neuen
-/// globalen Leg-/Set-End-Seeds.
+/// Check the user-like X01 seeds (Bah, 3x20, 3x19) as well as the new
+/// global leg/set end seeds.
 ///
-/// Menü: Darts/Tests/Seeded Audio Events.
+/// Menu: Darts/Tests/Seeded Audio Events.
 /// Batchmode: -executeMethod SeededAudioEventTest.Run
 /// </summary>
 public static class SeededAudioEventTest
