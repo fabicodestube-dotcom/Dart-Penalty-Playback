@@ -1289,7 +1289,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 33806894813368322
-    m_Localized: Limette
+    m_Localized: Türkis
     m_Metadata:
       m_Items: []
   - m_Id: 33806894813368323
@@ -1334,6 +1334,18 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 33806894813368333
     m_Localized: Trigger bearbeiten
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368334
+    m_Localized: Indigo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368335
+    m_Localized: Blaugrau
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368336
+    m_Localized: Tiefes Orange
     m_Metadata:
       m_Items: []
   references:

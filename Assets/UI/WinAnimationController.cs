@@ -422,7 +422,25 @@ public sealed class WinAnimationController : MonoBehaviour
         return cachedGlowSprite;
     }
 
-    private static Color AccentFor(WinLevel level)
+    private Color AccentFor(WinLevel level)
+    {
+        if (ThemeManager.Instance == null)
+            return FallbackAccentFor(level);
+
+        Color accent = ThemeManager.Instance.GetColor(ThemeColorRole.Accent1);
+        if (accent == Color.magenta)
+            return FallbackAccentFor(level);
+
+        return level switch
+        {
+            WinLevel.Leg => accent,
+            WinLevel.Set => Color.Lerp(accent, Color.white, 0.18f),
+            WinLevel.Match => Color.Lerp(accent, Color.white, 0.35f),
+            _ => Color.white
+        };
+    }
+
+    private static Color FallbackAccentFor(WinLevel level)
     {
         return level switch
         {

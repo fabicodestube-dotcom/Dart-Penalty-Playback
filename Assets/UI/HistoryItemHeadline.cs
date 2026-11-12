@@ -16,6 +16,10 @@ public class HistoryItemHeadline : MonoBehaviour
     public TMP_Text textTotalPenaltyCostSum;
 
     private GameSummary currentSummary;
+    private string cachedSettingsJson;
+    private GameMode cachedSettingsMode;
+    private GameSettings cachedSettings;
+    private bool hasCachedSettings;
 
     public void Initialize(GameSummary summary)
     {
@@ -81,7 +85,7 @@ public class HistoryItemHeadline : MonoBehaviour
         }
 
         if (textTotelPenaltiesCount != null)
-            textTotelPenaltiesCount.text = CountActivePenalties(summary, settings).ToString();
+            textTotelPenaltiesCount.text = CountActivePenalties(summary).ToString();
 
         if (textTotalPenaltyCostSum != null)
             textTotalPenaltyCostSum.text = SumImposedPenaltyCosts(summary, settings).ToString("0.##");
@@ -103,7 +107,7 @@ public class HistoryItemHeadline : MonoBehaviour
     /// Legacy-Settings zählen nicht mehr (System stillgelegt); neue Spiele
     /// buchen dort 0 und zeigen nur Customs.
     /// </summary>
-    private static int CountActivePenalties(GameSummary summary, GameSettings settings)
+    private static int CountActivePenalties(GameSummary summary)
     {
         int count = 0;
 
@@ -169,60 +173,73 @@ public class HistoryItemHeadline : MonoBehaviour
 
     private GameSettings GetSettings(GameSummary summary)
     {
+        if (summary == null)
+            return null;
+
+        if (hasCachedSettings && summary.GameMode == cachedSettingsMode && summary.SettingsJson == cachedSettingsJson)
+            return cachedSettings;
+
+        GameSettings settings = null;
+
         if (!string.IsNullOrEmpty(summary.SettingsJson))
         {
             try
             {
-                GameSettings settings = summary.GameMode switch
+                settings = summary.GameMode switch
                 {
                     GameMode.X01 => JsonConvert.DeserializeObject<X01GameSettings>(summary.SettingsJson),
                     GameMode.Cricket => JsonConvert.DeserializeObject<CricketGameSettings>(summary.SettingsJson),
                     GameMode.ATC => JsonConvert.DeserializeObject<ATCGameSettings>(summary.SettingsJson),
                     _ => null
                 };
-                if (settings != null)
-                    return settings;
             }
             catch
             {
             }
         }
 
-        return summary.GameMode switch
-        {
-            GameMode.X01 => new X01GameSettings
+        if (settings == null)
+            settings = summary.GameMode switch
             {
-                pointTarget = 501,
-                checkinType = CheckinType.StraightIn,
-                checkoutType = CheckoutType.Double,
-                setsAndLegsMode = SetsAndLegs.BestOf,
-                setCount = 1,
-                legCount = 1,
-                soundEnabled = true,
-                Penalties = new PenaltySettings()
-            },
-            GameMode.Cricket => new CricketGameSettings
-            {
-                pointsEnabled = true,
-                cutThroatEnabled = false,
-                setsAndLegsMode = SetsAndLegs.BestOf,
-                setCount = 1,
-                legCount = 1,
-                soundEnabled = true,
-                Penalties = new PenaltySettings()
-            },
-            GameMode.ATC => new ATCGameSettings
-            {
-                targetType = ATCTargetType.Singles,
-                order = ATCOrder.Ascending,
-                setsAndLegsMode = SetsAndLegs.BestOf,
-                setCount = 1,
-                legCount = 1,
-                soundEnabled = true,
-                Penalties = new PenaltySettings()
-            },
-            _ => null
-        };
+                GameMode.X01 => new X01GameSettings
+                {
+                    pointTarget = 501,
+                    checkinType = CheckinType.StraightIn,
+                    checkoutType = CheckoutType.Double,
+                    setsAndLegsMode = SetsAndLegs.BestOf,
+                    setCount = 1,
+                    legCount = 1,
+                    soundEnabled = true,
+                    Penalties = new PenaltySettings()
+                },
+                GameMode.Cricket => new CricketGameSettings
+                {
+                    pointsEnabled = true,
+                    cutThroatEnabled = false,
+                    setsAndLegsMode = SetsAndLegs.BestOf,
+                    setCount = 1,
+                    legCount = 1,
+                    soundEnabled = true,
+                    Penalties = new PenaltySettings()
+                },
+                GameMode.ATC => new ATCGameSettings
+                {
+                    targetType = ATCTargetType.Singles,
+                    order = ATCOrder.Ascending,
+                    setsAndLegsMode = SetsAndLegs.BestOf,
+                    setCount = 1,
+                    legCount = 1,
+                    soundEnabled = true,
+                    Penalties = new PenaltySettings()
+                },
+                _ => null
+            };
+
+        cachedSettingsJson = summary.SettingsJson;
+        cachedSettingsMode = summary.GameMode;
+        cachedSettings = settings;
+        hasCachedSettings = true;
+        return settings;
     }
 
 }

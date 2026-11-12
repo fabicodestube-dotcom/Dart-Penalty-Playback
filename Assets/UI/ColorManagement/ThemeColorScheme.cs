@@ -7,5 +7,8 @@ public enum ThemeColorScheme
     Purple,
     Cyan,
     Pink,
-    Lime
+    Teal,
+    Indigo,
+    BlueGrey,
+    DeepOrange
 }

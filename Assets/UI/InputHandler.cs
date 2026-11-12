@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -417,17 +418,26 @@ public abstract class InputHandler : MonoBehaviour
             botTurnPanel.ShowTarget(throwData);
     }
 
-    public IEnumerator PlayBotThrow(Throw throwData)
+    public IEnumerator PlayBotThrow(Throw throwData, Action onImpact = null)
     {
         EnsureBotTurnPanel();
 
         if (botTurnPanel == null)
         {
-            yield return new WaitForSeconds(0.65f);
+            yield return new WaitForSeconds(0.8f + 0.45f + 0.12f);
+            onImpact?.Invoke();
+            yield return new WaitForSeconds(1f);
             yield break;
         }
 
-        yield return botTurnPanel.PlayThrow(throwData);
+        yield return botTurnPanel.PlayThrow(throwData, onImpact);
+    }
+
+    public bool IsBotHitHoldActive => botTurnPanel != null && botTurnPanel.IsHitHoldActive;
+
+    public void CancelBotHitHold()
+    {
+        botTurnPanel?.CancelHitHold();
     }
 
     public void ShowBotPausedState()

@@ -58,6 +58,7 @@ public class HistoryHandler : MonoBehaviour, IUIScreen
     private TabState[] tabs;
 
     private readonly Stack<HistoryItem> itemPool = new Stack<HistoryItem>();
+    private readonly HashSet<HistoryItem> pooledItems = new HashSet<HistoryItem>();
     private readonly Dictionary<Guid, string> playerNameCache = new Dictionary<Guid, string>();
     private List<GameSummary> cachedSummaries = new List<GameSummary>();
 
@@ -121,8 +122,17 @@ public class HistoryHandler : MonoBehaviour, IUIScreen
 
     private void SnapshotSummaries()
     {
-        cachedSummaries = appHandler.GetGameSummaries() ?? new List<GameSummary>();
-        existingGameIds = new HashSet<Guid>(cachedSummaries.Select(s => s.Id));
+        var loadedSummaries = appHandler.GetGameSummaries() ?? new List<GameSummary>();
+        cachedSummaries = new List<GameSummary>(loadedSummaries.Count);
+        existingGameIds = new HashSet<Guid>();
+
+        foreach (var summary in loadedSummaries)
+        {
+            if (summary == null || !existingGameIds.Add(summary.Id))
+                continue;
+
+            cachedSummaries.Add(summary);
+        }
 
         // Eigene Listen pro Tab (keine geteilten Referenzen), damit
         // Insert/Remove in Handlern nicht doppelt wirken.
@@ -337,15 +347,28 @@ public class HistoryHandler : MonoBehaviour, IUIScreen
         }
     }
 
-    private void CreatePooledItem(TabState tab, GameSummary summary)
+    private HistoryItem CreatePooledItem(TabState tab, GameSummary summary, bool insertAtTop = false)
     {
+        if (tab.lookup.TryGetValue(summary.Id, out var existingItem))
+            return existingItem;
+
         existingGameIds.Add(summary.Id);
 
         var item = GetPooledItem(tab.parent);
         item.Setup(appHandler, summary, HistoryItemMode.History, OnGameClicked, ResolvePlayerName);
 
-        tab.items.Add(item);
+        if (insertAtTop)
+        {
+            item.transform.SetAsFirstSibling();
+            tab.items.Insert(0, item);
+        }
+        else
+        {
+            tab.items.Add(item);
+        }
+
         tab.lookup[summary.Id] = item;
+        return item;
     }
 
     private HistoryItem GetPooledItem(Transform parent)
@@ -355,6 +378,7 @@ public class HistoryHandler : MonoBehaviour, IUIScreen
             var pooled = itemPool.Pop();
             if (pooled == null)
                 continue;
+            pooledItems.Remove(pooled);
             pooled.transform.SetParent(parent, false);
             pooled.transform.SetAsLastSibling();
             pooled.gameObject.SetActive(true);
@@ -366,7 +390,7 @@ public class HistoryHandler : MonoBehaviour, IUIScreen
 
     private void ReleaseItem(HistoryItem item)
     {
-        if (item == null)
+        if (item == null || !pooledItems.Add(item))
             return;
         item.PrepareForPool();
         item.gameObject.SetActive(false);
@@ -534,14 +558,20 @@ public class HistoryHandler : MonoBehaviour, IUIScreen
 
     private void RemoveGameFromTab(TabState tab, Guid gameId)
     {
-        tab.source.RemoveAll(s => s.Id == gameId);
+        int sourceIndex = tab.source.FindIndex(s => s.Id == gameId);
+        if (sourceIndex < 0)
+            return;
+
+        tab.source.RemoveAt(sourceIndex);
+
+        if (sourceIndex < tab.builtCount)
+            tab.builtCount = Math.Max(0, tab.builtCount - 1);
 
         if (tab.lookup.TryGetValue(gameId, out var item))
         {
             tab.items.Remove(item);
             tab.lookup.Remove(gameId);
             ReleaseItem(item);
-            tab.builtCount = Math.Max(0, tab.builtCount - 1);
         }
     }
 
@@ -659,16 +689,14 @@ public class HistoryHandler : MonoBehaviour, IUIScreen
         {
             // Bereits vorhanden -> aktualisieren und nach oben schieben.
             MoveSourceToTop(cachedSummaries, summary.Id);
-            MoveSourceToTop(allTab.source, summary.Id);
-            MoveSourceToTop(modeTab.source, summary.Id);
 
             DisableLayoutGroup(allTab.parent);
             DisableLayoutGroup(modeTab.parent);
 
             try
             {
-                UpdateAndMoveToTop(allTab, summary);
-                UpdateAndMoveToTop(modeTab, summary);
+                MoveSummaryToTop(allTab, summary);
+                MoveSummaryToTop(modeTab, summary);
             }
             finally
             {
@@ -696,6 +724,56 @@ public class HistoryHandler : MonoBehaviour, IUIScreen
         source.Insert(0, entry);
     }
 
+    private void MoveSummaryToTop(TabState tab, GameSummary summary)
+    {
+        if (tab == null || tab.parent == null)
+            return;
+
+        int sourceIndex = tab.source.FindIndex(s => s.Id == summary.Id);
+
+        if (tab.lookup.TryGetValue(summary.Id, out var item))
+        {
+            item.Setup(appHandler, summary, HistoryItemMode.History, OnGameClicked, ResolvePlayerName);
+
+            if (sourceIndex > 0)
+            {
+                tab.source.RemoveAt(sourceIndex);
+                tab.source.Insert(0, summary);
+            }
+            else if (sourceIndex < 0)
+            {
+                tab.source.Insert(0, summary);
+            }
+
+            item.transform.SetAsFirstSibling();
+            tab.items.Remove(item);
+            tab.items.Insert(0, item);
+            return;
+        }
+
+        if (!tab.buildRequested)
+        {
+            if (sourceIndex > 0)
+            {
+                tab.source.RemoveAt(sourceIndex);
+                tab.source.Insert(0, summary);
+            }
+            else if (sourceIndex < 0)
+            {
+                tab.source.Insert(0, summary);
+            }
+            return;
+        }
+
+        if (sourceIndex >= 0)
+            tab.source.RemoveAt(sourceIndex);
+        tab.source.Insert(0, summary);
+
+        RemoveHeadline(ref tab.headline);
+        CreatePooledItem(tab, summary, insertAtTop: true);
+        tab.builtCount++;
+    }
+
     /// <summary>
     /// Fügt eine neue Summary oben in einen Tab ein. Funktioniert auch während
     /// ein Chunk-Build läuft oder der Tab noch gar nicht gebaut wurde:
@@ -714,11 +792,7 @@ public class HistoryHandler : MonoBehaviour, IUIScreen
         {
             RemoveHeadline(ref tab.headline);
 
-            var item = GetPooledItem(tab.parent);
-            item.Setup(appHandler, summary, HistoryItemMode.History, OnGameClicked, ResolvePlayerName);
-            item.transform.SetSiblingIndex(0);
-            tab.items.Insert(0, item);
-            tab.lookup[summary.Id] = item;
+            CreatePooledItem(tab, summary, insertAtTop: true);
             // Manuell erstellt -> als gebaut zählen, damit der laufende
             // Chunk-Build danach korrekt beim ersten ungeöffneten Index fortfährt.
             tab.builtCount++;
@@ -727,19 +801,6 @@ public class HistoryHandler : MonoBehaviour, IUIScreen
         {
             EnableLayoutGroup(tab.parent);
         }
-    }
-
-    private void UpdateAndMoveToTop(TabState tab, GameSummary summary)
-    {
-        if (!tab.lookup.TryGetValue(summary.Id, out var item))
-            return;
-
-        item.Setup(appHandler, summary, HistoryItemMode.History, OnGameClicked, ResolvePlayerName);
-
-        item.transform.SetAsFirstSibling();
-
-        tab.items.Remove(item);
-        tab.items.Insert(0, item);
     }
 
     private void OnDestroy()

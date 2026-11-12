@@ -134,34 +134,18 @@ public class ATCGameEngine : GameEngine
     {
         inputHandler.SetInputEnabled(false);
 
-        Throw pendingThrow = GetNextATCBotThrow(bot);
-        inputHandler.ShowBotTarget(pendingThrow);
-
-        yield return new WaitForSeconds(1.5f);
-
         // Endlose Schleife, die nur abbricht, wenn der Bot nicht mehr dran ist
         while (!isPaused && game.GetCurrentPlayerId() == bot.GetID() && !game.IsFinished())
         {
-            //yield return new WaitUntil(() => !isPaused && (!botPausePending || pauseConfirmed));
             yield return new WaitUntil(() => !isPaused);
 
-            Throw t = pendingThrow ?? GetNextATCBotThrow(bot);
-            pendingThrow = null;
-
-            yield return inputHandler.PlayBotThrow(t);
-            AddThrow(t);
+            Throw t = GetNextATCBotThrow(bot);
+            yield return inputHandler.PlayBotThrow(t, () => AddThrow(t));
 
             // Nach AddThrow hat die Engine evtl. NextPlayer() gerufen (bei Miss oder Turn-Ende ohne Carry)
             // Wir prüfen also sofort, ob wir noch dran sind
             if (game.GetCurrentPlayerId() != bot.GetID() || game.IsFinished())
-            {
-                break; 
-            }
-
-            pendingThrow = GetNextATCBotThrow(bot);
-            inputHandler.ShowBotTarget(pendingThrow);
-
-            yield return new WaitForSeconds(0.85f);
+                break;
         }
 
         Debug.Log($"Bot {bot.GetName()} beendet seinen Turn-Zyklus.");

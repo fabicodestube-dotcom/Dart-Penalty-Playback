@@ -1290,7 +1290,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 33806894813368322
-    m_Localized: Lime
+    m_Localized: Verde acqua
     m_Metadata:
       m_Items: []
   - m_Id: 33806894813368323
@@ -1335,6 +1335,18 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 33806894813368333
     m_Localized: Modifica trigger
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368334
+    m_Localized: Indaco
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368335
+    m_Localized: Grigio blu
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368336
+    m_Localized: Arancione scuro
     m_Metadata:
       m_Items: []
   references:

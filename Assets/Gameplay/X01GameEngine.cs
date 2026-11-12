@@ -139,15 +139,10 @@ public class X01GameEngine : GameEngine
         // Input sperren
         inputHandler.SetInputEnabled(false);
 
-        Throw pendingThrow = GetNextX01BotThrow(bot);
-        inputHandler.ShowBotTarget(pendingThrow);
-
-        yield return new WaitForSeconds(2f);
-
         for (int i = 0; i < 3; i++)
         {
-            // yield return new WaitUntil(() => !isPaused && (!botPausePending || pauseConfirmed));
             yield return new WaitUntil(() => !isPaused);
+
             // Falls Turn schon beendet (z.B. durch Bust oder Win)
             var currentTurn = game.GetCurrentTurnOfPlayer(bot.GetID());
 
@@ -157,11 +152,8 @@ public class X01GameEngine : GameEngine
                 yield break;
             }
 
-            Throw t = pendingThrow ?? GetNextX01BotThrow(bot);
-            pendingThrow = null;
-
-            yield return inputHandler.PlayBotThrow(t);
-            AddThrow(t);
+            Throw t = GetNextX01BotThrow(bot);
+            yield return inputHandler.PlayBotThrow(t, () => AddThrow(t));
 
             var updatedTurn = game.GetCurrentTurnOfPlayer(bot.GetID());
             bool canThrowAgain = i < 2
@@ -171,13 +163,8 @@ public class X01GameEngine : GameEngine
                 && !game.IsFinished()
                 && ((X01Game) game).GetScore(bot.GetID()) != 0;
 
-            if (canThrowAgain)
-            {
-                pendingThrow = GetNextX01BotThrow(bot);
-                inputHandler.ShowBotTarget(pendingThrow);
-            }
-
-            yield return new WaitForSeconds(1.35f);
+            if (!canThrowAgain)
+                yield break;
         }
     }
 

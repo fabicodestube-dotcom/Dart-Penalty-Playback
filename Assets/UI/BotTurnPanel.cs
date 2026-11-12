@@ -24,13 +24,13 @@ public class BotTurnPanel : MonoBehaviour
     private const float BaseLabelRadius = 178f;
     private const float RightPadding = 40f;
 
-    private const float BotIconSize = 110f;
-    private const float NameFontSize = 36f;
-    private const float NameTextHeight = 44f;
+    private const float BotIconSize = 200f;
+    private const float NameFontSize = 50f;
+    private const float NameTextHeight = 60f;
     private const float NameIconGap = 6f;
     private const float IconTargetGap = 10f;
-    private const float InfoFontSize = 40f;
-    private const float InfoTextHeight = 48f;
+    private const float InfoFontSize = 45f;
+    private const float InfoTextHeight = 54f;
     private const float InfoTextGap = 6f;
     private const float TargetBlockHeight = InfoTextHeight + InfoTextGap + InfoTextHeight;
     private const float StatsBlockHeight = NameTextHeight + NameIconGap + BotIconSize + IconTargetGap + TargetBlockHeight;
@@ -40,21 +40,21 @@ public class BotTurnPanel : MonoBehaviour
     private const float BaseBoardMarkerThickness = 3f;
     private const float BaseBoardMarkerOutlineThickness = 7f;
     private const float BaseDartSize = 180f;
+    private const float DartTipPixelX = 38f;
+    private const float DartTipPixelYFromBottom = 38f;
 
-    private const float PreviewDuration = 0.08f;
+    private const float TargetPreviewDuration = 0.8f;
     private const float FlightDuration = 0.45f;
     private const float ImpactDuration = 0.12f;
+    private const float HitHoldDuration = 1f;
 
     private static readonly Color NumberColor = new Color(0.96f, 0.96f, 0.96f, 1f);
     private static readonly Color MarkerColor = new Color(1f, 1f, 1f, 0.98f);
     private static readonly Color MarkerOutlineColor = new Color(0f, 0f, 0f, 0.72f);
 
-    private static readonly float[] RingRadius =
-    {
-        0.252f,   // Single (inneres Single)
-        0.4335f,  // Triple
-        0.7745f   // Double
-    };
+    private const float SingleOuterRingRadius = 0.618f;
+    private const float TripleRingRadius = 0.4335f;
+    private const float DoubleRingRadius = 0.7875f;
 
     private GameObject _root;
     private GameObject _playingContainer;
@@ -91,12 +91,14 @@ public class BotTurnPanel : MonoBehaviour
     private RectTransform _targetCrosshair;
     private readonly List<Image> _targetCrosshairParts = new List<Image>();
     private Image _dartImage;
+    private Outline _dartOutline;
     private RectTransform _dartRect;
 
     private TMP_FontAsset _font;
 
     private DartBot _currentBot;
     private bool _hasTarget;
+    private bool _hitHoldActive;
     private int _targetValue;
     private DartMultiplier _targetMultiplier;
 
@@ -111,6 +113,13 @@ public class BotTurnPanel : MonoBehaviour
         _boardSprite = boardSprite;
 
         EnsureBuilt();
+    }
+
+    public bool IsHitHoldActive => _hitHoldActive;
+
+    public void CancelHitHold()
+    {
+        _hitHoldActive = false;
     }
 
     public void ShowBot(DartBot bot)
@@ -146,6 +155,7 @@ public class BotTurnPanel : MonoBehaviour
         }
 
         _hasTarget = false;
+        _hitHoldActive = false;
         _targetValue = -1;
         _targetMultiplier = DartMultiplier.Single;
 
@@ -153,7 +163,7 @@ public class BotTurnPanel : MonoBehaviour
             _boardImage.rectTransform.localScale = Vector3.one;
     }
 
-    public IEnumerator PlayThrow(Throw throwData)
+    public IEnumerator PlayThrow(Throw throwData, Action onImpact = null)
     {
         EnsureBuilt();
 
@@ -161,26 +171,28 @@ public class BotTurnPanel : MonoBehaviour
 
         if (_dartImage == null || _dartSprite == null)
         {
-            yield return new WaitForSeconds(PreviewDuration + FlightDuration + ImpactDuration);
-            ShowHit(throwData);
+            yield return new WaitForSeconds(TargetPreviewDuration + FlightDuration + ImpactDuration);
+            yield return FinishThrow(throwData, onImpact);
             yield break;
         }
 
-        yield return new WaitForSeconds(PreviewDuration);
+        yield return new WaitForSeconds(TargetPreviewDuration);
 
         Vector2 end = GetCardPositionForThrow(throwData);
         Rect layerRect = _animationLayer.rect;
         Vector2 start = new Vector2(
             layerRect.xMin + layerRect.width * 0.15f,
             layerRect.yMin - layerRect.height * 0.15f);
+        Quaternion dartRotation = GetDartRotation(start, end);
+
+        LogDartDiagnostics(throwData, end, "end");
 
         _dartImage.gameObject.SetActive(true);
         _dartRect.anchoredPosition = start;
         _dartRect.localScale = new Vector3(0.75f, 0.75f, 1f);
-        _dartRect.localRotation = GetDartRotation(start, end);
+        _dartRect.localRotation = dartRotation;
 
         float elapsed = 0f;
-        Vector2 previous = start;
 
         while (elapsed < FlightDuration)
         {
@@ -191,19 +203,17 @@ public class BotTurnPanel : MonoBehaviour
             Vector2 position = Vector2.LerpUnclamped(start, end, eased);
             position.y += Mathf.Sin(progress * Mathf.PI) * 55f;
 
-            if ((position - previous).sqrMagnitude > 0.01f)
-                _dartRect.localRotation = GetDartRotation(previous, position);
-
             _dartRect.anchoredPosition = position;
 
             float scale = Mathf.Lerp(0.75f, 1f, eased);
             _dartRect.localScale = new Vector3(scale, scale, 1f);
 
-            previous = position;
             yield return null;
         }
 
         _dartRect.anchoredPosition = end;
+        _dartRect.localRotation = dartRotation;
+        LogDartDiagnostics(throwData, end, "impact");
 
         float impactElapsed = 0f;
         while (impactElapsed < ImpactDuration)
@@ -226,7 +236,19 @@ public class BotTurnPanel : MonoBehaviour
         if (_boardImage != null)
             _boardImage.rectTransform.localScale = Vector3.one;
 
+        yield return FinishThrow(throwData, onImpact);
+    }
+
+    private IEnumerator FinishThrow(Throw throwData, Action onImpact)
+    {
         ShowHit(throwData);
+        _hitHoldActive = true;
+        onImpact?.Invoke();
+        yield return new WaitForSeconds(HitHoldDuration);
+        _hitHoldActive = false;
+
+        if (_dartRect != null)
+            LogDartDiagnostics(throwData, _dartRect.anchoredPosition, "hold");
     }
 
     public void ShowTarget(Throw throwData)
@@ -255,6 +277,20 @@ public class BotTurnPanel : MonoBehaviour
                 _targetCrosshair.anchoredPosition = GetBoardPosition(_targetValue, _targetMultiplier);
         }
 
+        if (_hitText != null)
+        {
+            _hitText.text = string.Empty;
+            _hitText.gameObject.SetActive(false);
+        }
+
+        if (_dartImage != null)
+            _dartImage.gameObject.SetActive(false);
+
+        if (_boardImage != null)
+            _boardImage.rectTransform.localScale = Vector3.one;
+
+        _hitHoldActive = false;
+
         ApplyTheme();
     }
 
@@ -271,10 +307,20 @@ public class BotTurnPanel : MonoBehaviour
 
     private Vector2 GetCardPositionForThrow(Throw throwData)
     {
-        Vector2 boardOrigin = GetBoardCenterInAnimationSpace();
+        if (_boardArea == null || _animationLayer == null)
+            return Vector2.zero;
 
         if (throwData == null)
-            return boardOrigin;
+            return _animationLayer.InverseTransformPoint(_boardArea.position);
+
+        bool isExactHit = _hasTarget
+            && throwData.Value == _targetValue
+            && throwData.Multiplier == _targetMultiplier
+            && _targetCrosshair != null
+            && _targetCrosshair.gameObject.activeInHierarchy;
+
+        if (isExactHit)
+            return _animationLayer.InverseTransformPoint(_targetCrosshair.position);
 
         Vector2 boardPosition;
         bool valid = throwData.Value > 0
@@ -291,15 +337,8 @@ public class BotTurnPanel : MonoBehaviour
             boardPosition = new Vector2(Mathf.Sin(rad), Mathf.Cos(rad)) * (_boardRadius * 1.05f);
         }
 
-        return boardOrigin + boardPosition;
-    }
-
-    private Vector2 GetBoardCenterInAnimationSpace()
-    {
-        if (_boardArea == null || _animationLayer == null)
-            return Vector2.zero;
-
-        return _animationLayer.InverseTransformPoint(_boardArea.position);
+        Vector3 world = _boardArea.TransformPoint(boardPosition);
+        return _animationLayer.InverseTransformPoint(world);
     }
 
     private Vector2 GetBoardPosition(int value, DartMultiplier multiplier)
@@ -320,9 +359,9 @@ public class BotTurnPanel : MonoBehaviour
 
         float ringFactor = multiplier switch
         {
-            DartMultiplier.Triple => RingRadius[1],
-            DartMultiplier.Double => RingRadius[2],
-            _ => RingRadius[0]
+            DartMultiplier.Triple => TripleRingRadius,
+            DartMultiplier.Double => DoubleRingRadius,
+            _ => SingleOuterRingRadius
         };
 
         float ringRadius = _boardRadius * ringFactor;
@@ -342,6 +381,42 @@ public class BotTurnPanel : MonoBehaviour
 
         float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
         return Quaternion.Euler(0f, 0f, angle + 135f);
+    }
+
+    private static Vector2 GetDartTipPivot(Sprite sprite)
+    {
+        if (sprite == null)
+            return new Vector2(0.08f, 0.08f);
+
+        Rect rect = sprite.rect;
+        if (rect.width <= 0f || rect.height <= 0f)
+            return new Vector2(0.08f, 0.08f);
+
+        return new Vector2(
+            Mathf.Clamp01((DartTipPixelX - rect.x) / rect.width),
+            Mathf.Clamp01((DartTipPixelYFromBottom - rect.y) / rect.height));
+    }
+
+    private void LogDartDiagnostics(Throw throwData, Vector2 end, string phase)
+    {
+        if (_dartRect == null || _targetCrosshair == null || _dartSprite == null || _boardArea == null || _animationLayer == null)
+            return;
+
+        Canvas canvas = _card != null ? _card.GetComponentInParent<Canvas>() : null;
+        Vector3 crosshairWorld = _targetCrosshair.position;
+        Vector3 dartWorld = _animationLayer.TransformPoint(end);
+        Vector3 delta = dartWorld - crosshairWorld;
+
+        Debug.Log(
+            $"[BotDart:{phase}] actual={throwData?.Value}/{throwData?.Multiplier} " +
+            $"target={_targetValue}/{_targetMultiplier} hasTarget={_hasTarget} isHit={throwData?.IsTargetHit} " +
+            $"crosshair={crosshairWorld} dartWorld={dartWorld} dartRect={_dartRect.position} delta={delta} " +
+            $"endLocal={end} rotZ={_dartRect.localRotation.eulerAngles.z} dartPivot={_dartRect.pivot} " +
+            $"spriteRect={_dartSprite.rect} textureRect={_dartSprite.textureRect} spritePivot={_dartSprite.pivot} " +
+            $"boardRect={_boardArea.rect} boardPos={_boardArea.position} boardScale={_boardArea.lossyScale} " +
+            $"layerRect={_animationLayer.rect} layerPos={_animationLayer.position} layerScale={_animationLayer.lossyScale} " +
+            $"cardRect={_card?.rect} contentRect={_content?.rect} canvasScale={(canvas != null ? canvas.scaleFactor : -1f)} " +
+            $"screen={Screen.width}x{Screen.height}");
     }
 
     private static string GetTargetLabel()
@@ -637,15 +712,21 @@ public class BotTurnPanel : MonoBehaviour
         if (_dartSprite == null)
             return;
 
-        _dartImage = CreateImage("BotDart", _animationLayer, _dartSprite, Color.white);
+        _dartImage = CreateImage("BotDart", _animationLayer, _dartSprite, GetColor(ThemeColorRole.Text1, Color.white));
         _dartRect = _dartImage.rectTransform;
         _dartRect.anchorMin = new Vector2(0.5f, 0.5f);
         _dartRect.anchorMax = new Vector2(0.5f, 0.5f);
-        _dartRect.pivot = new Vector2(0.08f, 0.08f);
+        _dartRect.pivot = GetDartTipPivot(_dartSprite);
         _dartRect.sizeDelta = new Vector2(_dartSize, _dartSize);
         _dartRect.anchoredPosition = Vector2.zero;
         _dartImage.preserveAspect = true;
         _dartImage.raycastTarget = false;
+
+        _dartOutline = _dartImage.gameObject.AddComponent<Outline>();
+        _dartOutline.effectDistance = Vector2.one * Mathf.Max(1.5f, _dartSize * 0.015f);
+        _dartOutline.useGraphicAlpha = true;
+        ApplyDartTheme();
+
         _dartImage.gameObject.SetActive(false);
     }
 
@@ -837,8 +918,20 @@ public class BotTurnPanel : MonoBehaviour
                 : GetColor(ThemeColorRole.Text1, Color.white);
         }
 
+        ApplyDartTheme();
+    }
+
+    private void ApplyDartTheme()
+    {
         if (_dartImage != null)
-            _dartImage.color = Color.white;
+            _dartImage.color = GetColor(ThemeColorRole.Text1, Color.white);
+
+        if (_dartOutline != null)
+        {
+            Color outlineColor = GetColor(ThemeColorRole.Background1, Color.black);
+            outlineColor.a = 0.9f;
+            _dartOutline.effectColor = outlineColor;
+        }
     }
 
     private static Color GetColor(ThemeColorRole role, Color fallback)

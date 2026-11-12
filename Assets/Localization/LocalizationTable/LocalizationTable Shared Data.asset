@@ -1264,7 +1264,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 33806894813368322
-    m_Key: Lime
+    m_Key: Teal
     m_Metadata:
       m_Items: []
   - m_Id: 33806894813368323
@@ -1309,6 +1309,18 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 33806894813368333
     m_Key: Edit_trigger
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368334
+    m_Key: Indigo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368335
+    m_Key: Blue_Grey
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368336
+    m_Key: Deep_Orange
     m_Metadata:
       m_Items: []
   m_Metadata:

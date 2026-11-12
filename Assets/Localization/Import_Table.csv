@@ -314,7 +314,10 @@ Edit_audio_event,Edit audio event,Audio-Event bearbeiten,Modifier l'événement 
 Add_trigger,Add trigger,Trigger hinzufügen,Ajouter un déclencheur,Añadir disparador,Добавить триггер,Dodaj wyzwalacz,Aggiungi trigger,Tetikleyici ekle
 Edit_trigger,Edit trigger,Trigger bearbeiten,Modifier le déclencheur,Editar disparador,Изменить триггер,Edytuj wyzwalacz,Modifica trigger,Tetikleyiciyi düzenle
 Pink,Pink,Pink,Rose,Rosa,Розовый,Różowy,Rosa,Pembe
-Lime,Lime,Limette,Citron vert,Lima,Лаймовый,Limonkowy,Lime,Misket limonu
+Teal,Teal,Türkis,Sarcelle,Verde azulado,Бирюзовый,Turkusowy,Verde acqua,Turkuaz
+Indigo,Indigo,Indigo,Indigo,Índigo,Индиго,Indygo,Indaco,Çivit rengi
+Blue_Grey,Blue Grey,Blaugrau,Gris bleu,Gris azulado,Сине-серый,Niebiesko-szary,Grigio blu,Mavi gri
+Deep_Orange,Deep Orange,Tiefes Orange,Orange foncé,Naranja oscuro,Тёмно-оранжевый,Ciemnopomarańczowy,Arancione scuro,Koyu turuncu
 Name_required,Name is required.,Name ist erforderlich.,Le nom est requis.,El nombre es obligatorio.,Требуется имя.,Nazwa jest wymagana.,Il nome è obbligatorio.,Ad gerekli.
 Invalid_number,Please enter a valid number.,Bitte eine gültige Zahl eingeben.,Veuillez saisir un nombre valide.,Introduce un número válido.,Введите корректное число.,Wprowadź prawidłową liczbę.,Inserisci un numero valido.,Lütfen geçerli bir sayı girin.
 Select_target_area,Please select a target area.,Bitte einen Zielbereich auswählen.,Veuillez sélectionner une zone cible.,Selecciona una zona objetivo.,Выберите целевую зону.,Wybierz obszar docelowy.,Seleziona un'area bersaglio.,Lütfen bir hedef alan seçin.

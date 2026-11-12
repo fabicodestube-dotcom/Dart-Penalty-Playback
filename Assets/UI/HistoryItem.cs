@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using TMPro;
 using UnityEngine;
-using UnityEngine.AI;
+using UnityEngine.UI;
 
 public enum HistoryItemMode
 {
@@ -15,16 +15,8 @@ public class HistoryItem : MonoBehaviour
 {
     public HistoryItemHeadline headline;
     [Header("Prefabs and Content Parent")]
-    public GameObject playerPrefab;
-    public GameObject dividerPrefab;
+    public GameObject playerRowTemplate;
     public Transform contentParent;
-
-    [Header("Header UI Elements")]
-    public TMP_Text textDate;
-    public TMP_Text textSettings;
-    public GameObject textGameStatusFinished;
-    public GameObject textGameStatusRunning;
-
 
     private List<GameObject> items;
     private GameSummary gameSummary;
@@ -35,8 +27,6 @@ public class HistoryItem : MonoBehaviour
 
     private readonly Stack<GameObject> playerRowPool = new Stack<GameObject>();
     private readonly Stack<GameObject> dividerPool = new Stack<GameObject>();
-
-    private static readonly Dictionary<string, string> settingsLabelCache = new Dictionary<string, string>();
 
     private void Awake()
     {
@@ -63,12 +53,9 @@ public class HistoryItem : MonoBehaviour
         this.historyAppHandler = appHandler;
         this.historyPlayerNameResolver = playerNameResolver;
 
-        RenderHeader(summary);
-        RenderBody(appHandler, summary, playerNameResolver);
-
-        ApplyInteraction();
-
         headline.Initialize(summary);
+        RenderBody(appHandler, summary, playerNameResolver);
+        ApplyInteraction();
     }
 
     /// <summary>
@@ -80,7 +67,7 @@ public class HistoryItem : MonoBehaviour
     {
         Clear();
         onClick = null;
-        var button = GetComponent<UnityEngine.UI.Button>();
+        var button = GetComponent<Button>();
         if (button != null)
             button.onClick.RemoveAllListeners();
     }
@@ -95,65 +82,8 @@ public class HistoryItem : MonoBehaviour
         if (gameSummary == null)
             return;
 
-        RenderHeader(gameSummary);
         RenderBody(historyAppHandler, gameSummary, historyPlayerNameResolver);
         headline?.RefreshLocalization();
-    }
-
-    private void RenderHeader(GameSummary summary)
-    {
-        var finishedAt = summary.FinishedAt;
-
-        textDate.text = finishedAt.HasValue
-            ? finishedAt.Value.ToString("dd.MM.yyyy HH:mm")
-            : LocalizationText.Format("Game_running_since", "Game still running (as of {0})", summary.LastActivityAt.ToString("dd.MM.yyyy HH:mm"));
-
-        if (finishedAt.HasValue)
-        {
-            textGameStatusRunning.SetActive(false);
-            textGameStatusFinished.SetActive(true);
-        }
-        else
-        {
-            textGameStatusFinished.SetActive(false);
-            textGameStatusRunning.SetActive(true);
-        }
-
-        if (summary.GameMode == GameMode.X01)
-        {
-            textSettings.text = "X01 (" + GetSettingsString(summary) + ")";
-        }
-        else if (summary.GameMode == GameMode.Cricket)
-        {
-            textSettings.text = "Cricket (" + GetSettingsString(summary) + ")";
-        }
-        else if (summary.GameMode == GameMode.ATC)
-        {
-            textSettings.text = "ATC (" + GetSettingsString(summary) + ")";
-        }
-    }
-
-    private string GetSettingsString(GameSummary summary)
-    {
-        if (string.IsNullOrEmpty(summary.SettingsJson))
-            return "";
-
-        if (settingsLabelCache.TryGetValue(summary.SettingsJson, out var cached))
-            return cached;
-
-        try
-        {
-            var settings = Newtonsoft.Json.JsonConvert.DeserializeObject<GameSettings>(summary.SettingsJson);
-            var label = settings?.GetString() ?? "";
-            if (settingsLabelCache.Count > 200)
-                settingsLabelCache.Clear();
-            settingsLabelCache[summary.SettingsJson] = label;
-            return label;
-        }
-        catch
-        {
-            return "";
-        }
     }
 
     private string ResolvePlayerName(AppHandler appHandler, Guid playerId, System.Func<Guid, string> resolver)
@@ -173,86 +103,72 @@ public class HistoryItem : MonoBehaviour
         Clear();
 
         var playerEntries = summary.PlayerEntries;
-        if (summary.GameMode == GameMode.X01)
+        if (playerEntries == null)
+            return;
+
+        List<PlayerSummaryEntry> sortedPlayers;
+        string metricPrefix;
+
+        if (summary.GameMode == GameMode.ATC)
         {
-            var sortedPlayers = playerEntries
-                .OrderByDescending(p => p.SetsWon)
-                .ThenByDescending(p => p.LegsWon)
-                .ToList();
-
-            for (int i = 0; i < sortedPlayers.Count; i++)
-            {
-                var entry = sortedPlayers[i];
-
-                var go = GetPooledPlayerRow();
-                var item = go.GetComponent<HistoryItemPlayerPrefab>();
-
-                item.ShowPlayer(
-                    rank: i + 1,
-                    playerName: ResolvePlayerName(appHandler, entry.PlayerId, playerNameResolver),
-                    metricLabel: LocalizationText.Get("Points", "Points") + ": " + entry.Score.ToString(),
-                    stats: BuildPenaltyStats(entry, summary),
-                    setsWonOverride: entry.SetsWon,
-                    legsWonOverride: entry.LegsWon
-                );
-
-                items.Add(item.gameObject);
-                CreateDividerIfNeeded(i, sortedPlayers.Count);
-            }
-        }
-        else if (summary.GameMode == GameMode.Cricket)
-        {
-            var sortedPlayers = playerEntries
-                .OrderByDescending(p => p.SetsWon)
-                .ThenByDescending(p => p.LegsWon)
-                .ToList();
-
-            for (int i = 0; i < sortedPlayers.Count; i++)
-            {
-                var entry = sortedPlayers[i];
-
-                var go = GetPooledPlayerRow();
-                var item = go.GetComponent<HistoryItemPlayerPrefab>();
-
-                item.ShowPlayer(
-                    rank: i + 1,
-                    playerName: ResolvePlayerName(appHandler, entry.PlayerId, playerNameResolver),
-                    metricLabel: LocalizationText.Get("Points", "Points") + ": " + entry.Score.ToString(),
-                    stats: BuildPenaltyStats(entry, summary),
-                    setsWonOverride: entry.SetsWon,
-                    legsWonOverride: entry.LegsWon
-                );
-
-                items.Add(item.gameObject);
-                CreateDividerIfNeeded(i, sortedPlayers.Count);
-            }
-        }
-        else if (summary.GameMode == GameMode.ATC)
-        {
-            var sortedPlayers = playerEntries
+            sortedPlayers = playerEntries
                 .OrderByDescending(p => p.TargetsHit)
                 .ToList();
-
-            for (int i = 0; i < sortedPlayers.Count; i++)
-            {
-                var entry = sortedPlayers[i];
-
-                var go = GetPooledPlayerRow();
-                var item = go.GetComponent<HistoryItemPlayerPrefab>();
-
-                item.ShowPlayer(
-                    rank: i + 1,
-                    playerName: ResolvePlayerName(appHandler, entry.PlayerId, playerNameResolver),
-                    metricLabel: LocalizationText.Get("Targets", "Targets") + ": " + $"{entry.TargetsHit} / {entry.TotalTargets}",
-                    stats: BuildPenaltyStats(entry, summary),
-                    setsWonOverride: entry.SetsWon,
-                    legsWonOverride: entry.LegsWon
-                );
-
-                items.Add(item.gameObject);
-                CreateDividerIfNeeded(i, sortedPlayers.Count);
-            }
+            metricPrefix = LocalizationText.Get("Targets", "Targets");
         }
+        else
+        {
+            sortedPlayers = playerEntries
+                .OrderByDescending(p => p.SetsWon)
+                .ThenByDescending(p => p.LegsWon)
+                .ToList();
+            metricPrefix = LocalizationText.Get("Points", "Points");
+        }
+
+        for (int i = 0; i < sortedPlayers.Count; i++)
+        {
+            var entry = sortedPlayers[i];
+            string metricLabel = summary.GameMode == GameMode.ATC
+                ? metricPrefix + ": " + $"{entry.TargetsHit} / {entry.TotalTargets}"
+                : metricPrefix + ": " + entry.Score.ToString();
+
+            RenderPlayerRow(
+                appHandler,
+                summary,
+                playerNameResolver,
+                i,
+                sortedPlayers.Count,
+                entry,
+                metricLabel);
+        }
+    }
+
+    private void RenderPlayerRow(
+        AppHandler appHandler,
+        GameSummary summary,
+        System.Func<Guid, string> playerNameResolver,
+        int index,
+        int totalCount,
+        PlayerSummaryEntry entry,
+        string metricLabel)
+    {
+        var go = GetPooledPlayerRow();
+        if (go == null)
+            return;
+
+        var item = go.GetComponent<HistoryItemPlayerPrefab>();
+
+        item.ShowPlayer(
+            rank: index + 1,
+            playerName: ResolvePlayerName(appHandler, entry.PlayerId, playerNameResolver),
+            metricLabel: metricLabel,
+            stats: BuildPenaltyStats(entry, summary),
+            setsWonOverride: entry.SetsWon,
+            legsWonOverride: entry.LegsWon
+        );
+
+        items.Add(item.gameObject);
+        CreateDividerIfNeeded(index, totalCount);
     }
 
     private static GameStats BuildPenaltyStats(PlayerSummaryEntry entry, GameSummary summary)
@@ -321,7 +237,15 @@ public class HistoryItem : MonoBehaviour
             return go;
         }
 
-        return Instantiate(playerPrefab, contentParent);
+        if (playerRowTemplate == null)
+        {
+            Debug.LogError("HistoryItem: playerRowTemplate is not assigned.");
+            return null;
+        }
+
+        var instance = Instantiate(playerRowTemplate, contentParent);
+        instance.SetActive(true);
+        return instance;
     }
 
     private GameObject GetPooledDivider()
@@ -337,12 +261,65 @@ public class HistoryItem : MonoBehaviour
             return go;
         }
 
-        return Instantiate(dividerPrefab, contentParent);
+        return CreateDivider();
+    }
+
+    private GameObject CreateDivider()
+    {
+        var root = new GameObject(
+            "Divider",
+            typeof(RectTransform),
+            typeof(CanvasRenderer),
+            typeof(Image),
+            typeof(LayoutElement),
+            typeof(ThemeColorBinding));
+
+        var rootRect = root.GetComponent<RectTransform>();
+        rootRect.SetParent(contentParent, false);
+        rootRect.anchorMin = Vector2.zero;
+        rootRect.anchorMax = Vector2.zero;
+        rootRect.pivot = new Vector2(0.5f, 0.5f);
+        rootRect.anchoredPosition = Vector2.zero;
+        rootRect.sizeDelta = new Vector2(1250f, 2f);
+
+        var rootImage = root.GetComponent<Image>();
+        rootImage.color = new Color(0.16470589f, 0.16470589f, 0.16470589f, 1f);
+        rootImage.raycastTarget = false;
+
+        var layout = root.GetComponent<LayoutElement>();
+        layout.minHeight = -1f;
+        layout.preferredHeight = 2f;
+        layout.flexibleHeight = -1f;
+
+        root.GetComponent<ThemeColorBinding>().SetRole(ThemeColorRole.Background4);
+
+        var line = new GameObject(
+            "Line",
+            typeof(RectTransform),
+            typeof(CanvasRenderer),
+            typeof(Image),
+            typeof(ThemeColorBinding));
+
+        var lineRect = line.GetComponent<RectTransform>();
+        lineRect.SetParent(rootRect, false);
+        lineRect.anchorMin = Vector2.zero;
+        lineRect.anchorMax = Vector2.one;
+        lineRect.anchoredPosition = Vector2.zero;
+        lineRect.sizeDelta = new Vector2(-80f, 0f);
+        lineRect.pivot = new Vector2(0.5f, 0.5f);
+
+        var lineImage = line.GetComponent<Image>();
+        lineImage.color = Color.white;
+        lineImage.raycastTarget = false;
+
+        line.GetComponent<ThemeColorBinding>().SetRole(ThemeColorRole.Text1);
+
+        return root;
     }
 
     private void ApplyInteraction()
     {
-        var button = GetComponent<UnityEngine.UI.Button>();
+        var button = GetComponent<Button>();
 
         if (mode == HistoryItemMode.History)
         {
@@ -358,7 +335,7 @@ public class HistoryItem : MonoBehaviour
 
     private void CreateDividerIfNeeded(int index, int totalCount)
     {
-        if (dividerPrefab != null && index < totalCount - 1)
+        if (index < totalCount - 1)
         {
             var divider = GetPooledDivider();
             items.Add(divider);

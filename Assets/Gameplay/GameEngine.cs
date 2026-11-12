@@ -26,6 +26,9 @@ public abstract class GameEngine : MonoBehaviour
     protected bool isPaused;
     protected Coroutine botCoroutine;
     private bool botUndoPending;
+    private Coroutine pendingBotCheckCoroutine;
+    private Guid pendingBotCheckPlayerId;
+    private bool hasPendingBotCheck;
     private WinAnimationController winAnimation;
 
     public virtual void StartGame(Game game)
@@ -163,6 +166,16 @@ public abstract class GameEngine : MonoBehaviour
 
     protected void StopBotTurn()
     {
+        if (pendingBotCheckCoroutine != null)
+        {
+            StopCoroutine(pendingBotCheckCoroutine);
+            pendingBotCheckCoroutine = null;
+        }
+
+        hasPendingBotCheck = false;
+
+        inputHandler?.CancelBotHitHold();
+
         if (botCoroutine == null)
             return;
 
@@ -288,15 +301,42 @@ public abstract class GameEngine : MonoBehaviour
 
     protected void HandleBotCheck(Guid playerId)
     {
+        if (inputHandler != null && inputHandler.IsBotHitHoldActive)
+        {
+            pendingBotCheckPlayerId = playerId;
+            hasPendingBotCheck = true;
+
+            if (pendingBotCheckCoroutine == null)
+                pendingBotCheckCoroutine = StartCoroutine(HandleBotCheckAfterHitHold());
+
+            return;
+        }
+
+        HandleBotCheckNow(playerId);
+    }
+
+    private IEnumerator HandleBotCheckAfterHitHold()
+    {
+        yield return new WaitUntil(() => inputHandler == null || !inputHandler.IsBotHitHoldActive);
+
+        pendingBotCheckCoroutine = null;
+
+        if (!hasPendingBotCheck)
+            yield break;
+
+        hasPendingBotCheck = false;
+        HandleBotCheckNow(pendingBotCheckPlayerId);
+    }
+
+    private void HandleBotCheckNow(Guid playerId)
+    {
         BasePlayer player =
             appHandler.GetPlayerByID(playerId);
-
 
         if (player is DartBot bot)
         {
             // Immer Bot-UI anzeigen
             inputHandler.ShowBotPlayingState(bot);
-
 
             // Bot wurde durch Undo oder Pause angehalten
             if (botUndoPending || isPaused)
@@ -304,7 +344,6 @@ public abstract class GameEngine : MonoBehaviour
                 inputHandler.ShowBotPausedState();
                 return;
             }
-
 
             StartBotTurn(bot);
         }

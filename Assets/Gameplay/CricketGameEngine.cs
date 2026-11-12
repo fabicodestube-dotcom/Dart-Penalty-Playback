@@ -191,14 +191,8 @@ public class CricketGameEngine : GameEngine
         // Input sperren
         inputHandler.SetInputEnabled(false);
 
-        Throw pendingThrow = GetNextCricketBotThrow(bot);
-        inputHandler.ShowBotTarget(pendingThrow);
-
-        yield return new WaitForSeconds(2f);
-
         for (int i = 0; i < 3; i++)
         {
-            //yield return new WaitUntil(() => !isPaused && (!botPausePending || pauseConfirmed));
             yield return new WaitUntil(() => !isPaused);
 
             // Falls Turn schon beendet (z.B. durch Bust oder Win)
@@ -209,11 +203,8 @@ public class CricketGameEngine : GameEngine
                 yield break;
             }
 
-            Throw t = pendingThrow ?? GetNextCricketBotThrow(bot);
-            pendingThrow = null;
-
-            yield return inputHandler.PlayBotThrow(t);
-            AddThrow(t);
+            Throw t = GetNextCricketBotThrow(bot);
+            yield return inputHandler.PlayBotThrow(t, () => AddThrow(t));
 
             var updatedTurn = game.GetCurrentTurnOfPlayer(bot.GetID());
             bool canThrowAgain = i < 2
@@ -221,13 +212,8 @@ public class CricketGameEngine : GameEngine
                 && updatedTurn.HasSpace()
                 && !game.IsFinished();
 
-            if (canThrowAgain)
-            {
-                pendingThrow = GetNextCricketBotThrow(bot);
-                inputHandler.ShowBotTarget(pendingThrow);
-            }
-
-            yield return new WaitForSeconds(1.35f);
+            if (!canThrowAgain)
+                yield break;
         }
     }
 
