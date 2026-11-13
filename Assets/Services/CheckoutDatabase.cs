@@ -34,22 +34,81 @@ public static class CheckoutDatabase
         {2,  0.20f},
     };
 
+    private static readonly Dictionary<int, float> TripleWeights = new Dictionary<int, float>
+    {
+        {60, 1.00f},
+        {57, 0.95f},
+        {54, 0.90f},
+        {51, 0.85f},
+        {48, 0.80f},
+        {45, 0.75f},
+        {42, 0.70f},
+        {39, 0.65f},
+        {36, 0.60f},
+        {33, 0.55f},
+        {30, 0.50f},
+        {27, 0.45f},
+        {24, 0.40f},
+        {21, 0.35f},
+        {18, 0.30f},
+        {15, 0.25f},
+        {12, 0.20f},
+        {9,  0.15f},
+        {6,  0.10f},
+        {3,  0.05f},
+    };
+
     // =========================================
     // PUBLIC API
     // =========================================
+    public struct CheckoutPlan
+    {
+        public string Route;
+        public int DartCount;
+        public float FinalWeight;
+        public bool IsValid => !string.IsNullOrEmpty(Route);
+    }
+
     public static string GetCheckout(CheckoutType type, int score, int dartsLeft)
     {
-        if (score <= 1 || dartsLeft <= 0)
-            return null;
+        return GetCheckoutPlan(type, score, dartsLeft).Route;
+    }
 
-        var route =
-            GenerateRoutes(score, 1, type).FirstOrDefault() ??
-            (dartsLeft >= 2 ? GenerateRoutes(score, 2, type).FirstOrDefault() : null) ??
-            (dartsLeft >= 3 ? GenerateRoutes(score, 3, type).FirstOrDefault() : null);
+    public static CheckoutPlan GetCheckoutPlan(CheckoutType type, int score, int maxDarts)
+    {
+        var plan = new CheckoutPlan();
 
-        return route != null
-            ? string.Join(" ", route)
-            : null;
+        if (score <= 0 || maxDarts <= 0)
+            return plan;
+
+        if (maxDarts > 3)
+            maxDarts = 3;
+
+        var route = GetBestRoute(type, score, maxDarts);
+
+        if (route == null)
+            return plan;
+
+        plan.Route = string.Join(" ", route);
+        plan.DartCount = route.Count;
+        plan.FinalWeight = GetFinalWeight(route[^1]);
+        return plan;
+    }
+
+    // =========================================
+    // ROUTE SELECTION
+    // =========================================
+    private static List<string> GetBestRoute(CheckoutType type, int score, int maxDarts)
+    {
+        for (int darts = 1; darts <= maxDarts; darts++)
+        {
+            var route = GenerateRoutes(score, darts, type).FirstOrDefault();
+
+            if (route != null)
+                return route;
+        }
+
+        return null;
     }
 
     // =========================================
@@ -126,6 +185,17 @@ public static class CheckoutDatabase
                     list.Add((i * 3, "T" + i));
 
                 break;
+
+            case CheckoutType.Master:
+
+                for (int i = 1; i <= 20; i++)
+                {
+                    list.Add((i * 2, "D" + i));
+                    list.Add((i * 3, "T" + i));
+                }
+
+                list.Add((50, "D25"));
+                break;
         }
 
         return list
@@ -186,18 +256,33 @@ public static class CheckoutDatabase
     // =========================================
     private static float ScoreCheckoutDart(string dart)
     {
+        return GetFinalWeight(dart) * 10f;
+    }
+
+    private static float GetFinalWeight(string dart)
+    {
+        if (dart == "D25")
+            return 0.95f;
+
         if (dart.StartsWith("D"))
         {
             int val = int.Parse(dart.Substring(1)) * 2;
 
             if (DoubleWeights.TryGetValue(val, out float weight))
-                return weight * 10f;
+                return weight;
 
-            return 5f;
+            return 0.5f;
         }
 
-        if (dart == "D25")
-            return 9.5f;
+        if (dart.StartsWith("T"))
+        {
+            int val = int.Parse(dart.Substring(1)) * 3;
+
+            if (TripleWeights.TryGetValue(val, out float weight))
+                return weight;
+
+            return 0.2f;
+        }
 
         return 0f;
     }

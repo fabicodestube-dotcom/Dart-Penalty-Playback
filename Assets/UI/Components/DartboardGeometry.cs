@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using UnityEngine;
 
 /// <summary>
 /// Official dartboard geometry + mapping of HitSector keys on board zones.
@@ -23,6 +24,66 @@ public static class DartboardGeometry
     public const float DoubleOuterRadius = 1.0f;
 
     public const float SegmentAngle = 18f;
+
+    public const float BoardRadiusMm = 170f;
+    public const float BoardSurfaceOuterMm = 214f;
+    public const float BullInnerMm = 6.35f;
+    public const float BullOuterMm = 15.9f;
+    public const float TripleInnerMm = 99f;
+    public const float TripleOuterMm = 107f;
+    public const float DoubleInnerMm = 162f;
+    public const float DoubleOuterMm = 170f;
+
+    public enum PointZoneKind
+    {
+        OffBoard,
+        BoardMiss,
+        Single,
+        Double,
+        Triple,
+        OuterBull,
+        Bull
+    }
+
+    public struct PointZone
+    {
+        public PointZoneKind kind;
+        public int number;
+    }
+
+    public static PointZone ResolvePoint(float xMm, float yMm)
+    {
+        float radius = Mathf.Sqrt(xMm * xMm + yMm * yMm);
+
+        if (radius > BoardSurfaceOuterMm)
+            return new PointZone { kind = PointZoneKind.OffBoard, number = 0 };
+
+        if (radius > DoubleOuterMm)
+            return new PointZone { kind = PointZoneKind.BoardMiss, number = 0 };
+
+        if (radius <= BullInnerMm)
+            return new PointZone { kind = PointZoneKind.Bull, number = 25 };
+
+        if (radius <= BullOuterMm)
+            return new PointZone { kind = PointZoneKind.OuterBull, number = 25 };
+
+        float angle = Mathf.Atan2(xMm, yMm) * Mathf.Rad2Deg;
+        angle = Mathf.Repeat(angle, 360f);
+
+        int index = Mathf.RoundToInt(angle / SegmentAngle) % NumberOrder.Length;
+        int number = NumberOrder[index];
+
+        if (radius < TripleInnerMm)
+            return new PointZone { kind = PointZoneKind.Single, number = number };
+
+        if (radius <= TripleOuterMm)
+            return new PointZone { kind = PointZoneKind.Triple, number = number };
+
+        if (radius < DoubleInnerMm)
+            return new PointZone { kind = PointZoneKind.Single, number = number };
+
+        return new PointZone { kind = PointZoneKind.Double, number = number };
+    }
 
     /// <summary>Center of the segment for a number in degrees (0 = above, clockwise).</summary>
     public static float GetSegmentCenterAngle(int number)

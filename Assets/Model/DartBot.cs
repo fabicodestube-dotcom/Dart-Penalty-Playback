@@ -1,7 +1,6 @@
 using Newtonsoft.Json;
-using System.Linq;
-using System.Collections.Generic;
 using System;
+using System.Linq;
 using UnityEngine;
 
 [System.Serializable]
@@ -10,213 +9,12 @@ public class DartBot : BasePlayer
     [JsonProperty] private float skillRating;
     [JsonProperty] private readonly int number;
 
-    private int streak = 0;
+    [JsonProperty] private int streak = 0;
+    [JsonProperty] private float confidence = 0f;
+    [JsonProperty] private int dartsThrown = 0;
 
-    private float confidence = 0f;
-
-    private int dartsThrown = 0;
-
-
-    private static readonly int[] BoardCircle = { 20, 1, 18, 4, 13, 6, 10, 15, 2, 17, 3, 19, 7, 16, 8, 11, 14, 9, 12, 5 };
-
-    private readonly struct BotSkillProfile
-    {
-        public readonly float BaseAccuracy;
-        public readonly float SingleWrongRingChance;
-        public readonly float SingleWrongRingTripleShare;
-        public readonly float SingleMissChance;
-        public readonly float DoubleSuccessChance;
-        public readonly float DoubleWrongRingChance;
-        public readonly float DoubleOutsideMissChance;
-        public readonly float DoubleWrongRingTripleShare;
-        public readonly float TripleSuccessChance;
-        public readonly float TripleWrongRingChance;
-        public readonly float TripleWrongRingDoubleShare;
-        public readonly float TripleOutsideMissChance;
-        // neighbor-related probabilities separated:
-        public readonly float NeighborNumberChance;   // chance a miss lands on neighbor number vs random board
-        public readonly float NeighborTripleChance;   // when neighbor, chance the neighbor ring is Triple (for triple-target misses)
-        public readonly float NeighborDoubleChance;   // when neighbor, chance the neighbor ring is Double (for double-target misses)
-        public readonly float SingleBullSingleChance;
-        public readonly float SingleBullDoubleChance;
-        public readonly float DoubleBullSingleChance;
-        public readonly float DoubleBullDoubleChance;
-
-        public BotSkillProfile(
-            float baseAccuracy,
-            float singleWrongRingChance,
-            float singleWrongRingTripleShare,
-            float singleMissChance,
-            float doubleSuccessChance,
-            float doubleWrongRingChance,
-            float doubleWrongRingTripleShare,
-            float doubleOutsideMissChance,
-            float tripleSuccessChance,
-            float tripleWrongRingChance,
-            float tripleWrongRingDoubleShare,
-            float tripleOutsideMissChance,
-            float neighborNumberChance,
-            float neighborTripleChance,
-            float neighborDoubleChance,
-            float singleBullSingleChance,
-            float singleBullDoubleChance,
-            float doubleBullSingleChance,
-            float doubleBullDoubleChance)
-        {
-            BaseAccuracy = baseAccuracy;
-            SingleWrongRingChance = singleWrongRingChance;
-            SingleWrongRingTripleShare = singleWrongRingTripleShare;
-            SingleMissChance = singleMissChance;
-            DoubleSuccessChance = doubleSuccessChance;
-            DoubleWrongRingChance = doubleWrongRingChance;
-            DoubleWrongRingTripleShare = doubleWrongRingTripleShare;
-            DoubleOutsideMissChance = doubleOutsideMissChance;
-            TripleSuccessChance = tripleSuccessChance;
-            TripleWrongRingChance = tripleWrongRingChance;
-            TripleWrongRingDoubleShare = tripleWrongRingDoubleShare;
-            TripleOutsideMissChance = tripleOutsideMissChance;
-            NeighborNumberChance = neighborNumberChance;
-            NeighborTripleChance = neighborTripleChance;
-            NeighborDoubleChance = neighborDoubleChance;
-            SingleBullSingleChance = singleBullSingleChance;
-            SingleBullDoubleChance = singleBullDoubleChance;
-            DoubleBullSingleChance = doubleBullSingleChance;
-            DoubleBullDoubleChance = doubleBullDoubleChance;
-        }
-
-        public static BotSkillProfile Lerp(BotSkillProfile a, BotSkillProfile b, float t)
-        {
-            return new BotSkillProfile(
-                Mathf.Lerp(a.BaseAccuracy, b.BaseAccuracy, t),
-                Mathf.Lerp(a.SingleWrongRingChance, b.SingleWrongRingChance, t),
-                Mathf.Lerp(a.SingleWrongRingTripleShare, b.SingleWrongRingTripleShare, t),
-                Mathf.Lerp(a.SingleMissChance, b.SingleMissChance, t),
-                Mathf.Lerp(a.DoubleSuccessChance, b.DoubleSuccessChance, t),
-                Mathf.Lerp(a.DoubleWrongRingChance, b.DoubleWrongRingChance, t),
-                Mathf.Lerp(a.DoubleWrongRingTripleShare, b.DoubleWrongRingTripleShare, t),
-                Mathf.Lerp(a.DoubleOutsideMissChance, b.DoubleOutsideMissChance, t),
-                Mathf.Lerp(a.TripleSuccessChance, b.TripleSuccessChance, t),
-                Mathf.Lerp(a.TripleWrongRingChance, b.TripleWrongRingChance, t),
-                Mathf.Lerp(a.TripleWrongRingDoubleShare, b.TripleWrongRingDoubleShare, t),
-                Mathf.Lerp(a.TripleOutsideMissChance, b.TripleOutsideMissChance, t),
-                Mathf.Lerp(a.NeighborNumberChance, b.NeighborNumberChance, t),
-                Mathf.Lerp(a.NeighborTripleChance, b.NeighborTripleChance, t),
-                Mathf.Lerp(a.NeighborDoubleChance, b.NeighborDoubleChance, t),
-                Mathf.Lerp(a.SingleBullSingleChance, b.SingleBullSingleChance, t),
-                Mathf.Lerp(a.SingleBullDoubleChance, b.SingleBullDoubleChance, t),
-                Mathf.Lerp(a.DoubleBullSingleChance, b.DoubleBullSingleChance, t),
-                Mathf.Lerp(a.DoubleBullDoubleChance, b.DoubleBullDoubleChance, t));
-        }
-    }
-
-    private static readonly BotSkillProfile[] SkillProfileAnchors =
-    {
-        // Easy (beginner/bar player)
-        new BotSkillProfile(
-            baseAccuracy: 0.35f,
-            singleWrongRingChance: 0.15f,
-            singleWrongRingTripleShare: 0.20f,
-            singleMissChance: 0.20f,
-
-            doubleSuccessChance: 0.15f,
-            doubleWrongRingChance: 0.70f,
-            doubleWrongRingTripleShare: 0.05f,
-            doubleOutsideMissChance: 0.35f,
-
-            tripleSuccessChance: 0.10f,
-            tripleWrongRingChance: 0.80f,
-            tripleWrongRingDoubleShare: 0.05f,
-            tripleOutsideMissChance: 0.20f,
-
-            neighborNumberChance: 0.40f,
-            neighborTripleChance: 0.02f,
-            neighborDoubleChance: 0.05f,
-
-            singleBullSingleChance: 0.15f,
-            singleBullDoubleChance: 0.02f,
-            doubleBullSingleChance: 0.10f,
-            doubleBullDoubleChance: 0.05f),
-
-        // Medium (advanced hobby player)
-        new BotSkillProfile(
-            baseAccuracy: 0.55f,
-            singleWrongRingChance: 0.08f,
-            singleWrongRingTripleShare: 0.30f,
-            singleMissChance: 0.08f,
-
-            doubleSuccessChance: 0.30f,
-            doubleWrongRingChance: 0.55f,
-            doubleWrongRingTripleShare: 0.10f,
-            doubleOutsideMissChance: 0.20f,
-
-            tripleSuccessChance: 0.25f,
-            tripleWrongRingChance: 0.65f,
-            tripleWrongRingDoubleShare: 0.10f,
-            tripleOutsideMissChance: 0.10f,
-
-            neighborNumberChance: 0.70f,
-            neighborTripleChance: 0.08f,
-            neighborDoubleChance: 0.12f,
-
-            singleBullSingleChance: 0.35f,
-            singleBullDoubleChance: 0.10f,
-            doubleBullSingleChance: 0.30f,
-            doubleBullDoubleChance: 0.20f),
-
-        // Hard (local league player)
-        new BotSkillProfile(
-            baseAccuracy: 0.75f,
-            singleWrongRingChance: 0.04f,
-            singleWrongRingTripleShare: 0.40f,
-            singleMissChance: 0.02f,
-
-            doubleSuccessChance: 0.45f,
-            doubleWrongRingChance: 0.45f,
-            doubleWrongRingTripleShare: 0.15f,
-            doubleOutsideMissChance: 0.10f,
-
-            tripleSuccessChance: 0.42f,
-            tripleWrongRingChance: 0.53f,
-            tripleWrongRingDoubleShare: 0.15f,
-            tripleOutsideMissChance: 0.05f,
-
-            neighborNumberChance: 0.90f,
-            neighborTripleChance: 0.20f,
-            neighborDoubleChance: 0.25f,
-
-            singleBullSingleChance: 0.60f,
-            singleBullDoubleChance: 0.15f,
-            doubleBullSingleChance: 0.45f,
-            doubleBullDoubleChance: 0.40f),
-
-        // Pro (PDC professional level)
-        new BotSkillProfile(
-            baseAccuracy: 0.92f,
-            singleWrongRingChance: 0.015f,
-            singleWrongRingTripleShare: 0.50f,
-            singleMissChance: 0.002f,
-
-            doubleSuccessChance: 0.60f,
-            doubleWrongRingChance: 0.38f,
-            doubleWrongRingTripleShare: 0.20f,
-            doubleOutsideMissChance: 0.02f,
-
-            tripleSuccessChance: 0.55f,
-            tripleWrongRingChance: 0.43f,
-            tripleWrongRingDoubleShare: 0.20f,
-            tripleOutsideMissChance: 0.02f,
-
-            neighborNumberChance: 0.98f,
-            neighborTripleChance: 0.35f,
-            neighborDoubleChance: 0.40f,
-
-            singleBullSingleChance: 0.75f,
-            singleBullDoubleChance: 0.20f,
-            doubleBullSingleChance: 0.40f,
-            doubleBullDoubleChance: 0.55f)
-    };
-
-    private static readonly BotSkillProfile[] SkillProfiles = BuildSkillProfiles();
+    private const int IntentionalBustMaxScore = 60;
+    private const float BustFinalWeightMargin = 0.10f;
 
     public DartBot(Guid id, string playerName, float skillRating, int number) : base(id, playerName)
     {
@@ -238,168 +36,127 @@ public class DartBot : BasePlayer
         skillRating = BotSkillScale.Normalize(value);
     }
 
-    // =========================================================
-    // WAHRSCHEINLICHKEITEN
-    // =========================================================
-
-    private static BotSkillProfile[] BuildSkillProfiles()
-    {
-        int count = Mathf.RoundToInt((BotSkillScale.Max - BotSkillScale.Min) / BotSkillScale.Step) + 1;
-        var profiles = new BotSkillProfile[count];
-
-        for (int i = 0; i < count; i++)
-        {
-            float skill = BotSkillScale.Min + i * BotSkillScale.Step;
-            profiles[i] = BuildAnchoredProfile(skill);
-        }
-
-        return profiles;
-    }
-
-    private static BotSkillProfile BuildAnchoredProfile(float skill)
-    {
-        if (skill <= BotSkillScale.Min)
-            return SkillProfileAnchors[0];
-
-        if (skill <= 4f)
-            return BotSkillProfile.Lerp(SkillProfileAnchors[0], SkillProfileAnchors[1], (skill - 1f) / 3f);
-
-        if (skill <= 7f)
-            return BotSkillProfile.Lerp(SkillProfileAnchors[1], SkillProfileAnchors[2], (skill - 4f) / 3f);
-
-        if (skill < BotSkillScale.Max)
-            return BotSkillProfile.Lerp(SkillProfileAnchors[2], SkillProfileAnchors[3], (skill - 7f) / 3f);
-
-        return SkillProfileAnchors[3];
-    }
-
-    private BotSkillProfile GetSkillProfile()
-    {
-        int index = Mathf.RoundToInt((GetSkillRating() - BotSkillScale.Min) / BotSkillScale.Step);
-        return SkillProfiles[Mathf.Clamp(index, 0, SkillProfiles.Length - 1)];
-    }
-
-    private float GetNumberAccuracy()
-    {
-        return GetSkillProfile().BaseAccuracy;
-    }
-
-    private float GetCurrentAccuracy()
-    {
-        float accuracy = GetNumberAccuracy();
-
-        accuracy += streak * 0.01f;
-        accuracy += confidence * 0.005f;
-        accuracy -= GetFatiguePenalty();
-
-        return Mathf.Clamp01(accuracy);
-    }
-
-    private void UpdateForm(Throw dart)
-    {
-        if (dart.HitType == HitType.Board || (dart.HitType == HitType.Custom && dart.Value > 0))
-        {
-            streak++;
-            confidence += 0.2f;
-        }
-        else
-        {
-            streak--;
-            confidence -= 0.3f;
-        }
-
-        streak = Mathf.Clamp(streak, -5, 5);
-        confidence = Mathf.Clamp(confidence, -5f, 5f);
-    }
-
-    private float GetFatiguePenalty()
-    {
-        if (dartsThrown < 150)
-            return 0f;
-
-        if (dartsThrown < 300)
-            return 0.01f;
-
-        return 0.025f;
-    }
-
-    private float GetTripleChance()
-    {
-        return GetSkillProfile().TripleSuccessChance;
-    }
-
-    private float GetDoubleChance()
-    {
-        return GetSkillProfile().DoubleSuccessChance;
-    }
-
-    private float GetNeighborChance()
-    {
-        return GetSkillProfile().NeighborNumberChance;
-    }
-
-    private DartMultiplier GetWrongRingMultiplierForSingle()
-    {
-        var profile = GetSkillProfile();
-        return UnityEngine.Random.value < profile.SingleWrongRingTripleShare
-            ? DartMultiplier.Triple
-            : DartMultiplier.Double;
-    }
-
-    private DartMultiplier GetWrongRingMultiplierForDouble()
-    {
-        var profile = GetSkillProfile();
-        return UnityEngine.Random.value < profile.DoubleWrongRingTripleShare
-            ? DartMultiplier.Triple
-            : DartMultiplier.Single;
-    }
-
-    private DartMultiplier GetWrongRingMultiplierForTriple()
-    {
-        var profile = GetSkillProfile();
-        return UnityEngine.Random.value < profile.TripleWrongRingDoubleShare
-            ? DartMultiplier.Double
-            : DartMultiplier.Single;
-    }
-
-    // =========================================================
-    // X01
-    // =========================================================
-
     public Throw GetNextX01Throw(int currentScore, CheckoutType checkoutType)
     {
-        var target = DetermineX01Target(currentScore, checkoutType);
-        return SimulatePhysicalThrow(target);
+        return GetNextX01Throw(currentScore, checkoutType, 3, true, CheckinType.StraightIn);
     }
 
-    private (int value, DartMultiplier multiplier) DetermineX01Target(int score, CheckoutType checkoutType)
+    public Throw GetNextX01Throw(
+        int currentScore,
+        CheckoutType checkoutType,
+        int dartsLeft,
+        bool isCheckedIn,
+        CheckinType checkinType,
+        int turnStartScore = -1)
     {
-        // How many darts are still in the turn?
-        // (You don’t have this in the bot right now!)
-        int dartsLeft = 3; // TODO: handed over by the game would be better
+        dartsLeft = Mathf.Clamp(dartsLeft, 1, 3);
 
-        string checkout = CheckoutDatabase.GetCheckout(checkoutType, score, dartsLeft);
-
-        if (!string.IsNullOrEmpty(checkout))
+        if (!isCheckedIn)
         {
-            var parts = checkout.Split(' ');
+            if (checkinType == CheckinType.DoubleIn)
+                return Simulate(20, DartMultiplier.Double);
 
-            // Take the first dart of the route
-            var first = ParseDart(parts[0]);
-
-            return first;
+            if (checkinType == CheckinType.MasterIn)
+                return Simulate(20, DartMultiplier.Triple);
         }
 
-        // Fallback (your previous behavior)
-        return (GetSkillRating() <= BotSkillScale.EasyMax)
-            ? (20, DartMultiplier.Single)
-            : (20, DartMultiplier.Triple);
+        if (currentScore <= 0)
+            return Simulate(20, DartMultiplier.Single);
+
+        var checkoutPlan = CheckoutDatabase.GetCheckoutPlan(checkoutType, currentScore, 3);
+
+        if (ShouldIntentionalBust(checkoutType, currentScore, dartsLeft, turnStartScore, checkoutPlan))
+            return Simulate(20, DartMultiplier.Triple);
+
+        if (checkoutPlan.IsValid)
+        {
+            var first = ParseDart(checkoutPlan.Route.Split(' ')[0]);
+            return Simulate(first.val, first.mult);
+        }
+
+        var scoringTarget = ChooseScoringTarget(currentScore);
+        return Simulate(scoringTarget.val, scoringTarget.mult);
     }
 
-    // Using Checkout Database to determine the best target based on current score and checkout type
-    private (int val, DartMultiplier mult) ParseDart(string dart)
+    private static bool ShouldIntentionalBust(
+        CheckoutType checkoutType,
+        int currentScore,
+        int dartsLeft,
+        int turnStartScore,
+        CheckoutDatabase.CheckoutPlan checkoutPlan)
     {
-        // Number only - Single
+        if (dartsLeft != 1
+            || turnStartScore <= currentScore
+            || currentScore > IntentionalBustMaxScore
+            || checkoutType == CheckoutType.Single
+            || !checkoutPlan.IsValid)
+        {
+            return false;
+        }
+
+        if (CheckoutDatabase.GetCheckoutPlan(checkoutType, currentScore, 1).IsValid)
+            return false;
+
+        var first = ParseDart(checkoutPlan.Route.Split(' ')[0]);
+        int normalLeave = currentScore - DartScore(first.val, first.mult);
+
+        if (normalLeave <= 0)
+            return false;
+
+        var startPlan = CheckoutDatabase.GetCheckoutPlan(checkoutType, turnStartScore, 3);
+        if (!startPlan.IsValid)
+            return false;
+
+        var leavePlan = CheckoutDatabase.GetCheckoutPlan(checkoutType, normalLeave, 3);
+        if (!leavePlan.IsValid)
+            return true;
+
+        if (startPlan.DartCount != leavePlan.DartCount)
+            return startPlan.DartCount < leavePlan.DartCount;
+
+        return startPlan.FinalWeight > leavePlan.FinalWeight + BustFinalWeightMargin;
+    }
+
+    private static int DartScore(int value, DartMultiplier multiplier)
+    {
+        return multiplier switch
+        {
+            DartMultiplier.Double => value * 2,
+            DartMultiplier.Triple => value * 3,
+            _ => value
+        };
+    }
+
+    private (int val, DartMultiplier mult) ChooseScoringTarget(int score)
+    {
+        if (score > 170 && IsBogeyLeave(score - 60) && !IsBogeyLeave(score - 57))
+            return (19, DartMultiplier.Triple);
+
+        if (score > 60)
+            return (20, DartMultiplier.Triple);
+
+        if (score % 2 == 0 && score <= 40)
+            return (score / 2, DartMultiplier.Double);
+
+        int leave = score - 40;
+        if (leave >= 1 && leave <= 20)
+            return (leave, DartMultiplier.Single);
+
+        return (20, DartMultiplier.Single);
+    }
+
+    private static bool IsBogeyLeave(int score)
+    {
+        return score == 169
+            || score == 168
+            || score == 166
+            || score == 163
+            || score == 162
+            || score == 159;
+    }
+
+    private static (int val, DartMultiplier mult) ParseDart(string dart)
+    {
         if (int.TryParse(dart, out int value))
         {
             if (value == 50)
@@ -423,273 +180,144 @@ public class DartBot : BasePlayer
         if (dart.Equals("Bull", StringComparison.OrdinalIgnoreCase))
             return (25, DartMultiplier.Single);
 
-        // Fallback
         return (1, DartMultiplier.Single);
     }
-
-
-    // =========================================================
-    // CRICKET
-    // =========================================================
 
     public Throw GetNextCricketThrow(CricketBotContext ctx)
     {
         Guid myId = ctx.PlayerId;
 
-        var openNumbers = ctx.Numbers.Where(n => ctx.PlayerHits[myId][n] < 3).ToList();
-
-        var targets = ctx.Numbers
-            .OrderByDescending(n => {
-                if (openNumbers.Count == 1 && openNumbers.Contains(n)) return 100f;
-
-                return n switch {
-                    25 => 17.5f,
-                    _ => (float)n
-                };
-            })
+        var openNumbers = ctx.Numbers
+            .Where(n => ctx.PlayerHits[myId][n] < 3)
+            .OrderByDescending(CricketTargetValue)
             .ToList();
 
-        foreach (int number in targets)
+        if (openNumbers.Count > 0)
         {
+            int number = openNumbers[0];
             int myHits = ctx.PlayerHits[myId][number];
-            bool iHaveClosed = myHits >= 3;
+            bool needOne = 3 - myHits == 1;
 
-            if (!iHaveClosed)
+            DartMultiplier multiplier;
+            if (number == 25)
+                multiplier = needOne && GetSkillRating() < 6f
+                    ? DartMultiplier.Single
+                    : DartMultiplier.Double;
+            else if (needOne && GetSkillRating() < 5f)
+                multiplier = DartMultiplier.Single;
+            else
+                multiplier = DartMultiplier.Triple;
+
+            return Simulate(number, multiplier);
+        }
+
+        if (ctx.PointsEnabled)
+        {
+            var scoringNumbers = ctx.Numbers
+                .Where(n => ctx.PlayerIds.Any(id => id != myId && ctx.PlayerHits[id][n] < 3))
+                .OrderByDescending(n => ctx.PlayerIds.Count(id => id != myId && ctx.PlayerHits[id][n] < 3))
+                .ThenByDescending(CricketTargetValue)
+                .ToList();
+
+            if (scoringNumbers.Count > 0)
             {
-                if (3 - myHits == 1 && GetSkillRating() <= BotSkillScale.MediumMax)
-                    return SimulatePhysicalThrow((number, DartMultiplier.Single));
-
-                return SimulatePhysicalThrow((number, number == 25 ? DartMultiplier.Double : DartMultiplier.Triple));
-            }
-
-            if (ctx.PointsEnabled)
-            {
-                bool opponentOpen = ctx.PlayerIds.Where(id => id != myId).Any(id => ctx.PlayerHits[id][number] < 3);
-
-                if (opponentOpen)
-                {
-                    bool shouldScore = false;
-                    int myScore = ctx.PlayerScores[myId];
-
-                    if (ctx.CutThroat)
-                    {
-                        int minScore = ctx.PlayerScores.Values.Min();
-                        if (myScore > minScore || GetSkillRating() > BotSkillScale.HardMax) shouldScore = true;
-                    }
-                    else
-                    {
-                        int maxScore = ctx.PlayerScores.Values.Max();
-                        if (myScore < maxScore || GetSkillRating() > BotSkillScale.HardMax) shouldScore = true;
-                    }
-
-                    if (shouldScore)
-                        return SimulatePhysicalThrow((number, number == 25 ? DartMultiplier.Double : DartMultiplier.Triple));
-                }
+                int number = scoringNumbers[0];
+                return Simulate(number, number == 25 ? DartMultiplier.Double : DartMultiplier.Triple);
             }
         }
 
-        return SimulatePhysicalThrow((20, DartMultiplier.Single));
+        return Simulate(20, DartMultiplier.Triple);
     }
 
-    // =========================================================
-    // ATC
-    // =========================================================
-
-    public Throw GetNextATCThrow(int currentTarget, DartMultiplier requiredMultiplier, bool hasStarted)
+    private static float CricketTargetValue(int number)
     {
-        (int val, DartMultiplier mult) targetParams = (currentTarget, requiredMultiplier);
-
-        Throw result = SimulatePhysicalThrow(targetParams);
-
-        bool isActuallyHit = result.Value == targetParams.val;
-
-        if (targetParams.mult == DartMultiplier.Double && result.Multiplier != DartMultiplier.Double) isActuallyHit = false;
-        if (targetParams.mult == DartMultiplier.Triple && result.Multiplier != DartMultiplier.Triple) isActuallyHit = false;
-
-        return new Throw(result.Multiplier, result.Value, result.HitType, isActuallyHit, targetParams.val, targetMultiplier: targetParams.mult);
+        return number == 25 ? 17.5f : number;
     }
 
-    // =========================================================
-    // PHYSICS
-    // =========================================================
-
-    private Throw SimulatePhysicalThrow((int val, DartMultiplier mult) target)
+    public Throw GetNextATCThrow(int currentTarget, DartMultiplier requiredMultiplier)
     {
-        if (target.val == 25)
-            return SimulateBullThrow(target);
+        if (currentTarget <= 0)
+            return new Throw(DartMultiplier.Single, 0, HitType.Wall, false, -1);
 
-        return target.mult switch
-        {
-            DartMultiplier.Single => SimulateSingleThrow(target),
-            DartMultiplier.Double => SimulateDoubleThrow(target),
-            DartMultiplier.Triple => SimulateTripleThrow(target),
-            _ => SimulateSingleThrow(target)
-        };
-    }
-
-    private Throw SimulateSingleThrow((int val, DartMultiplier mult) target)
-    {
-        var profile = GetSkillProfile();
-        bool hitNumber = UnityEngine.Random.value < GetCurrentAccuracy();
-
-        if (hitNumber)
-        {
-            float ringRoll = UnityEngine.Random.value;
-            float goodSingleChance = 1f - profile.SingleWrongRingChance - profile.SingleMissChance;
-
-            if (ringRoll < goodSingleChance)
-                return CreateThrow(target.val, DartMultiplier.Single, target);
-
-            if (ringRoll < goodSingleChance + profile.SingleWrongRingChance)
-                return CreateThrow(target.val, GetWrongRingMultiplierForSingle(), target);
-        }
-
-        return CreateThrow(GetMissedNumber(target.val), DartMultiplier.Single, target);
-    }
-
-    private Throw SimulateTripleThrow((int val, DartMultiplier mult) target)
-    {
-        var profile = GetSkillProfile();
-        bool hitNumber = UnityEngine.Random.value < GetCurrentAccuracy();
-
-        if (hitNumber)
-        {
-            float ringRoll = UnityEngine.Random.value;
-
-            if (ringRoll < profile.TripleSuccessChance)
-                return CreateThrow(target.val, DartMultiplier.Triple, target);
-
-            if (ringRoll < profile.TripleSuccessChance + profile.TripleWrongRingChance)
-                return CreateThrow(target.val, GetWrongRingMultiplierForTriple(), target);
-
-            if (ringRoll < profile.TripleSuccessChance + profile.TripleWrongRingChance + profile.TripleOutsideMissChance)
-                return new Throw(DartMultiplier.Single, 0, HitType.Board, false, target.val, targetMultiplier: target.mult);
-        }
-
-        // Decide whether the miss lands on a neighbor number or somewhere else
-        if (UnityEngine.Random.value < profile.NeighborNumberChance)
-        {
-            var (left, right) = GetNeighbors(target.val);
-            int neighbor = UnityEngine.Random.value < 0.5f ? left : right;
-            DartMultiplier mult = UnityEngine.Random.value < profile.NeighborTripleChance
-                ? DartMultiplier.Triple
-                : DartMultiplier.Single;
-
-            return CreateThrow(neighbor, mult, target);
-        }
-
-        // random board miss -> single
-        return CreateThrow(RandomBoardNumber(), DartMultiplier.Single, target);
-    }
-
-    private Throw SimulateDoubleThrow((int val, DartMultiplier mult) target)
-    {
-        var profile = GetSkillProfile();
-        bool hitNumber = UnityEngine.Random.value < GetCurrentAccuracy();
-
-        if (hitNumber)
-        {
-            float ringRoll = UnityEngine.Random.value;
-
-            if (ringRoll < profile.DoubleSuccessChance)
-                return CreateThrow(target.val, DartMultiplier.Double, target);
-
-            if (ringRoll < profile.DoubleSuccessChance + profile.DoubleWrongRingChance)
-                return CreateThrow(target.val, GetWrongRingMultiplierForDouble(), target);
-
-            if (ringRoll < profile.DoubleSuccessChance + profile.DoubleWrongRingChance + profile.DoubleOutsideMissChance)
-                return new Throw(DartMultiplier.Single, 0, HitType.Board, false, target.val, targetMultiplier: target.mult);
-        }
-
-        // Decide whether the miss lands on a neighbor number or somewhere else
-        if (UnityEngine.Random.value < profile.NeighborNumberChance)
-        {
-            var (left, right) = GetNeighbors(target.val);
-            int neighbor = UnityEngine.Random.value < 0.5f ? left : right;
-            DartMultiplier mult = UnityEngine.Random.value < profile.NeighborDoubleChance
-                ? DartMultiplier.Double
-                : DartMultiplier.Single;
-
-            return CreateThrow(neighbor, mult, target);
-        }
-
-        // random board miss -> single
-        return CreateThrow(RandomBoardNumber(), DartMultiplier.Single, target);
-    }
-
-    private Throw SimulateBullThrow((int val, DartMultiplier mult) target)
-    {
-        var profile = GetSkillProfile();
-        float roll = UnityEngine.Random.value;
-
-        if (target.mult == DartMultiplier.Single)
-        {
-            if (roll < profile.SingleBullDoubleChance)
-                return CreateThrow(25, DartMultiplier.Double, target);
-
-            if (roll < profile.SingleBullDoubleChance + profile.SingleBullSingleChance)
-                return CreateThrow(25, DartMultiplier.Single, target);
-
-            return CreateThrow(RandomBoardNumber(), DartMultiplier.Single, target);
-        }
-
-        // Target = Bullseye
-        if (roll < profile.DoubleBullDoubleChance)
-            return CreateThrow(25, DartMultiplier.Double, target);
-
-        if (roll < profile.DoubleBullDoubleChance + profile.DoubleBullSingleChance)
-            return CreateThrow(25, DartMultiplier.Single, target);
-
-        return CreateThrow(RandomBoardNumber(), DartMultiplier.Single, target);
-    }
-
-    private Throw CreateThrow(int value,
-                          DartMultiplier multiplier,
-                          (int val, DartMultiplier mult) target)
-    {
-        bool hit =
-            value == target.val &&
-            multiplier == target.mult;
+        Throw result = Simulate(currentTarget, requiredMultiplier);
+        bool isActuallyHit = IsAtcHit(result, currentTarget, requiredMultiplier);
 
         return new Throw(
-            multiplier,
+            result.Multiplier,
+            result.Value,
+            result.HitType,
+            isActuallyHit,
+            currentTarget,
+            result.CustomHitId,
+            requiredMultiplier,
+            result.LandingX,
+            result.LandingY,
+            result.TargetX,
+            result.TargetY,
+            result.HasLandingPoint,
+            result.HasTargetPoint);
+    }
+
+    private static bool IsAtcHit(Throw result, int target, DartMultiplier required)
+    {
+        if (result.Value != target)
+            return false;
+
+        if (result.HitType != HitType.Board && result.HitType != HitType.Custom)
+            return false;
+
+        if (required == DartMultiplier.Single)
+            return !(target == 25 && result.Multiplier == DartMultiplier.Triple);
+
+        return result.Multiplier == required;
+    }
+
+    private Throw Simulate(int value, DartMultiplier multiplier)
+    {
+        Throw throwData = DartThrowSimulator.Simulate(
+            GetSkillRating(),
             value,
-            HitType.Board,
-            hit,
-            target.val,
-            targetMultiplier: target.mult);
+            multiplier,
+            GetCurrentFormFactor());
+
+        RegisterThrow(throwData);
+        return throwData;
     }
 
-    private int RandomBoardNumber()
+    private float GetCurrentFormFactor()
     {
-        return BoardCircle[UnityEngine.Random.Range(0, BoardCircle.Length)];
+        float factor = 1f;
+        factor -= Mathf.Clamp(streak, -5, 5) * 0.012f;
+        factor -= Mathf.Clamp(confidence, -5f, 5f) * 0.008f;
+        factor += GetFatiguePenalty();
+
+        return Mathf.Clamp(factor, 0.80f, 1.35f);
     }
 
-    private int GetMissedNumber(int target)
+    private float GetFatiguePenalty()
     {
-        if (target == 25)
-            return RandomBoardNumber();
+        if (dartsThrown < 150)
+            return 0f;
 
-        if (UnityEngine.Random.value < GetNeighborChance())
+        if (dartsThrown < 300)
+            return 0.01f;
+
+        return 0.025f;
+    }
+
+    private void RegisterThrow(Throw dart)
+    {
+        dartsThrown++;
+
+        if (dart.GetScore() > 0)
         {
-            var (left, right) = GetNeighbors(target);
-            return UnityEngine.Random.value < .5f ? left : right;
+            streak = Math.Min(5, streak + 1);
+            confidence = Math.Min(5f, confidence + 0.2f);
         }
-
-        return RandomBoardNumber();
-    }
-
-    // =========================================================
-    // HELPER
-    // =========================================================
-
-    private (int left, int right) GetNeighbors(int value)
-    {
-        int index = System.Array.IndexOf(BoardCircle, value);
-        if (index == -1) return (1, 5);
-
-        int left = BoardCircle[(index - 1 + 20) % 20];
-        int right = BoardCircle[(index + 1) % 20];
-        return (left, right);
+        else
+        {
+            streak = Math.Max(-5, streak - 1);
+            confidence = Math.Max(-5f, confidence - 0.3f);
+        }
     }
 }

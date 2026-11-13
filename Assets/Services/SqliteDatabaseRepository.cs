@@ -1502,7 +1502,7 @@ public static class SqliteDatabaseRepository
                 "INSERT OR REPLACE INTO bot_state (player_id, skill, difficulty, number, confidence, darts_thrown, streak) VALUES (?, ?, ?, ?, ?, ?, ?);",
                 player.GetID().ToString(),
                 bot.GetSkillRating(),
-                BotSkillScale.GetTierKey(bot.GetSkillRating()),
+                "Custom",
                 bot.GetNumber(),
                 GetPrivateField(bot, "confidence", 0f),
                 GetPrivateField(bot, "dartsThrown", 0),

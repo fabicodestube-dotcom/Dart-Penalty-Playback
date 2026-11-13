@@ -275,6 +275,9 @@ public class X01Game : Game
         if (newScore == 0 && x01Settings.checkoutType == CheckoutType.Triple && !t.IsTriple())
             bust = true;
 
+        if (newScore == 0 && x01Settings.checkoutType == CheckoutType.Master && !(t.IsDouble() || t.IsTriple()))
+            bust = true;
+
         // Custom penalties (instant type) per throw; legacy paths are
         // decommissioned (all about customization snapshots).
         CheckCustomInstantPenalties(playerId, t, currentTurn);
@@ -735,28 +738,10 @@ public class X01Game : Game
 
         X01GameSettings settings = GetSettingsAsX01();
 
-        if (settings == null)
-            return;
-        
-        int suddenDeathValue = 0;
-
-        switch (settings.checkoutType)
-        {
-            case CheckoutType.Single:
-                suddenDeathValue = 1;
-                break;
-            case CheckoutType.Double:
-                suddenDeathValue = 2;
-                break;
-            case CheckoutType.Triple:
-                suddenDeathValue = 3;
-                break;
-        }
-
-        if (suddenDeathValue == 0)
+        if (settings == null || playerScores.Count == 0)
             return;
 
-        suddenDeathTriggered = playerScores.Values.All(s => s == suddenDeathValue);
+        suddenDeathTriggered = playerScores.Values.All(s => IsSuddenDeathScore(s, settings.checkoutType));
 
         if (suddenDeathTriggered)
         {
@@ -771,28 +756,27 @@ public class X01Game : Game
 
                 X01GameSettings settings = GetSettingsAsX01();
 
-        if (settings == null)
+        if (settings == null || playerScores.Count == 0)
             return;
-        
-        int suddenDeathValue = 0;
 
-        switch (settings.checkoutType)
+        suddenDeathTriggered = playerScores.Values.All(s => IsSuddenDeathScore(s, settings.checkoutType));
+    }
+
+    private static bool IsSuddenDeathScore(int score, CheckoutType checkoutType)
+    {
+        switch (checkoutType)
         {
             case CheckoutType.Single:
-                suddenDeathValue = 1;
-                break;
+                return score == 1;
             case CheckoutType.Double:
-                suddenDeathValue = 2;
-                break;
+                return score == 2;
             case CheckoutType.Triple:
-                suddenDeathValue = 3;
-                break;
+                return score == 3;
+            case CheckoutType.Master:
+                return score == 2 || score == 3;
+            default:
+                return false;
         }
-
-        if (suddenDeathValue == 0)
-            return;
-
-        suddenDeathTriggered = playerScores.Values.All(s => s == suddenDeathValue);
     }
 
     private static bool IsCheckable(int remainingPoints, CheckoutType checkoutType)

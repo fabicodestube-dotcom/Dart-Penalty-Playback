@@ -14,6 +14,13 @@ public class Throw
     [JsonProperty] public int TargetValue { get; }
     [JsonProperty] public DartMultiplier TargetMultiplier { get; }
 
+    [JsonProperty] public float LandingX { get; }
+    [JsonProperty] public float LandingY { get; }
+    [JsonProperty] public float TargetX { get; }
+    [JsonProperty] public float TargetY { get; }
+    [JsonProperty] public bool HasLandingPoint { get; }
+    [JsonProperty] public bool HasTargetPoint { get; }
+
     /// <summary>
     /// sector ID of a custom hit area (only set at HitType.Custom),
     /// Value/multiplier determines the score (0 = miss).
@@ -25,7 +32,20 @@ public class Throw
     // CONSTRUCTION
     // =========================================================
 
-    public Throw(DartMultiplier multiplier, int value, HitType hitType = HitType.Board, bool isTargetHit = false, int targetValue = -1, string customHitId = null, DartMultiplier targetMultiplier = DartMultiplier.Single)
+    public Throw(
+        DartMultiplier multiplier,
+        int value,
+        HitType hitType = HitType.Board,
+        bool isTargetHit = false,
+        int targetValue = -1,
+        string customHitId = null,
+        DartMultiplier targetMultiplier = DartMultiplier.Single,
+        float landingX = 0f,
+        float landingY = 0f,
+        float targetX = 0f,
+        float targetY = 0f,
+        bool hasLandingPoint = false,
+        bool hasTargetPoint = false)
     {
         Multiplier = multiplier;
         Value = value;
@@ -34,6 +54,12 @@ public class Throw
         TargetValue = targetValue;
         TargetMultiplier = targetMultiplier;
         CustomHitId = hitType == HitType.Custom ? customHitId : null;
+        LandingX = landingX;
+        LandingY = landingY;
+        TargetX = targetX;
+        TargetY = targetY;
+        HasLandingPoint = hasLandingPoint;
+        HasTargetPoint = hasTargetPoint;
     }
 
 

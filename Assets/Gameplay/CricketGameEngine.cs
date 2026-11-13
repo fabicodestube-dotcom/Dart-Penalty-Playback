@@ -133,17 +133,17 @@ public class CricketGameEngine : GameEngine
         // (Legacy) penalties are decommissioned; Customs fire over
         // OnCustomPenaltyTriggered (HandleCustomPenaltyAudio), Specials
         // (e.g. White Horse) via OnCustomAudioEvent — both before this
-        // Hook. Order here: Marks number, points, then Marks event.
+        // Hook. Order here: Marks number, Marks event, then points.
         if (result.Hits.Count > 0)
         {
-            // Marks: announce number, then points, then Marks event (Custom, Seed cricket_marks).
+            // Marks: announce number, then Marks event (Custom, Seed cricket_marks), then points.
             int totalMarks = result.Hits.Sum(h => h.EffectiveMarks);
             audioManager.PlayScore(totalMarks);
 
+            PlayManualAudioEvent(SeededAudioEvents.MarksId);
+
             if (result.TurnScore > 0)
                 audioManager.PlayScore(result.TurnScore);
-
-            PlayManualAudioEvent(SeededAudioEvents.MarksId);
         }
 
         // Nothing at all

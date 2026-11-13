@@ -157,8 +157,7 @@ public class ATCGameEngine : GameEngine
 
         return bot.GetNextATCThrow(
             ((ATCGame) game).GetCurrentTarget(playerId),
-            ((ATCGame) game).GetCurrentTargetMultiplier(playerId),
-            ((ATCGame) game).HasPlayerStarted(playerId)
+            ((ATCGame) game).GetCurrentTargetMultiplier(playerId)
         );
     }
 

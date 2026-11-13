@@ -170,9 +170,20 @@ public class X01GameEngine : GameEngine
 
     private Throw GetNextX01BotThrow(DartBot bot)
     {
+        var x01 = (X01Game) game;
+        var settings = x01.GetSettingsAsX01();
+        var turn = game.GetCurrentTurnOfPlayer(bot.GetID());
+        int turnStartScore = turn != null && turn.GetThrows().Count > 0
+            ? turn.ScoreBeforeTurn
+            : x01.GetScore(bot.GetID());
+
         return bot.GetNextX01Throw(
-            ((X01Game) game).GetScore(bot.GetID()),
-            ((X01Game) game).GetSettingsAsX01().checkoutType);
+            x01.GetScore(bot.GetID()),
+            settings.checkoutType,
+            GetRemainingDarts(bot.GetID()),
+            x01.IsCheckedIn(bot.GetID()),
+            settings.checkinType,
+            turnStartScore);
     }
 
     private void HandleLegWon(Guid playerId)

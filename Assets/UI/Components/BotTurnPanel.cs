@@ -55,6 +55,27 @@ public class BotTurnPanel : MonoBehaviour
     private const float SingleOuterRingRadius = 0.618f;
     private const float TripleRingRadius = 0.4335f;
     private const float DoubleRingRadius = 0.7875f;
+    private const float OuterBullRingRadius = 0.07f;
+
+    private const float VisualBullInnerRadius = 0.036f;
+    private const float VisualOuterBullRadius = 0.094f;
+    private const float VisualTripleInnerRadius = 0.409f;
+    private const float VisualTripleOuterRadius = 0.456f;
+    private const float VisualDoubleInnerRadius = 0.749f;
+    private const float VisualDoubleOuterRadius = 0.796f;
+    private const float VisualBoardOuterRadius = 1.05f;
+
+    private const float PhysicalBullInnerMm = 6.35f;
+    private const float PhysicalOuterBullRadiusMm = 11.125f;
+    private const float PhysicalOuterBullOuterMm = 15.9f;
+    private const float PhysicalTripleInnerMm = 99f;
+    private const float PhysicalTripleRadiusMm = 103f;
+    private const float PhysicalTripleOuterMm = 107f;
+    private const float PhysicalSingleRadiusMm = 134.5f;
+    private const float PhysicalDoubleInnerMm = 162f;
+    private const float PhysicalDoubleRadiusMm = 165.5f;
+    private const float PhysicalDoubleOuterMm = 170f;
+    private const float PhysicalOffBoardMaxMm = 220f;
 
     private GameObject _root;
     private GameObject _playingContainer;
@@ -317,6 +338,18 @@ public class BotTurnPanel : MonoBehaviour
         if (throwData == null)
             return _animationLayer.InverseTransformPoint(_boardArea.position);
 
+        if (throwData.HasLandingPoint)
+        {
+            Vector2 landing = GetBoardPositionFromNormalized(throwData.LandingX, throwData.LandingY);
+            float maxRadius = _boardRadius * VisualBoardOuterRadius;
+
+            if (landing.magnitude > maxRadius)
+                landing = landing.normalized * maxRadius;
+
+            Vector3 landingWorld = _boardArea.TransformPoint(landing);
+            return _animationLayer.InverseTransformPoint(landingWorld);
+        }
+
         bool isExactHit = _hasTarget
             && throwData.Value == _targetValue
             && throwData.Multiplier == _targetMultiplier
@@ -345,15 +378,26 @@ public class BotTurnPanel : MonoBehaviour
         return _animationLayer.InverseTransformPoint(world);
     }
 
+    private Vector2 GetBoardPositionFromNormalized(float x, float y)
+    {
+        float radiusNormalized = Mathf.Sqrt(x * x + y * y);
+
+        if (radiusNormalized < 0.0001f)
+            return Vector2.zero;
+
+        float radiusMm = radiusNormalized * DartboardGeometry.BoardRadiusMm;
+        float visualRadius = PhysicalRadiusToVisualFraction(radiusMm) * _boardRadius;
+        Vector2 direction = new Vector2(x, y) / radiusNormalized;
+
+        return direction * visualRadius;
+    }
+
     private Vector2 GetBoardPosition(int value, DartMultiplier multiplier)
     {
+        float ringRadius = _boardRadius * GetVisualRingFraction(value, multiplier);
+
         if (value == 25)
-        {
-            float radius = multiplier == DartMultiplier.Double
-                ? 0f
-                : _boardRadius * 0.07f;
-            return new Vector2(0f, radius);
-        }
+            return new Vector2(0f, ringRadius);
 
         if (value <= 0)
             return Vector2.zero;
@@ -361,15 +405,79 @@ public class BotTurnPanel : MonoBehaviour
         float angle = GetSegmentAngle(value);
         float radians = angle * Mathf.Deg2Rad;
 
-        float ringFactor = multiplier switch
+        return new Vector2(Mathf.Sin(radians) * ringRadius, Mathf.Cos(radians) * ringRadius);
+    }
+
+    public static float GetVisualRingFraction(int value, DartMultiplier multiplier)
+    {
+        if (value == 25)
+            return multiplier == DartMultiplier.Double ? 0f : OuterBullRingRadius;
+
+        if (value <= 0)
+            return 0f;
+
+        return multiplier switch
         {
             DartMultiplier.Triple => TripleRingRadius,
             DartMultiplier.Double => DoubleRingRadius,
             _ => SingleOuterRingRadius
         };
+    }
 
-        float ringRadius = _boardRadius * ringFactor;
-        return new Vector2(Mathf.Sin(radians) * ringRadius, Mathf.Cos(radians) * ringRadius);
+    public static float PhysicalRadiusToVisualFraction(float radiusMm)
+    {
+        if (radiusMm <= 0f)
+            return 0f;
+
+        if (radiusMm < PhysicalBullInnerMm)
+            return LerpFraction(0f, VisualBullInnerRadius, radiusMm / PhysicalBullInnerMm);
+
+        if (radiusMm < PhysicalOuterBullRadiusMm)
+            return LerpFraction(VisualBullInnerRadius, OuterBullRingRadius,
+                (radiusMm - PhysicalBullInnerMm) / (PhysicalOuterBullRadiusMm - PhysicalBullInnerMm));
+
+        if (radiusMm < PhysicalOuterBullOuterMm)
+            return LerpFraction(OuterBullRingRadius, VisualOuterBullRadius,
+                (radiusMm - PhysicalOuterBullRadiusMm) / (PhysicalOuterBullOuterMm - PhysicalOuterBullRadiusMm));
+
+        if (radiusMm < PhysicalTripleInnerMm)
+            return LerpFraction(VisualOuterBullRadius, VisualTripleInnerRadius,
+                (radiusMm - PhysicalOuterBullOuterMm) / (PhysicalTripleInnerMm - PhysicalOuterBullOuterMm));
+
+        if (radiusMm < PhysicalTripleRadiusMm)
+            return LerpFraction(VisualTripleInnerRadius, TripleRingRadius,
+                (radiusMm - PhysicalTripleInnerMm) / (PhysicalTripleRadiusMm - PhysicalTripleInnerMm));
+
+        if (radiusMm < PhysicalTripleOuterMm)
+            return LerpFraction(TripleRingRadius, VisualTripleOuterRadius,
+                (radiusMm - PhysicalTripleRadiusMm) / (PhysicalTripleOuterMm - PhysicalTripleRadiusMm));
+
+        if (radiusMm < PhysicalSingleRadiusMm)
+            return LerpFraction(VisualTripleOuterRadius, SingleOuterRingRadius,
+                (radiusMm - PhysicalTripleOuterMm) / (PhysicalSingleRadiusMm - PhysicalTripleOuterMm));
+
+        if (radiusMm < PhysicalDoubleInnerMm)
+            return LerpFraction(SingleOuterRingRadius, VisualDoubleInnerRadius,
+                (radiusMm - PhysicalSingleRadiusMm) / (PhysicalDoubleInnerMm - PhysicalSingleRadiusMm));
+
+        if (radiusMm < PhysicalDoubleRadiusMm)
+            return LerpFraction(VisualDoubleInnerRadius, DoubleRingRadius,
+                (radiusMm - PhysicalDoubleInnerMm) / (PhysicalDoubleRadiusMm - PhysicalDoubleInnerMm));
+
+        if (radiusMm < PhysicalDoubleOuterMm)
+            return LerpFraction(DoubleRingRadius, VisualDoubleOuterRadius,
+                (radiusMm - PhysicalDoubleRadiusMm) / (PhysicalDoubleOuterMm - PhysicalDoubleRadiusMm));
+
+        if (radiusMm < PhysicalOffBoardMaxMm)
+            return LerpFraction(VisualDoubleOuterRadius, VisualBoardOuterRadius,
+                (radiusMm - PhysicalDoubleOuterMm) / (PhysicalOffBoardMaxMm - PhysicalDoubleOuterMm));
+
+        return VisualBoardOuterRadius;
+    }
+
+    private static float LerpFraction(float from, float to, float t)
+    {
+        return from + (to - from) * Mathf.Clamp01(t);
     }
 
     private static float GetSegmentAngle(int value)

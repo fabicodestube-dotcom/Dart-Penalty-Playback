@@ -176,12 +176,12 @@ public static class DatabaseMigrationSmokeTest
         {
             Check(Math.Abs(connection.ExecuteScalar<double>("SELECT skill FROM bot_state WHERE player_id = ?;", mediumId.ToString()) - 4.5) < 0.001,
                 "Bot skill 4.5 was not persisted.");
-            Check(connection.ExecuteScalar<string>("SELECT difficulty FROM bot_state WHERE player_id = ?;", mediumId.ToString()) == "Medium",
-                "Legacy difficulty tier for skill 4.5 was not persisted.");
+            Check(connection.ExecuteScalar<string>("SELECT difficulty FROM bot_state WHERE player_id = ?;", mediumId.ToString()) == "Custom",
+                "Neutral legacy difficulty for skill 4.5 was not persisted.");
             Check(Math.Abs(connection.ExecuteScalar<double>("SELECT skill FROM bot_state WHERE player_id = ?;", proId.ToString()) - 10.0) < 0.001,
                 "Bot skill 10.0 was not persisted.");
-            Check(connection.ExecuteScalar<string>("SELECT difficulty FROM bot_state WHERE player_id = ?;", proId.ToString()) == "Pro",
-                "Legacy difficulty tier for skill 10.0 was not persisted.");
+            Check(connection.ExecuteScalar<string>("SELECT difficulty FROM bot_state WHERE player_id = ?;", proId.ToString()) == "Custom",
+                "Neutral legacy difficulty for skill 10.0 was not persisted.");
         }
 
         var loaded = SqliteDatabaseRepository.LoadDatabase();
