@@ -8,7 +8,11 @@ using System;
 [RequireComponent(typeof(CanvasGroup))]
 public class PlayerDragHandler : MonoBehaviour,
     IPointerDownHandler,
-    IPointerUpHandler
+    IPointerUpHandler,
+    IInitializePotentialDragHandler,
+    IBeginDragHandler,
+    IDragHandler,
+    IEndDragHandler
 {
     public Guid playerID;
 
@@ -34,13 +38,26 @@ public class PlayerDragHandler : MonoBehaviour,
     [SerializeField] private float longPressDuration = 0.3f;
     [SerializeField] private float moveThreshold = 10f;
 
+    [Header("Auto Scroll")]
+    [SerializeField] private float autoScrollSpeed = 250f;
+    [SerializeField] private float autoScrollEdgeSize = 80f;
+    [Range(0f, 1f)]
+    [SerializeField] private float autoScrollEdgeViewportRatio = 0.2f;
+
     private ScrollRect currentScrollRect;
+    private PlayerDropZone activeZone;
+    private PlayerDropZone[] dropZones;
 
     // AUTO SCROLL STATE
     private bool isAutoScrolling;
     private float autoScrollDir;
+    private ScrollRect autoScrollTarget;
 
+    private bool pressMoved;
+    private bool forwardingScrollDrag;
     private bool layoutLocked;
+
+    private Image placeholderImage;
 
     // =====================
     // PUBLIC PROPERTIES
@@ -69,7 +86,10 @@ public class PlayerDragHandler : MonoBehaviour,
             float held = Time.unscaledTime - pressTime;
             float moved = Vector2.Distance(startPointerPos, pointerPos);
 
-            if (held >= longPressDuration && moved < moveThreshold)
+            if (moved >= moveThreshold)
+                pressMoved = true;
+
+            if (!pressMoved && held >= longPressDuration)
                 StartDrag(pointerPos);
         }
 
@@ -92,6 +112,7 @@ public class PlayerDragHandler : MonoBehaviour,
     public void OnPointerDown(PointerEventData eventData)
     {
         isPointerDown = true;
+        pressMoved = false;
         pressTime = Time.unscaledTime;
         startPointerPos = eventData.position;
     }
@@ -99,6 +120,59 @@ public class PlayerDragHandler : MonoBehaviour,
     public void OnPointerUp(PointerEventData eventData)
     {
         isPointerDown = false;
+        pressMoved = false;
+    }
+
+    public void OnInitializePotentialDrag(PointerEventData eventData)
+    {
+        if (isDragging)
+            return;
+
+        ScrollRect scroll = ResolveCurrentScrollRect();
+        if (scroll != null)
+            scroll.OnInitializePotentialDrag(eventData);
+    }
+
+    public void OnBeginDrag(PointerEventData eventData)
+    {
+        if (isDragging)
+        {
+            forwardingScrollDrag = false;
+            return;
+        }
+
+        ScrollRect scroll = ResolveCurrentScrollRect();
+        if (scroll == null)
+            return;
+
+        forwardingScrollDrag = true;
+        scroll.OnBeginDrag(eventData);
+    }
+
+    public void OnDrag(PointerEventData eventData)
+    {
+        if (isDragging || !forwardingScrollDrag)
+            return;
+
+        if (currentScrollRect != null)
+            currentScrollRect.OnDrag(eventData);
+    }
+
+    public void OnEndDrag(PointerEventData eventData)
+    {
+        if (forwardingScrollDrag && currentScrollRect != null)
+            currentScrollRect.OnEndDrag(eventData);
+
+        forwardingScrollDrag = false;
+    }
+
+    private ScrollRect ResolveCurrentScrollRect()
+    {
+        ScrollRect scroll = GetComponentInParent<ScrollRect>();
+        if (scroll != null)
+            currentScrollRect = scroll;
+
+        return currentScrollRect;
     }
 
     private void StartDrag(Vector2 pointerPos)
@@ -115,22 +189,37 @@ public class PlayerDragHandler : MonoBehaviour,
 
         currentScrollRect = GetComponentInParent<ScrollRect>();
 
+        if (forwardingScrollDrag && currentScrollRect != null)
+        {
+            PointerEventData endData = new PointerEventData(EventSystem.current);
+            endData.position = pointerPos;
+            endData.pressPosition = startPointerPos;
+            endData.button = PointerEventData.InputButton.Left;
+            currentScrollRect.OnEndDrag(endData);
+        }
+        forwardingScrollDrag = false;
+
         if (currentScrollRect != null)
             currentScrollRect.StopMovement();
 
+        dropZones = GameObject.FindObjectsByType<PlayerDropZone>(FindObjectsSortMode.None);
+
+        PointerEventData initialPointer = new PointerEventData(EventSystem.current);
+        initialPointer.position = pointerPos;
+        activeZone = GetCurrentDropZone(initialPointer);
+        if (activeZone == null)
+            activeZone = FindZoneForContent(originalParent);
+
         selfLayout.ignoreLayout = true;
 
-        placeholder = new GameObject("Placeholder");
-        LayoutElement le = placeholder.AddComponent<LayoutElement>();
+        RectTransform itemRect = GetComponent<RectTransform>();
+        CreatePlaceholder(itemRect);
 
-        RectTransform myRT = GetComponent<RectTransform>();
-        le.preferredHeight = myRT.rect.height;
-        le.preferredWidth = myRT.rect.width;
-
-        placeholder.transform.SetParent(originalParent);
+        Transform placeholderInitialParent = activeZone != null ? activeZone.contentParent : originalParent;
+        placeholder.transform.SetParent(placeholderInitialParent, false);
         placeholder.transform.SetSiblingIndex(originalIndex);
 
-        placeholderParent = originalParent;
+        placeholderParent = placeholderInitialParent;
 
         canvasGroup.alpha = 0.6f;
         canvasGroup.blocksRaycasts = false;
@@ -141,38 +230,44 @@ public class PlayerDragHandler : MonoBehaviour,
         // reset scroll state
         isAutoScrolling = false;
         autoScrollDir = 0f;
+        autoScrollTarget = null;
     }
 
     private void SimulateDrag(Vector2 pointerPos)
     {
-        if (layoutLocked) return;
-
         PointerEventData fake = new PointerEventData(EventSystem.current);
         fake.position = pointerPos;
 
-        PlayerDropZone zone = GetCurrentDropZone(fake);
-        if (zone == null) return;
+        PlayerDropZone hoveredZone = GetCurrentDropZone(fake);
+        if (hoveredZone != null)
+            activeZone = hoveredZone;
 
-        Transform newParent = zone.contentParent;
+        UpdateAutoScrollState(fake, activeZone);
+
+        if (activeZone == null || layoutLocked) return;
+
+        Transform newParent = activeZone.contentParent;
+        bool changed = false;
 
         if (placeholderParent != newParent)
         {
-            placeholder.transform.SetParent(newParent);
+            placeholder.transform.SetParent(newParent, false);
             placeholderParent = newParent;
+            changed = true;
         }
 
         int oldIndex = placeholder.transform.GetSiblingIndex();
-        int newIndex = zone.GetDropIndex(rectTransform);
+        int newIndex = activeZone.GetDropIndex(rectTransform);
 
         if (oldIndex != newIndex)
         {
             VibrationManager.Instance.Vibrate();
             placeholder.transform.SetSiblingIndex(newIndex);
+            changed = true;
         }
 
-        RequestRebuild(placeholder.transform.parent as RectTransform);
-
-        HandleAutoScroll(fake); // only sets STATE
+        if (changed)
+            RequestRebuild(newParent as RectTransform);
     }
 
     private void EndDrag(Vector2 pointerPos)
@@ -180,41 +275,84 @@ public class PlayerDragHandler : MonoBehaviour,
         isDragging = false;
         IsDraggingAny = false;
         isPointerDown = false;
+        pressMoved = false;
 
         canvasGroup.alpha = 1f;
         canvasGroup.blocksRaycasts = true;
 
         isAutoScrolling = false;
         autoScrollDir = 0f;
+        autoScrollTarget = null;
+        forwardingScrollDrag = false;
+        layoutLocked = false;
 
-        if (placeholder != null)
+        PlayerDropZone targetZone = activeZone;
+
+        PointerEventData endPointer = new PointerEventData(EventSystem.current);
+        endPointer.position = pointerPos;
+
+        PlayerDropZone hoveredAtRelease = GetCurrentDropZone(endPointer);
+        if (hoveredAtRelease != null)
+            targetZone = hoveredAtRelease;
+
+        if (targetZone == null && placeholder != null)
+            targetZone = FindZoneForContent(placeholder.transform.parent);
+
+        if (targetZone != null)
         {
-            Transform targetParent = placeholder.transform.parent;
-            int targetIndex = placeholder.transform.GetSiblingIndex();
+            Transform targetParent = targetZone.contentParent;
+
+            if (placeholder != null)
+            {
+                if (placeholder.transform.parent != targetParent)
+                    placeholder.transform.SetParent(targetParent, false);
+
+                int targetIndex = targetZone.GetDropIndex(rectTransform);
+                placeholder.transform.SetSiblingIndex(targetIndex);
+            }
+
+            int dropIndex = placeholder != null
+                ? placeholder.transform.GetSiblingIndex()
+                : targetZone.GetDropIndex(rectTransform);
 
             selfLayout.ignoreLayout = false;
 
             transform.SetParent(targetParent, false);
-            transform.SetSiblingIndex(targetIndex);
+            transform.SetSiblingIndex(dropIndex);
 
             rectTransform.anchoredPosition = Vector2.zero;
 
-            Destroy(placeholder);
+            if (placeholder != null)
+            {
+                placeholder.SetActive(false);
+                Destroy(placeholder);
+            }
 
             LayoutRebuilder.MarkLayoutForRebuild((RectTransform)targetParent);
+
+            TriggerDrop(targetZone);
         }
-
-        TriggerDrop(pointerPos);
-
-        PointerEventData fake = new PointerEventData(EventSystem.current);
-        fake.position = pointerPos;
-
-        if (GetCurrentDropZone(fake) == null)
+        else
         {
+            selfLayout.ignoreLayout = false;
+
             transform.SetParent(originalParent, false);
             transform.SetSiblingIndex(originalIndex);
+
             rectTransform.anchoredPosition = Vector2.zero;
+
+            if (placeholder != null)
+            {
+                placeholder.SetActive(false);
+                Destroy(placeholder);
+            }
         }
+
+        placeholder = null;
+        placeholderParent = null;
+        placeholderImage = null;
+        activeZone = null;
+        dropZones = null;
     }
 
     private void RequestRebuild(RectTransform target)
@@ -231,23 +369,90 @@ public class PlayerDragHandler : MonoBehaviour,
         layoutLocked = false;
     }
 
-    private void TriggerDrop(Vector2 pointerPos)
+    private void TriggerDrop(PlayerDropZone zone)
     {
+        if (zone == null) return;
+
         PointerEventData fake = new PointerEventData(EventSystem.current);
-        fake.position = pointerPos;
         fake.pointerDrag = gameObject;
 
-        PlayerDropZone zone = GetCurrentDropZone(fake);
-        if (zone != null)
-            zone.OnDrop(fake);
+        zone.OnDrop(fake);
+    }
+
+    private void CreatePlaceholder(RectTransform itemRect)
+    {
+        placeholder = new GameObject("Placeholder", typeof(RectTransform));
+
+        RectTransform placeholderRect = placeholder.GetComponent<RectTransform>();
+        placeholderRect.anchorMin = itemRect.anchorMin;
+        placeholderRect.anchorMax = itemRect.anchorMax;
+        placeholderRect.pivot = itemRect.pivot;
+
+        float width = itemRect.rect.width;
+        float height = itemRect.rect.height;
+
+        placeholderRect.sizeDelta = new Vector2(width, height);
+
+        LayoutElement le = placeholder.AddComponent<LayoutElement>();
+        le.preferredHeight = height;
+        le.preferredWidth = width;
+
+        Image image = placeholder.AddComponent<Image>();
+
+        Image sourceImage = GetComponent<Image>();
+        if (sourceImage != null)
+        {
+            image.sprite = sourceImage.sprite;
+            image.type = sourceImage.type;
+            image.pixelsPerUnitMultiplier = sourceImage.pixelsPerUnitMultiplier;
+            image.preserveAspect = sourceImage.preserveAspect;
+        }
+
+        Color accent = ThemeManager.Instance != null
+            ? ThemeManager.Instance.GetColor(ThemeColorRole.Accent1)
+            : Color.white;
+        accent.a = 0.25f;
+
+        image.color = accent;
+        image.raycastTarget = false;
+
+        placeholderImage = image;
+    }
+
+    private void SetPlaceholderHighlight(bool highlighted)
+    {
+        if (placeholderImage == null) return;
+
+        Color color = placeholderImage.color;
+        float targetAlpha = highlighted ? 0.6f : 0.25f;
+
+        if (Mathf.Approximately(color.a, targetAlpha)) return;
+
+        color.a = targetAlpha;
+        placeholderImage.color = color;
+    }
+
+    private PlayerDropZone FindZoneForContent(Transform content)
+    {
+        if (content == null) return null;
+
+        if (dropZones == null)
+            dropZones = GameObject.FindObjectsByType<PlayerDropZone>(FindObjectsSortMode.None);
+
+        foreach (var z in dropZones)
+            if (z != null && z.contentParent == content)
+                return z;
+
+        return null;
     }
 
     private PlayerDropZone GetCurrentDropZone(PointerEventData eventData)
     {
-        var zones = GameObject.FindObjectsByType<PlayerDropZone>(FindObjectsSortMode.None);
+        if (dropZones == null)
+            dropZones = GameObject.FindObjectsByType<PlayerDropZone>(FindObjectsSortMode.None);
 
-        foreach (var z in zones)
-            if (z.IsPointerOver(eventData))
+        foreach (var z in dropZones)
+            if (z != null && z.IsPointerOver(eventData))
                 return z;
 
         return null;
@@ -265,16 +470,17 @@ public class PlayerDragHandler : MonoBehaviour,
         return c != null ? c.rootCanvas : null;
     }
 
-    // =========================
-    // FIXED AUTO SCROLL
-    // =========================
-
-    private void HandleAutoScroll(PointerEventData eventData)
+    private void UpdateAutoScrollState(PointerEventData eventData, PlayerDropZone zone)
     {
-        if (currentScrollRect == null) return;
+        ScrollRect target = zone != null ? zone.ListScrollRect : null;
 
-        RectTransform viewport = currentScrollRect.viewport;
-        if (viewport == null) return;
+        if (target == null || target.viewport == null || target.content == null || !target.vertical)
+        {
+            SetAutoScroll(null, 0f);
+            return;
+        }
+
+        RectTransform viewport = target.viewport;
 
         Vector3[] corners = new Vector3[4];
         viewport.GetWorldCorners(corners);
@@ -282,52 +488,67 @@ public class PlayerDragHandler : MonoBehaviour,
         float top = corners[1].y;
         float bottom = corners[0].y;
 
+        float viewportHeight = top - bottom;
+        float edgeSize = Mathf.Min(autoScrollEdgeSize, viewportHeight * autoScrollEdgeViewportRatio);
+
+        if (edgeSize <= 0f)
+        {
+            SetAutoScroll(null, 0f);
+            return;
+        }
+
         float pointerY = eventData.position.y;
-
-        float edgeSize = 80f;
-
         float dir = 0f;
 
         if (pointerY > top - edgeSize)
-        {
-            float t = (pointerY - (top - edgeSize)) / edgeSize;
-            dir = t;
-        }
+            dir = Mathf.Clamp01((pointerY - (top - edgeSize)) / edgeSize);
         else if (pointerY < bottom + edgeSize)
-        {
-            float t = ((bottom + edgeSize) - pointerY) / edgeSize;
-            dir = -t;
-        }
+            dir = -Mathf.Clamp01(((bottom + edgeSize) - pointerY) / edgeSize);
 
-        if (dir != 0f)
-        {
-            isAutoScrolling = true;
-            autoScrollDir = dir;
-        }
-        else
-        {
-            isAutoScrolling = false;
-            autoScrollDir = 0f;
-        }
+        SetAutoScroll(target, dir);
+    }
+
+    private void SetAutoScroll(ScrollRect target, float dir)
+    {
+        bool active = target != null && dir != 0f;
+
+        isAutoScrolling = active;
+        autoScrollDir = active ? dir : 0f;
+        autoScrollTarget = active ? target : null;
+
+        SetPlaceholderHighlight(active);
     }
 
     private void ApplyAutoScroll()
     {
-        if (!isAutoScrolling) return;
-        if (currentScrollRect == null) return;
+        if (!isAutoScrolling || autoScrollTarget == null) return;
 
-        float current = currentScrollRect.verticalNormalizedPosition;
+        ScrollRect scroll = autoScrollTarget;
+        RectTransform viewport = scroll.viewport;
+        RectTransform content = scroll.content;
+
+        if (viewport == null || content == null) return;
+
+        Vector3[] corners = new Vector3[4];
+        viewport.GetWorldCorners(corners);
+
+        float viewportScreenHeight = Mathf.Abs(corners[1].y - corners[0].y);
+        float viewportLocalHeight = viewport.rect.height;
+
+        if (viewportScreenHeight <= 0f || viewportLocalHeight <= 0f) return;
+
+        float contentToViewport = content.rect.height / viewportLocalHeight;
+        float scrollableScreenHeight = viewportScreenHeight * Mathf.Max(0f, contentToViewport - 1f);
+
+        if (scrollableScreenHeight <= 1f) return;
+
+        float current = scroll.verticalNormalizedPosition;
 
         if (current >= 1f && autoScrollDir > 0f) return;
         if (current <= 0f && autoScrollDir < 0f) return;
 
-        float speed = 2.5f;
+        float delta = autoScrollSpeed * autoScrollDir * Time.unscaledDeltaTime / scrollableScreenHeight;
 
-        current += autoScrollDir * speed * Time.unscaledDeltaTime;
-
-        currentScrollRect.verticalNormalizedPosition =
-            Mathf.Clamp01(current);
+        scroll.verticalNormalizedPosition = Mathf.Clamp01(current + delta);
     }
-
-    
 }

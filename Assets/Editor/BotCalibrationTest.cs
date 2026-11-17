@@ -14,6 +14,7 @@ public static class BotCalibrationTest
     {
         CheckGeometry();
         CheckCheckoutRoutes();
+        CheckPreparationTargets();
         CheckIntentionalBust();
         CheckBoardProjection();
         CheckSkillTenRates();
@@ -51,9 +52,31 @@ public static class BotCalibrationTest
         Check(CheckoutDatabase.GetCheckout(CheckoutType.Triple, 3, 1) == "T1", "Triple 3 checkout must be T1.");
         Check(CheckoutDatabase.GetCheckout(CheckoutType.Master, 2, 1) == "D1", "Master 2 checkout must be D1.");
         Check(!string.IsNullOrEmpty(CheckoutDatabase.GetCheckout(CheckoutType.Master, 110, 2)), "Master 110 two-dart checkout is missing.");
-        Check(!string.IsNullOrEmpty(CheckoutDatabase.GetCheckout(CheckoutType.Double, 170, 3)), "Double 170 three-dart checkout is missing.");
+        Check(CheckoutDatabase.GetCheckout(CheckoutType.Double, 170, 3) == "T20 T20 D25", "Double 170 must use the table route with D25.");
+        Check(CheckoutDatabase.GetCheckout(CheckoutType.Double, 108, 3) == "T20 16 D16", "Double 108 slash alternatives must resolve to one valid route.");
+        Check(CheckoutDatabase.GetCheckout(CheckoutType.Double, 82, 2) == "D25 D16", "Double 82 must normalize DB to D25.");
+        Check(CheckoutDatabase.GetCheckout(CheckoutType.Double, 50, 3) == "10 D20", "Double 50 with three darts must use the table route.");
+        Check(CheckoutDatabase.GetCheckout(CheckoutType.Double, 50, 1) == "D25", "Double 50 with one dart must use the direct checkout.");
+        Check(CheckoutDatabase.GetCheckout(CheckoutType.Double, 104, 2) == "T18 D25", "Double 104 with two darts must prefer the two-dart finish.");
+        Check(CheckoutDatabase.GetCheckout(CheckoutType.Double, 104, 3) == "T19 15 D16", "Double 104 with three darts must use the table route.");
+        Check(CheckoutDatabase.GetCheckout(CheckoutType.Double, 101, 2) == "T17 D25", "Double 101 with two darts must prefer the two-dart finish.");
 
         Debug.Log("[BOT-CAL] Checkout routes OK");
+    }
+
+    private static void CheckPreparationTargets()
+    {
+        CheckBotTarget(50, 50, 1, 25, DartMultiplier.Double, "Direct D25 must beat the table setup route");
+        CheckBotTarget(50, 50, 2, 10, DartMultiplier.Single, "Two darts on 50 must use the table route 10/D20");
+        CheckBotTarget(82, 82, 2, 25, DartMultiplier.Double, "Two darts on 82 must use bull before D16");
+        CheckBotTarget(104, 104, 2, 18, DartMultiplier.Triple, "Two darts on 104 must use T18 before D25");
+        CheckBotTarget(101, 101, 2, 17, DartMultiplier.Triple, "Two darts on 101 must use T17 before D25");
+        CheckBotTarget(104, 104, 1, 18, DartMultiplier.Triple, "One dart on 104 must prepare bull with T18");
+        CheckBotTarget(101, 101, 1, 17, DartMultiplier.Triple, "One dart on 101 must prepare bull with T17");
+        CheckBotTarget(108, 108, 2, 20, DartMultiplier.Triple, "Two darts on 108 must play the table setup T20");
+        CheckBotTarget(3, 32, 1, 20, DartMultiplier.Triple, "Last dart on 3 must bust back to 32 for D16");
+
+        Debug.Log("[BOT-CAL] Preparation targets OK");
     }
 
     private static void CheckIntentionalBust()

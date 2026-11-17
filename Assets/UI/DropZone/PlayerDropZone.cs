@@ -15,6 +15,19 @@ public class PlayerDropZone : MonoBehaviour
     public bool singleZone = false;
     [SerializeField] private PlayerDropZone otherZone;
 
+    private ScrollRect cachedScrollRect;
+
+    public ScrollRect ListScrollRect
+    {
+        get
+        {
+            if (cachedScrollRect == null)
+                cachedScrollRect = GetComponentInParent<ScrollRect>();
+
+            return cachedScrollRect;
+        }
+    }
+
 
     public int GetDropIndex(RectTransform dragged)
     {

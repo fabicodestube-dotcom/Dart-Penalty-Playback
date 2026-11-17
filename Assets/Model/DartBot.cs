@@ -63,58 +63,192 @@ public class DartBot : BasePlayer
         if (currentScore <= 0)
             return Simulate(20, DartMultiplier.Single);
 
-        var checkoutPlan = CheckoutDatabase.GetCheckoutPlan(checkoutType, currentScore, 3);
+        var finishPlan = CheckoutDatabase.GetCheckoutPlan(checkoutType, currentScore, dartsLeft);
+        var prepPlan = CheckoutDatabase.GetCheckoutPlan(checkoutType, currentScore, 3);
 
-        if (ShouldIntentionalBust(checkoutType, currentScore, dartsLeft, turnStartScore, checkoutPlan))
-            return Simulate(20, DartMultiplier.Triple);
-
-        if (checkoutPlan.IsValid)
+        if (finishPlan.IsValid)
         {
-            var first = ParseDart(checkoutPlan.Route.Split(' ')[0]);
-            return Simulate(first.val, first.mult);
+            var finish = ParseDart(finishPlan.Route.Split(' ')[0]);
+            return Simulate(finish.val, finish.mult);
+        }
+
+        if (dartsLeft == 1
+            && TryChoosePreparationTarget(
+                checkoutType,
+                currentScore,
+                turnStartScore,
+                out int prepValue,
+                out DartMultiplier prepMultiplier))
+        {
+            return Simulate(prepValue, prepMultiplier);
+        }
+
+        if (prepPlan.IsValid)
+        {
+            var prep = ParseDart(prepPlan.Route.Split(' ')[0]);
+            return Simulate(prep.val, prep.mult);
         }
 
         var scoringTarget = ChooseScoringTarget(currentScore);
         return Simulate(scoringTarget.val, scoringTarget.mult);
     }
 
-    private static bool ShouldIntentionalBust(
+    private static bool TryChoosePreparationTarget(
         CheckoutType checkoutType,
         int currentScore,
-        int dartsLeft,
         int turnStartScore,
-        CheckoutDatabase.CheckoutPlan checkoutPlan)
+        out int value,
+        out DartMultiplier multiplier)
     {
-        if (dartsLeft != 1
-            || turnStartScore <= currentScore
-            || currentScore > IntentionalBustMaxScore
-            || checkoutType == CheckoutType.Single
-            || !checkoutPlan.IsValid)
+        value = 0;
+        multiplier = DartMultiplier.Single;
+
+        bool hasBest = false;
+        int bestValue = 0;
+        DartMultiplier bestMultiplier = DartMultiplier.Single;
+        CheckoutDatabase.CheckoutPlan bestPlan = default;
+
+        for (int target = 1; target <= 20; target++)
         {
-            return false;
+            ConsiderPreparationTarget(
+                checkoutType, currentScore, target, DartMultiplier.Single,
+                ref hasBest, ref bestValue, ref bestMultiplier, ref bestPlan);
+
+            ConsiderPreparationTarget(
+                checkoutType, currentScore, target, DartMultiplier.Double,
+                ref hasBest, ref bestValue, ref bestMultiplier, ref bestPlan);
+
+            ConsiderPreparationTarget(
+                checkoutType, currentScore, target, DartMultiplier.Triple,
+                ref hasBest, ref bestValue, ref bestMultiplier, ref bestPlan);
         }
 
-        if (CheckoutDatabase.GetCheckoutPlan(checkoutType, currentScore, 1).IsValid)
+        ConsiderPreparationTarget(
+            checkoutType, currentScore, 25, DartMultiplier.Single,
+            ref hasBest, ref bestValue, ref bestMultiplier, ref bestPlan);
+
+        ConsiderPreparationTarget(
+            checkoutType, currentScore, 25, DartMultiplier.Double,
+            ref hasBest, ref bestValue, ref bestMultiplier, ref bestPlan);
+
+        if (CanIntentionalBust(checkoutType, currentScore, turnStartScore))
+        {
+            var bustPlan = GetBestNextTurnPlan(checkoutType, turnStartScore);
+
+            if (bustPlan.IsValid && (!hasBest || IsBustBetterThanLeave(bustPlan, bestPlan)))
+            {
+                value = 20;
+                multiplier = DartMultiplier.Triple;
+                return true;
+            }
+        }
+
+        if (!hasBest)
             return false;
 
-        var first = ParseDart(checkoutPlan.Route.Split(' ')[0]);
-        int normalLeave = currentScore - DartScore(first.val, first.mult);
+        value = bestValue;
+        multiplier = bestMultiplier;
+        return true;
+    }
 
-        if (normalLeave <= 0)
-            return false;
+    private static void ConsiderPreparationTarget(
+        CheckoutType checkoutType,
+        int currentScore,
+        int targetValue,
+        DartMultiplier targetMultiplier,
+        ref bool hasBest,
+        ref int bestValue,
+        ref DartMultiplier bestMultiplier,
+        ref CheckoutDatabase.CheckoutPlan bestPlan)
+    {
+        int leave = currentScore - DartScore(targetValue, targetMultiplier);
 
-        var startPlan = CheckoutDatabase.GetCheckoutPlan(checkoutType, turnStartScore, 3);
-        if (!startPlan.IsValid)
-            return false;
+        if (leave <= 0 || IsBust(leave, checkoutType, targetMultiplier))
+            return;
 
-        var leavePlan = CheckoutDatabase.GetCheckoutPlan(checkoutType, normalLeave, 3);
+        var nextPlan = GetBestNextTurnPlan(checkoutType, leave);
+
+        if (!nextPlan.IsValid)
+            return;
+
+        if (hasBest && !IsBetterPlan(nextPlan, bestPlan))
+            return;
+
+        hasBest = true;
+        bestValue = targetValue;
+        bestMultiplier = targetMultiplier;
+        bestPlan = nextPlan;
+    }
+
+    private static CheckoutDatabase.CheckoutPlan GetBestNextTurnPlan(CheckoutType checkoutType, int score)
+    {
+        for (int darts = 1; darts <= 3; darts++)
+        {
+            var plan = CheckoutDatabase.GetCheckoutPlan(checkoutType, score, darts);
+
+            if (plan.IsValid)
+                return plan;
+        }
+
+        return default;
+    }
+
+    private static bool IsBetterPlan(
+        CheckoutDatabase.CheckoutPlan candidate,
+        CheckoutDatabase.CheckoutPlan current)
+    {
+        if (!current.IsValid)
+            return true;
+
+        if (candidate.DartCount != current.DartCount)
+            return candidate.DartCount < current.DartCount;
+
+        return candidate.FinalWeight > current.FinalWeight;
+    }
+
+    private static bool IsBustBetterThanLeave(
+        CheckoutDatabase.CheckoutPlan bustPlan,
+        CheckoutDatabase.CheckoutPlan leavePlan)
+    {
         if (!leavePlan.IsValid)
             return true;
 
-        if (startPlan.DartCount != leavePlan.DartCount)
-            return startPlan.DartCount < leavePlan.DartCount;
+        if (bustPlan.DartCount != leavePlan.DartCount)
+            return bustPlan.DartCount < leavePlan.DartCount;
 
-        return startPlan.FinalWeight > leavePlan.FinalWeight + BustFinalWeightMargin;
+        return bustPlan.FinalWeight > leavePlan.FinalWeight + BustFinalWeightMargin;
+    }
+
+    private static bool CanIntentionalBust(
+        CheckoutType checkoutType,
+        int currentScore,
+        int turnStartScore)
+    {
+        return checkoutType != CheckoutType.Single
+            && turnStartScore > currentScore
+            && currentScore <= IntentionalBustMaxScore
+            && !CheckoutDatabase.GetCheckoutPlan(checkoutType, currentScore, 1).IsValid;
+    }
+
+    private static bool IsBust(int leave, CheckoutType checkoutType, DartMultiplier multiplier)
+    {
+        if (leave < 0)
+            return true;
+
+        if (leave == 1 && checkoutType != CheckoutType.Single)
+            return true;
+
+        if (leave != 0)
+            return false;
+
+        return checkoutType switch
+        {
+            CheckoutType.Single => false,
+            CheckoutType.Double => multiplier != DartMultiplier.Double,
+            CheckoutType.Triple => multiplier != DartMultiplier.Triple,
+            CheckoutType.Master => multiplier != DartMultiplier.Double && multiplier != DartMultiplier.Triple,
+            _ => true
+        };
     }
 
     private static int DartScore(int value, DartMultiplier multiplier)

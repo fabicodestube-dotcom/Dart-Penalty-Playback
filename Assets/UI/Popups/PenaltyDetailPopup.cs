@@ -53,14 +53,17 @@ public class PenaltyDetailPopup : UIScreen, IUIScreen
 
     // Auto-Size: Only the list height is set:
     // LayoutElement.preferredHeight = min(formula, cap).
-    // Formula: PadTop + PadBottom + N * line height + max(0, N-1) * Spacing
-    // (N = Child number, line height live from first line, pad/spacing from VLG).
+    // Formula: PadTop + PadBottom + sum(child heights) + max(0, N-1) * Spacing
+    // (N = Child number, heights live per row, pad/spacing from VLG).
     // Cap: Background Height (BottomBar -free) - Margin (200) - Chrome (Top +)
     // ButtonRow + window padding/spacing, measured live, fallback 450).
-    private const float RowHeight = 130f;
+    private const float RowHeight = 120f;
+    private const float HeaderRowHeight = 64f;
     private const float ChromeFallback = 450f;
 
     private Coroutine scrollResetRoutine;
+    private string currentTitle = string.Empty;
+    private string currentTotalText = string.Empty;
 
     /// <summary>
     /// Find the pop-up instance belonging to the visible screen.
@@ -126,10 +129,14 @@ public class PenaltyDetailPopup : UIScreen, IUIScreen
             windowHandler = FindAnyObjectByType<WindowHandler>(FindObjectsInactive.Include);
         if (appHandler == null)
             appHandler = FindAnyObjectByType<AppHandler>(FindObjectsInactive.Include);
+
+        DisableHeaderLocalization();
     }
 
     public void OnShow()
     {
+        DisableHeaderLocalization();
+        ApplyHeader();
     }
 
     public void OnHide()
@@ -343,39 +350,100 @@ public class PenaltyDetailPopup : UIScreen, IUIScreen
 
     private void SetTitle(string title)
     {
-        if (titleText != null)
-            titleText.text = title ?? "";
+        currentTitle = title ?? "";
+        ApplyHeader();
     }
 
     /// <summary>Grand Total to the header area (sumText) or title suffix.</summary>
     private void SetTotal(float grandTotal)
     {
-        string text = LocalizationText.Get("Total", "Total") + ": " + grandTotal.ToString("0.##");
-        if (sumText != null)
+        string label = LocalizationText.Get("Total", "Total");
+        currentTotalText = $"<size=65%>{label}</size>  {grandTotal:0.##}";
+        ApplyHeader();
+    }
+
+    private void ApplyHeader()
+    {
+        if (titleText != null)
         {
-            sumText.text = text;
-        }
-        else if (titleText != null)
-        {
-            titleText.text = titleText.text + " (" + text + ")";
+            titleText.fontStyle = FontStyles.Bold;
+            titleText.enableAutoSizing = true;
+            titleText.fontSizeMin = 28f;
+            titleText.fontSizeMax = 46f;
+            titleText.textWrappingMode = TextWrappingModes.NoWrap;
+            titleText.overflowMode = TextOverflowModes.Ellipsis;
+            titleText.alignment = TextAlignmentOptions.Left;
+            ConfigureHeaderWidth(titleText, 1.8f);
+
+            if (sumText != null)
+            {
+                titleText.text = currentTitle;
+                sumText.fontStyle = FontStyles.Bold;
+                sumText.enableAutoSizing = false;
+                sumText.fontSize = 38f;
+                sumText.textWrappingMode = TextWrappingModes.NoWrap;
+                sumText.overflowMode = TextOverflowModes.Ellipsis;
+                sumText.alignment = TextAlignmentOptions.Right;
+                ConfigureHeaderWidth(sumText, 1f);
+                sumText.text = currentTotalText;
+            }
+            else
+            {
+                titleText.text = string.IsNullOrEmpty(currentTotalText)
+                    ? currentTitle
+                    : currentTitle + " (" + currentTotalText + ")";
+            }
         }
     }
 
-    /// <summary>Header of the 4 detail columns (name | cost | number | sum).</summary>
+    private static void ConfigureHeaderWidth(TMP_Text text, float flexibleWidth)
+    {
+        if (text == null)
+            return;
+
+        var element = text.GetComponent<LayoutElement>();
+        if (element == null)
+            element = text.gameObject.AddComponent<LayoutElement>();
+
+        element.flexibleWidth = flexibleWidth;
+        element.minWidth = 100f;
+    }
+
+    private static void DisableHeaderLocalizationFor(TMP_Text text)
+    {
+        if (text == null)
+            return;
+
+        var events = text.GetComponents<LocalizeStringEvent>();
+        for (int i = 0; i < events.Length; i++)
+        {
+            if (events[i] != null)
+                events[i].enabled = false;
+        }
+    }
+
+    private void DisableHeaderLocalization()
+    {
+        DisableHeaderLocalizationFor(titleText);
+        DisableHeaderLocalizationFor(sumText);
+    }
+
+    /// <summary>Header of the 4 detail columns (name | count | cost | sum).</summary>
     private void AddTableHeader()
     {
         AddItemRow(
             LocalizationText.Get("Name", "Name"),
             LocalizationText.Get("Costs", "Costs"),
             LocalizationText.Get("Count", "Count"),
-            LocalizationText.Get("Sum", "Sum"));
+            LocalizationText.Get("Sum", "Sum"),
+            true);
     }
 
     /// <summary>
     /// Detail line (name | cost | number | sum): prefers the
     /// wired prefab, otherwise code line as fallback (silent emergency operation).
     /// </summary>
-    private void AddItemRow(string name, string cost, string count, string rowTotal)
+    private void AddItemRow(string name, string cost, string count, string rowTotal, bool header = false)
     {
         if (contentParent == null)
         {
@@ -389,16 +457,16 @@ public class PenaltyDetailPopup : UIScreen, IUIScreen
             var item = go.GetComponent<PenaltyDetailPopupItem>();
             if (item != null)
             {
-                item.Bind(name, cost, count, rowTotal);
+                item.Bind(name, cost, count, rowTotal, header);
                 return;
             }
             Destroy(go);
         }
 
-        AddDetailRow(name, cost, count, rowTotal);
+        AddDetailRow(name, cost, count, rowTotal, header);
     }
 
-    /// <summary>Detail line with 4 columns (name | cost | number | sum).</summary>
+    /// <summary>Detail line with 4 columns (name | count | cost | sum).</summary>
     private void AddDetailRow(string name, string cost, string count, string rowTotal, bool header = false)
     {
         if (contentParent == null)
@@ -408,23 +476,24 @@ public class PenaltyDetailPopup : UIScreen, IUIScreen
         go.transform.SetParent(contentParent, false);
 
         var rowLayout = go.AddComponent<UnityEngine.UI.HorizontalLayoutGroup>();
-        rowLayout.spacing = 8f;
+        rowLayout.padding = new RectOffset(24, 24, 8, 8);
+        rowLayout.spacing = 12f;
         rowLayout.childControlWidth = true;
         rowLayout.childControlHeight = true;
         rowLayout.childForceExpandWidth = false;
         rowLayout.childForceExpandHeight = false;
 
         var rowSize = go.AddComponent<UnityEngine.UI.LayoutElement>();
-        rowSize.preferredHeight = 44f;
+        rowSize.preferredHeight = header ? HeaderRowHeight : RowHeight;
         rowSize.flexibleHeight = 0f;
 
-        AddDetailCell(go.transform, name, 2f, header);
-        AddDetailCell(go.transform, cost, 1f, header);
-        AddDetailCell(go.transform, count, 1f, header);
-        AddDetailCell(go.transform, rowTotal, 1f, header);
+        AddDetailCell(go.transform, name, 2.4f, header, TextAlignmentOptions.Left, ThemeColorRole.Text1);
+        AddDetailCell(go.transform, count, 0.8f, header, TextAlignmentOptions.Center, ThemeColorRole.Text2);
+        AddDetailCell(go.transform, cost, 1.1f, header, TextAlignmentOptions.Center, ThemeColorRole.Text2);
+        AddDetailCell(go.transform, rowTotal, 1.3f, header, TextAlignmentOptions.Right, ThemeColorRole.Accent1);
     }
 
-    private void AddDetailCell(Transform parent, string text, float flexibleWidth, bool header)
+    private void AddDetailCell(Transform parent, string text, float flexibleWidth, bool header, TextAlignmentOptions alignment, ThemeColorRole dataRole)
     {
         var go = new GameObject("DetailCell", typeof(RectTransform));
         go.transform.SetParent(parent, false);
@@ -435,22 +504,24 @@ public class PenaltyDetailPopup : UIScreen, IUIScreen
 
         var tmp = go.AddComponent<TextMeshProUGUI>();
         tmp.text = text ?? "";
-        tmp.fontSize = header ? 24 : 26;
-        tmp.alignment = header ? TextAlignmentOptions.Center : TextAlignmentOptions.Left;
-        tmp.textWrappingMode = header ? TextWrappingModes.Normal : TextWrappingModes.NoWrap;
+        tmp.fontSize = header ? 28f : 44f;
+        tmp.fontStyle = header || dataRole == ThemeColorRole.Accent1 ? FontStyles.Bold : FontStyles.Normal;
+        tmp.alignment = alignment;
+        tmp.textWrappingMode = TextWrappingModes.NoWrap;
         tmp.overflowMode = TextOverflowModes.Ellipsis;
         tmp.raycastTarget = false;
 
-        if (ThemeManager.Instance != null)
-        {
-            try
-            {
-                tmp.color = header
-                    ? ThemeManager.Instance.GetColor(ThemeColorRole.Accent1)
-                    : ThemeManager.Instance.GetColor(ThemeColorRole.Text3);
-            }
-            catch { tmp.color = Color.white; }
-        }
+        ThemeColorRole role = header ? ThemeColorRole.Text3 : dataRole;
+        tmp.color = GetThemeColor(role, Color.white);
+    }
+
+    private static Color GetThemeColor(ThemeColorRole role, Color fallback)
+    {
+        if (ThemeManager.Instance == null)
+            return fallback;
+
+        try { return ThemeManager.Instance.GetColor(role); }
+        catch { return fallback; }
     }
 
     /// <summary>2@@ - key for empty case (table maintained separately).</summary>
@@ -466,6 +537,22 @@ public class PenaltyDetailPopup : UIScreen, IUIScreen
         if (emptyStatePrefab != null)
         {
             var go = Instantiate(emptyStatePrefab, contentParent);
+
+            var emptyTmp = go.GetComponentInChildren<TMP_Text>(true);
+            if (emptyTmp != null)
+            {
+                emptyTmp.fontSize = 34f;
+                emptyTmp.fontStyle = FontStyles.Normal;
+                emptyTmp.alignment = TextAlignmentOptions.Center;
+                emptyTmp.textWrappingMode = TextWrappingModes.Normal;
+                emptyTmp.overflowMode = TextOverflowModes.Overflow;
+                emptyTmp.raycastTarget = false;
+                emptyTmp.color = GetThemeColor(ThemeColorRole.Text3, Color.white);
+            }
+
+            var emptyLayout = go.GetComponent<LayoutElement>();
+            if (emptyLayout != null)
+                emptyLayout.preferredHeight = 120f;
 
             var localizeEvent = go.GetComponent<LocalizeStringEvent>();
             if (localizeEvent != null)
@@ -487,19 +574,15 @@ public class PenaltyDetailPopup : UIScreen, IUIScreen
         row.transform.SetParent(contentParent, false);
 
         var layout = row.AddComponent<UnityEngine.UI.LayoutElement>();
-        layout.preferredHeight = 44f;
+        layout.preferredHeight = 120f;
         layout.flexibleHeight = 0f;
 
         var tmp = row.AddComponent<TextMeshProUGUI>();
         tmp.text = string.IsNullOrEmpty(value) ? label ?? "" : label + ": " + value;
-        tmp.fontSize = 26;
+        tmp.fontSize = 34f;
+        tmp.alignment = TextAlignmentOptions.Center;
         tmp.raycastTarget = false;
-
-        if (ThemeManager.Instance != null)
-        {
-            try { tmp.color = ThemeManager.Instance.GetColor(ThemeColorRole.Text3); }
-            catch { tmp.color = Color.white; }
-        }
+        tmp.color = GetThemeColor(ThemeColorRole.Text3, Color.white);
 
         // Localize empty text (HistoryScreen pattern): fallback is immediate,
         // LocalizedString overwrites only in the case of non-empty table value —
@@ -546,6 +629,8 @@ public class PenaltyDetailPopup : UIScreen, IUIScreen
     {
         EnsureSizeRefs();
         ShowViaWindowHandler();
+        DisableHeaderLocalization();
+        ApplyHeader();
         ApplyListHeight();
         EnsureScrollReset();
     }
@@ -691,8 +776,16 @@ public class PenaltyDetailPopup : UIScreen, IUIScreen
         if (n <= 0)
             return padTop + padBottom;
 
-        float rowH = GetLiveRowHeight();
-        return n * rowH + padTop + padBottom + spacing * (n - 1);
+        float total = padTop + padBottom + spacing * (n - 1);
+        for (int i = 0; i < n; i++)
+        {
+            var element = listContentRect.GetChild(i)?.GetComponent<LayoutElement>();
+            total += element != null && element.preferredHeight > 0f
+                ? element.preferredHeight
+                : GetLiveRowHeight();
+        }
+
+        return total;
     }
 
     /// <summary>

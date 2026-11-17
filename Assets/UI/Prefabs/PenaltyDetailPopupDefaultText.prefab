@@ -208,7 +208,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7a0368f7840987e639f0bdecbc803891, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ThemeColorBinding
-  role: 9
+  role: 10
 --- !u!1 &5563474863980583167
 GameObject:
   m_ObjectHideFlags: 0
