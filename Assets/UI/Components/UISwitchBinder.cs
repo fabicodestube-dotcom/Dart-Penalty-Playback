@@ -17,7 +17,13 @@ public enum SwitchBindingType
     /// <summary>
     /// Dark mode (true = dark, false = light). NEW — always attach to the end.
     /// </summary>
-    DarkMode
+    DarkMode,
+
+    /// <summary>
+    /// Bot throws are shown in a large fullscreen overlay.
+    /// NEW — always attach to the end.
+    /// </summary>
+    BotFullscreenOverlay
 }
 
 public class UISwitchBinder : MonoBehaviour
@@ -63,8 +69,13 @@ public class UISwitchBinder : MonoBehaviour
             case SwitchBindingType.DarkMode:
                 value = AppSettingsManager.Instance.Settings.ThemeMode == ThemeMode.Dark;
                 break;
+
+            case SwitchBindingType.BotFullscreenOverlay:
+                value = AppSettingsManager.Instance.Settings.BotAnimation.FullscreenOverlay;
+                break;
         }
 
+        uiSwitch.RecalculateHandlePositions();
         uiSwitch.toggle.SetIsOnWithoutNotify(value);
         uiSwitch.RefreshVisual();
         UpdateCanvasGroups(value);
@@ -92,6 +103,10 @@ public class UISwitchBinder : MonoBehaviour
 
             case SwitchBindingType.DarkMode:
                 options.SetThemeMode(value);
+                break;
+
+            case SwitchBindingType.BotFullscreenOverlay:
+                options.SetBotFullscreenOverlay(value);
                 break;
         }
 

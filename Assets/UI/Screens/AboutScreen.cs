@@ -1,3 +1,4 @@
+using TMPro;
 using UnityEngine;
 
 public class AboutScreen : MonoBehaviour
@@ -11,7 +12,20 @@ public class AboutScreen : MonoBehaviour
     public string privacyPolicyUrl = "https://github.com/fabicodestube-dotcom/Dart-Penalty-Playback/blob/main/PRIVACY_POLICY.md";
     public string licenseUrl = "https://github.com/fabicodestube-dotcom/Dart-Penalty-Playback/blob/main/LICENSE";
 
+    [Header("Patch Notes")]
+    [SerializeField] private TMP_Text appVersionText;
+    [SerializeField] private RectTransform patchNotesContent;
+    [SerializeField] private PatchNoteRow patchNoteRowPrefab;
+    [SerializeField] private PatchNotesCatalog patchNotesCatalog;
+
+    private bool _patchNotesBuilt;
+
 // ================= UNITY LIFECYCLE =================
+
+    private void Start()
+    {
+        BuildPatchNotes();
+    }
 
     public void OnGoBackClicked()
     {
@@ -51,6 +65,36 @@ public class AboutScreen : MonoBehaviour
     }
 
 // ================= PRIVATE HELPERS =================
+
+    private void BuildPatchNotes()
+    {
+        if (_patchNotesBuilt)
+            return;
+
+        _patchNotesBuilt = true;
+
+        if (appVersionText != null)
+            appVersionText.text = "Dart Penalty Playback " + Application.version;
+
+        if (patchNotesCatalog == null || patchNotesContent == null || patchNoteRowPrefab == null)
+        {
+            Debug.LogWarning("AboutScreen: Patch-Notes-Referenzen sind nicht vollständig gesetzt.");
+            return;
+        }
+
+        if (patchNotesCatalog.entries == null)
+            return;
+
+        for (int i = 0; i < patchNotesCatalog.entries.Count; i++)
+        {
+            PatchNotesEntry entry = patchNotesCatalog.entries[i];
+            if (entry == null)
+                continue;
+
+            PatchNoteRow row = Instantiate(patchNoteRowPrefab, patchNotesContent, false);
+            row.Bind(entry);
+        }
+    }
 
     // A small helper method to keep the code clean and catch errors
     private void OpenBrowser(string url)

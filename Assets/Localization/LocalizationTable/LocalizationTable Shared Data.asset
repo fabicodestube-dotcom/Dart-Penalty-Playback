@@ -1323,6 +1323,34 @@ MonoBehaviour:
     m_Key: Deep_Orange
     m_Metadata:
       m_Items: []
+  - m_Id: 33806894813368337
+    m_Key: Bot_animation
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368338
+    m_Key: Fullscreen_overlay
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368339
+    m_Key: Fullscreen_overlay_expl
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368340
+    m_Key: Animation_speed
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368341
+    m_Key: Animation_speed_expl
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368342
+    m_Key: Minimize
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368343
+    m_Key: Fullscreen
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

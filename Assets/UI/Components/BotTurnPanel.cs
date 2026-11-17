@@ -7,50 +7,87 @@ using UnityEngine.UI;
 
 public class BotTurnPanel : MonoBehaviour
 {
+    private enum DartPhase
+    {
+        None,
+        Flight,
+        Impact,
+        Hold
+    }
+
     private const float CardMargin = 24f;
     private const float CardBorderInset = 4f;
     private const float CardPadding = 24f;
     private const float InfoLeftPadding = 50f;
-    private const float ColumnGap = 24f;
-    private const float InfoColumnWidth = 0.55f;
+    private const float ColumnGap = 16f;
+    private const float InfoColumnWidth = 0.42f;
     private const float FooterGap = 12f;
     private const float FooterWidth = 360f;
     private const float FooterHeight = 116f;
 
+    private const float TightCardMargin = 12f;
+    private const float TightCardPadding = 12f;
+    private const float TightFooterGap = 8f;
+    private const float TightFooterHeight = 96f;
+    private const float TightLayoutHeight = 600f;
+
     private const float ReferenceBoardSize = 408f;
-    private const float MaxBoardSize = 440f;
-    private const float MaxBoardAreaSize = 492f;
     private const float BaseBoardRadius = 192f;
     private const float BaseLabelRadius = 178f;
-    private const float RightPadding = 40f;
+    private const float RightPadding = 32f;
 
     private const float BotIconSize = 200f;
     private const float NameFontSize = 50f;
     private const float NameTextHeight = 60f;
     private const float NameIconGap = 6f;
-    private const float IconTargetGap = 10f;
     private const float InfoFontSize = 45f;
-    private const float InfoTextHeight = 54f;
-    private const float InfoTextGap = 6f;
-    private const float TargetBlockHeight = InfoTextHeight + InfoTextGap + InfoTextHeight;
-    private const float StatsBlockHeight = NameTextHeight + NameIconGap + BotIconSize + IconTargetGap + TargetBlockHeight;
+    private const float StatsBlockHeight = NameTextHeight + NameIconGap + BotIconSize;
+
+    private const float OverlayCardMargin = 20f;
+    private const float OverlayCardPadding = 32f;
+    private const float OverlayHeaderHeight = 250f;
+    private const float OverlayHeaderGap = 20f;
+    private const float OverlayIconSize = 180f;
+    private const float OverlayHeaderTextGap = 24f;
+    private const float OverlayTopBarHeight = 200f;
+    private const float OverlayLeftCardMaxWidthFraction = 0.38f;
+    private const float OverlayFooterWidth = 420f;
+    private const float OverlayFooterHeight = 116f;
+    private const float OverlayFooterGap = 12f;
+    private const float ModeButtonWidth = 280f;
+    private const float ModeButtonHeight = 68f;
+    private const float ModeButtonFontSize = 28f;
 
     private const float BaseBoardMarkerSize = 34f;
     private const float BaseBoardMarkerOutlineSize = 40f;
     private const float BaseBoardMarkerThickness = 3f;
     private const float BaseBoardMarkerOutlineThickness = 7f;
-    private const float BaseDartSize = 180f;
-    private const float DartTipPixelX = 38f;
-    private const float DartTipPixelYFromBottom = 38f;
+    private const float BaseDartSize = 153.3f;
+    private const float DartTipPixelX = 0f;
+    private const float DartTipPixelYFromBottom = 0f;
 
     private const float TargetPreviewDuration = 0.8f;
     private const float FlightDuration = 0.45f;
     private const float ImpactDuration = 0.12f;
     private const float HitHoldDuration = 1f;
+    private const float HitPopupDuration = 0.32f;
+    private const float HitPopupFadeDuration = 0.15f;
+    private const float HitPopupOutlineWidth = 0.2f;
+
+    private const float TargetLockSnapDuration = 0.15f;
+    private const float TargetLockPulseDuration = 0.8f;
+    private const float TargetLockReticleZoomDuration = 0.55f;
+    private const float TargetLockSnapScale = 1.25f;
+    private const float TargetLockPulseScale = 1.08f;
+    private const float TargetLockReticlePulseScale = 1.06f;
+    private const float TargetLockReticleBoardPadding = 1.06f;
+    private const float TargetLockCrosshairMinAlpha = 0.82f;
+    private const float TargetLockReticleMaxAlpha = 0.7f;
+    private const float TargetLockReticleMinAlpha = 0.35f;
 
     private static readonly Color NumberColor = new Color(0.96f, 0.96f, 0.96f, 1f);
     private static readonly Color MarkerColor = new Color(1f, 1f, 1f, 0.98f);
-    private static readonly Color MarkerOutlineColor = new Color(0f, 0f, 0f, 0.72f);
+    private static readonly Color MarkerOutlineColor = new Color(0f, 0f, 0f, 0.95f);
 
     private const float SingleOuterRingRadius = 0.618f;
     private const float TripleRingRadius = 0.4335f;
@@ -77,6 +114,8 @@ public class BotTurnPanel : MonoBehaviour
     private const float PhysicalDoubleOuterMm = 170f;
     private const float PhysicalOffBoardMaxMm = 220f;
 
+    private static bool _sessionOverlaySuppressed;
+
     private GameObject _root;
     private GameObject _playingContainer;
     private GameObject _pausedContainer;
@@ -84,18 +123,39 @@ public class BotTurnPanel : MonoBehaviour
     private Sprite _boardSprite;
     private Transform _botIconRow;
     private Image _botIconSource;
+    private GameObject _playerCardPrefab;
+    private BotOverlayCardPlacement _cardPlacement;
 
     private bool _built;
+    private bool _overlayMode;
+    private GameObject _generatedRoot;
+    private Image _rootImage;
+    private Transform _compactParent;
+    private int _compactSiblingIndex;
+    private Vector2 _compactAnchorMin;
+    private Vector2 _compactAnchorMax;
+    private Vector2 _compactOffsetMin;
+    private Vector2 _compactOffsetMax;
+    private Vector2 _compactPivot;
+    private Vector2 _compactAnchoredPosition;
+    private Vector3 _compactLocalScale;
+    private Quaternion _compactLocalRotation;
+    private bool _compactRootRaycastTarget;
+    private bool _rootBindingStripped;
 
     private RectTransform _card;
     private RectTransform _content;
     private RectTransform _infoColumn;
+    private RectTransform _header;
     private Image _cardImage;
     private Image _cardBorder;
     private RectTransform _boardArea;
     private Image _boardImage;
     private RectTransform _footer;
     private RectTransform _animationLayer;
+    private Button _modeButton;
+    private Image _modeButtonImage;
+    private TMP_Text _modeButtonText;
 
     private float _boardAreaSize;
     private float _boardSize;
@@ -109,25 +169,60 @@ public class BotTurnPanel : MonoBehaviour
 
     private Image _botIcon;
     private TMP_Text _nameText;
-    private TMP_Text _targetText;
-    private TMP_Text _hitText;
     private RectTransform _targetCrosshair;
+    private CanvasGroup _targetCrosshairGroup;
     private readonly List<Image> _targetCrosshairParts = new List<Image>();
+    private RectTransform _targetReticleRoot;
+    private CanvasGroup _targetReticleGroup;
+    private readonly List<Image> _targetReticleParts = new List<Image>();
+    private float _targetReticleBaseSize;
+    private Coroutine _targetLockRoutine;
+    private int _targetLockVersion;
+    private GameObject _playerCardInstance;
+    private RectTransform _playerCardRect;
+    private X01PlayerItem _x01PlayerCard;
+    private CricketPlayerListItem _cricketPlayerCard;
+    private ATCPlayerListItem _atcPlayerCard;
+    private object _playerStats;
+    private float _overlayCardVisualWidth;
+    private float _overlayCardVisualHeight;
+    private float _overlayHeaderExtent;
     private Image _dartImage;
     private Outline _dartOutline;
     private RectTransform _dartRect;
+    private TMP_Text _hitPopupText;
+    private CanvasGroup _hitPopupGroup;
+    private Vector2 _hitPopupOffset;
 
     private TMP_FontAsset _font;
 
     private DartBot _currentBot;
     private bool _hasTarget;
     private bool _hitHoldActive;
+    private bool _hitPopupActive;
+    private Coroutine _hitPopupRoutine;
+    private bool _animationPaused;
+    private DartPhase _dartPhase;
+    private float _dartFlightProgress;
+    private Vector2 _activeLandingNormalized;
+    private int _throwGeneration;
+    private float _lastRootWidth;
+    private float _lastRootHeight;
     private int _targetValue;
     private DartMultiplier _targetMultiplier;
 
     private ThemeManager _subscribedThemeManager;
 
-    public void Initialize(GameObject root, GameObject playingContainer, GameObject pausedContainer, Sprite dartSprite, Sprite boardSprite, Transform botIconRow = null, Image botIcon = null)
+    public void Initialize(
+        GameObject root,
+        GameObject playingContainer,
+        GameObject pausedContainer,
+        Sprite dartSprite,
+        Sprite boardSprite,
+        Transform botIconRow = null,
+        Image botIcon = null,
+        GameObject playerCardPrefab = null,
+        BotOverlayCardPlacement cardPlacement = BotOverlayCardPlacement.Top)
     {
         _root = root;
         _playingContainer = playingContainer;
@@ -136,11 +231,49 @@ public class BotTurnPanel : MonoBehaviour
         _boardSprite = boardSprite;
         _botIconRow = botIconRow;
         _botIconSource = botIcon;
+        _playerCardPrefab = playerCardPrefab;
+        _cardPlacement = cardPlacement;
 
+        CaptureCompactRootState();
         EnsureBuilt();
     }
 
     public bool IsHitHoldActive => _hitHoldActive;
+
+    public void SetAnimationPaused(bool paused)
+    {
+        _animationPaused = paused;
+    }
+
+    public void SetPlayerStats(object stats)
+    {
+        _playerStats = stats;
+
+        if (_playerCardInstance == null || stats == null)
+            return;
+
+        switch (stats)
+        {
+            case X01UIStats x01Stats:
+                if (_x01PlayerCard == null)
+                    _x01PlayerCard = _playerCardInstance.GetComponent<X01PlayerItem>()
+                        ?? _playerCardInstance.GetComponentInChildren<X01PlayerItem>(true);
+                _x01PlayerCard?.Bind(x01Stats);
+                break;
+            case CricketUIStats cricketStats:
+                if (_cricketPlayerCard == null)
+                    _cricketPlayerCard = _playerCardInstance.GetComponent<CricketPlayerListItem>()
+                        ?? _playerCardInstance.GetComponentInChildren<CricketPlayerListItem>(true);
+                _cricketPlayerCard?.Bind(cricketStats);
+                break;
+            case ATCUIStats atcStats:
+                if (_atcPlayerCard == null)
+                    _atcPlayerCard = _playerCardInstance.GetComponent<ATCPlayerListItem>()
+                        ?? _playerCardInstance.GetComponentInChildren<ATCPlayerListItem>(true);
+                _atcPlayerCard?.Bind(atcStats);
+                break;
+        }
+    }
 
     public void CancelHitHold()
     {
@@ -161,74 +294,91 @@ public class BotTurnPanel : MonoBehaviour
 
     public void ResetVisuals()
     {
+        StopTargetLock(true);
+
         if (_dartImage != null)
             _dartImage.gameObject.SetActive(false);
 
         if (_targetCrosshair != null)
             _targetCrosshair.gameObject.SetActive(false);
 
-        if (_targetText != null)
-        {
-            _targetText.text = GetTargetLabel() + "-";
-            _targetText.color = GetColor(ThemeColorRole.Text1, Color.white);
-        }
+        if (_targetReticleRoot != null)
+            _targetReticleRoot.gameObject.SetActive(false);
 
-        if (_hitText != null)
-        {
-            _hitText.text = string.Empty;
-            _hitText.gameObject.SetActive(false);
-        }
+        HideHitPopup();
 
         _hasTarget = false;
         _hitHoldActive = false;
+        _dartPhase = DartPhase.None;
+        _dartFlightProgress = 0f;
+        _activeLandingNormalized = Vector2.zero;
+        _throwGeneration++;
         _targetValue = -1;
         _targetMultiplier = DartMultiplier.Single;
-
-        if (_boardImage != null)
-            _boardImage.rectTransform.localScale = Vector3.one;
     }
 
     public IEnumerator PlayThrow(Throw throwData, Action onImpact = null)
     {
         EnsureBuilt();
-
+        int generation = ++_throwGeneration;
         UpdateTarget(throwData);
 
-        if (_dartImage == null || _dartSprite == null)
+        float previewDuration = ScaledDuration(TargetPreviewDuration);
+        float flightDuration = ScaledDuration(FlightDuration);
+        float impactDuration = ScaledDuration(ImpactDuration);
+
+        if (_dartImage == null || _dartSprite == null || _animationLayer == null)
         {
-            yield return new WaitForSeconds(TargetPreviewDuration + FlightDuration + ImpactDuration);
+            yield return WaitAnimation(previewDuration + flightDuration + impactDuration);
+            if (generation != _throwGeneration)
+                yield break;
+
+            StopTargetLock(true);
             yield return FinishThrow(throwData, onImpact);
             yield break;
         }
 
-        yield return new WaitForSeconds(TargetPreviewDuration);
+        yield return WaitAnimation(previewDuration);
+        if (generation != _throwGeneration)
+            yield break;
 
-        Vector2 end = GetCardPositionForThrow(throwData);
-        Rect layerRect = _animationLayer.rect;
-        Vector2 start = new Vector2(
-            layerRect.xMin + layerRect.width * 0.15f,
-            layerRect.yMin - layerRect.height * 0.15f);
-        Quaternion dartRotation = GetDartRotation(start, end);
+        StopTargetLock(true);
 
-        LogDartDiagnostics(throwData, end, "end");
+        Vector2 landingNormalized = GetBoardNormalizedPositionForThrow(throwData);
+        _activeLandingNormalized = landingNormalized;
+        float arcHeight = Mathf.Max(30f, _boardAreaSize * 0.12f);
 
         _dartImage.gameObject.SetActive(true);
-        _dartRect.anchoredPosition = start;
         _dartRect.localScale = new Vector3(0.75f, 0.75f, 1f);
-        _dartRect.localRotation = dartRotation;
+        _dartPhase = DartPhase.Flight;
+        _dartFlightProgress = 0f;
+        LogDartDiagnostics(throwData, GetLayerPositionForBoardNormalized(landingNormalized), "end");
 
         float elapsed = 0f;
 
-        while (elapsed < FlightDuration)
+        while (elapsed < flightDuration)
         {
+            if (generation != _throwGeneration)
+                yield break;
+
+            if (_animationPaused)
+            {
+                yield return null;
+                continue;
+            }
+
             elapsed += Time.deltaTime;
-            float progress = Mathf.Clamp01(elapsed / FlightDuration);
+            float progress = Mathf.Clamp01(elapsed / flightDuration);
+            _dartFlightProgress = progress;
             float eased = 1f - Mathf.Pow(1f - progress, 3f);
 
+            Vector2 start = GetLayerStartPosition();
+            Vector2 end = GetLayerPositionForBoardNormalized(landingNormalized);
             Vector2 position = Vector2.LerpUnclamped(start, end, eased);
-            position.y += Mathf.Sin(progress * Mathf.PI) * 55f;
+            position.y += Mathf.Sin(progress * Mathf.PI) * arcHeight;
 
             _dartRect.anchoredPosition = position;
+            _dartRect.localRotation = GetDartRotation(start, end);
 
             float scale = Mathf.Lerp(0.75f, 1f, eased);
             _dartRect.localScale = new Vector3(scale, scale, 1f);
@@ -236,31 +386,48 @@ public class BotTurnPanel : MonoBehaviour
             yield return null;
         }
 
-        _dartRect.anchoredPosition = end;
-        _dartRect.localRotation = dartRotation;
-        LogDartDiagnostics(throwData, end, "impact");
+        if (generation != _throwGeneration)
+            yield break;
+
+        _dartPhase = DartPhase.Impact;
+        _dartFlightProgress = 1f;
+        Vector2 impactStart = GetLayerStartPosition();
+        Vector2 impactEnd = GetLayerPositionForBoardNormalized(landingNormalized);
+        _dartRect.anchoredPosition = impactEnd;
+        _dartRect.localRotation = GetDartRotation(impactStart, impactEnd);
+        LogDartDiagnostics(throwData, impactEnd, "impact");
 
         float impactElapsed = 0f;
-        while (impactElapsed < ImpactDuration)
+        while (impactElapsed < impactDuration)
         {
+            if (generation != _throwGeneration)
+                yield break;
+
+            if (_animationPaused)
+            {
+                yield return null;
+                continue;
+            }
+
             impactElapsed += Time.deltaTime;
-            float progress = Mathf.Clamp01(impactElapsed / ImpactDuration);
+            float progress = Mathf.Clamp01(impactElapsed / impactDuration);
             float punch = 1f + 0.12f * Mathf.Sin(progress * Mathf.PI);
             _dartRect.localScale = new Vector3(punch, punch, 1f);
 
-            if (_boardImage != null)
-            {
-                float boardPunch = 1f + 0.025f * Mathf.Sin(progress * Mathf.PI);
-                _boardImage.rectTransform.localScale = new Vector3(boardPunch, boardPunch, 1f);
-            }
+            impactStart = GetLayerStartPosition();
+            impactEnd = GetLayerPositionForBoardNormalized(landingNormalized);
+            _dartRect.anchoredPosition = impactEnd;
+            _dartRect.localRotation = GetDartRotation(impactStart, impactEnd);
 
             yield return null;
         }
 
-        _dartRect.localScale = Vector3.one;
-        if (_boardImage != null)
-            _boardImage.rectTransform.localScale = Vector3.one;
+        if (generation != _throwGeneration)
+            yield break;
 
+        _dartRect.localScale = Vector3.one;
+
+        _dartPhase = DartPhase.Hold;
         yield return FinishThrow(throwData, onImpact);
     }
 
@@ -269,11 +436,357 @@ public class BotTurnPanel : MonoBehaviour
         ShowHit(throwData);
         _hitHoldActive = true;
         onImpact?.Invoke();
-        yield return new WaitForSeconds(HitHoldDuration);
+        yield return WaitAnimation(ScaledDuration(HitHoldDuration));
         _hitHoldActive = false;
 
         if (_dartRect != null)
             LogDartDiagnostics(throwData, _dartRect.anchoredPosition, "hold");
+    }
+
+    private IEnumerator WaitAnimation(float duration)
+    {
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            if (!_animationPaused)
+                elapsed += Time.deltaTime;
+
+            yield return null;
+        }
+    }
+
+    private void StartTargetLock()
+    {
+        StopTargetLock(false);
+
+        if (_targetCrosshair == null || _targetCrosshairGroup == null)
+            return;
+
+        _targetLockVersion++;
+        _targetLockRoutine = StartCoroutine(TargetLockRoutine());
+    }
+
+    private void StopTargetLock(bool resetVisuals)
+    {
+        if (_targetLockRoutine != null)
+            StopCoroutine(_targetLockRoutine);
+
+        _targetLockRoutine = null;
+        _targetLockVersion++;
+
+        if (resetVisuals)
+            ResetTargetLockVisuals();
+    }
+
+    private void ResetTargetLockVisuals()
+    {
+        if (_targetCrosshair != null)
+            _targetCrosshair.localScale = Vector3.one;
+
+        if (_targetCrosshairGroup != null)
+            _targetCrosshairGroup.alpha = 1f;
+
+        if (_targetReticleRoot != null)
+        {
+            _targetReticleRoot.anchoredPosition = Vector2.zero;
+            _targetReticleRoot.localScale = Vector3.one;
+        }
+
+        if (_targetReticleGroup != null)
+            _targetReticleGroup.alpha = 0f;
+    }
+
+    private IEnumerator TargetLockRoutine()
+    {
+        int version = _targetLockVersion;
+        RectTransform marker = _targetCrosshair;
+        CanvasGroup markerGroup = _targetCrosshairGroup;
+        RectTransform reticle = _targetReticleRoot;
+        CanvasGroup reticleGroup = _targetReticleGroup;
+
+        if (marker == null || markerGroup == null)
+        {
+            _targetLockRoutine = null;
+            yield break;
+        }
+
+        marker.localScale = Vector3.one * TargetLockSnapScale;
+        markerGroup.alpha = 0f;
+
+        Vector2 targetPosition = marker.anchoredPosition;
+        float reticleStartScale = GetTargetReticleStartScale();
+
+        if (reticle != null)
+        {
+            reticle.anchoredPosition = Vector2.zero;
+            reticle.localScale = Vector3.one * reticleStartScale;
+        }
+
+        if (reticleGroup != null)
+            reticleGroup.alpha = 0f;
+
+        float snapDuration = Mathf.Max(0.01f, ScaledDuration(TargetLockSnapDuration));
+        float snapElapsed = 0f;
+
+        while (snapElapsed < snapDuration)
+        {
+            if (version != _targetLockVersion)
+                yield break;
+
+            if (!_animationPaused)
+            {
+                snapElapsed += Time.deltaTime;
+                float progress = Mathf.Clamp01(snapElapsed / snapDuration);
+                float eased = 1f - Mathf.Pow(1f - progress, 3f);
+
+                marker.localScale = Vector3.one * Mathf.Lerp(TargetLockSnapScale, 1f, eased);
+                markerGroup.alpha = eased;
+
+                if (reticleGroup != null)
+                    reticleGroup.alpha = TargetLockReticleMaxAlpha * eased;
+            }
+
+            yield return null;
+        }
+
+        marker.localScale = Vector3.one;
+        markerGroup.alpha = 1f;
+
+        if (reticle != null)
+        {
+            reticle.anchoredPosition = Vector2.zero;
+            reticle.localScale = Vector3.one * reticleStartScale;
+        }
+
+        if (reticleGroup != null)
+            reticleGroup.alpha = TargetLockReticleMaxAlpha;
+
+        float zoomDuration = Mathf.Max(0.01f, ScaledDuration(TargetLockReticleZoomDuration));
+        float zoomElapsed = 0f;
+
+        while (zoomElapsed < zoomDuration)
+        {
+            if (version != _targetLockVersion)
+                yield break;
+
+            if (!_animationPaused)
+            {
+                zoomElapsed += Time.deltaTime;
+                float progress = Mathf.Clamp01(zoomElapsed / zoomDuration);
+                float eased = 1f - Mathf.Pow(1f - progress, 3f);
+
+                if (reticle != null)
+                {
+                    reticle.anchoredPosition = Vector2.LerpUnclamped(Vector2.zero, targetPosition, eased);
+                    float scale = Mathf.LerpUnclamped(reticleStartScale, 1f, eased);
+                    reticle.localScale = Vector3.one * scale;
+                }
+            }
+
+            yield return null;
+        }
+
+        if (reticle != null)
+        {
+            reticle.anchoredPosition = targetPosition;
+            reticle.localScale = Vector3.one;
+        }
+
+        if (reticleGroup != null)
+            reticleGroup.alpha = TargetLockReticleMaxAlpha;
+
+        float pulseDuration = Mathf.Max(0.1f, ScaledDuration(TargetLockPulseDuration));
+        float pulseElapsed = 0f;
+
+        while (version == _targetLockVersion)
+        {
+            if (!_animationPaused)
+            {
+                pulseElapsed += Time.deltaTime;
+                float phase = Mathf.Repeat(pulseElapsed / pulseDuration, 1f);
+                float wave = 0.5f - 0.5f * Mathf.Cos(phase * Mathf.PI * 2f);
+
+                marker.localScale = Vector3.one * Mathf.Lerp(1f, TargetLockPulseScale, wave);
+                markerGroup.alpha = Mathf.Lerp(1f, TargetLockCrosshairMinAlpha, wave);
+
+                if (reticle != null)
+                {
+                    reticle.anchoredPosition = targetPosition;
+                    float scale = Mathf.Lerp(1f, TargetLockReticlePulseScale, wave);
+                    reticle.localScale = Vector3.one * scale;
+                }
+
+                if (reticleGroup != null)
+                {
+                    reticleGroup.alpha = Mathf.Lerp(
+                        TargetLockReticleMaxAlpha,
+                        TargetLockReticleMinAlpha,
+                        wave);
+                }
+            }
+
+            yield return null;
+        }
+
+        if (version == _targetLockVersion)
+            _targetLockRoutine = null;
+    }
+
+    private float GetTargetReticleStartScale()
+    {
+        if (_boardAreaSize <= 0.001f)
+            return 1f;
+
+        float baseSize = _targetReticleBaseSize > 0.001f
+            ? _targetReticleBaseSize
+            : Mathf.Max(52f, _boardMarkerOutlineSize * 1.8f);
+
+        return Mathf.Max(1f, (_boardAreaSize * TargetLockReticleBoardPadding) / baseSize);
+    }
+
+    private void LateUpdate()
+    {
+        if (!_built)
+            return;
+
+        DetectRootSizeChange();
+        UpdateDartLayout();
+        if (_hitPopupActive)
+            RepositionHitPopup();
+    }
+
+    private void OnDisable()
+    {
+        StopTargetLock(true);
+    }
+
+    private void UpdateDartLayout()
+    {
+        if (_dartRect == null || _dartImage == null || !_dartImage.gameObject.activeSelf)
+            return;
+
+        if (_dartPhase == DartPhase.Flight)
+        {
+            if (!_animationPaused)
+                return;
+
+            float eased = 1f - Mathf.Pow(1f - _dartFlightProgress, 3f);
+            Vector2 start = GetLayerStartPosition();
+            Vector2 end = GetLayerPositionForBoardNormalized(_activeLandingNormalized);
+            Vector2 position = Vector2.LerpUnclamped(start, end, eased);
+            position.y += Mathf.Sin(_dartFlightProgress * Mathf.PI) * Mathf.Max(30f, _boardAreaSize * 0.12f);
+
+            _dartRect.anchoredPosition = position;
+            _dartRect.localRotation = GetDartRotation(start, end);
+
+            float scale = Mathf.Lerp(0.75f, 1f, eased);
+            _dartRect.localScale = new Vector3(scale, scale, 1f);
+            return;
+        }
+
+        if (_dartPhase != DartPhase.Impact && _dartPhase != DartPhase.Hold)
+            return;
+
+        Vector2 impactStart = GetLayerStartPosition();
+        Vector2 impactEnd = GetLayerPositionForBoardNormalized(_activeLandingNormalized);
+        _dartRect.anchoredPosition = impactEnd;
+        _dartRect.localRotation = GetDartRotation(impactStart, impactEnd);
+    }
+
+    private IEnumerator AnimateHitPopup()
+    {
+        float introDuration = Mathf.Max(0.01f, ScaledDuration(HitPopupDuration));
+        float holdDuration = Mathf.Max(introDuration + 0.2f, ScaledDuration(HitHoldDuration));
+        float fadeDuration = Mathf.Max(0.01f, ScaledDuration(HitPopupFadeDuration));
+        float elapsed = 0f;
+
+        ApplyHitPopupProgress(elapsed, introDuration, holdDuration, fadeDuration);
+
+        while (elapsed < holdDuration)
+        {
+            if (!_animationPaused)
+            {
+                elapsed += Time.deltaTime;
+                ApplyHitPopupProgress(elapsed, introDuration, holdDuration, fadeDuration);
+            }
+
+            yield return null;
+        }
+
+        _hitPopupActive = false;
+        _hitPopupOffset = Vector2.zero;
+        if (_hitPopupText != null)
+            _hitPopupText.gameObject.SetActive(false);
+
+        _hitPopupRoutine = null;
+    }
+
+    private void ApplyHitPopupProgress(float elapsed, float introDuration, float holdDuration, float fadeDuration)
+    {
+        if (_hitPopupText == null || _hitPopupGroup == null)
+            return;
+
+        float popInDuration = introDuration * 0.55f;
+        float fadeInDuration = Mathf.Max(0.01f, introDuration * 0.25f);
+        float fadeStart = Mathf.Max(introDuration, holdDuration - fadeDuration);
+        float alpha = 1f;
+        float scale;
+        float lift;
+
+        if (elapsed < popInDuration)
+        {
+            float t = Mathf.Clamp01(elapsed / popInDuration);
+            float eased = EaseOutCubic(t);
+            scale = Mathf.LerpUnclamped(0.45f, 1.18f, eased);
+            alpha = Mathf.Clamp01(elapsed / fadeInDuration);
+            lift = Mathf.Lerp(-12f, 0f, eased);
+        }
+        else if (elapsed < introDuration)
+        {
+            float t = Mathf.Clamp01((elapsed - popInDuration) / Mathf.Max(0.001f, introDuration - popInDuration));
+            scale = Mathf.Lerp(1.18f, 1f, Mathf.SmoothStep(0f, 1f, t));
+            lift = 0f;
+        }
+        else
+        {
+            float breatheTime = elapsed - introDuration;
+            scale = 1f + 0.015f * Mathf.Sin(breatheTime * Mathf.PI * 2f / 0.55f);
+
+            float fadeT = Mathf.Clamp01((elapsed - fadeStart) / fadeDuration);
+            alpha = 1f - Mathf.SmoothStep(0f, 1f, fadeT);
+            scale = Mathf.Lerp(scale, 1.06f, fadeT);
+            lift = Mathf.Lerp(0f, 8f, fadeT);
+        }
+
+        _hitPopupGroup.alpha = alpha;
+        _hitPopupText.rectTransform.localScale = new Vector3(scale, scale, 1f);
+        _hitPopupOffset = new Vector2(0f, lift);
+        RepositionHitPopup();
+    }
+
+    private static float EaseOutCubic(float t)
+    {
+        t = 1f - Mathf.Clamp01(t);
+        return 1f - t * t * t;
+    }
+
+    private void DetectRootSizeChange()
+    {
+        if (_root == null)
+            return;
+
+        var rootRect = (RectTransform)_root.transform;
+        float width = rootRect.rect.width;
+        float height = rootRect.rect.height;
+        if (width <= 1f || height <= 1f)
+            return;
+
+        if (Mathf.Abs(width - _lastRootWidth) <= 1f && Mathf.Abs(height - _lastRootHeight) <= 1f)
+            return;
+
+        _lastRootWidth = width;
+        _lastRootHeight = height;
+        RebuildForMode(_overlayMode);
     }
 
     public void ShowTarget(Throw throwData)
@@ -288,13 +801,6 @@ public class BotTurnPanel : MonoBehaviour
         _targetValue = _hasTarget ? throwData.TargetValue : -1;
         _targetMultiplier = throwData != null ? throwData.TargetMultiplier : DartMultiplier.Single;
 
-        if (_targetText != null)
-        {
-            _targetText.text = GetTargetLabel() + (_hasTarget
-                ? FormatValue(_targetValue, _targetMultiplier)
-                : "-");
-        }
-
         if (_targetCrosshair != null)
         {
             _targetCrosshair.gameObject.SetActive(_hasTarget);
@@ -302,53 +808,83 @@ public class BotTurnPanel : MonoBehaviour
                 _targetCrosshair.anchoredPosition = GetBoardPosition(_targetValue, _targetMultiplier);
         }
 
-        if (_hitText != null)
-        {
-            _hitText.text = string.Empty;
-            _hitText.gameObject.SetActive(false);
-        }
+        if (_targetReticleRoot != null)
+            _targetReticleRoot.gameObject.SetActive(_hasTarget);
+
+        if (_hitPopupActive)
+            HideHitPopup();
 
         if (_dartImage != null)
             _dartImage.gameObject.SetActive(false);
 
-        if (_boardImage != null)
-            _boardImage.rectTransform.localScale = Vector3.one;
-
         _hitHoldActive = false;
+        _dartPhase = DartPhase.None;
+        _dartFlightProgress = 0f;
+        _activeLandingNormalized = Vector2.zero;
 
         ApplyTheme();
+
+        if (_hasTarget)
+            StartTargetLock();
+        else
+            StopTargetLock(true);
     }
 
     private void ShowHit(Throw throwData)
     {
-        if (_hitText == null)
+        if (_hitPopupText == null || _hitPopupGroup == null)
+            EnsureHitPopup();
+
+        if (_hitPopupText == null || _hitPopupGroup == null)
             return;
 
+        if (_hitPopupRoutine != null)
+        {
+            StopCoroutine(_hitPopupRoutine);
+            _hitPopupRoutine = null;
+        }
+
         string actual = FormatActual(throwData);
-        _hitText.text = LocalizationText.Get("Hit", "Hit") + ": " + actual;
-        _hitText.gameObject.SetActive(true);
-        _hitText.color = GetColor(ThemeColorRole.Text1, Color.white);
+        _hitPopupText.text = actual;
+        _hitPopupText.color = GetColor(ThemeColorRole.Text1, Color.white);
+        _hitPopupText.gameObject.SetActive(true);
+        ApplyHitPopupOutline();
+        _hitPopupText.rectTransform.localScale = new Vector3(0.45f, 0.45f, 1f);
+        _hitPopupGroup.alpha = 0f;
+        _hitPopupOffset = Vector2.zero;
+        _hitPopupActive = true;
+        RepositionHitPopup();
+        _hitPopupRoutine = StartCoroutine(AnimateHitPopup());
     }
 
-    private Vector2 GetCardPositionForThrow(Throw throwData)
+    private void HideHitPopup()
     {
-        if (_boardArea == null || _animationLayer == null)
+        _hitPopupActive = false;
+        _hitPopupOffset = Vector2.zero;
+
+        if (_hitPopupRoutine != null)
+        {
+            StopCoroutine(_hitPopupRoutine);
+            _hitPopupRoutine = null;
+        }
+
+        if (_hitPopupGroup != null)
+            _hitPopupGroup.alpha = 0f;
+
+        if (_hitPopupText != null)
+        {
+            _hitPopupText.text = string.Empty;
+            _hitPopupText.gameObject.SetActive(false);
+        }
+    }
+
+    private Vector2 GetBoardNormalizedPositionForThrow(Throw throwData)
+    {
+        if (_boardArea == null || _boardRadius <= 0.001f || throwData == null)
             return Vector2.zero;
 
-        if (throwData == null)
-            return _animationLayer.InverseTransformPoint(_boardArea.position);
-
         if (throwData.HasLandingPoint)
-        {
-            Vector2 landing = GetBoardPositionFromNormalized(throwData.LandingX, throwData.LandingY);
-            float maxRadius = _boardRadius * VisualBoardOuterRadius;
-
-            if (landing.magnitude > maxRadius)
-                landing = landing.normalized * maxRadius;
-
-            Vector3 landingWorld = _boardArea.TransformPoint(landing);
-            return _animationLayer.InverseTransformPoint(landingWorld);
-        }
+            return GetBoardPositionFromNormalized(throwData.LandingX, throwData.LandingY) / _boardRadius;
 
         bool isExactHit = _hasTarget
             && throwData.Value == _targetValue
@@ -357,7 +893,7 @@ public class BotTurnPanel : MonoBehaviour
             && _targetCrosshair.gameObject.activeInHierarchy;
 
         if (isExactHit)
-            return _animationLayer.InverseTransformPoint(_targetCrosshair.position);
+            return _targetCrosshair.anchoredPosition / _boardRadius;
 
         Vector2 boardPosition;
         bool valid = throwData.Value > 0
@@ -374,8 +910,53 @@ public class BotTurnPanel : MonoBehaviour
             boardPosition = new Vector2(Mathf.Sin(rad), Mathf.Cos(rad)) * (_boardRadius * 1.05f);
         }
 
-        Vector3 world = _boardArea.TransformPoint(boardPosition);
+        return boardPosition / _boardRadius;
+    }
+
+    private Vector2 GetLayerPositionForBoardNormalized(Vector2 normalized)
+    {
+        if (_boardArea == null || _animationLayer == null)
+            return Vector2.zero;
+
+        Vector3 world = _boardArea.TransformPoint(normalized * _boardRadius);
         return _animationLayer.InverseTransformPoint(world);
+    }
+
+    private Vector2 GetLayerStartPosition()
+    {
+        if (_animationLayer == null)
+            return Vector2.zero;
+
+        Rect layerRect = _animationLayer.rect;
+        if (_card == null)
+        {
+            return new Vector2(
+                layerRect.xMin + layerRect.width * 0.15f,
+                layerRect.yMin + layerRect.height * 0.15f);
+        }
+
+        var corners = new Vector3[4];
+        _card.GetWorldCorners(corners);
+        Vector2 bottomLeft = _animationLayer.InverseTransformPoint(corners[0]);
+        Vector2 topRight = _animationLayer.InverseTransformPoint(corners[2]);
+
+        Vector2 start = new Vector2(
+            Mathf.Lerp(bottomLeft.x, topRight.x, 0.15f),
+            Mathf.Lerp(bottomLeft.y, topRight.y, 0.15f));
+
+        start.x = Mathf.Clamp(start.x, layerRect.xMin, layerRect.xMax);
+        start.y = Mathf.Clamp(start.y, layerRect.yMin, layerRect.yMax);
+        return start;
+    }
+
+    private void RepositionHitPopup()
+    {
+        if (_hitPopupText == null || _animationLayer == null || _boardArea == null)
+            return;
+
+        Vector3 world = _boardArea.TransformPoint(Vector3.zero);
+        Vector2 local = _animationLayer.InverseTransformPoint(world);
+        _hitPopupText.rectTransform.anchoredPosition = local + _hitPopupOffset;
     }
 
     private Vector2 GetBoardPositionFromNormalized(float x, float y)
@@ -531,11 +1112,6 @@ public class BotTurnPanel : MonoBehaviour
             $"screen={Screen.width}x{Screen.height}");
     }
 
-    private static string GetTargetLabel()
-    {
-        return "Target: ";
-    }
-
     private static string FormatValue(int value, DartMultiplier multiplier)
     {
         if (value <= 0)
@@ -561,51 +1137,465 @@ public class BotTurnPanel : MonoBehaviour
         return FormatValue(throwData.Value, throwData.Multiplier);
     }
 
-    private void EnsureBuilt()
+    public static void ResetSessionOverlaySuppression()
     {
-        if (_built || _root == null)
+        _sessionOverlaySuppressed = false;
+    }
+
+    private static bool IsOverlayEnabledInSettings()
+    {
+        AppSettingsManager manager = AppSettingsManager.Instance;
+        if (manager == null || manager.Settings == null || manager.Settings.BotAnimation == null)
+            return false;
+
+        return manager.Settings.BotAnimation.FullscreenOverlay;
+    }
+
+    private static bool ShouldUseOverlay()
+    {
+        return IsOverlayEnabledInSettings() && !_sessionOverlaySuppressed;
+    }
+
+    private static float GetAnimationSpeed()
+    {
+        AppSettingsManager manager = AppSettingsManager.Instance;
+        if (manager == null || manager.Settings == null || manager.Settings.BotAnimation == null)
+            return 1f;
+
+        float speed = manager.Settings.BotAnimation.AnimationSpeed;
+        return Mathf.Clamp(float.IsNaN(speed) || float.IsInfinity(speed) ? 1f : speed, 0.5f, 2f);
+    }
+
+    private static float ScaledDuration(float duration)
+    {
+        return duration / GetAnimationSpeed();
+    }
+
+    private void CaptureCompactRootState()
+    {
+        if (_root == null)
             return;
 
+        var rect = (RectTransform)_root.transform;
+        _compactParent = _root.transform.parent;
+        _compactSiblingIndex = _root.transform.GetSiblingIndex();
+        _compactAnchorMin = rect.anchorMin;
+        _compactAnchorMax = rect.anchorMax;
+        _compactOffsetMin = rect.offsetMin;
+        _compactOffsetMax = rect.offsetMax;
+        _compactPivot = rect.pivot;
+        _compactAnchoredPosition = rect.anchoredPosition;
+        _compactLocalScale = rect.localScale;
+        _compactLocalRotation = rect.localRotation;
+
+        var image = _root.GetComponent<Image>();
+        _compactRootRaycastTarget = image != null && image.raycastTarget;
+    }
+
+    private void ConfigureRootForMode(bool overlay)
+    {
+        if (_root == null)
+            return;
+
+        _rootImage = _root.GetComponent<Image>();
+        if (_rootImage != null)
+            _rootImage.raycastTarget = overlay ? true : _compactRootRaycastTarget;
+
+        var rect = (RectTransform)_root.transform;
+
+        if (overlay)
+        {
+            Transform overlayParent = FindParentScreen(_root.transform);
+            if (overlayParent == null)
+                overlayParent = _compactParent;
+
+            if (overlayParent != null)
+            {
+                _root.transform.SetParent(overlayParent, false);
+                _root.transform.SetAsLastSibling();
+            }
+
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.localScale = Vector3.one;
+            rect.localRotation = Quaternion.identity;
+            rect.offsetMin = Vector2.zero;
+            rect.offsetMax = new Vector2(0f, -OverlayTopBarHeight);
+        }
+        else
+        {
+            if (_compactParent != null)
+            {
+                _root.transform.SetParent(_compactParent, false);
+                int index = Mathf.Clamp(_compactSiblingIndex, 0, _compactParent.childCount - 1);
+                _root.transform.SetSiblingIndex(index);
+            }
+
+            rect.anchorMin = _compactAnchorMin;
+            rect.anchorMax = _compactAnchorMax;
+            rect.offsetMin = _compactOffsetMin;
+            rect.offsetMax = _compactOffsetMax;
+            rect.pivot = _compactPivot;
+            rect.anchoredPosition = _compactAnchoredPosition;
+            rect.localScale = _compactLocalScale;
+            rect.localRotation = _compactLocalRotation;
+        }
+
+        if (overlay)
+        {
+            var bindings = _root.GetComponents<ThemeColorBinding>();
+            if (bindings.Length > 0)
+            {
+                _rootBindingStripped = true;
+                for (int i = 0; i < bindings.Length; i++)
+                    Destroy(bindings[i]);
+            }
+        }
+        else if (_rootBindingStripped && _rootImage != null)
+        {
+            var binding = _root.AddComponent<ThemeColorBinding>();
+            binding.SetRole(ThemeColorRole.Background3);
+            _rootBindingStripped = false;
+        }
+    }
+
+    private void RebuildForMode(bool overlay)
+    {
+        StopTargetLock(true);
+        DetachPersistentControls();
+
+        if (_generatedRoot != null)
+        {
+            _generatedRoot.SetActive(false);
+            Destroy(_generatedRoot);
+        }
+
+        _generatedRoot = null;
+        ResetGeneratedRefs();
+        _built = false;
+        _overlayMode = overlay;
+        EnsureBuilt();
+    }
+
+    private void DetachPersistentControls()
+    {
+        MoveToRoot(_playingContainer);
+        MoveToRoot(_pausedContainer);
+        if (_botIcon != null)
+            MoveToRoot(_botIcon.gameObject);
+    }
+
+    private void MoveToRoot(GameObject target)
+    {
+        if (target != null && _root != null && target.transform.parent != _root.transform)
+            target.transform.SetParent(_root.transform, false);
+    }
+
+    private void ResetGeneratedRefs()
+    {
+        _card = null;
+        _content = null;
+        _infoColumn = null;
+        _header = null;
+        _cardImage = null;
+        _cardBorder = null;
+        _boardArea = null;
+        _boardImage = null;
+        _footer = null;
+        _modeButton = null;
+        _modeButtonImage = null;
+        _modeButtonText = null;
+        _nameText = null;
+        _targetCrosshair = null;
+        _targetCrosshairGroup = null;
+        _targetCrosshairParts.Clear();
+        _targetReticleRoot = null;
+        _targetReticleGroup = null;
+        _targetReticleParts.Clear();
+        _targetReticleBaseSize = 0f;
+        _targetLockRoutine = null;
+        _playerCardInstance = null;
+        _playerCardRect = null;
+        _x01PlayerCard = null;
+        _cricketPlayerCard = null;
+        _atcPlayerCard = null;
+        _overlayCardVisualWidth = 0f;
+        _overlayCardVisualHeight = 0f;
+        _overlayHeaderExtent = 0f;
+    }
+
+    private void EnsureBuilt()
+    {
+        if (_root == null)
+            return;
+
+        bool overlay = ShouldUseOverlay();
+        if (_built)
+        {
+            if (_overlayMode != overlay)
+                RebuildForMode(overlay);
+
+            return;
+        }
+
         _built = true;
+        _overlayMode = overlay;
+        ConfigureRootForMode(overlay);
 
         var layout = _root.GetComponent<VerticalLayoutGroup>();
         if (layout != null)
             layout.enabled = false;
 
+        CreateGeneratedRoot();
+
         BuildCard();
         BuildContent();
-        BuildInfoColumn();
+        if (_overlayMode)
+            BuildOverlayHeader();
+        else
+            BuildInfoColumn();
         BuildBoard();
         BuildFooter();
         BuildAnimationLayer();
+        BuildModeButton();
 
         ApplyTheme();
         SubscribeToTheme();
+        RefreshCurrentState();
+
+        var rootRect = (RectTransform)_root.transform;
+        _lastRootWidth = rootRect.rect.width;
+        _lastRootHeight = rootRect.rect.height;
+    }
+
+    private void RefreshCurrentState()
+    {
+        if (_nameText != null)
+            _nameText.text = _currentBot != null ? _currentBot.GetName() : "Bot";
+
+        if (_targetCrosshair != null)
+        {
+            _targetCrosshair.gameObject.SetActive(_hasTarget);
+            if (_hasTarget)
+                _targetCrosshair.anchoredPosition = GetBoardPosition(_targetValue, _targetMultiplier);
+        }
+
+        if (_targetReticleRoot != null)
+            _targetReticleRoot.gameObject.SetActive(_hasTarget);
+
+        if (_hasTarget)
+            StartTargetLock();
+        else
+            StopTargetLock(true);
+
+        UpdateDartLayout();
+        RepositionHitPopup();
+    }
+
+    private void CreateGeneratedRoot()
+    {
+        if (_generatedRoot != null)
+            return;
+
+        var go = CreateUIObject("BotGeneratedUI", _root.transform);
+        _generatedRoot = go;
+        SetStretchRect((RectTransform)go.transform, 0f, 0f, 0f, 0f);
     }
 
     private void BuildCard()
     {
-        float borderOffset = CardMargin - CardBorderInset;
+        if (_overlayMode)
+        {
+            var rootRect = (RectTransform)_root.transform;
+            float rootWidth = rootRect.rect.width > 1f ? rootRect.rect.width : 1220f;
+            float rootHeight = rootRect.rect.height > 1f ? rootRect.rect.height : 1400f;
 
-        _cardBorder = CreateImage("BotCardBorder", _root.transform, null, Color.white);
+            float cardWidth = Mathf.Max(320f, rootWidth - OverlayCardMargin * 2f);
+            float cardHeight = Mathf.Max(600f, rootHeight - OverlayCardMargin * 2f);
+
+            _cardBorder = CreateImage("BotCardBorder", _generatedRoot.transform, null, Color.white);
+            SetRect(_cardBorder.rectTransform, new Vector2(cardWidth + CardBorderInset * 2f, cardHeight + CardBorderInset * 2f), Vector2.zero);
+
+            _cardImage = CreateImage("BotCard", _generatedRoot.transform, null, Color.white);
+            SetRect(_cardImage.rectTransform, new Vector2(cardWidth, cardHeight), Vector2.zero);
+            _card = _cardImage.rectTransform;
+            return;
+        }
+
+        float margin = GetCompactCardMargin();
+        float borderOffset = margin - CardBorderInset;
+
+        _cardBorder = CreateImage("BotCardBorder", _generatedRoot.transform, null, Color.white);
         SetStretchRect(_cardBorder.rectTransform, borderOffset, borderOffset, borderOffset, borderOffset);
 
-        _cardImage = CreateImage("BotCard", _root.transform, null, Color.white);
-        SetStretchRect(_cardImage.rectTransform, CardMargin, CardMargin, CardMargin, CardMargin);
+        _cardImage = CreateImage("BotCard", _generatedRoot.transform, null, Color.white);
+        SetStretchRect(_cardImage.rectTransform, margin, margin, margin, margin);
         _card = _cardImage.rectTransform;
     }
 
     private void BuildContent()
     {
+        float padding = _overlayMode ? OverlayCardPadding : GetCompactCardPadding();
+        float footerHeight = _overlayMode ? OverlayFooterHeight : GetCompactFooterHeight();
+        float footerGap = _overlayMode ? OverlayFooterGap : GetCompactFooterGap();
+
         var contentGo = CreateUIObject("BotContent", _card);
         _content = (RectTransform)contentGo.transform;
+        float horizontalPadding = _overlayMode ? padding : 0f;
+
         _content.anchorMin = Vector2.zero;
         _content.anchorMax = Vector2.one;
         _content.pivot = new Vector2(0.5f, 0.5f);
-        _content.offsetMin = new Vector2(0f, CardPadding + FooterHeight + FooterGap);
-        _content.offsetMax = new Vector2(0f, -CardPadding);
+        _content.offsetMin = new Vector2(horizontalPadding, padding + footerHeight + footerGap);
+        _content.offsetMax = new Vector2(-horizontalPadding, -padding);
         _content.localScale = Vector3.one;
         _content.localRotation = Quaternion.identity;
+    }
+
+    private void BuildOverlayHeader()
+    {
+        if (_playerCardPrefab != null)
+            BuildOverlayPlayerCard();
+        else
+            BuildOverlayFallbackHeader();
+    }
+
+    private void BuildOverlayPlayerCard()
+    {
+        var cardGo = Instantiate(_playerCardPrefab, _content, false);
+        cardGo.name = "BotPlayerCard";
+        _playerCardInstance = cardGo;
+        _playerCardRect = (RectTransform)cardGo.transform;
+
+        float nativeWidth = Mathf.Max(1f, _playerCardRect.sizeDelta.x);
+        float nativeHeight = Mathf.Max(1f, _playerCardRect.sizeDelta.y);
+        if (nativeWidth < 10f)
+            nativeWidth = Mathf.Max(1f, _playerCardRect.rect.width);
+        if (nativeHeight < 10f)
+            nativeHeight = Mathf.Max(1f, _playerCardRect.rect.height);
+
+        Vector2 contentSize = GetContentSize();
+        bool top = _cardPlacement == BotOverlayCardPlacement.Top;
+
+        float maxWidth = top
+            ? contentSize.x
+            : contentSize.x * OverlayLeftCardMaxWidthFraction;
+        float maxHeight = top
+            ? Mathf.Max(120f, contentSize.y * 0.42f)
+            : Mathf.Max(120f, contentSize.y);
+
+        float scale = Mathf.Min(maxWidth / nativeWidth, maxHeight / nativeHeight);
+        scale = Mathf.Max(0.05f, scale);
+
+        _overlayCardVisualWidth = nativeWidth * scale;
+        _overlayCardVisualHeight = nativeHeight * scale;
+
+        _playerCardRect.localScale = new Vector3(scale, scale, 1f);
+        _playerCardRect.localRotation = Quaternion.identity;
+
+        if (top)
+        {
+            _playerCardRect.anchorMin = new Vector2(0.5f, 1f);
+            _playerCardRect.anchorMax = new Vector2(0.5f, 1f);
+            _playerCardRect.pivot = new Vector2(0.5f, 1f);
+            _playerCardRect.anchoredPosition = Vector2.zero;
+        }
+        else
+        {
+            _playerCardRect.anchorMin = new Vector2(0f, 1f);
+            _playerCardRect.anchorMax = new Vector2(0f, 1f);
+            _playerCardRect.pivot = new Vector2(0f, 1f);
+            _playerCardRect.anchoredPosition = Vector2.zero;
+        }
+
+        if (_botIconRow != null)
+            _botIconRow.gameObject.SetActive(false);
+
+        if (_botIcon != null)
+            _botIcon.gameObject.SetActive(false);
+        else if (_botIconSource != null)
+            _botIconSource.gameObject.SetActive(false);
+
+        _overlayHeaderExtent = _overlayCardVisualHeight;
+        SetPlayerStats(_playerStats);
+    }
+
+    private void BuildOverlayFallbackHeader()
+    {
+        var headerGo = CreateUIObject("BotHeader", _content);
+        _header = (RectTransform)headerGo.transform;
+        _header.anchorMin = new Vector2(0f, 1f);
+        _header.anchorMax = new Vector2(1f, 1f);
+        _header.pivot = new Vector2(0.5f, 1f);
+        _header.offsetMin = new Vector2(0f, -OverlayHeaderHeight);
+        _header.offsetMax = Vector2.zero;
+        _header.localScale = Vector3.one;
+        _header.localRotation = Quaternion.identity;
+
+        Transform botIcon = ResolveBotIconTransform(_root.transform);
+        if (botIcon != null)
+        {
+            botIcon.SetParent(_header, false);
+
+            var iconRect = (RectTransform)botIcon;
+            iconRect.anchorMin = new Vector2(0f, 0.5f);
+            iconRect.anchorMax = new Vector2(0f, 0.5f);
+            iconRect.pivot = new Vector2(0f, 0.5f);
+            iconRect.sizeDelta = new Vector2(OverlayIconSize, OverlayIconSize);
+            iconRect.anchoredPosition = Vector2.zero;
+            iconRect.localScale = Vector3.one;
+            iconRect.localRotation = Quaternion.identity;
+
+            _botIcon = botIcon.GetComponent<Image>();
+            if (_botIcon != null)
+                _botIcon.preserveAspect = true;
+
+            var bindings = botIcon.GetComponents<ThemeColorBinding>();
+            for (int i = 0; i < bindings.Length; i++)
+                Destroy(bindings[i]);
+
+            botIcon.gameObject.SetActive(true);
+        }
+
+        if (_botIconRow != null)
+            Destroy(_botIconRow.gameObject);
+
+        float textLeft = OverlayIconSize + OverlayHeaderTextGap;
+
+        _nameText = CreateText("BotName", _header, Vector2.zero, new Vector2(100f, NameTextHeight), NameFontSize);
+        _nameText.fontStyle = FontStyles.Bold;
+        _nameText.alignment = TextAlignmentOptions.Left;
+        SetTopTextRect(_nameText.rectTransform, textLeft, 0f, NameTextHeight);
+    }
+
+    private static void SetTopTextRect(RectTransform rect, float left, float top, float height)
+    {
+        rect.anchorMin = new Vector2(0f, 1f);
+        rect.anchorMax = new Vector2(1f, 1f);
+        rect.pivot = new Vector2(0f, 1f);
+        rect.offsetMin = new Vector2(left, -(top + height));
+        rect.offsetMax = new Vector2(0f, -top);
+        rect.localScale = Vector3.one;
+        rect.localRotation = Quaternion.identity;
+    }
+
+    private Transform ResolveBotIconTransform(Transform fallbackParent)
+    {
+        if (_botIcon != null)
+            return _botIcon.transform;
+
+        if (_botIconSource != null)
+            return _botIconSource.transform;
+
+        if (_botIconRow != null)
+        {
+            Transform fromRow = FindChild(_botIconRow, "BotIcon");
+            if (fromRow != null)
+                return fromRow;
+        }
+
+        return fallbackParent != null ? FindChild(fallbackParent, "BotIcon") : null;
     }
 
     private void BuildInfoColumn()
@@ -628,7 +1618,12 @@ public class BotTurnPanel : MonoBehaviour
         stats.pivot = new Vector2(0.5f, 0.5f);
         stats.sizeDelta = new Vector2(0f, StatsBlockHeight);
         stats.anchoredPosition = Vector2.zero;
-        stats.localScale = Vector3.one;
+
+        float contentHeight = GetContentSize().y;
+        float statsScale = contentHeight > 1f
+            ? Mathf.Clamp(contentHeight / StatsBlockHeight, 0.5f, 1f)
+            : 1f;
+        stats.localScale = new Vector3(statsScale, statsScale, 1f);
         stats.localRotation = Quaternion.identity;
 
         _nameText = CreateText("BotName", stats, Vector2.zero, new Vector2(100f, NameTextHeight), NameFontSize);
@@ -643,17 +1638,9 @@ public class BotTurnPanel : MonoBehaviour
 
         Transform iconRow = _botIconRow;
         if (iconRow == null)
-        {
-            Debug.LogWarning("[BotTurnPanel] botIconRow nicht verdrahtet; Fallback-Suche nach 'BotIconRow'.", this);
             iconRow = FindChild(_root.transform, "BotIconRow");
-        }
 
-        Transform botIcon = _botIconSource != null ? _botIconSource.transform : null;
-        if (botIcon == null && iconRow != null)
-        {
-            Debug.LogWarning("[BotTurnPanel] botIcon nicht verdrahtet; Fallback-Suche nach 'BotIcon'.", this);
-            botIcon = FindChild(iconRow, "BotIcon");
-        }
+        Transform botIcon = ResolveBotIconTransform(_root.transform);
 
         if (botIcon != null)
         {
@@ -681,54 +1668,108 @@ public class BotTurnPanel : MonoBehaviour
 
         if (iconRow != null)
             Destroy(iconRow.gameObject);
+    }
 
-        var targetGo = CreateUIObject("BotTargetBlock", stats);
-        var targetBlock = (RectTransform)targetGo.transform;
-        targetBlock.anchorMin = new Vector2(0f, 1f);
-        targetBlock.anchorMax = new Vector2(1f, 1f);
-        targetBlock.pivot = new Vector2(0.5f, 1f);
-        targetBlock.sizeDelta = new Vector2(0f, TargetBlockHeight);
-        targetBlock.anchoredPosition = new Vector2(0f, -(NameTextHeight + NameIconGap + BotIconSize + IconTargetGap));
-        targetBlock.localScale = Vector3.one;
-        targetBlock.localRotation = Quaternion.identity;
+    private Vector2 GetContentSize()
+    {
+        float rootWidth = GetRootWidth();
+        float rootHeight = GetRootHeight();
 
-        _targetText = CreateText("BotTarget", targetBlock, Vector2.zero, new Vector2(100f, InfoTextHeight), InfoFontSize);
-        _targetText.fontStyle = FontStyles.Bold;
-        _targetText.alignment = TextAlignmentOptions.Center;
-        _targetText.color = GetColor(ThemeColorRole.Text1, Color.white);
-        var targetRect = _targetText.rectTransform;
-        targetRect.anchorMin = new Vector2(0f, 1f);
-        targetRect.anchorMax = new Vector2(1f, 1f);
-        targetRect.pivot = new Vector2(0.5f, 1f);
-        targetRect.offsetMin = new Vector2(0f, -InfoTextHeight);
-        targetRect.offsetMax = Vector2.zero;
+        if (_overlayMode)
+        {
+            float cardWidth = Mathf.Max(320f, rootWidth - OverlayCardMargin * 2f);
+            float cardHeight = Mathf.Max(600f, rootHeight - OverlayCardMargin * 2f);
+            float width = Mathf.Max(1f, cardWidth - OverlayCardPadding * 2f);
+            float height = Mathf.Max(1f, cardHeight - OverlayCardPadding * 2f
+                - OverlayFooterHeight - OverlayFooterGap);
+            return new Vector2(width, height);
+        }
 
-        _hitText = CreateText("BotHit", targetBlock, Vector2.zero, new Vector2(100f, InfoTextHeight), InfoFontSize);
-        _hitText.alignment = TextAlignmentOptions.Center;
-        _hitText.color = GetColor(ThemeColorRole.Text1, Color.white);
-        var hitRect = _hitText.rectTransform;
-        hitRect.anchorMin = new Vector2(0f, 0f);
-        hitRect.anchorMax = new Vector2(1f, 0f);
-        hitRect.pivot = new Vector2(0.5f, 0f);
-        hitRect.offsetMin = Vector2.zero;
-        hitRect.offsetMax = new Vector2(0f, InfoTextHeight);
-        _hitText.gameObject.SetActive(false);
+        float margin = GetCompactCardMargin();
+        float padding = GetCompactCardPadding();
+        float footerHeight = GetCompactFooterHeight();
+        float footerGap = GetCompactFooterGap();
+        float compactWidth = Mathf.Max(200f, rootWidth - margin * 2f);
+        float compactHeight = Mathf.Max(200f, rootHeight - margin * 2f);
+        return new Vector2(
+            compactWidth,
+            Mathf.Max(1f, compactHeight - padding * 2f - footerHeight - footerGap));
+    }
+
+    private float GetRootWidth()
+    {
+        if (_root == null)
+            return 1220f;
+
+        var rect = (RectTransform)_root.transform;
+        return rect.rect.width > 1f ? rect.rect.width : 1220f;
+    }
+
+    private float GetRootHeight()
+    {
+        if (_root == null)
+            return _overlayMode ? 1400f : 850f;
+
+        var rect = (RectTransform)_root.transform;
+        if (rect.rect.height > 1f)
+            return rect.rect.height;
+
+        return _overlayMode ? 1400f : 850f;
+    }
+
+    private bool IsTightCompactLayout()
+    {
+        return !_overlayMode && GetRootHeight() < TightLayoutHeight;
+    }
+
+    private float GetCompactCardMargin()
+    {
+        return IsTightCompactLayout() ? TightCardMargin : CardMargin;
+    }
+
+    private float GetCompactCardPadding()
+    {
+        return IsTightCompactLayout() ? TightCardPadding : CardPadding;
+    }
+
+    private float GetCompactFooterHeight()
+    {
+        return IsTightCompactLayout() ? TightFooterHeight : FooterHeight;
+    }
+
+    private float GetCompactFooterGap()
+    {
+        return IsTightCompactLayout() ? TightFooterGap : FooterGap;
     }
 
     private void BuildBoard()
     {
-        float contentHeight = _content != null ? _content.rect.height : 0f;
-        var rootRect = _root != null ? _root.GetComponent<RectTransform>() : null;
-        if (contentHeight <= 1f && rootRect != null)
-            contentHeight = rootRect.rect.height - CardMargin * 2f - CardPadding * 2f - FooterHeight - FooterGap;
-        if (contentHeight <= 1f && _card != null)
-            contentHeight = _card.rect.height - CardPadding * 2f - FooterHeight - FooterGap;
-        if (contentHeight <= 1f)
-            contentHeight = MaxBoardAreaSize;
+        Vector2 contentSize = GetContentSize();
+        float overlayAvailableHeight = 0f;
 
-        _boardAreaSize = Mathf.Min(MaxBoardAreaSize, contentHeight);
-        float scale = _boardAreaSize / MaxBoardAreaSize;
-        _boardSize = MaxBoardSize * scale;
+        if (_overlayMode)
+        {
+            if (_cardPlacement == BotOverlayCardPlacement.Top)
+            {
+                overlayAvailableHeight = contentSize.y - _overlayHeaderExtent - OverlayHeaderGap;
+                _boardAreaSize = Mathf.Max(120f, Mathf.Min(contentSize.x, overlayAvailableHeight));
+            }
+            else
+            {
+                overlayAvailableHeight = contentSize.y;
+                float boardWidth = contentSize.x - _overlayCardVisualWidth - OverlayHeaderGap;
+                _boardAreaSize = Mathf.Max(120f, Mathf.Min(contentSize.y, boardWidth));
+            }
+
+            _boardSize = _boardAreaSize;
+        }
+        else
+        {
+            float boardWidth = contentSize.x * (1f - InfoColumnWidth) + ColumnGap - RightPadding;
+            _boardAreaSize = Mathf.Max(120f, Mathf.Min(contentSize.y, boardWidth));
+            _boardSize = _boardAreaSize;
+        }
+
         float visualScale = _boardSize / ReferenceBoardSize;
         _boardRadius = BaseBoardRadius * visualScale;
         _labelRadius = BaseLabelRadius * visualScale;
@@ -745,6 +1786,27 @@ public class BotTurnPanel : MonoBehaviour
         _boardArea.pivot = new Vector2(0.5f, 0.5f);
         _boardArea.sizeDelta = new Vector2(_boardAreaSize, _boardAreaSize);
         _boardArea.anchoredPosition = new Vector2(-(RightPadding + _boardAreaSize * 0.5f), 0f);
+
+        if (_overlayMode)
+        {
+            if (_cardPlacement == BotOverlayCardPlacement.Top)
+            {
+                _boardArea.anchorMin = new Vector2(0.5f, 0f);
+                _boardArea.anchorMax = new Vector2(0.5f, 0f);
+                _boardArea.pivot = new Vector2(0.5f, 0.5f);
+                _boardArea.anchoredPosition = new Vector2(
+                    0f,
+                    Mathf.Max(_boardAreaSize * 0.5f, overlayAvailableHeight * 0.5f));
+            }
+            else
+            {
+                _boardArea.anchorMin = new Vector2(1f, 0.5f);
+                _boardArea.anchorMax = new Vector2(1f, 0.5f);
+                _boardArea.pivot = new Vector2(0.5f, 0.5f);
+                _boardArea.anchoredPosition = new Vector2(-_boardAreaSize * 0.5f, 0f);
+            }
+        }
+
         _boardArea.localScale = Vector3.one;
         _boardArea.localRotation = Quaternion.identity;
 
@@ -795,72 +1857,276 @@ public class BotTurnPanel : MonoBehaviour
         _targetCrosshairParts.Clear();
         _targetCrosshairParts.Add(markerH);
         _targetCrosshairParts.Add(markerV);
+
+        _targetCrosshairGroup = _targetCrosshair.gameObject.AddComponent<CanvasGroup>();
+        _targetCrosshairGroup.interactable = false;
+        _targetCrosshairGroup.blocksRaycasts = false;
+        _targetCrosshairGroup.alpha = 1f;
+
+        BuildTargetReticle();
+    }
+
+    private void BuildTargetReticle()
+    {
+        var reticleGo = CreateUIObject("BotTargetReticle", _boardArea);
+        _targetReticleRoot = (RectTransform)reticleGo.transform;
+        SetRect(_targetReticleRoot, Vector2.zero, Vector2.zero);
+        reticleGo.SetActive(false);
+
+        _targetReticleGroup = reticleGo.AddComponent<CanvasGroup>();
+        _targetReticleGroup.interactable = false;
+        _targetReticleGroup.blocksRaycasts = false;
+        _targetReticleGroup.alpha = 0f;
+
+        float reticleSize = Mathf.Max(52f, _boardMarkerOutlineSize * 1.8f);
+        _targetReticleBaseSize = reticleSize;
+        float armLength = Mathf.Max(10f, reticleSize * 0.22f);
+        float thickness = Mathf.Max(2.5f, _boardMarkerThickness * 0.85f);
+        float outline = Mathf.Max(2f, thickness * 0.6f);
+        float half = reticleSize * 0.5f;
+
+        _targetReticleParts.Clear();
+
+        for (int x = -1; x <= 1; x += 2)
+        {
+            for (int y = -1; y <= 1; y += 2)
+            {
+                var horizontalShadow = CreateImage("ReticleHShadow", _targetReticleRoot, null, MarkerOutlineColor);
+                SetRect(horizontalShadow.rectTransform,
+                    new Vector2(armLength + outline * 2f, thickness + outline * 2f),
+                    new Vector2(x * (half - armLength * 0.5f), y * (half - thickness * 0.5f)));
+
+                var verticalShadow = CreateImage("ReticleVShadow", _targetReticleRoot, null, MarkerOutlineColor);
+                SetRect(verticalShadow.rectTransform,
+                    new Vector2(thickness + outline * 2f, armLength + outline * 2f),
+                    new Vector2(x * (half - thickness * 0.5f), y * (half - armLength * 0.5f)));
+            }
+        }
+
+        for (int x = -1; x <= 1; x += 2)
+        {
+            for (int y = -1; y <= 1; y += 2)
+            {
+                var horizontal = CreateImage("ReticleH", _targetReticleRoot, null, MarkerColor);
+                SetRect(horizontal.rectTransform,
+                    new Vector2(armLength, thickness),
+                    new Vector2(x * (half - armLength * 0.5f), y * (half - thickness * 0.5f)));
+                _targetReticleParts.Add(horizontal);
+
+                var vertical = CreateImage("ReticleV", _targetReticleRoot, null, MarkerColor);
+                SetRect(vertical.rectTransform,
+                    new Vector2(thickness, armLength),
+                    new Vector2(x * (half - thickness * 0.5f), y * (half - armLength * 0.5f)));
+                _targetReticleParts.Add(vertical);
+            }
+        }
     }
 
     private void BuildFooter()
     {
+        float footerWidth = _overlayMode ? OverlayFooterWidth : FooterWidth;
+        float footerHeight = _overlayMode ? OverlayFooterHeight : GetCompactFooterHeight();
+        float footerPadding = _overlayMode ? OverlayCardPadding : GetCompactCardPadding();
+
         var footerGo = CreateUIObject("BotFooter", _card);
         _footer = (RectTransform)footerGo.transform;
         _footer.anchorMin = new Vector2(0.5f, 0f);
         _footer.anchorMax = new Vector2(0.5f, 0f);
         _footer.pivot = new Vector2(0.5f, 0f);
-        _footer.sizeDelta = new Vector2(FooterWidth, FooterHeight);
-        _footer.anchoredPosition = new Vector2(0f, CardPadding);
+        _footer.sizeDelta = new Vector2(footerWidth, footerHeight);
+        _footer.anchoredPosition = new Vector2(0f, footerPadding);
         _footer.localScale = Vector3.one;
         _footer.localRotation = Quaternion.identity;
+
+        float buttonSize = Mathf.Clamp(footerHeight - 8f, 76f, 110f);
 
         if (_playingContainer != null)
         {
             _playingContainer.transform.SetParent(_footer, false);
             var rect = (RectTransform)_playingContainer.transform;
-            SetRect(rect, new Vector2(FooterWidth, FooterHeight), Vector2.zero);
-            PositionButtons(_playingContainer, false);
+            SetRect(rect, new Vector2(footerWidth, footerHeight), Vector2.zero);
+            PositionButtons(_playingContainer, false, buttonSize);
         }
 
         if (_pausedContainer != null)
         {
             _pausedContainer.transform.SetParent(_footer, false);
             var rect = (RectTransform)_pausedContainer.transform;
-            SetRect(rect, new Vector2(FooterWidth, FooterHeight), Vector2.zero);
-            PositionButtons(_pausedContainer, true);
+            SetRect(rect, new Vector2(footerWidth, footerHeight), Vector2.zero);
+            PositionButtons(_pausedContainer, true, buttonSize);
         }
     }
 
     private void BuildAnimationLayer()
     {
-        var layerGo = CreateUIObject("BotAnimationLayer", _card);
-        _animationLayer = (RectTransform)layerGo.transform;
-        SetStretchRect(_animationLayer, 0f, 0f, 0f, 0f);
+        if (_animationLayer == null)
+        {
+            var layerGo = CreateUIObject("BotAnimationLayer", _root.transform);
+            _animationLayer = (RectTransform)layerGo.transform;
+        }
+        else
+        {
+            _animationLayer.SetParent(_root.transform, false);
+        }
 
+        SetStretchRect(_animationLayer, 0f, 0f, 0f, 0f);
+        _animationLayer.SetAsLastSibling();
+
+        EnsureDart();
+        EnsureHitPopup();
+        ApplyAnimationGeometry();
+
+        if (_hitPopupText != null)
+            _hitPopupText.transform.SetAsLastSibling();
+    }
+
+    private void EnsureDart()
+    {
         if (_dartSprite == null)
             return;
 
-        _dartImage = CreateImage("BotDart", _animationLayer, _dartSprite, GetColor(ThemeColorRole.Text1, Color.white));
-        _dartRect = _dartImage.rectTransform;
-        _dartRect.anchorMin = new Vector2(0.5f, 0.5f);
-        _dartRect.anchorMax = new Vector2(0.5f, 0.5f);
+        if (_dartImage == null)
+        {
+            _dartImage = CreateImage("BotDart", _animationLayer, _dartSprite, GetColor(ThemeColorRole.Text1, Color.white));
+            _dartRect = _dartImage.rectTransform;
+            _dartRect.anchorMin = new Vector2(0.5f, 0.5f);
+            _dartRect.anchorMax = new Vector2(0.5f, 0.5f);
+            _dartRect.pivot = GetDartTipPivot(_dartSprite);
+            _dartRect.anchoredPosition = Vector2.zero;
+            _dartImage.preserveAspect = true;
+            _dartImage.raycastTarget = false;
+
+            _dartOutline = _dartImage.gameObject.AddComponent<Outline>();
+            _dartOutline.useGraphicAlpha = true;
+            ApplyDartTheme();
+
+            _dartImage.gameObject.SetActive(false);
+        }
+        else
+        {
+            _dartImage.sprite = _dartSprite;
+        }
+
         _dartRect.pivot = GetDartTipPivot(_dartSprite);
-        _dartRect.sizeDelta = new Vector2(_dartSize, _dartSize);
-        _dartRect.anchoredPosition = Vector2.zero;
-        _dartImage.preserveAspect = true;
-        _dartImage.raycastTarget = false;
-
-        _dartOutline = _dartImage.gameObject.AddComponent<Outline>();
-        _dartOutline.effectDistance = Vector2.one * Mathf.Max(1.5f, _dartSize * 0.015f);
-        _dartOutline.useGraphicAlpha = true;
-        ApplyDartTheme();
-
-        _dartImage.gameObject.SetActive(false);
     }
 
-    private void PositionButtons(GameObject container, bool twoButtons)
+    private void EnsureHitPopup()
+    {
+        if (_animationLayer == null)
+            return;
+
+        if (_hitPopupText != null)
+        {
+            if (_hitPopupGroup == null)
+                _hitPopupGroup = _hitPopupText.gameObject.AddComponent<CanvasGroup>();
+
+            return;
+        }
+
+        _hitPopupText = CreateText("BotHitPopup", _animationLayer, Vector2.zero,
+            new Vector2(100f, 100f), InfoFontSize);
+        _hitPopupText.fontStyle = FontStyles.Bold;
+        _hitPopupText.alignment = TextAlignmentOptions.Center;
+        _hitPopupText.textWrappingMode = TextWrappingModes.NoWrap;
+        _hitPopupText.overflowMode = TextOverflowModes.Overflow;
+        _hitPopupText.color = GetColor(ThemeColorRole.Text1, Color.white);
+
+        _hitPopupGroup = _hitPopupText.gameObject.AddComponent<CanvasGroup>();
+        _hitPopupGroup.alpha = 0f;
+        _hitPopupGroup.interactable = false;
+        _hitPopupGroup.blocksRaycasts = false;
+
+        ApplyHitPopupOutline();
+        _hitPopupText.gameObject.SetActive(false);
+    }
+
+    private void ApplyHitPopupOutline()
+    {
+        if (_hitPopupText == null)
+            return;
+
+        Material material = _hitPopupText.fontMaterial;
+        if (material == null)
+            return;
+
+        material.EnableKeyword(ShaderUtilities.Keyword_Outline);
+        _hitPopupText.outlineWidth = HitPopupOutlineWidth;
+        _hitPopupText.outlineColor = Color.black;
+    }
+
+    private void ApplyAnimationGeometry()
+    {
+        if (_dartRect != null)
+            _dartRect.sizeDelta = new Vector2(_dartSize, _dartSize);
+
+        if (_dartOutline != null)
+            _dartOutline.effectDistance = Vector2.one * Mathf.Clamp(_dartSize * 0.01f, 1f, 2f);
+
+        if (_hitPopupText == null)
+            return;
+
+        float popupWidth = Mathf.Max(120f, _boardAreaSize * 1.12f);
+        float popupHeight = Mathf.Max(70f, _boardAreaSize * 0.42f);
+        _hitPopupText.rectTransform.sizeDelta = new Vector2(popupWidth, popupHeight);
+        _hitPopupText.enableAutoSizing = true;
+        _hitPopupText.fontSizeMin = Mathf.Max(40f, _boardAreaSize * 0.07f);
+        _hitPopupText.fontSizeMax = Mathf.Max(72f, _boardAreaSize * 0.20f);
+        _hitPopupText.fontSize = _hitPopupText.fontSizeMax;
+        _hitPopupText.margin = new Vector4(8f, 0f, 8f, 0f);
+
+        ApplyHitPopupOutline();
+        RepositionHitPopup();
+    }
+
+    private void BuildModeButton()
+    {
+        bool show = _overlayMode || (_sessionOverlaySuppressed && IsOverlayEnabledInSettings());
+        if (!show || _card == null)
+            return;
+
+        float padding = _overlayMode ? OverlayCardPadding : GetCompactCardPadding();
+        var go = CreateUIObject("BotModeButton", _card);
+        var rect = (RectTransform)go.transform;
+        rect.anchorMin = new Vector2(1f, 0f);
+        rect.anchorMax = new Vector2(1f, 0f);
+        rect.pivot = new Vector2(1f, 0f);
+        rect.sizeDelta = new Vector2(ModeButtonWidth, ModeButtonHeight);
+        rect.anchoredPosition = new Vector2(-padding, padding);
+
+        _modeButtonImage = go.AddComponent<Image>();
+        _modeButtonImage.raycastTarget = true;
+
+        _modeButton = go.AddComponent<Button>();
+        _modeButton.targetGraphic = _modeButtonImage;
+        _modeButton.onClick.AddListener(OnModeButtonClicked);
+
+        string key = _overlayMode ? "Minimize" : "Fullscreen";
+        _modeButtonText = CreateText("Label", go.transform, Vector2.zero,
+            new Vector2(ModeButtonWidth - 24f, ModeButtonHeight), ModeButtonFontSize);
+        _modeButtonText.text = LocalizationText.Get(key, key);
+        _modeButtonText.fontStyle = FontStyles.Bold;
+        _modeButtonText.alignment = TextAlignmentOptions.Center;
+        SetStretchRect(_modeButtonText.rectTransform, 12f, 4f, 12f, 4f);
+    }
+
+    private void OnModeButtonClicked()
+    {
+        _sessionOverlaySuppressed = _overlayMode;
+
+        if (_modeButton != null)
+            _modeButton.interactable = false;
+
+        EnsureBuilt();
+    }
+
+    private void PositionButtons(GameObject container, bool twoButtons, float buttonSize)
     {
         var buttons = container.GetComponentsInChildren<Button>(true);
         for (int i = 0; i < buttons.Length; i++)
         {
             var button = buttons[i];
             var rect = (RectTransform)button.transform;
-            SetRect(rect, new Vector2(110f, 110f), Vector2.zero);
+            SetRect(rect, new Vector2(buttonSize, buttonSize), Vector2.zero);
 
             var buttonImage = button.GetComponent<Image>();
             var images = button.GetComponentsInChildren<Image>(true);
@@ -979,6 +2245,21 @@ public class BotTurnPanel : MonoBehaviour
         rect.localRotation = Quaternion.identity;
     }
 
+    private static Transform FindParentScreen(Transform target)
+    {
+        Transform current = target;
+        while (current != null)
+        {
+            UIScreen screen = current.GetComponent<UIScreen>();
+            if (screen != null)
+                return screen.transform;
+
+            current = current.parent;
+        }
+
+        return null;
+    }
+
     private static Transform FindChild(Transform parent, string name)
     {
         for (int i = 0; i < parent.childCount; i++)
@@ -997,10 +2278,14 @@ public class BotTurnPanel : MonoBehaviour
 
     private void SubscribeToTheme()
     {
-        if (ThemeManager.Instance == null)
+        ThemeManager manager = ThemeManager.Instance;
+        if (manager == null || _subscribedThemeManager == manager)
             return;
 
-        _subscribedThemeManager = ThemeManager.Instance;
+        if (_subscribedThemeManager != null)
+            _subscribedThemeManager.OnThemeChanged -= ApplyTheme;
+
+        _subscribedThemeManager = manager;
         _subscribedThemeManager.OnThemeChanged += ApplyTheme;
     }
 
@@ -1008,6 +2293,13 @@ public class BotTurnPanel : MonoBehaviour
     {
         if (!_built)
             return;
+
+        if (_overlayMode && _rootImage != null)
+        {
+            Color backdrop = GetColor(ThemeColorRole.Background1, Color.black);
+            backdrop.a = 0.88f;
+            _rootImage.color = backdrop;
+        }
 
         if (_cardImage != null)
             _cardImage.color = GetColor(ThemeColorRole.Background2, new Color(0.12f, 0.12f, 0.12f, 1f));
@@ -1022,16 +2314,22 @@ public class BotTurnPanel : MonoBehaviour
         if (_nameText != null)
             _nameText.color = GetColor(ThemeColorRole.Text1, Color.white);
 
-        if (_hitText != null)
-            _hitText.color = GetColor(ThemeColorRole.Text1, Color.white);
-
-        if (_targetText != null)
-            _targetText.color = GetColor(ThemeColorRole.Text1, Color.white);
+        if (_hitPopupText != null)
+        {
+            _hitPopupText.color = GetColor(ThemeColorRole.Text1, Color.white);
+            ApplyHitPopupOutline();
+        }
 
         for (int i = 0; i < _targetCrosshairParts.Count; i++)
         {
             if (_targetCrosshairParts[i] != null)
                 _targetCrosshairParts[i].color = MarkerColor;
+        }
+
+        for (int i = 0; i < _targetReticleParts.Count; i++)
+        {
+            if (_targetReticleParts[i] != null)
+                _targetReticleParts[i].color = MarkerColor;
         }
 
         if (_botIcon != null)
@@ -1040,6 +2338,12 @@ public class BotTurnPanel : MonoBehaviour
                 ? ThemeManager.Instance.GetBotSkillColor(_currentBot.GetSkillRating())
                 : GetColor(ThemeColorRole.Text1, Color.white);
         }
+
+        if (_modeButtonImage != null)
+            _modeButtonImage.color = GetColor(ThemeColorRole.Accent1, Color.gray);
+
+        if (_modeButtonText != null)
+            _modeButtonText.color = GetColor(ThemeColorRole.TextOnAccent1, Color.white);
 
         ApplyDartTheme();
     }

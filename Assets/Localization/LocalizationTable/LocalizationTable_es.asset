@@ -1338,6 +1338,34 @@ MonoBehaviour:
     m_Localized: Editar disparador
     m_Metadata:
       m_Items: []
+  - m_Id: 33806894813368337
+    m_Localized: Animación del bot
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368338
+    m_Localized: Superposición a pantalla completa
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368339
+    m_Localized: Muestra los lanzamientos del bot en una gran superposición durante su turno.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368340
+    m_Localized: Velocidad de animación
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368341
+    m_Localized: 0,5× lento – 2,0× rápido
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368342
+    m_Localized: Minimizar
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368343
+    m_Localized: Pantalla completa
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

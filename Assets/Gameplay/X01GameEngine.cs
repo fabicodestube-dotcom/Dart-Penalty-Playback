@@ -28,10 +28,11 @@ public class X01GameEngine : GameEngine
 
          // Data initialization
         settings = ((X01Game)game).GetSettingsAsX01();
-        
+
         checkoutHandler.Show(null);
 
         playerList.Init(GetUIStats());
+        RefreshBotOverlayStats();
 
         // Logic & Events
         TriggerInitialCheckout();
@@ -67,7 +68,7 @@ public class X01GameEngine : GameEngine
         if (game == null)
             return;
         ((X01Game) game).AddThrow(t);
-        playerList.RefreshUI(GetUIStats());
+        RefreshPlayerUI();
     }
 
     public override void Undo()
@@ -78,7 +79,7 @@ public class X01GameEngine : GameEngine
         ((X01Game) game).Undo();
         StopBotTurn();
         PlayManualAudioEvent(SeededAudioEvents.UndoId);
-        playerList.RefreshUI(GetUIStats());
+        RefreshPlayerUI();
         HandleUndoBotState();
     }
 
@@ -97,16 +98,13 @@ public class X01GameEngine : GameEngine
 
     public void OnClickReturnFromX01()
     {
-        isPaused = true;
+        PauseForAbortPopup();
         windowHandler.ShowPopup(popupAbortGame);
     }
 
-    public void OnClickAbortCancel()
+    public override void OnClickAbortCancel()
     {
-        isPaused = false;
-        windowHandler.HidePopup();
-        if (game != null)
-            HandleBotCheck(game.GetCurrentPlayerId());
+        base.OnClickAbortCancel();
     }
 
     // =========================================================
@@ -192,7 +190,7 @@ public class X01GameEngine : GameEngine
 
         StopBotTurn();
 
-        playerList.RefreshUI(GetUIStats());
+        RefreshPlayerUI();
 
         NotifyWin(WinLevel.Leg, playerId);
     }
@@ -203,7 +201,7 @@ public class X01GameEngine : GameEngine
 
         StopBotTurn();
 
-        playerList.RefreshUI(GetUIStats());
+        RefreshPlayerUI();
 
         if (playerId.HasValue && playerId.Value != Guid.Empty)
             NotifyWin(WinLevel.Set, playerId.Value);
@@ -251,6 +249,22 @@ public class X01GameEngine : GameEngine
         }
 
         return result;
+    }
+
+    private void RefreshPlayerUI()
+    {
+        playerList.RefreshUI(GetUIStats());
+        RefreshBotOverlayStats();
+    }
+
+    private void RefreshBotOverlayStats()
+    {
+        if (inputHandler == null || game == null || appHandler == null)
+            return;
+
+        BasePlayer player = appHandler.GetPlayerByID(game.GetCurrentPlayerId());
+        if (player != null)
+            inputHandler.RefreshBotPlayerStats(new X01UIStats((X01Game)game, player));
     }
 
     private void TriggerInitialCheckout()

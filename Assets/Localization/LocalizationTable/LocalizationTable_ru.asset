@@ -1468,6 +1468,34 @@ MonoBehaviour:
     m_Localized: Изменить триггер
     m_Metadata:
       m_Items: []
+  - m_Id: 33806894813368337
+    m_Localized: Анимация бота
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368338
+    m_Localized: Полноэкранное наложение
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368339
+    m_Localized: Показывает броски бота в большом наложении во время его хода.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368340
+    m_Localized: Скорость анимации
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368341
+    m_Localized: 0,5× медленно – 2,0× быстро
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368342
+    m_Localized: Свернуть
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368343
+    m_Localized: Полный экран
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

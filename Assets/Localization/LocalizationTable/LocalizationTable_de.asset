@@ -1348,6 +1348,34 @@ MonoBehaviour:
     m_Localized: Tiefes Orange
     m_Metadata:
       m_Items: []
+  - m_Id: 33806894813368337
+    m_Localized: Bot-Animation
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368338
+    m_Localized: Vollbild-Overlay
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368339
+    m_Localized: Zeigt Bot-Würfe während des Bot-Zugs in einem großen Overlay an.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368340
+    m_Localized: Animationsgeschwindigkeit
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368341
+    m_Localized: 0,5× langsam – 2,0× schnell
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368342
+    m_Localized: Minimieren
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368343
+    m_Localized: Vollbild
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

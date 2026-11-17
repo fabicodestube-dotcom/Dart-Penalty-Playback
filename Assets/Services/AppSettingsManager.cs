@@ -232,6 +232,22 @@ public class AppSettingsManager : MonoBehaviour
     }
 
     // =========================
+    // BOT ANIMATION SETTINGS
+    // =========================
+
+    public void SetBotFullscreenOverlay(bool enabled)
+    {
+        Settings.BotAnimation.FullscreenOverlay = enabled;
+        Save();
+    }
+
+    public void SetBotAnimationSpeed(float speed)
+    {
+        Settings.BotAnimation.AnimationSpeed = Mathf.Clamp(speed, 0.5f, 2f);
+        Save();
+    }
+
+    // =========================
     // LAST SELECTED SECTOR
     // =========================
 
@@ -287,6 +303,15 @@ public class AppSettingsManager : MonoBehaviour
         };
 
         // =========================
+        // BOT ANIMATION DEFAULT
+        // =========================
+        Settings.BotAnimation = new BotAnimationSettings
+        {
+            FullscreenOverlay = true,
+            AnimationSpeed = 1f
+        };
+
+        // =========================
         // PENALTIES DEFAULT
         // =========================
         Settings.Penalties.Settings = new System.Collections.Generic.List<PenaltySetting>
@@ -309,6 +334,7 @@ public class AppSettingsManager : MonoBehaviour
         Settings.Language ??= new LanguageSaveData();
         Settings.Sound ??= new SoundSettings();
         Settings.Vibration ??= new VibrationSettings();
+        Settings.BotAnimation ??= new BotAnimationSettings();
         Settings.Penalties ??= new PenaltySettings();
         Settings.Penalties.Settings ??= new System.Collections.Generic.List<PenaltySetting>();
 
@@ -326,6 +352,10 @@ public class AppSettingsManager : MonoBehaviour
         if (float.IsNaN(Settings.Sound.Volume) || float.IsInfinity(Settings.Sound.Volume))
             Settings.Sound.Volume = 1f;
         Settings.Sound.Volume = UnityEngine.Mathf.Clamp01(Settings.Sound.Volume);
+
+        if (float.IsNaN(Settings.BotAnimation.AnimationSpeed) || float.IsInfinity(Settings.BotAnimation.AnimationSpeed))
+            Settings.BotAnimation.AnimationSpeed = 1f;
+        Settings.BotAnimation.AnimationSpeed = Mathf.Clamp(Settings.BotAnimation.AnimationSpeed, 0.5f, 2f);
 
         foreach (PenaltyType type in System.Enum.GetValues(typeof(PenaltyType)))
         {

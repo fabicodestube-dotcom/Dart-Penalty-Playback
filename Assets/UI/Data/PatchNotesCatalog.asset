@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0460a2501d80e6e75ba0c80637af46f0, type: 3}
+  m_Name: PatchNotesCatalog
+  m_EditorClassIdentifier: Assembly-CSharp::PatchNotesCatalog
+  entries:
+  - version: 0.9
+    releaseLabel: Pre-release
+    notes: "<b>[FEATURE] Database & Statistics</b>\n<indent=5%>\u2022 <b>SQLite:</b>
+      Migrated game history and player statistics from JSON to SQLite for faster
+      and more reliable storage.</indent>\n<indent=5%>\u2022 <b>Time Filters:</b>
+      Added Today, Week, Month, Year and All filters to player statistics.</indent>\n\n<b>[FEATURE]
+      Bot Overlay</b>\n<indent=5%>\u2022 <b>Fullscreen Cards:</b> Added mode-specific
+      overlays for X01, Cricket and Around the Clock with current-player stats.</indent>\n<indent=5%>\u2022
+      <b>Target Lock:</b> Added an animated target-lock crosshair for bot throws.</indent>\n\n<b>[UI]
+      Polish & Fixes</b>\n<indent=5%>\u2022 <b>Popups:</b> Popups now stay above
+      the bot overlay; cancelling an abort resumes the exact interrupted bot throw.</indent>\n<indent=5%>\u2022
+      <b>Recorder:</b> Fixed audio normalization so recorded clips use the intended
+      volume.</indent>"

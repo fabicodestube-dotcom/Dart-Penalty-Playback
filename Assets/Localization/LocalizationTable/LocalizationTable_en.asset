@@ -1344,6 +1344,34 @@ MonoBehaviour:
     m_Localized: Deep Orange
     m_Metadata:
       m_Items: []
+  - m_Id: 33806894813368337
+    m_Localized: Bot Animation
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368338
+    m_Localized: Fullscreen overlay
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368339
+    m_Localized: Show bot throws in a large overlay while the bot is playing.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368340
+    m_Localized: Animation speed
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368341
+    m_Localized: 0.5× slow – 2.0× fast
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368342
+    m_Localized: Minimize
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368343
+    m_Localized: Fullscreen
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

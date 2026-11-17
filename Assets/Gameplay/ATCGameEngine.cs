@@ -47,11 +47,23 @@ public class ATCGameEngine : GameEngine
 
     private void RefreshPlayerList()
     {
-        if (playerList == null)
+        if (playerList != null)
+        {
+            playerList.Refresh((ATCGame)game);
+            ((ATCInputHandler)inputHandler).UpdateHitButtonLabel();
+        }
+
+        RefreshBotOverlayStats();
+    }
+
+    private void RefreshBotOverlayStats()
+    {
+        if (inputHandler == null || game == null || appHandler == null)
             return;
 
-        playerList.Refresh((ATCGame) game);
-        ((ATCInputHandler) inputHandler).UpdateHitButtonLabel();
+        BasePlayer player = appHandler.GetPlayerByID(game.GetCurrentPlayerId());
+        if (player != null)
+            inputHandler.RefreshBotPlayerStats(new ATCUIStats((ATCGame)game, player));
     }
 
     // =========================
@@ -203,13 +215,12 @@ public class ATCGameEngine : GameEngine
 
     public void OnClickReturnFromATC()
     {
-        isPaused = true;
-
         if (windowHandler == null)
             windowHandler = FindFirstObjectByType<WindowHandler>();
 
         if (windowHandler != null && popupAbortGame != null){
 
+            PauseForAbortPopup();
             windowHandler.ShowPopup(popupAbortGame);
         }
         else if (windowHandler != null)

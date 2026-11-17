@@ -6,6 +6,7 @@ using TMPro; // Important for TextMeshPro
 public class PatchNoteRow : MonoBehaviour
 {
     [Header("UI Elements")]
+    [SerializeField] private TMP_Text versionHeadline;
     [SerializeField] private RectTransform patchNotesPanel; 
     [SerializeField] private RectTransform arrowIndicator;
 
@@ -42,6 +43,41 @@ public class PatchNoteRow : MonoBehaviour
         panelLayoutElement.preferredHeight = 0f;
     }
 
+    public void Bind(PatchNotesEntry entry)
+    {
+        if (entry == null)
+            return;
+
+        if (versionHeadline == null)
+            versionHeadline = transform.Find("Button/VersionHeadline")?.GetComponent<TMP_Text>();
+
+        if (versionHeadline != null)
+            versionHeadline.text = entry.DisplayTitle;
+
+        if (tmpText == null)
+            tmpText = patchNotesPanel.GetComponentInChildren<TMP_Text>();
+
+        if (tmpText != null)
+        {
+            tmpText.text = entry.notes;
+            tmpText.ForceMeshUpdate();
+        }
+
+        isOpened = false;
+
+        if (toggleCoroutine != null)
+        {
+            StopCoroutine(toggleCoroutine);
+            toggleCoroutine = null;
+        }
+
+        if (panelLayoutElement != null)
+            panelLayoutElement.preferredHeight = 0f;
+
+        if (arrowIndicator != null)
+            arrowIndicator.localRotation = Quaternion.identity;
+    }
+
     public void TogglePatchNotes()
     {
         isOpened = !isOpened;
@@ -66,6 +102,7 @@ public class PatchNoteRow : MonoBehaviour
             // This bypasses the error where the panel reports '0'.
             if (tmpText != null)
             {
+                tmpText.ForceMeshUpdate();
                 endHeight = tmpText.preferredHeight;
             }
             else if (textOld != null)

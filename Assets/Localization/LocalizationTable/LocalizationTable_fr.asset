@@ -1340,6 +1340,34 @@ MonoBehaviour:
     m_Localized: Modifier le déclencheur
     m_Metadata:
       m_Items: []
+  - m_Id: 33806894813368337
+    m_Localized: Animation du bot
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368338
+    m_Localized: Superposition plein écran
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368339
+    m_Localized: Affiche les lancers du bot dans une grande superposition pendant son tour.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368340
+    m_Localized: Vitesse d’animation
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368341
+    m_Localized: 0,5× lent – 2,0× rapide
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368342
+    m_Localized: Réduire
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368343
+    m_Localized: Plein écran
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

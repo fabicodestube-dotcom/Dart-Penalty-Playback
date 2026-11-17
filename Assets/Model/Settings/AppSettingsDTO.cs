@@ -15,8 +15,18 @@ public class AppSettings
     [JsonProperty] public ThemeMode ThemeMode = ThemeMode.Dark;
     [JsonProperty] public SoundSettings Sound = new SoundSettings();
     [JsonProperty] public VibrationSettings Vibration = new VibrationSettings();
+    [JsonProperty] public BotAnimationSettings BotAnimation = new BotAnimationSettings();
     [JsonProperty] public PenaltySettings Penalties = new PenaltySettings();
     [JsonProperty] public string LastSelectedSectorId;
+}
+
+[System.Serializable]
+public class BotAnimationSettings
+{
+    [JsonProperty] public bool FullscreenOverlay = true;
+
+    [Range(0.5f, 2f)]
+    [JsonProperty] public float AnimationSpeed = 1f;
 }
 
 [System.Serializable]

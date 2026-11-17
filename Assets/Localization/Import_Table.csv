@@ -326,3 +326,10 @@ Leave_app,Do you want to step back from the Oche and close the app?,Möchtest du
 Schnapszahl,Schnapszahl,Schnapszahl,Schnapszahl,Schnapszahl,Шнапсцаль,Sznapszahl,Schnapszahl,Schnapszahl
 No_triggers,No triggers,Keine Trigger,Aucun déclencheur,Sin disparadores,Нет триггеров,Brak wyzwalaczy,Nessun trigger,Tetikleyici yok
 Manual,Manual,Manuell,Manuel,Manual,Вручную,Ręcznie,Manuale,Elle
+Bot_animation,Bot Animation,Bot-Animation,Animation du bot,Animación del bot,Анимация бота,Animacja bota,Animazione del bot,Bot animasyonu
+Fullscreen_overlay,Fullscreen overlay,Vollbild-Overlay,Superposition plein écran,Superposición a pantalla completa,Полноэкранное наложение,Nakładka pełnoekranowa,Overlay a schermo intero,Tam ekran katman
+Fullscreen_overlay_expl,Show bot throws in a large overlay while the bot is playing.,Zeigt Bot-Würfe während des Bot-Zugs in einem großen Overlay an.,Affiche les lancers du bot dans une grande superposition pendant son tour.,Muestra los lanzamientos del bot en una gran superposición durante su turno.,Показывает броски бота в большом наложении во время его хода.,Wyświetla rzuty bota w dużej nakładce podczas jego tury.,Mostra i lanci del bot in un grande overlay durante il suo turno.,Botun atışlarını sırası sırasında büyük bir katmanda gösterir.
+Animation_speed,Animation speed,Animationsgeschwindigkeit,Vitesse d’animation,Velocidad de animación,Скорость анимации,Prędkość animacji,Velocità di animazione,Animasyon hızı
+Animation_speed_expl,"0.5× slow – 2.0× fast","0,5× langsam – 2,0× schnell","0,5× lent – 2,0× rapide","0,5× lento – 2,0× rápido","0,5× медленно – 2,0× быстро","0,5× wolno – 2,0× szybko","0,5× lento – 2,0× veloce","0,5× yavaş – 2,0× hızlı"
+Minimize,Minimize,Minimieren,Réduire,Minimizar,Свернуть,Minimalizuj,Riduci,Küçült
+Fullscreen,Fullscreen,Vollbild,Plein écran,Pantalla completa,Полный экран,Pełny ekran,Schermo intero,Tam ekran

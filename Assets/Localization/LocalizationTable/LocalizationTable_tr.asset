@@ -1336,6 +1336,34 @@ MonoBehaviour:
     m_Localized: Tetikleyiciyi düzenle
     m_Metadata:
       m_Items: []
+  - m_Id: 33806894813368337
+    m_Localized: Bot animasyonu
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368338
+    m_Localized: Tam ekran katman
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368339
+    m_Localized: Botun atışlarını sırası sırasında büyük bir katmanda gösterir.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368340
+    m_Localized: Animasyon hızı
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368341
+    m_Localized: 0,5× yavaş – 2,0× hızlı
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368342
+    m_Localized: Küçült
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368343
+    m_Localized: Tam ekran
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

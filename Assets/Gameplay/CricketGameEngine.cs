@@ -78,7 +78,7 @@ public class CricketGameEngine : GameEngine
             return;
 
         if (popupAbortGame != null){
-            isPaused = true;
+            PauseForAbortPopup();
             windowHandler.ShowPopup(popupAbortGame);
         }
         else
@@ -93,14 +93,9 @@ public class CricketGameEngine : GameEngine
         windowHandler.GoTo(ScreenId.Optionen);
     }
 
-    public void OnClickAbortCancel()
+    public override void OnClickAbortCancel()
     {
-        if (windowHandler != null){
-            isPaused = false;
-            windowHandler.HidePopup();
-            if (game != null)
-                HandleBotCheck(game.GetCurrentPlayerId());
-        }
+        base.OnClickAbortCancel();
     }
 
     private void InitPlayerList()
@@ -126,6 +121,7 @@ public class CricketGameEngine : GameEngine
             .ToList();
 
         playerList.Init(players);
+        RefreshBotOverlayStats();
     }
 
     private void HandleTurnCompleted(CricketTurnResult result)
@@ -243,6 +239,18 @@ public class CricketGameEngine : GameEngine
     {
         if (playerList != null)
             playerList.RefreshUI();
+
+        RefreshBotOverlayStats();
+    }
+
+    private void RefreshBotOverlayStats()
+    {
+        if (inputHandler == null || game == null || appHandler == null)
+            return;
+
+        BasePlayer player = appHandler.GetPlayerByID(game.GetCurrentPlayerId());
+        if (player != null)
+            inputHandler.RefreshBotPlayerStats(new CricketUIStats((CricketGame)game, player));
     }
 
     protected override void UnsubscribeFromGameEvents()

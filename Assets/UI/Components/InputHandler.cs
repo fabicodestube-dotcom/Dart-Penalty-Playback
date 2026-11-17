@@ -7,6 +7,13 @@ using UnityEngine;
 using UnityEngine.UI;
 
 
+public enum BotOverlayCardPlacement
+{
+    Top,
+    Left
+}
+
+
 public abstract class InputHandler : MonoBehaviour
 {
     [Header("Engine")]
@@ -23,7 +30,12 @@ public abstract class InputHandler : MonoBehaviour
     public Transform botIconRow;
     public Image botIcon;
 
+    [Header("Bot Overlay")]
+    [SerializeField] private GameObject botPlayerCardPrefab;
+    [SerializeField] private BotOverlayCardPlacement botOverlayCardPlacement = BotOverlayCardPlacement.Top;
+
     private BotTurnPanel botTurnPanel;
+    private object lastBotPlayerStats;
 
     // [Header("Penalty Buttons")]
     // public CanvasGroup wallCanvasGroup;
@@ -404,11 +416,13 @@ public abstract class InputHandler : MonoBehaviour
 
     public void ShowBotPlayingState(DartBot bot)
     {
-        botPausePanel.SetActive(true);
         EnsureBotTurnPanel();
 
         if (botTurnPanel != null)
+        {
+            botTurnPanel.SetAnimationPaused(false);
             botTurnPanel.ShowBot(bot);
+        }
 
         botPausePanelPlay.SetActive(true);
         botPausePanelPause.SetActive(false);
@@ -446,34 +460,76 @@ public abstract class InputHandler : MonoBehaviour
 
     public void ShowBotPausedState()
     {
-        botPausePanel.SetActive(true);
         EnsureBotTurnPanel();
 
         if (botTurnPanel != null)
-            botTurnPanel.ResetVisuals();
+            botTurnPanel.SetAnimationPaused(true);
 
         botPausePanelPause.SetActive(true);
         botPausePanelPlay.SetActive(false);
     }
 
+    public void ResumeBotAnimation()
+    {
+        EnsureBotTurnPanel();
+
+        if (botTurnPanel != null)
+            botTurnPanel.SetAnimationPaused(false);
+
+        botPausePanelPlay.SetActive(true);
+        botPausePanelPause.SetActive(false);
+    }
+
+    public void RefreshBotPlayerStats(X01UIStats stats) => SetBotPlayerStats(stats);
+
+    public void RefreshBotPlayerStats(CricketUIStats stats) => SetBotPlayerStats(stats);
+
+    public void RefreshBotPlayerStats(ATCUIStats stats) => SetBotPlayerStats(stats);
+
+    private void SetBotPlayerStats(object stats)
+    {
+        lastBotPlayerStats = stats;
+        botTurnPanel?.SetPlayerStats(stats);
+    }
+
     public void HideBotState()
     {
         if (botTurnPanel != null)
+        {
+            botTurnPanel.SetAnimationPaused(false);
             botTurnPanel.ResetVisuals();
+        }
 
         botPausePanel.SetActive(false);
     }
 
     private void EnsureBotTurnPanel()
     {
-        if (botTurnPanel != null || botPausePanel == null)
+        if (botPausePanel == null)
+            return;
+
+        if (!botPausePanel.activeSelf)
+            botPausePanel.SetActive(true);
+
+        if (botTurnPanel != null)
             return;
 
         botTurnPanel = botPausePanel.GetComponent<BotTurnPanel>();
         if (botTurnPanel == null)
             botTurnPanel = botPausePanel.AddComponent<BotTurnPanel>();
 
-        botTurnPanel.Initialize(botPausePanel, botPausePanelPlay, botPausePanelPause, botDartSprite, botDartboardSprite, botIconRow, botIcon);
+        botTurnPanel.Initialize(
+            botPausePanel,
+            botPausePanelPlay,
+            botPausePanelPause,
+            botDartSprite,
+            botDartboardSprite,
+            botIconRow,
+            botIcon,
+            botPlayerCardPrefab,
+            botOverlayCardPlacement);
+
+        botTurnPanel.SetPlayerStats(lastBotPlayerStats);
     }
 
 

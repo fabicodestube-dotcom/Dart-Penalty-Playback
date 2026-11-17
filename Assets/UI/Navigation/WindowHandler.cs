@@ -781,6 +781,7 @@ public class WindowHandler : MonoBehaviour
         activePopup = popup;
 
         popup.gameObject.SetActive(true);
+        popup.rect.SetAsLastSibling();
 
         if (popup.TryGetComponent<IUIScreen>(out var popupScreen))
             popupScreen.OnShow();

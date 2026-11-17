@@ -33,7 +33,15 @@ public abstract class GameEngine : MonoBehaviour
 
     public virtual void StartGame(Game game)
     {
-        InitializeGame(game);
+        try
+        {
+            InitializeGame(game);
+        }
+        catch (Exception e)
+        {
+            Debug.LogError("[GameEngine] StartGame failed:\n" + e);
+            throw;
+        }
     }
 
     public virtual void LoadGame(Game game)
@@ -44,7 +52,15 @@ public abstract class GameEngine : MonoBehaviour
 
         game.InitializeAfterLoad();
 
-        InitializeGame(game);
+        try
+        {
+            InitializeGame(game);
+        }
+        catch (Exception e)
+        {
+            Debug.LogError("[GameEngine] LoadGame failed:\n" + e);
+            throw;
+        }
 
         Debug.Log("[GameEngine] Settings: " + game.GetSettings().GetString());
     }
@@ -125,17 +141,44 @@ public abstract class GameEngine : MonoBehaviour
 
     public virtual void OnClickAbortCancel()
     {
-        isPaused = false;
-        windowHandler.HidePopup();
+        windowHandler?.HidePopup();
+        ResumeAfterAbortCancel();
+    }
 
-        if (game != null)
-            HandleBotCheck(game.GetCurrentPlayerId());
+    protected void PauseForAbortPopup()
+    {
+        isPaused = true;
+
+        if (game != null && IsCurrentPlayerBot())
+            inputHandler?.ShowBotPausedState();
+    }
+
+    private void ResumeAfterAbortCancel()
+    {
+        isPaused = false;
+
+        if (game == null)
+            return;
+
+        if (IsCurrentPlayerBot())
+        {
+            ResumeBotTurn();
+            return;
+        }
+
+        HandleBotCheck(game.GetCurrentPlayerId());
     }
 
     public void ResumeBotTurn()
     {
         botUndoPending = false;
         isPaused = false;
+
+        if (botCoroutine != null)
+        {
+            inputHandler?.ResumeBotAnimation();
+            return;
+        }
 
         HandleBotCheck(game.GetCurrentPlayerId());
     }
@@ -161,7 +204,13 @@ public abstract class GameEngine : MonoBehaviour
     protected void StartBotTurn(DartBot bot)
     {
         StopBotTurn(); // defensive: never double-run
-        botCoroutine = StartCoroutine(HandleBotTurn(bot));
+        botCoroutine = StartCoroutine(RunBotTurn(bot));
+    }
+
+    private IEnumerator RunBotTurn(DartBot bot)
+    {
+        yield return HandleBotTurn(bot);
+        botCoroutine = null;
     }
 
     protected void StopBotTurn()
@@ -415,8 +464,6 @@ public abstract class GameEngine : MonoBehaviour
     public void PauseBotTurn()
     {
         isPaused = true;
-
-        StopBotTurn();
 
         inputHandler.ShowBotPausedState();
     }

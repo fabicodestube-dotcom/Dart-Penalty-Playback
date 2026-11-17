@@ -1340,6 +1340,34 @@ MonoBehaviour:
     m_Localized: Edytuj wyzwalacz
     m_Metadata:
       m_Items: []
+  - m_Id: 33806894813368337
+    m_Localized: Animacja bota
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368338
+    m_Localized: Nakładka pełnoekranowa
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368339
+    m_Localized: Wyświetla rzuty bota w dużej nakładce podczas jego tury.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368340
+    m_Localized: Prędkość animacji
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368341
+    m_Localized: 0,5× wolno – 2,0× szybko
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368342
+    m_Localized: Minimalizuj
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368343
+    m_Localized: Pełny ekran
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

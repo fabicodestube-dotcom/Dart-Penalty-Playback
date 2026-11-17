@@ -23,14 +23,7 @@ public class UISwitch : MonoBehaviour
 
     void Start()
     {
-        float width = ((RectTransform)transform).rect.width;
-        float handleWidth = handleRect.rect.width;
-
-        // Handle move a little further outwards
-        float offset = (width - handleWidth) / 2f + 2f;
-
-        handleOnPos = new Vector2(offset, 0);
-        handleOffPos = new Vector2(-offset, 0);
+        RecalculateHandlePositions();
 
         toggle.onValueChanged.AddListener(OnToggleChanged);
 
@@ -142,5 +135,20 @@ public class UISwitch : MonoBehaviour
     public void RefreshVisual()
     {
         ApplyInstant(toggle.isOn);
+    }
+
+    public void RecalculateHandlePositions()
+    {
+        if (handleRect == null)
+            return;
+
+        float width = ((RectTransform)transform).rect.width;
+        float handleWidth = handleRect.rect.width;
+
+        // Handle move a little further outwards
+        float offset = (width - handleWidth) / 2f + 2f;
+
+        handleOnPos = new Vector2(offset, 0);
+        handleOffPos = new Vector2(-offset, 0);
     }
 }
