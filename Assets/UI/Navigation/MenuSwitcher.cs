@@ -1,13 +1,14 @@
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using Unity.VectorGraphics;
 
 public class MenuSwitcher : MonoBehaviour
 {
     [System.Serializable]
     private class MenuItem
     {
-        public Image image = null;
+        public SVGImage image = null;
         public TMP_Text text = null;
     }
 

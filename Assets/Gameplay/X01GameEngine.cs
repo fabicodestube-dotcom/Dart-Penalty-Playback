@@ -235,15 +235,15 @@ public class X01GameEngine : GameEngine
         return 3 - turn.GetThrows().Count;
     }
 
-    public List<X01UIStats> GetUIStats()
+    public List<PlayerLiveStats> GetUIStats()
     {
-        var result = new List<X01UIStats>();
+        var result = new List<PlayerLiveStats>();
 
         foreach (Guid playerId in game.GetPlayerIDs())
         {
             BasePlayer player = appHandler.GetPlayerByID(playerId);
 
-            var stats = new X01UIStats(((X01Game) game), player);
+            var stats = PlayerLiveStats.Create(game, player);
 
             result.Add(stats);
         }
@@ -264,7 +264,7 @@ public class X01GameEngine : GameEngine
 
         BasePlayer player = appHandler.GetPlayerByID(game.GetCurrentPlayerId());
         if (player != null)
-            inputHandler.RefreshBotPlayerStats(new X01UIStats((X01Game)game, player));
+            inputHandler.RefreshBotPlayerStats(PlayerLiveStats.Create(game, player));
     }
 
     private void TriggerInitialCheckout()

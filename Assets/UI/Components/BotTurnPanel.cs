@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using Unity.VectorGraphics;
 
 public class BotTurnPanel : MonoBehaviour
 {
@@ -122,7 +123,7 @@ public class BotTurnPanel : MonoBehaviour
     private Sprite _dartSprite;
     private Sprite _boardSprite;
     private Transform _botIconRow;
-    private Image _botIconSource;
+    private SVGImage _botIconSource;
     private GameObject _playerCardPrefab;
     private BotOverlayCardPlacement _cardPlacement;
 
@@ -167,7 +168,7 @@ public class BotTurnPanel : MonoBehaviour
     private float _boardMarkerOutlineThickness;
     private float _dartSize;
 
-    private Image _botIcon;
+    private SVGImage _botIcon;
     private TMP_Text _nameText;
     private RectTransform _targetCrosshair;
     private CanvasGroup _targetCrosshairGroup;
@@ -183,11 +184,11 @@ public class BotTurnPanel : MonoBehaviour
     private X01PlayerItem _x01PlayerCard;
     private CricketPlayerListItem _cricketPlayerCard;
     private ATCPlayerListItem _atcPlayerCard;
-    private object _playerStats;
+    private PlayerLiveStats _playerStats;
     private float _overlayCardVisualWidth;
     private float _overlayCardVisualHeight;
     private float _overlayHeaderExtent;
-    private Image _dartImage;
+    private SVGImage _dartImage;
     private Outline _dartOutline;
     private RectTransform _dartRect;
     private TMP_Text _hitPopupText;
@@ -220,7 +221,7 @@ public class BotTurnPanel : MonoBehaviour
         Sprite dartSprite,
         Sprite boardSprite,
         Transform botIconRow = null,
-        Image botIcon = null,
+        SVGImage botIcon = null,
         GameObject playerCardPrefab = null,
         BotOverlayCardPlacement cardPlacement = BotOverlayCardPlacement.Top)
     {
@@ -245,32 +246,32 @@ public class BotTurnPanel : MonoBehaviour
         _animationPaused = paused;
     }
 
-    public void SetPlayerStats(object stats)
+    public void SetPlayerStats(PlayerLiveStats stats)
     {
         _playerStats = stats;
 
         if (_playerCardInstance == null || stats == null)
             return;
 
-        switch (stats)
+        switch (stats.mode)
         {
-            case X01UIStats x01Stats:
+            case GameMode.X01:
                 if (_x01PlayerCard == null)
                     _x01PlayerCard = _playerCardInstance.GetComponent<X01PlayerItem>()
                         ?? _playerCardInstance.GetComponentInChildren<X01PlayerItem>(true);
-                _x01PlayerCard?.Bind(x01Stats);
+                _x01PlayerCard?.Bind(stats);
                 break;
-            case CricketUIStats cricketStats:
+            case GameMode.Cricket:
                 if (_cricketPlayerCard == null)
                     _cricketPlayerCard = _playerCardInstance.GetComponent<CricketPlayerListItem>()
                         ?? _playerCardInstance.GetComponentInChildren<CricketPlayerListItem>(true);
-                _cricketPlayerCard?.Bind(cricketStats);
+                _cricketPlayerCard?.Bind(stats);
                 break;
-            case ATCUIStats atcStats:
+            case GameMode.ATC:
                 if (_atcPlayerCard == null)
                     _atcPlayerCard = _playerCardInstance.GetComponent<ATCPlayerListItem>()
                         ?? _playerCardInstance.GetComponentInChildren<ATCPlayerListItem>(true);
-                _atcPlayerCard?.Bind(atcStats);
+                _atcPlayerCard?.Bind(stats);
                 break;
         }
     }
@@ -1547,7 +1548,7 @@ public class BotTurnPanel : MonoBehaviour
             iconRect.localScale = Vector3.one;
             iconRect.localRotation = Quaternion.identity;
 
-            _botIcon = botIcon.GetComponent<Image>();
+            _botIcon = botIcon.GetComponent<SVGImage>();
             if (_botIcon != null)
                 _botIcon.preserveAspect = true;
 
@@ -1655,7 +1656,7 @@ public class BotTurnPanel : MonoBehaviour
             iconRect.localScale = Vector3.one;
             iconRect.localRotation = Quaternion.identity;
 
-            _botIcon = botIcon.GetComponent<Image>();
+            _botIcon = botIcon.GetComponent<SVGImage>();
             if (_botIcon != null)
                 _botIcon.preserveAspect = true;
 
@@ -1987,7 +1988,7 @@ public class BotTurnPanel : MonoBehaviour
 
         if (_dartImage == null)
         {
-            _dartImage = CreateImage("BotDart", _animationLayer, _dartSprite, GetColor(ThemeColorRole.Text1, Color.white));
+            _dartImage = CreateSvgImage("BotDart", _animationLayer, _dartSprite, GetColor(ThemeColorRole.Text1, Color.white));
             _dartRect = _dartImage.rectTransform;
             _dartRect.anchorMin = new Vector2(0.5f, 0.5f);
             _dartRect.anchorMax = new Vector2(0.5f, 0.5f);
@@ -2135,6 +2136,13 @@ public class BotTurnPanel : MonoBehaviour
                 if (images[j] != buttonImage && images[j].sprite != null)
                     images[j].preserveAspect = true;
             }
+
+            var svgImages = button.GetComponentsInChildren<SVGImage>(true);
+            for (int j = 0; j < svgImages.Length; j++)
+            {
+                if (svgImages[j].sprite != null)
+                    svgImages[j].preserveAspect = true;
+            }
         }
 
         if (!twoButtons)
@@ -2217,6 +2225,16 @@ public class BotTurnPanel : MonoBehaviour
     {
         var go = CreateUIObject(objectName, parent);
         var image = go.AddComponent<Image>();
+        image.sprite = sprite;
+        image.color = color;
+        image.raycastTarget = false;
+        return image;
+    }
+
+    private static SVGImage CreateSvgImage(string objectName, Transform parent, Sprite sprite, Color color)
+    {
+        var go = CreateUIObject(objectName, parent);
+        var image = go.AddComponent<SVGImage>();
         image.sprite = sprite;
         image.color = color;
         image.raycastTarget = false;

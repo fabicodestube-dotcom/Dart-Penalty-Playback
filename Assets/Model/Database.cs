@@ -259,28 +259,7 @@ public class Database
 
     public void RebuildPlayerStatistics()
     {
-        foreach (var player in GetAllPlayers())
-        {
-            player.ResetTimeStats();
-        }
-
-        var allStats = SqliteDatabaseRepository.LoadAllPlayerGameStats();
-
-        foreach (var kvp in allStats)
-        {
-            var summary = GetGameSummary(kvp.Key);
-            if (summary == null || !summary.IsFinished)
-                continue;
-
-            foreach (var playerStat in kvp.Value)
-            {
-                var player = GetPlayerByID(playerStat.Key);
-                if (player == null)
-                    continue;
-
-                player.ApplyTimebasedGameStatsFromSummary(summary, playerStat.Value, 0f);
-            }
-        }
+        LoadPlayerStatsSnapshotsIntoPlayers();
     }
 
     public GameMode? DeleteGame(Guid id)
@@ -563,25 +542,28 @@ public class Database
 
     internal void RebuildAllPlayerStatistics()
     {
+        LoadPlayerStatsSnapshotsIntoPlayers();
+    }
+
+    private void LoadPlayerStatsSnapshotsIntoPlayers()
+    {
         foreach (var player in GetAllPlayers())
             player.ResetAllStats();
 
-        var allStats = SqliteDatabaseRepository.LoadAllPlayerGameStats();
+        var snapshots = SqliteDatabaseRepository.LoadPlayerStatsSnapshots();
 
-        foreach (var kvp in allStats)
+        foreach (var playerKvp in snapshots)
         {
-            var summary = GetGameSummary(kvp.Key);
-            if (summary == null || !summary.IsFinished)
+            var player = GetPlayerByID(playerKvp.Key);
+            if (player == null)
                 continue;
 
-            foreach (var playerStat in kvp.Value)
+            foreach (var rangeKvp in playerKvp.Value)
             {
-                var player = GetPlayerByID(playerStat.Key);
-                if (player == null)
-                    continue;
-
-                player.ApplyGameStatsFromSummary(summary, playerStat.Value, 0f);
+                foreach (var modeKvp in rangeKvp.Value)
+                    player.SetModeStats(modeKvp.Key, rangeKvp.Key, modeKvp.Value);
             }
         }
     }
+
 }

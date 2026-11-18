@@ -52,15 +52,15 @@ public class StatisticsPageCricket : MonoBehaviour
 
     [Header("Penalty-Resolver (TEMP-DIAG)")]
     [Tooltip("Löst Penalty-Stats zum Tap-Zeitpunkt frisch auf (statt Build-Zeit-Closure). Wird vom StatisticsScreen gesetzt.")]
-    public Func<string, GameStats> penaltyStatsResolver;
+    public Func<string, PlayerStats> penaltyStatsResolver;
 
     /// <summary>
     /// Tap handlers with fresh lookup (Stale-Closure-Fix): stats are only now
     /// When tapping brought in BasePlayer / currentRange, Closure only Fallback.
     /// </summary>
-    private void ShowPenaltyDetails(PenaltyDetailPopup popup, string playerName, GameStats fallbackStats)
+    private void ShowPenaltyDetails(PenaltyDetailPopup popup, string playerName, PlayerStats fallbackStats)
     {
-        GameStats resolved = null;
+        PlayerStats resolved = null;
         try { resolved = penaltyStatsResolver?.Invoke(playerName); }
         catch (Exception e) { Debug.LogWarning($"[PenaltyDiag] Resolver fehlgeschlagen ({playerName}): {e.Message}"); }
 
@@ -77,7 +77,7 @@ public class StatisticsPageCricket : MonoBehaviour
     }
 
 
-    public IEnumerator ShowStatsAsync(List<GameStatsCricket> stats, List<string> playerNames)
+    public IEnumerator ShowStatsAsync(List<PlayerStats> stats, List<string> playerNames)
     {
         yield return BuildCricketStatsCoroutine(stats, playerNames);
     }
@@ -86,7 +86,7 @@ public class StatisticsPageCricket : MonoBehaviour
     /// Targeted refresh of a player line (all tables of this page).
     /// No rebuild, no clear — use the cached tables.
     /// </summary>
-    public void UpsertPlayerRow(GameStatsCricket stats, string playerName)
+    public void UpsertPlayerRow(PlayerStats stats, string playerName)
     {
         if (stats == null || string.IsNullOrEmpty(playerName) || parent == null)
             return;
@@ -184,9 +184,9 @@ public class StatisticsPageCricket : MonoBehaviour
         {
             mprTable.AddOrUpdateRow(playerName, playerName, new TableCellData[]
             {
-                stats.marksPerRound.ToString("0.00"),
-                stats.markCount.ToString(),
-                stats.maxMPR.ToString("0.00")
+                (stats.cricket?.marksPerRound ?? 0f).ToString("0.00"),
+                (stats.cricket?.markCount ?? 0).ToString(),
+                (stats.cricket?.maxMPR ?? 0f).ToString("0.00")
             });
             mprTable.SetRowActive(playerName, true);
         }
@@ -201,9 +201,9 @@ public class StatisticsPageCricket : MonoBehaviour
         {
             scoresTable.AddOrUpdateRow(playerName, playerName, new TableCellData[]
             {
-                stats.AverageScorePerTurn.ToString("0.00"),
-                stats.MaxScoreInTurn.ToString(),
-                stats.TotalOverkillPoints.ToString()
+                (stats.cricket?.AverageScorePerTurn ?? 0d).ToString("0.00"),
+                (stats.cricket?.MaxScoreInTurn ?? 0).ToString(),
+                (stats.cricket?.TotalOverkillPoints ?? 0).ToString()
             });
             scoresTable.SetRowActive(playerName, true);
         }
@@ -218,9 +218,9 @@ public class StatisticsPageCricket : MonoBehaviour
         {
             highscoresTable.AddOrUpdateRow(playerName, playerName, new TableCellData[]
             {
-                stats.nineMarkTurns.ToString(),
-                stats.whiteHorseTurns.ToString(),
-                stats.sameTripleTurns.ToString()
+                (stats.cricket?.nineMarkTurns ?? 0).ToString(),
+                (stats.cricket?.whiteHorseTurns ?? 0).ToString(),
+                (stats.cricket?.sameTripleTurns ?? 0).ToString()
             });
             highscoresTable.SetRowActive(playerName, true);
         }
@@ -235,9 +235,9 @@ public class StatisticsPageCricket : MonoBehaviour
         {
             preferencesTable.AddOrUpdateRow(playerName, playerName, new TableCellData[]
             {
-                stats.firstClosedField == -1 ? "-" : stats.firstClosedField.ToString(),
-                stats.lastClosedField == -1 ? "-" : stats.lastClosedField.ToString(),
-                stats.maxPointsField == -1 ? "-" : stats.maxPointsField.ToString()
+                stats.cricket?.firstClosedField == -1 ? "-" : (stats.cricket?.firstClosedField ?? 0).ToString(),
+                stats.cricket?.lastClosedField == -1 ? "-" : (stats.cricket?.lastClosedField ?? 0).ToString(),
+                stats.cricket?.maxPointsField == -1 ? "-" : (stats.cricket?.maxPointsField ?? 0).ToString()
             });
             preferencesTable.SetRowActive(playerName, true);
         }
@@ -352,7 +352,7 @@ public class StatisticsPageCricket : MonoBehaviour
     }
 
 
-    private IEnumerator BuildCricketStatsCoroutine(List<GameStatsCricket> gameStatsX01s, List<string> playerNames)
+    private IEnumerator BuildCricketStatsCoroutine(List<PlayerStats> gameStatsX01s, List<string> playerNames)
     {
          bool originalParentState = parent.gameObject.activeSelf;
         parent.gameObject.SetActive(false);
@@ -537,9 +537,9 @@ public class StatisticsPageCricket : MonoBehaviour
 
             mprTable.AddOrUpdateRow(key, key, new TableCellData[]
             {
-                stats != null ? stats.marksPerRound.ToString("0.00") : "0.00",
-                stats != null ? stats.markCount.ToString() : "0",
-                stats != null ? stats.maxMPR.ToString("0.00") : "0.00"
+                stats != null ? (stats.cricket?.marksPerRound ?? 0f).ToString("0.00") : "0.00",
+                stats != null ? (stats.cricket?.markCount ?? 0).ToString() : "0",
+                stats != null ? (stats.cricket?.maxMPR ?? 0f).ToString("0.00") : "0.00"
             }, false);
 
             mprTable.SetRowActive(key, true);
@@ -572,9 +572,9 @@ public class StatisticsPageCricket : MonoBehaviour
 
             scoresTable.AddOrUpdateRow(key, key, new TableCellData[]
             {
-                stats != null ? stats.AverageScorePerTurn.ToString("0.00") : "0.00",
-                stats != null ? stats.MaxScoreInTurn.ToString() : "0",
-                stats != null ? stats.TotalOverkillPoints.ToString() : "0"
+                stats != null ? (stats.cricket?.AverageScorePerTurn ?? 0d).ToString("0.00") : "0.00",
+                stats != null ? (stats.cricket?.MaxScoreInTurn ?? 0).ToString() : "0",
+                stats != null ? (stats.cricket?.TotalOverkillPoints ?? 0).ToString() : "0"
             }, false);
 
             scoresTable.SetRowActive(key, true);
@@ -607,9 +607,9 @@ public class StatisticsPageCricket : MonoBehaviour
 
             highscoresTable.AddOrUpdateRow(key, key, new TableCellData[]
             {
-                stats != null ? stats.nineMarkTurns.ToString() : "0",
-                stats != null ? stats.whiteHorseTurns.ToString() : "0",
-                stats != null ? stats.sameTripleTurns.ToString() : "0"
+                stats != null ? (stats.cricket?.nineMarkTurns ?? 0).ToString() : "0",
+                stats != null ? (stats.cricket?.whiteHorseTurns ?? 0).ToString() : "0",
+                stats != null ? (stats.cricket?.sameTripleTurns ?? 0).ToString() : "0"
             }, false);
 
             highscoresTable.SetRowActive(key, true);
@@ -642,9 +642,9 @@ public class StatisticsPageCricket : MonoBehaviour
 
             preferencesTable.AddOrUpdateRow(key, key, new TableCellData[]
             {
-                stats == null ? "-" : (stats.firstClosedField == -1 ? "-" : stats.firstClosedField.ToString()),
-                stats == null ? "-" : (stats.lastClosedField == -1 ? "-" : stats.lastClosedField.ToString()),
-                stats == null ? "-" : (stats.maxPointsField == -1 ? "-" : stats.maxPointsField.ToString())
+                stats == null ? "-" : (stats.cricket?.firstClosedField == -1 ? "-" : (stats.cricket?.firstClosedField ?? 0).ToString()),
+                stats == null ? "-" : (stats.cricket?.lastClosedField == -1 ? "-" : (stats.cricket?.lastClosedField ?? 0).ToString()),
+                stats == null ? "-" : (stats.cricket?.maxPointsField == -1 ? "-" : (stats.cricket?.maxPointsField ?? 0).ToString())
             }, false);
 
             preferencesTable.SetRowActive(key, true);

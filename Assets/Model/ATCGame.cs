@@ -328,13 +328,13 @@ public class ATCGame : Game
         return targets.Count;
     }
 
-    /// <summary>Copies for persistence (game_meta): Step list + progress.</summary>
+    /// <summary>Copies for persistence (game_runtime_state): Step list + progress.</summary>
     public List<int> GetTargetNumbers() => new List<int>(targets);
 
-    /// <summary>Copies for persistence (game_meta): step multipliers.</summary>
+    /// <summary>Copies for persistence (game_runtime_state): step multipliers.</summary>
     public List<DartMultiplier> GetTargetMultipliers() => new List<DartMultiplier>(targetMultipliers);
 
-    /// <summary>Copies for persistence (game_meta): Target progress per player.</summary>
+    /// <summary>Copies for persistence (game_runtime_state): Target progress per player.</summary>
     public Dictionary<Guid, int> GetTargetIndices() => new Dictionary<Guid, int>(playerCurrentIndex);
 
     public int GetWonSetsTotal(Guid playerId)
@@ -417,14 +417,14 @@ public class ATCGame : Game
 
         if (playerStats.TryGetValue(undoPlayerId, out var stats))
         {
-            var sATC = (GameStatsATC)stats;
+            var sATC = stats.atc;
             int streakBefore = CalculateStreakBeforeUndo(undoPlayerId);
             bool wasFirstOfVisit = throws.Count == 1 && leg.GetTurns().Count(tn => tn.PlayerId == undoPlayerId) == 1;
 
             Debug.Log("ATCGame  targetAtTimeOfThrow: " + targetAtTimeOfThrow);
 
             // Correct stats
-            sATC.RemoveThrow(lastThrow, targetAtTimeOfThrow, isValid, wasFirstOfVisit, streakBefore);
+            sATC?.RemoveThrow(lastThrow, targetAtTimeOfThrow, isValid, wasFirstOfVisit, streakBefore);
         }
 
         // Turn back progress in the game state
@@ -606,14 +606,10 @@ public class ATCGame : Game
         bool wasFirstDartOfVisit = currentTurn.GetThrows().Count == 0 && validThrowsInTurn == 0;
 
         if (playerStats.TryGetValue(playerId, out var stats))
-        {
-            if (stats is GameStatsATC)
-            {
-                ((GameStatsATC) stats).AddThrow(t, currentTarget, isValidThrow, wasFirstDartOfVisit);
-            }
-        }
+            stats.atc?.AddThrow(t, currentTarget, isValidThrow, wasFirstDartOfVisit);
 
         currentTurn.AddThrow(t);
+        stats?.AddThrow(t);
 
         // Sector sound right at input (before instant penalties).
         NotifySectorHit(playerId, t);
@@ -753,8 +749,8 @@ public class ATCGame : Game
 
         values.hits = validThrowsInTurn;
 
-        if (playerStats.TryGetValue(playerId, out var stats) && stats is GameStatsATC atc)
-            values.streak = atc.currentHitStreak;
+        if (playerStats.TryGetValue(playerId, out var stats) && stats.atc != null)
+            values.streak = stats.atc.currentHitStreak;
     }
 
     private void FinalizeVisit(Guid playerId, bool isPlayerSwitch)
@@ -841,11 +837,11 @@ public class ATCGame : Game
         if (playerStats != null)
             playerStats.Clear();
 
-        playerStats = new Dictionary<Guid, GameStats>();
+        playerStats = new Dictionary<Guid, PlayerStats>();
 
         foreach (var pid in playerIDs)
         {
-            playerStats[pid] = new GameStatsATC(pid);
+            playerStats[pid] = PlayerStats.CreateForMode(pid, GameMode.ATC);
         }
     }
 
@@ -870,8 +866,8 @@ public class ATCGame : Game
         // Dart counters (totalThrows /Double/Triple) and penalties remain off base.
         foreach (var pid in playerIDs)
         {
-            if (playerStats.TryGetValue(pid, out var s) && s is GameStatsATC atc)
-                ResetATCStatsForRebuild(atc);
+            if (playerStats.TryGetValue(pid, out var s) && s.atc != null)
+                ResetATCStatsForRebuild(s.atc);
         }
 
         // Chronological simulation over all sets/legs/turns.
@@ -894,8 +890,10 @@ public class ATCGame : Game
                         continue;
 
                     Guid pid = turn.PlayerId;
-                    if (!playerStats.TryGetValue(pid, out var s) || s is not GameStatsATC stats)
+                    if (!playerStats.TryGetValue(pid, out var s) || s.atc == null)
                         continue;
+
+                    var stats = s.atc;
 
                     if (visitPlayerId != pid)
                     {
@@ -932,47 +930,18 @@ public class ATCGame : Game
         // Uses the exact miss branch logic (no live behavior changed).
         foreach (var pid in playerIDs)
         {
-            if (!playerStats.TryGetValue(pid, out var s) || s is not GameStatsATC stats)
+            if (!playerStats.TryGetValue(pid, out var s) || s.atc == null)
                 continue;
 
-            stats.FlushCurrentStreak();
+            s.atc.FlushCurrentStreak();
         }
     }
 
-    private void ResetATCStatsForRebuild(GameStatsATC stats)
+    private void ResetATCStatsForRebuild(AtcStats stats)
     {
-        if (stats == null)
-            return;
-
-        stats.targetsHit = 0;
-        stats.totalTargets = 0;
-        stats.hitPercentage = 0f;
-
-        stats.firstDartHits = 0;
-        stats.firstDartAttempts = 0;
-        stats.firstDartHitPercentage = 0f;
-
-        stats.hasStreak = false;
-        stats.currentHitStreak = 0;
-        stats.longestHitStreak = 0;
-        stats.completedStreaks.Clear();
-
-        if (stats.throwsPerTarget != null)
-            foreach (var k in stats.throwsPerTarget.Keys.ToList())
-                stats.throwsPerTarget[k] = 0;
-
-        // Sector counters are rebuilt by simulation (AddThrow )
-        stats.throwSectorCounts?.Clear();
-
-        if (stats.hitsPerTarget != null)
-            foreach (var k in stats.hitsPerTarget.Keys.ToList())
-                stats.hitsPerTarget[k] = 0;
-
-        stats.streak3Plus = 0;
-        stats.streak6Plus = 0;
-        stats.streak9Plus = 0;
-        stats.streak12Plus = 0;
+        stats?.ResetForRebuild();
     }
+
 
     /// <summary>
     /// Builds the Target order from the settings (like InitializeTargets).

@@ -21,100 +21,7 @@ public sealed class Migration001InitialSchema : IDatabaseMigration
     public void Apply(SQLiteConnection connection)
     {
         SqliteDatabaseService.CreateSchemaBaseline(connection);
-    }
-}
-
-public sealed class Migration002NormalizeTimestamps : IDatabaseMigration
-{
-    public int Version => 2;
-    public string Name => "normalize_timestamps";
-    public string Checksum => "v2-normalize-timestamps";
-
-    public void Apply(SQLiteConnection connection)
-    {
-        int updated = 0;
-        updated += NormalizeGames(connection);
-        updated += NormalizePlayers(connection);
-
-        Debug.Log("[DatabaseMigration] Normalized timestamps in " + updated + " rows.");
-    }
-
-    private static int NormalizeGames(SQLiteConnection connection)
-    {
-        var rows = connection.Query<GameTimestampRow>(
-            "SELECT id AS Id, created_at AS CreatedAt, last_activity_at AS LastActivityAt, finished_at AS FinishedAt FROM games;");
-
-        int updated = 0;
-
-        foreach (var row in rows)
-        {
-            string createdAt = Normalize(row.CreatedAt);
-            string lastActivityAt = Normalize(row.LastActivityAt);
-            string finishedAt = Normalize(row.FinishedAt);
-
-            if (string.Equals(createdAt, row.CreatedAt, StringComparison.Ordinal) &&
-                string.Equals(lastActivityAt, row.LastActivityAt, StringComparison.Ordinal) &&
-                string.Equals(finishedAt, row.FinishedAt, StringComparison.Ordinal))
-                continue;
-
-            connection.Execute(
-                "UPDATE games SET created_at = ?, last_activity_at = ?, finished_at = ? WHERE id = ?;",
-                createdAt,
-                lastActivityAt,
-                finishedAt,
-                row.Id
-            );
-
-            updated++;
-        }
-
-        return updated;
-    }
-
-    private static int NormalizePlayers(SQLiteConnection connection)
-    {
-        var rows = connection.Query<PlayerTimestampRow>(
-            "SELECT id AS Id, created_at AS CreatedAt FROM players;");
-
-        int updated = 0;
-
-        foreach (var row in rows)
-        {
-            string createdAt = Normalize(row.CreatedAt);
-            if (string.Equals(createdAt, row.CreatedAt, StringComparison.Ordinal))
-                continue;
-
-            connection.Execute(
-                "UPDATE players SET created_at = ? WHERE id = ?;",
-                createdAt,
-                row.Id
-            );
-
-            updated++;
-        }
-
-        return updated;
-    }
-
-    private static string Normalize(string value)
-    {
-        return DatabaseTimestamp.TryNormalize(value, out string normalized)
-            ? normalized
-            : value;
-    }
-
-    private sealed class GameTimestampRow
-    {
-        public string Id { get; set; }
-        public string CreatedAt { get; set; }
-        public string LastActivityAt { get; set; }
-        public string FinishedAt { get; set; }
-    }
-
-    private sealed class PlayerTimestampRow
-    {
-        public string Id { get; set; }
-        public string CreatedAt { get; set; }
+        DatabaseMigrationRunner.SetMeta(connection, DatabaseSchema.StatsVersionMetaKey, DatabaseSchema.CurrentStatsVersion.ToString());
     }
 }
 
@@ -122,13 +29,7 @@ public static class DatabaseMigrations
 {
     public static readonly IDatabaseMigration[] All =
     {
-        new Migration001InitialSchema(),
-        new Migration002NormalizeTimestamps(),
-        new Migration003RecordedClipMetadata(),
-        new Migration004NormalizeSchema(),
-        new Migration005HitSectorSnapshot(),
-        new Migration006MultiTriggers(),
-        new Migration007BotSkillRating()
+        new Migration001InitialSchema()
     };
 }
 

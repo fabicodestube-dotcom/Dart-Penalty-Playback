@@ -150,32 +150,10 @@ public static class DatabaseBootstrapper
 
         if (fromVersion < DatabaseSchema.CurrentVersion)
         {
-            var backup = DatabaseBackupService.CreateBackup("pre-migration", fromVersion, true);
-
-            try
-            {
-                DatabaseMigrationRunner.Migrate(databasePath, fromVersion, DatabaseSchema.CurrentVersion);
-            }
-            catch (Exception e)
-            {
-                return DatabaseBootstrapResult.Failed(
-                    "Migration von Schema v" + fromVersion + " auf v" + DatabaseSchema.CurrentVersion +
-                    " fehlgeschlagen. Die Datenbank wurde nicht verändert. Backup: " + backup.Path,
-                    e
-                );
-            }
-
-            DatabaseBackupService.CreateRollingBackupIfDue(DatabaseSchema.CurrentVersion);
-
-            return new DatabaseBootstrapResult
-            {
-                Success = true,
-                RestoredFromBackup = restoredFromBackup,
-                Migrated = true,
-                FromSchemaVersion = fromVersion,
-                ToSchemaVersion = DatabaseSchema.CurrentVersion,
-                BackupPath = backup.Path
-            };
+            return DatabaseBootstrapResult.Failed(
+                "Die vorhandene Datenbank hat Schema v" + fromVersion +
+                ". Diese Version unterstützt nur Schema v" + DatabaseSchema.CurrentVersion +
+                ". Bitte die Datenbank löschen; es gibt bewusst keine Migration.");
         }
 
         if (info.UserVersion == DatabaseSchema.CurrentVersion)

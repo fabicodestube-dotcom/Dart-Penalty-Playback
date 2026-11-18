@@ -1,6 +1,7 @@
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using Unity.VectorGraphics;
 
 public class ATCPlayerListItem : MonoBehaviour
 {
@@ -19,10 +20,10 @@ public class ATCPlayerListItem : MonoBehaviour
     public TMP_Text wonLegsText;
     public TMP_Text thrownDartsText;
     public TMP_Text hitRateText;
-    public Image[] hitImages;
-    public Image[] missImages;
-    public Image[] wallImages;
-    public Image[] ceilingImages;
+    public SVGImage[] hitImages;
+    public SVGImage[] missImages;
+    public SVGImage[] wallImages;
+    public SVGImage[] ceilingImages;
 
     [Header("Glow Animation")]
     public BorderGlowAnimator glowAnimator;
@@ -43,7 +44,7 @@ public class ATCPlayerListItem : MonoBehaviour
             glowAnimator.StopGlow();
     }
 
-    public void Bind(ATCUIStats stats)
+    public void Bind(PlayerLiveStats stats)
     {
         if (nameText != null)
             nameText.text = stats.playerName;
@@ -102,7 +103,7 @@ public class ATCPlayerListItem : MonoBehaviour
         SetLastThreeDarts(stats.lastThreeThrows);
     }
 
-    private void SetTarget(ATCUIStats stats)
+    private void SetTarget(PlayerLiveStats stats)
     {
         if (currentTargetText == null)
             return;
@@ -163,7 +164,7 @@ public class ATCPlayerListItem : MonoBehaviour
         SetImageActive(ceilingImages, index, ceiling);
     }
 
-    private void SetImageActive(Image[] images, int index, bool active)
+    private void SetImageActive(SVGImage[] images, int index, bool active)
     {
         if (images == null || index < 0 || index >= images.Length)
             return;

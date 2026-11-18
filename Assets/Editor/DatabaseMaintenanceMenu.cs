@@ -99,4 +99,40 @@ public static class DatabaseMaintenanceMenu
             Debug.LogError("[DB-MAINTENANCE] Database repair failed: " + e);
         }
     }
+
+    [MenuItem("Tools/Database/Reset Local Database")]
+    public static void ResetLocalDatabase()
+    {
+        string databasePath = DatabasePaths.DatabasePath;
+
+        if (!EditorUtility.DisplayDialog(
+                "Datenbank zurücksetzen",
+                "Die lokale Datenbank wird gelöscht. Danach wird beim nächsten Start eine neue V1-Datenbank angelegt.\n\nFortfahren?",
+                "Löschen",
+                "Abbrechen"))
+            return;
+
+        try
+        {
+            DeleteIfExists(databasePath);
+            DeleteIfExists(databasePath + "-wal");
+            DeleteIfExists(databasePath + "-shm");
+
+            DatabaseBootstrapper.ResetForTests();
+            SaveSystem.ResetLoadFailedForTests();
+
+            Debug.Log("[DB-MAINTENANCE] Local database reset: " + databasePath);
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError("[DB-MAINTENANCE] Database reset failed: " + e);
+        }
+    }
+
+    private static void DeleteIfExists(string path)
+    {
+        if (!string.IsNullOrEmpty(path) && System.IO.File.Exists(path))
+            System.IO.File.Delete(path);
+    }
+
 }

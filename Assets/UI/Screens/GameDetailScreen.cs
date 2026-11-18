@@ -44,7 +44,7 @@ public class GameDetailScreen : UIScreen, IUIScreen
     public PenaltyDetailPopup columnDetailPopup;
 
     private GameSummary gameSummary;
-    private Dictionary<Guid, GameStats> playerStats;
+    private Dictionary<Guid, PlayerStats> playerStats;
     private readonly Dictionary<string, TableView> cachedTables = new Dictionary<string, TableView>();
     private readonly List<HitSectorChart> x01HitSectorCharts = new List<HitSectorChart>();
     private GameObject x01HitSectorHeadline;
@@ -142,10 +142,10 @@ public class GameDetailScreen : UIScreen, IUIScreen
         return Guid.Empty;
     }
 
-    private Dictionary<Guid, GameStats> LoadPlayerStatsForGame(Guid gameId)
+    private Dictionary<Guid, PlayerStats> LoadPlayerStatsForGame(Guid gameId)
     {
         return SqliteDatabaseRepository.LoadPlayerGameStatsForGame(gameId)
-            ?? new Dictionary<Guid, GameStats>();
+            ?? new Dictionary<Guid, PlayerStats>();
     }
 
     private void ClearContent()
@@ -237,13 +237,13 @@ public class GameDetailScreen : UIScreen, IUIScreen
         var activeX01PlayerKeys = new HashSet<string>();
         foreach (var pid in playerIDs)
         {
-            var stats = statsDict.TryGetValue(pid, out var s) ? s as GameStatsX01 : null;
+            var stats = statsDict.TryGetValue(pid, out var s) ? s?.x01 : null;
             string key = pid.ToString();
 
             playerTable.AddOrUpdateRow(key, GetPlayerName(pid), new TableCellData[]
             {
-                stats?.totalSetsWon.ToString() ?? "0",
-                stats?.totalLegsWon.ToString() ?? "0",
+                s?.totalSetsWon.ToString() ?? "0",
+                s?.totalLegsWon.ToString() ?? "0",
                 GetScoreForPlayer(pid).ToString()
             }, false);
 
@@ -268,9 +268,7 @@ public class GameDetailScreen : UIScreen, IUIScreen
             new TableCellData[] { "Played", "Won", "Win %" },
             pid =>
             {
-                if (!statsDict.TryGetValue(pid, out var s)) return null;
-                var stats = s as GameStatsX01;
-                if (stats == null) return null;
+                if (!statsDict.TryGetValue(pid, out var stats)) return null;
 
                 return new TableCellData[]
                 {
@@ -292,7 +290,7 @@ public class GameDetailScreen : UIScreen, IUIScreen
                 if (!statsDict.TryGetValue(pid, out var baseStats))
                     return null;
 
-                var stats = baseStats as GameStatsX01;
+                var stats = baseStats;
 
                 return new TableCellData[]
                 {
@@ -314,7 +312,7 @@ public class GameDetailScreen : UIScreen, IUIScreen
                 if (!statsDict.TryGetValue(pid, out var baseStats))
                     return null;
 
-                var stats = baseStats as GameStatsX01;
+                var stats = baseStats?.x01;
                 if (stats == null) return null;
 
                 return new TableCellData[]
@@ -337,7 +335,7 @@ public class GameDetailScreen : UIScreen, IUIScreen
                 if (!statsDict.TryGetValue(pid, out var baseStats))
                     return null;
 
-                var stats = baseStats as GameStatsX01;
+                var stats = baseStats?.x01;
 
                 return new TableCellData[]
                 {
@@ -360,7 +358,7 @@ public class GameDetailScreen : UIScreen, IUIScreen
                 if (!statsDict.TryGetValue(pid, out var baseStats))
                     return null;
 
-                var stats = baseStats as GameStatsX01;
+                var stats = baseStats?.x01;
                 if (stats == null) return null;
 
                 return new TableCellData[]
@@ -396,7 +394,7 @@ public class GameDetailScreen : UIScreen, IUIScreen
                 var chart = x01HitSectorCharts[i];
                 chart.gameObject.SetActive(true);
 
-                GameStatsX01 stats = statsDict.TryGetValue(pid, out var s) ? s as GameStatsX01 : null;
+                var stats = statsDict.TryGetValue(pid, out var s) ? s?.x01 : null;
                 string playerName = appHandler.GetPlayerNameByID(pid);
 
                 chart.SetData(playerName, stats?.GetHitSector);
@@ -415,13 +413,13 @@ public class GameDetailScreen : UIScreen, IUIScreen
         var activePlayerKeys = new HashSet<string>();
         foreach (var pid in playerIDs)
         {
-            var stats = statsDict.TryGetValue(pid, out var s) ? s as GameStatsCricket : null;
+            var stats = statsDict.TryGetValue(pid, out var s) ? s?.cricket : null;
             string key = pid.ToString();
 
             playerTable.AddOrUpdateRow(key, GetPlayerName(pid), new TableCellData[]
             {
-                stats?.totalSetsWon.ToString() ?? "0",
-                stats?.totalLegsWon.ToString() ?? "0",
+                s?.totalSetsWon.ToString() ?? "0",
+                s?.totalLegsWon.ToString() ?? "0",
                 GetScoreForPlayer(pid).ToString()
             }, false);
 
@@ -503,7 +501,7 @@ public class GameDetailScreen : UIScreen, IUIScreen
                 new TableCellData[] { "Ø Points/Turn", "Max Points", "Overkill Points" },
                 pid =>
                 {
-                    var stats = statsDict.TryGetValue(pid, out var s) ? s as GameStatsCricket : null;
+                    var stats = statsDict.TryGetValue(pid, out var s) ? s?.cricket : null;
                     if (stats == null) return null;
 
                     return new TableCellData[]
@@ -524,7 +522,7 @@ public class GameDetailScreen : UIScreen, IUIScreen
             new TableCellData[] { "MPR", "Marks", "Max MPR" },
             pid =>
             {
-                var stats = statsDict.TryGetValue(pid, out var s) ? s as GameStatsCricket : null;
+                var stats = statsDict.TryGetValue(pid, out var s) ? s?.cricket : null;
                 if (stats == null) return null;
 
                 return new TableCellData[]
@@ -544,7 +542,7 @@ public class GameDetailScreen : UIScreen, IUIScreen
             new TableCellData[] { "9 Marks", "White Horse", "Same Triple" },
             pid =>
             {
-                var stats = statsDict.TryGetValue(pid, out var s) ? s as GameStatsCricket : null;
+                var stats = statsDict.TryGetValue(pid, out var s) ? s?.cricket : null;
                 if (stats == null) return null;
 
                 return new TableCellData[]
@@ -564,7 +562,7 @@ public class GameDetailScreen : UIScreen, IUIScreen
             new TableCellData[] { "First Closed", "Last Closed", "Most Points" },
             pid =>
             {
-                var stats = statsDict.TryGetValue(pid, out var s) ? s as GameStatsCricket : null;
+                var stats = statsDict.TryGetValue(pid, out var s) ? s?.cricket : null;
                 if (stats == null) return null;
 
                 return new TableCellData[]
@@ -589,14 +587,14 @@ public class GameDetailScreen : UIScreen, IUIScreen
         var activeATCPlayerKeys = new HashSet<string>();
         foreach (var pid in playerIDs)
         {
-            var stats = statsDict.TryGetValue(pid, out var s) ? s as GameStatsATC : null;
+            var stats = statsDict.TryGetValue(pid, out var s) ? s?.atc : null;
             string key = pid.ToString();
 
             playerTable.AddOrUpdateRow(key, GetPlayerName(pid), new TableCellData[]
             {
-                stats?.totalSetsWon.ToString() ?? "0",
-                stats?.totalLegsWon.ToString() ?? "0",
-                (stats?.targetsHit ?? 0) + "/" + (stats?.totalTargets ?? 0)
+                s?.totalSetsWon.ToString() ?? "0",
+                s?.totalLegsWon.ToString() ?? "0",
+                (s?.atc?.hits ?? 0) + "/" + (s?.atc?.attempts ?? 0)
             }, false);
 
             playerTable.SetRowActive(key, true);
@@ -641,12 +639,12 @@ public class GameDetailScreen : UIScreen, IUIScreen
             new TableCellData[] { "Throws", "Hits", "Hit %" },
             pid =>
             {
-                var stats = statsDict.TryGetValue(pid, out var s) ? s as GameStatsATC : null;
+                var stats = statsDict.TryGetValue(pid, out var s) ? s : null;
                 return new TableCellData[]
                 {
                     stats?.totalThrowsCount.ToString() ?? "0",
-                    stats?.targetsHit.ToString() ?? "0",
-                    $"{stats?.hitPercentage * 100 ?? 0:0.00}%"
+                    stats?.atc?.hits.ToString() ?? "0",
+                    $"{stats?.atc?.hitPercentage * 100 ?? 0:0.00}%"
                 };
             },
             playerIDs
@@ -659,7 +657,7 @@ public class GameDetailScreen : UIScreen, IUIScreen
             new TableCellData[] { "1st Dart Hit %", "Longest Streak", "Biggest Choke" },
             pid =>
             {
-                var stats = statsDict.TryGetValue(pid, out var s) ? s as GameStatsATC : null;
+                var stats = statsDict.TryGetValue(pid, out var s) ? s?.atc : null;
                 if (stats == null) return new TableCellData[] { "0%", "0", "-" };
 
                 var (target, attempts) = stats.GetChoke();
@@ -683,7 +681,7 @@ public class GameDetailScreen : UIScreen, IUIScreen
             new TableCellData[] { "3 Hits +", "6 Hits +", "9 Hits +", "12 Hits +" },
             pid =>
             {
-                var stats = statsDict.TryGetValue(pid, out var s) ? s as GameStatsATC : null;
+                var stats = statsDict.TryGetValue(pid, out var s) ? s?.atc : null;
                 if (stats == null) return new TableCellData[] { "0", "0", "0", "0" };
 
                 return new TableCellData[]
@@ -730,8 +728,8 @@ public class GameDetailScreen : UIScreen, IUIScreen
                 if (i < playerIDs.Count)
                 {
                     var pid = playerIDs[i];
-                    var stats = statsDict.TryGetValue(pid, out var s) ? s as GameStatsATC : null;
-                    ATCAttemptsChart.SetupChart(chart, GetPlayerName(pid), stats?.throwSectorCounts);
+                    var stats = statsDict.TryGetValue(pid, out var s) ? s?.atc : null;
+                    ATCAttemptsChart.SetupChart(chart, GetPlayerName(pid), stats?.throwSectorCounts ?? new Dictionary<string, int>());
                 }
                 else
                     chart.gameObject.SetActive(false);
@@ -869,7 +867,7 @@ public class GameDetailScreen : UIScreen, IUIScreen
     /// Player (popup: PenaltyDetailPopup.ShowPlayerPenalties).
     /// </summary>
     private void FillSimplePenaltyTable(
-        string tableKey, List<Guid> playerIDs, Dictionary<Guid, GameStats> statsDict)
+        string tableKey, List<Guid> playerIDs, Dictionary<Guid, PlayerStats> statsDict)
     {
         var table = GetCachedTable(tableKey);
         if (table == null || gameSummary == null)

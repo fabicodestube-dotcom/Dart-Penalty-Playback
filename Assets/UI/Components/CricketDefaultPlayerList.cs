@@ -73,7 +73,7 @@ public class CricketDefaultPlayerList : MonoBehaviour
             var player = players[i];
             var item = playerItems[i];
 
-            var stats = new CricketUIStats(game, player);
+            var stats = PlayerLiveStats.Create(game, player);
             item.Bind(stats);
 
             if (stats.isActive)

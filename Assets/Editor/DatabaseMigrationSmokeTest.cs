@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using Newtonsoft.Json;
 using SQLite;
 using UnityEditor;
 using UnityEngine;
@@ -43,6 +44,7 @@ public static class DatabaseMigrationSmokeTest
             TestBuiltInHitSectors();
             TestHitSectorDeletionCascadesPenalties();
             TestHitSectorSnapshotSurvivesDeletion();
+            TestPlayerStatsSnapshotRoundtrip();
             TestActualDatabaseCopyIfAvailable(actualRoot);
 
             Debug.Log("[DB-SMOKE] PASS");
@@ -81,11 +83,9 @@ public static class DatabaseMigrationSmokeTest
             Check(DatabaseHealth.GetUserVersion(connection) == DatabaseSchema.CurrentVersion, "Fresh database has wrong user_version.");
             Check(DatabaseHealth.GetApplicationId(connection) == DatabaseSchema.ApplicationId, "Fresh database has wrong application_id.");
             Check(DatabaseHealth.TableExists(connection, "schema_migrations"), "schema_migrations is missing.");
-            Check(connection.ExecuteScalar<int>("SELECT COUNT(*) FROM schema_migrations WHERE version = 2;") == 1, "Fresh database is missing migration v2.");
-            Check(connection.ExecuteScalar<int>("SELECT COUNT(*) FROM schema_migrations WHERE version = 3;") == 1, "Fresh database is missing migration v3.");
-            Check(connection.ExecuteScalar<int>("SELECT COUNT(*) FROM schema_migrations WHERE version = 4;") == 1, "Fresh database is missing migration v4.");
-            Check(connection.ExecuteScalar<int>("SELECT COUNT(*) FROM schema_migrations WHERE version = 5;") == 1, "Fresh database is missing migration v5.");
-            Check(connection.ExecuteScalar<int>("SELECT COUNT(*) FROM schema_migrations WHERE version = 7;") == 1, "Fresh database is missing migration v7.");
+            Check(connection.ExecuteScalar<int>("SELECT COUNT(*) FROM schema_migrations WHERE version = 1;") == 1, "Fresh database is missing migration v1.");
+            Check(DatabaseHealth.TableExists(connection, "player_stats_snapshots"), "player_stats_snapshots is missing.");
+            Check(!DatabaseHealth.TableExists(connection, "player_stats_all"), "player_stats_all must not exist in V1.");
             Check(DatabaseHealth.ColumnExists(connection, "bot_state", "skill"), "bot_state.skill is missing.");
             Check(DatabaseHealth.ColumnExists(connection, "game_runtime_state", "custom_hit_sectors_snapshot_json"), "custom_hit_sectors_snapshot_json is missing.");
             Check(DatabaseHealth.ColumnExists(connection, "player_game_stats", "stats_schema_version"), "stats_schema_version is missing.");
@@ -204,64 +204,8 @@ public static class DatabaseMigrationSmokeTest
         CreateLegacyDatabase(DatabasePaths.DatabasePath);
 
         var result = DatabaseBootstrapper.Prepare();
-        Check(result.Success, "Legacy migration failed: " + result.Error);
-        Check(result.Migrated, "Legacy bootstrap did not report a migration.");
-        Check(result.FromSchemaVersion == 0, "Legacy migration started from the wrong version.");
-        Check(!string.IsNullOrEmpty(result.BackupPath) && File.Exists(result.BackupPath), "Pre-migration backup is missing.");
-
-        using (var connection = new SQLiteConnection(DatabasePaths.DatabasePath, SQLiteOpenFlags.ReadOnly))
-        {
-            Check(DatabaseHealth.GetUserVersion(connection) == DatabaseSchema.CurrentVersion, "Legacy database was not migrated.");
-            Check(DatabaseHealth.GetApplicationId(connection) == DatabaseSchema.ApplicationId, "legacy application_id was not set.");
-            Check(connection.ExecuteScalar<int>("SELECT COUNT(*) FROM players;") == 1, "Legacy player row was lost.");
-            Check(connection.ExecuteScalar<int>("SELECT COUNT(*) FROM player_game_stats;") == 1, "Legacy stats row was lost.");
-            Check(DatabaseHealth.ColumnExists(connection, "player_game_stats", "stats_schema_version"), "Legacy stats column was not added.");
-            Check(connection.ExecuteScalar<int>("SELECT COUNT(*) FROM schema_migrations WHERE version = 1;") == 1, "Migration v1 row is missing.");
-            Check(connection.ExecuteScalar<int>("SELECT COUNT(*) FROM schema_migrations WHERE version = 2;") == 1, "Migration v2 row is missing.");
-            Check(connection.ExecuteScalar<int>("SELECT COUNT(*) FROM schema_migrations WHERE version = 3;") == 1, "Migration v3 row is missing.");
-            Check(connection.ExecuteScalar<int>("SELECT COUNT(*) FROM schema_migrations WHERE version = 4;") == 1, "Migration v4 row is missing.");
-            Check(connection.ExecuteScalar<int>("SELECT COUNT(*) FROM schema_migrations WHERE version = 5;") == 1, "Migration v5 row is missing.");
-            Check(connection.ExecuteScalar<int>("SELECT COUNT(*) FROM schema_migrations WHERE version = 7;") == 1, "Migration v7 row is missing.");
-            Check(DatabaseHealth.ColumnExists(connection, "bot_state", "skill"), "Legacy bot skill column was not added.");
-            Check(DatabaseHealth.ColumnExists(connection, "game_runtime_state", "custom_hit_sectors_snapshot_json"), "Legacy hit-sector snapshot column was not added.");
-            Check(!DatabaseHealth.TableExists(connection, "player_meta"), "Legacy player_meta was not removed.");
-            Check(!DatabaseHealth.TableExists(connection, "game_meta"), "Legacy game_meta was not removed.");
-            Check(!DatabaseHealth.ColumnExists(connection, "games", "player_ids"), "Legacy games.player_ids was not removed.");
-            Check(connection.ExecuteScalar<int>("SELECT COUNT(*) FROM game_players;") == 1, "Legacy game player assignment was lost.");
-            Check(connection.ExecuteScalar<int>("SELECT setup_start_position FROM players LIMIT 1;") == 2, "Legacy setup start position was not migrated.");
-            Check(connection.ExecuteScalar<int>("SELECT COUNT(*) FROM bot_state;") == 1, "Legacy bot state was not migrated.");
-            Check(connection.ExecuteScalar<string>("SELECT difficulty FROM bot_state LIMIT 1;") == "Hard", "Legacy bot difficulty was not migrated.");
-            Check(Math.Abs(connection.ExecuteScalar<double>("SELECT skill FROM bot_state LIMIT 1;") - 7.0) < 0.001, "Legacy bot skill was not migrated.");
-            Check(connection.ExecuteScalar<int>("SELECT number FROM bot_state LIMIT 1;") == 7, "Legacy bot number was not migrated.");
-            Check(connection.ExecuteScalar<int>("SELECT x01_sudden_death_triggered FROM game_runtime_state LIMIT 1;") == 1, "Legacy runtime state was not migrated.");
-            Check(connection.ExecuteScalar<string>("SELECT x01_player_scores_json FROM game_runtime_state LIMIT 1;") != null, "Legacy player scores were not migrated.");
-
-            CheckUtcTimestamp(
-                connection.ExecuteScalar<string>("SELECT created_at FROM players LIMIT 1;"),
-                LegacyPlayerCreatedAt,
-                "player.created_at"
-            );
-
-            CheckUtcTimestamp(
-                connection.ExecuteScalar<string>("SELECT created_at FROM games LIMIT 1;"),
-                LegacyGameCreatedAt,
-                "game.created_at"
-            );
-
-            CheckUtcTimestamp(
-                connection.ExecuteScalar<string>("SELECT last_activity_at FROM games LIMIT 1;"),
-                LegacyGameLastActivityAt,
-                "game.last_activity_at"
-            );
-
-            CheckUtcTimestamp(
-                connection.ExecuteScalar<string>("SELECT finished_at FROM games LIMIT 1;"),
-                LegacyGameFinishedAt,
-                "game.finished_at"
-            );
-        }
-
-        Debug.Log("[DB-SMOKE] Legacy migration OK");
+        Check(!result.Success, "Legacy database must be rejected; no in-place migration is supported.");
+        Debug.Log("[DB-SMOKE] Legacy rejection OK");
     }
 
     private static void TestBackupAndRestore()
@@ -710,6 +654,108 @@ public static class DatabaseMigrationSmokeTest
         Debug.Log("[DB-SMOKE] Hit-sector snapshot survives deletion OK");
     }
 
+    private static void TestPlayerStatsSnapshotRoundtrip()
+    {
+        string root = CreateRoot("stats-snapshot");
+        DatabaseBootstrapper.ResetForTests();
+        SaveSystem.ResetLoadFailedForTests();
+        ResetRoot(root);
+
+        var bootstrap = DatabaseBootstrapper.Prepare();
+        Check(bootstrap.Success, "Stats snapshot bootstrap failed: " + bootstrap.Error);
+
+        var database = new Database();
+        Guid playerId = database.AddPlayer("Snapshot Stats Player");
+        SqliteDatabaseRepository.SaveDatabase(database);
+
+        Guid gameId = Guid.NewGuid();
+        string finishedAt = DatabaseTimestamp.ToUtcIso(DateTime.Now);
+
+        var gameStats = PlayerStats.CreateForMode(playerId, GameMode.X01);
+        gameStats.gameCount = 1;
+        gameStats.gamesWon = 1;
+        gameStats.totalLegsCount = 1;
+        gameStats.totalLegsWon = 1;
+        gameStats.totalSetsCount = 1;
+        gameStats.totalSetsWon = 1;
+        gameStats.totalThrowsCount = 3;
+        gameStats.totalDoubleCount = 1;
+        gameStats.totalTripleCount = 1;
+        gameStats.doublePercentage = 0.33f;
+        gameStats.triplePercentage = 0.33f;
+        gameStats.x01.turnCount = 1;
+        gameStats.x01.turnSum = 101;
+        gameStats.x01.averagePointsPerTurn = 101f;
+        gameStats.x01.bestTurnPoints = 101;
+        gameStats.x01.first9Points = 101;
+        gameStats.x01.first9Average = 101f;
+        gameStats.x01.count100Plus = 1;
+        gameStats.x01.highestCheckout = 101;
+        gameStats.x01.checkoutAttemptCount = 1f;
+
+        using (var connection = new SQLiteConnection(DatabasePaths.DatabasePath))
+        {
+            connection.Execute(
+                "INSERT INTO games (id, game_mode, created_at, last_activity_at, finished_at, current_player_index, starting_player_index, winner_player_id, settings_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);",
+                gameId.ToString(),
+                GameMode.X01.ToString(),
+                finishedAt,
+                finishedAt,
+                finishedAt,
+                0,
+                0,
+                playerId.ToString(),
+                "{}");
+
+            connection.Execute(
+                "INSERT INTO game_players (game_id, player_id, player_order) VALUES (?, ?, ?);",
+                gameId.ToString(),
+                playerId.ToString(),
+                0);
+
+            connection.Execute(
+                "INSERT INTO player_game_stats (game_id, player_id, stat_type, stat_data, stats_schema_version) VALUES (?, ?, ?, ?, ?);",
+                gameId.ToString(),
+                playerId.ToString(),
+                "x01",
+                JsonConvert.SerializeObject(gameStats, Formatting.None),
+                DatabaseSchema.CurrentStatsVersion);
+        }
+
+        SqliteDatabaseRepository.RebuildAggregatedPlayerStats();
+
+        var snapshots = SqliteDatabaseRepository.LoadPlayerStatsSnapshots();
+        Check(snapshots.TryGetValue(playerId, out var ranges), "Stats snapshot for player is missing.");
+        Check(ranges.ContainsKey(StatisticsRange.AllTime), "All-time stats snapshot is missing.");
+        Check(ranges.ContainsKey(StatisticsRange.Today), "Today stats snapshot is missing.");
+
+        var allTime = ranges[StatisticsRange.AllTime][GameMode.X01];
+        Check(allTime.gameCount == 1, "All-time snapshot gameCount is wrong.");
+        Check(allTime.gamesWon == 1, "All-time snapshot gamesWon is wrong.");
+        Check(allTime.totalThrowsCount == 3, "All-time snapshot totalThrowsCount is wrong.");
+        Check(allTime.totalDoubleCount == 1, "All-time snapshot totalDoubleCount is wrong.");
+        Check(allTime.totalTripleCount == 1, "All-time snapshot totalTripleCount is wrong.");
+        Check(Math.Abs(allTime.doublePercentage - 0.33f) < 0.001f, "All-time snapshot doublePercentage is wrong.");
+        Check(Math.Abs(allTime.AverageThrowsPerGame - 3f) < 0.001f, "All-time snapshot average throws is wrong.");
+        Check(allTime.x01 != null && allTime.x01.turnSum == 101, "All-time X01 snapshot turnSum is wrong.");
+        Check(allTime.x01.first9Average == 101f, "All-time X01 snapshot first9Average is wrong.");
+
+        var today = ranges[StatisticsRange.Today][GameMode.X01];
+        Check(today.gameCount == 1, "Today snapshot gameCount is wrong.");
+        Check(today.x01 != null && today.x01.highestCheckout == 101, "Today X01 snapshot highestCheckout is wrong.");
+
+        using (var connection = new SQLiteConnection(DatabasePaths.DatabasePath, SQLiteOpenFlags.ReadOnly))
+        {
+            Check(connection.ExecuteScalar<int>("SELECT COUNT(*) FROM player_stats_snapshots;") == 5,
+                "Unexpected snapshot row count.");
+            Check(connection.ExecuteScalar<int>("SELECT COUNT(*) FROM player_stats_snapshots WHERE stats_schema_version <> ?;",
+                DatabaseSchema.CurrentStatsVersion) == 0, "Snapshot stats schema version is outdated.");
+        }
+
+        Directory.Delete(root, true);
+        Debug.Log("[DB-SMOKE] Player stats snapshot roundtrip OK");
+    }
+
     private static void TestActualDatabaseCopyIfAvailable(string actualRoot)
     {
         string actualDatabase = Path.Combine(actualRoot, DatabasePaths.DatabaseFileName);
@@ -771,9 +817,11 @@ public static class DatabaseMigrationSmokeTest
         File.Copy(actualDatabase, DatabasePaths.DatabasePath, true);
 
         var result = DatabaseBootstrapper.Prepare();
-        Check(result.Success, "Real database copy migration failed: " + result.Error);
-        if (result.Migrated)
-            Check(File.Exists(result.BackupPath), "Real database copy migration created no backup.");
+        if (!result.Success)
+        {
+            Debug.Log("[DB-SMOKE] Real database copy is not schema V1 - skipped: " + result.Error);
+            return;
+        }
 
         CustomizationStore.Reload();
 

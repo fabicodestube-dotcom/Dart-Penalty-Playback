@@ -4,6 +4,7 @@ using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using Unity.VectorGraphics;
 
 public class SetupScreen : MonoBehaviour, IUIScreen
 {   
@@ -55,7 +56,7 @@ public class SetupScreen : MonoBehaviour, IUIScreen
 
     [Header("Add Bot")]
     public Slider botSkillSlider;
-    public Image botSkillIcon;
+    public SVGImage botSkillIcon;
     public TMP_Text botSkillValueLabel;
 
 

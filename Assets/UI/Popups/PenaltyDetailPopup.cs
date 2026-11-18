@@ -233,7 +233,7 @@ public class PenaltyDetailPopup : UIScreen, IUIScreen
     /// Breakdown of a player in the aggregate: Legacy without
     /// Cost (different per game → stroke), Customs with the latest price.
     /// </summary>
-    public void ShowPlayerAggregates(string playerName, GameStats stats)
+    public void ShowPlayerAggregates(string playerName, PlayerStats stats)
     {
         ClearContent();
         SetTitle(string.IsNullOrWhiteSpace(playerName) ? LocalizationText.Get("Penalties", "Penalties") : playerName);

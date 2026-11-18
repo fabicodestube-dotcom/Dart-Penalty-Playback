@@ -410,14 +410,14 @@ public class StatisticsScreen : MonoBehaviour, IUIScreen
     {
         // Aggregates come from BasePlayer (In-Memory, O(1) per player) —
         // No SQLite Read, no rescan of all games.
-        var stats = new List<GameStats>(playerIds.Count);
+        var stats = new List<PlayerStats>(playerIds.Count);
 
         for (int i = 0; i < playerIds.Count; i++)
         {
             var player = appHandler.GetPlayerByID(playerIds[i]);
             stats.Add(player != null
                 ? player.GetCombinedStats(range)
-                : new GameStats(playerIds[i]));
+                : new PlayerStats(playerIds[i]));
 
             if ((i & 7) == 7)
                 yield return null;
@@ -433,14 +433,14 @@ public class StatisticsScreen : MonoBehaviour, IUIScreen
         List<Guid> playerIds,
         List<string> playerNames)
     {
-        var stats = new List<GameStatsX01>(playerIds.Count);
+        var stats = new List<PlayerStats>(playerIds.Count);
 
         for (int i = 0; i < playerIds.Count; i++)
         {
             var player = appHandler.GetPlayerByID(playerIds[i]);
             stats.Add(player != null
-                ? player.GetModeStats(GameMode.X01, range) as GameStatsX01 ?? new GameStatsX01(playerIds[i])
-                : new GameStatsX01(playerIds[i]));
+                ? player.GetModeStats(GameMode.X01, range) ?? PlayerStats.CreateForMode(playerIds[i], GameMode.X01)
+                : PlayerStats.CreateForMode(playerIds[i], GameMode.X01));
 
             if ((i & 7) == 7)
                 yield return null;
@@ -455,14 +455,14 @@ public class StatisticsScreen : MonoBehaviour, IUIScreen
         List<Guid> playerIds,
         List<string> playerNames)
     {
-        var stats = new List<GameStatsCricket>(playerIds.Count);
+        var stats = new List<PlayerStats>(playerIds.Count);
 
         for (int i = 0; i < playerIds.Count; i++)
         {
             var player = appHandler.GetPlayerByID(playerIds[i]);
             stats.Add(player != null
-                ? player.GetModeStats(GameMode.Cricket, range) as GameStatsCricket ?? new GameStatsCricket(playerIds[i])
-                : new GameStatsCricket(playerIds[i]));
+                ? player.GetModeStats(GameMode.Cricket, range) ?? PlayerStats.CreateForMode(playerIds[i], GameMode.Cricket)
+                : PlayerStats.CreateForMode(playerIds[i], GameMode.Cricket));
 
             if ((i & 7) == 7)
                 yield return null;
@@ -477,14 +477,14 @@ public class StatisticsScreen : MonoBehaviour, IUIScreen
         List<Guid> playerIds,
         List<string> playerNames)
     {
-        var stats = new List<GameStatsATC>(playerIds.Count);
+        var stats = new List<PlayerStats>(playerIds.Count);
 
         for (int i = 0; i < playerIds.Count; i++)
         {
             var player = appHandler.GetPlayerByID(playerIds[i]);
             stats.Add(player != null
-                ? player.GetModeStats(GameMode.ATC, range) as GameStatsATC ?? new GameStatsATC(playerIds[i])
-                : new GameStatsATC(playerIds[i]));
+                ? player.GetModeStats(GameMode.ATC, range) ?? PlayerStats.CreateForMode(playerIds[i], GameMode.ATC)
+                : PlayerStats.CreateForMode(playerIds[i], GameMode.ATC));
 
             if ((i & 7) == 7)
                 yield return null;
@@ -1225,8 +1225,8 @@ public class StatisticsScreen : MonoBehaviour, IUIScreen
         // X01 mode.
         if (liveX01Page != null)
         {
-            var x01 = player.GetModeStats(GameMode.X01, range) as GameStatsX01
-                ?? new GameStatsX01(playerId);
+            var x01 = player.GetModeStats(GameMode.X01, range)
+                ?? PlayerStats.CreateForMode(playerId, GameMode.X01);
             liveX01Page.UpsertPlayerRow(x01, name);
             liveX01Page.SetPlayerRowVisible(name, visible);
         }
@@ -1234,8 +1234,8 @@ public class StatisticsScreen : MonoBehaviour, IUIScreen
         // Cricket mode.
         if (liveCricketPage != null)
         {
-            var cricket = player.GetModeStats(GameMode.Cricket, range) as GameStatsCricket
-                ?? new GameStatsCricket(playerId);
+            var cricket = player.GetModeStats(GameMode.Cricket, range)
+                ?? PlayerStats.CreateForMode(playerId, GameMode.Cricket);
             liveCricketPage.UpsertPlayerRow(cricket, name);
             liveCricketPage.SetPlayerRowVisible(name, visible);
         }
@@ -1243,8 +1243,8 @@ public class StatisticsScreen : MonoBehaviour, IUIScreen
         // ATC mode.
         if (liveATCPage != null)
         {
-            var atc = player.GetModeStats(GameMode.ATC, range) as GameStatsATC
-                ?? new GameStatsATC(playerId);
+            var atc = player.GetModeStats(GameMode.ATC, range)
+                ?? PlayerStats.CreateForMode(playerId, GameMode.ATC);
             liveATCPage.UpsertPlayerRow(atc, name);
             liveATCPage.SetPlayerRowVisible(name, visible);
         }
@@ -1308,28 +1308,28 @@ public class StatisticsScreen : MonoBehaviour, IUIScreen
             liveATCPage.penaltyStatsResolver = ResolveATCPenaltyStats;
     }
 
-    private GameStats ResolveAllPenaltyStats(string playerName)
+    private PlayerStats ResolveAllPenaltyStats(string playerName)
     {
         var player = GetPlayerByName(playerName);
         return player?.GetCombinedStats(currentRange);
     }
 
-    private GameStats ResolveX01PenaltyStats(string playerName)
+    private PlayerStats ResolveX01PenaltyStats(string playerName)
     {
         var player = GetPlayerByName(playerName);
-        return player?.GetModeStats(GameMode.X01, currentRange) as GameStatsX01;
+        return player?.GetModeStats(GameMode.X01, currentRange);
     }
 
-    private GameStats ResolveCricketPenaltyStats(string playerName)
+    private PlayerStats ResolveCricketPenaltyStats(string playerName)
     {
         var player = GetPlayerByName(playerName);
-        return player?.GetModeStats(GameMode.Cricket, currentRange) as GameStatsCricket;
+        return player?.GetModeStats(GameMode.Cricket, currentRange);
     }
 
-    private GameStats ResolveATCPenaltyStats(string playerName)
+    private PlayerStats ResolveATCPenaltyStats(string playerName)
     {
         var player = GetPlayerByName(playerName);
-        return player?.GetModeStats(GameMode.ATC, currentRange) as GameStatsATC;
+        return player?.GetModeStats(GameMode.ATC, currentRange);
     }
 
     private BasePlayer GetPlayerByName(string playerName)

@@ -165,7 +165,7 @@ public class X01Game : Game
             {
                 if (playerStats.TryGetValue(oldPlayerId, out var stats))
                 {
-                    ((GameStatsX01) stats).RegisterTurn(currentTurn);
+                    stats.x01?.RegisterTurn(currentTurn);
                 }
             }
         }
@@ -303,9 +303,9 @@ public class X01Game : Game
         {
             if (playerStats.TryGetValue(playerId, out var stats))
             {
-                var sX01 = (GameStatsX01)stats;
-                sX01.RegisterTurn(currentTurn); 
-                sX01.RegisterCheckout(currentTurn);
+                var sX01 = stats.x01;
+                sX01?.RegisterTurn(currentTurn);
+                sX01?.RegisterCheckout(currentTurn);
             }
 
             CheckTurnPenalties(playerId, currentTurn);
@@ -417,7 +417,7 @@ public class X01Game : Game
                 var finishingTurn = undoInfo.UndoneLeg?.GetTurns().LastOrDefault(t => t.GetThrows().Count > 0);
                 if (finishingTurn != null)
                 {
-                    ((GameStatsX01)s).UnregisterCheckout(finishingTurn);
+                    s.x01?.UnregisterCheckout(finishingTurn);
                 }
             }
         }
@@ -447,7 +447,7 @@ public class X01Game : Game
             if (playerStats.TryGetValue(undoPlayerId, out var stats))
             {
                 // Correct Averages/Darts counters in the X01 Stat object
-                ((GameStatsX01)stats).UnregisterTurn(lastTurn);
+                stats.x01?.UnregisterTurn(lastTurn);
             }
 
             // ---- CHECKOUT ATTEMPT UNDO LOGIC ----
@@ -520,9 +520,10 @@ public class X01Game : Game
 
         foreach (var playerId in playerIDs)
         {
-            if (!playerStats.TryGetValue(playerId, out var stats) || stats is not GameStatsX01 x01Stats)
+            if (!playerStats.TryGetValue(playerId, out var stats) || stats.x01 == null)
                 continue;
 
+            var x01Stats = stats.x01;
             ResetX01StatsForRebuild(x01Stats);
 
             foreach (var set in sets)
@@ -553,39 +554,11 @@ public class X01Game : Game
         }
     }
 
-    private void ResetX01StatsForRebuild(GameStatsX01 stats)
+    private void ResetX01StatsForRebuild(X01Stats stats)
     {
-        if (stats == null)
-            return;
-
-        stats.turnCount = 0;
-        stats.turnSum = 0;
-        stats.averagePointsPerTurn = 0f;
-        stats.bestTurnPoints = 0;
-        stats.first9Points = 0;
-        stats.first9Average = 0f;
-        stats.count60Plus = 0;
-        stats.count100Plus = 0;
-        stats.count140Plus = 0;
-        stats.count180 = 0;
-        stats.checkoutTurns.Clear();
-        stats.highestCheckout = 0;
-        stats.checkoutAttemptCount = 0f;
-
-        // tripleDigitCount (Legacy) is no longer rebuilt, but from the
-        // restored persisted row (old games keep their values).
-        stats.hitSectorCounts = new Dictionary<string, int>();
-        stats.hitSectorCounts["0"] = 0;
-        for (int i = 1; i <= 20; i++)
-        {
-            stats.hitSectorCounts[i.ToString()] = 0;
-            stats.hitSectorCounts["D" + i] = 0;
-            stats.hitSectorCounts["T" + i] = 0;
-        }
-
-        stats.hitSectorCounts["25"] = 0;
-        stats.hitSectorCounts["D25"] = 0;
+        stats?.ResetForRebuild();
     }
+
 
 
     // =========================================================
@@ -724,10 +697,10 @@ public class X01Game : Game
     {
         if (playerStats != null)
             playerStats.Clear();
-        playerStats = new Dictionary<Guid, GameStats>();
+        playerStats = new Dictionary<Guid, PlayerStats>();
         foreach (var pid in playerIDs)
         {
-            playerStats[pid] = new GameStatsX01(pid, GetSettingsAsX01().pointTarget);
+            playerStats[pid] = PlayerStats.CreateForMode(pid, GameMode.X01);
         }
     }
 
@@ -825,7 +798,7 @@ public class X01Game : Game
     {
         if (playerStats.TryGetValue(playerId, out var stats))
         {
-            ((GameStatsX01)stats).RegisterCheckoutAttempt();
+            stats.x01?.RegisterCheckoutAttempt();
         }
     }
 
@@ -833,7 +806,7 @@ public class X01Game : Game
     {
         if (playerStats.TryGetValue(playerId, out var stats))
         {
-            ((GameStatsX01)stats).UnregisterCheckoutAttempt();
+            stats.x01?.UnregisterCheckoutAttempt();
         }
     }
 

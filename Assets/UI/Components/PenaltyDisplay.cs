@@ -300,7 +300,7 @@ public static class PenaltyDisplay
     };
 
 
-    public static int LegacyCount(GameStats stats, PenaltyType type)
+    public static int LegacyCount(PlayerStats stats, PenaltyType type)
     {
         if (stats == null)
             return 0;
@@ -318,7 +318,7 @@ public static class PenaltyDisplay
     }
 
     /// <summary>Total number of incurred penalties (legacy + custom).</summary>
-    public static int TotalPenaltyCount(GameStats stats)
+    public static int TotalPenaltyCount(PlayerStats stats)
     {
         if (stats == null)
             return 0;

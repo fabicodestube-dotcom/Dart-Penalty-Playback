@@ -250,7 +250,7 @@ public class CricketGameEngine : GameEngine
 
         BasePlayer player = appHandler.GetPlayerByID(game.GetCurrentPlayerId());
         if (player != null)
-            inputHandler.RefreshBotPlayerStats(new CricketUIStats((CricketGame)game, player));
+            inputHandler.RefreshBotPlayerStats(PlayerLiveStats.Create(game, player));
     }
 
     protected override void UnsubscribeFromGameEvents()

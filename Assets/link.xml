@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <linker>
     <assembly fullname="Assembly-CSharp">
-        <type fullname="GameStatsX01" preserve="all"/>
-        <type fullname="GameStatsCricket" preserve="all"/>
-        <type fullname="GameStatsATC" preserve="all"/>
+        <type fullname="PlayerStats" preserve="all"/>
+        <type fullname="X01Stats" preserve="all"/>
+        <type fullname="CricketStats" preserve="all"/>
+        <type fullname="AtcStats" preserve="all"/>
     </assembly>
 </linker>

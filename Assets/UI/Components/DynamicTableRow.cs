@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using Unity.VectorGraphics;
 
 public class DynamicTableRow : MonoBehaviour
 {
@@ -15,7 +16,7 @@ public class DynamicTableRow : MonoBehaviour
     {
         public GameObject gameObject;
         public TextMeshProUGUI text;
-        public Image image;
+        public SVGImage image;
         public LayoutElement layout;
         public Button button;
     }
@@ -61,11 +62,12 @@ public class DynamicTableRow : MonoBehaviour
                 cell.button = button;
             }
 
-            var graphic = cell.gameObject.GetComponent<Image>();
+            var graphic = cell.gameObject.GetComponent<Graphic>();
             if (graphic == null)
             {
-                graphic = cell.gameObject.AddComponent<Image>();
-                graphic.color = new Color(0f, 0f, 0f, 0f);
+                var fallback = cell.gameObject.AddComponent<Image>();
+                fallback.color = new Color(0f, 0f, 0f, 0f);
+                graphic = fallback;
             }
             graphic.raycastTarget = true;
 
@@ -120,7 +122,7 @@ public class DynamicTableRow : MonoBehaviour
                     gameObject = cellObject,
                     layout = tableCell != null ? tableCell.layoutElement : cellObject.GetComponent<LayoutElement>(),
                     text = tableCell != null ? tableCell.text : cellObject.GetComponentInChildren<TextMeshProUGUI>(true),
-                    image = tableCell != null ? tableCell.image : cellObject.GetComponentInChildren<Image>(true)
+                    image = tableCell != null ? tableCell.image : cellObject.GetComponentInChildren<SVGImage>(true)
                 };
                 cells.Add(cellEntry);
             }

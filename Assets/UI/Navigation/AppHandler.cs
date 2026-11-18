@@ -328,10 +328,6 @@ public class AppHandler : MonoBehaviour
 
         if (summary != null && summary.IsFinished)
         {
-            // Subtract aggregates incrementally instead of all tables from all
-            // rebuild (O(1) instead of O(history)).
-            SubtractAggregatedPlayerStats(summary, playerStats);
-
             if (playerStats != null)
             {
                 foreach (var playerStat in playerStats)
@@ -340,6 +336,10 @@ public class AppHandler : MonoBehaviour
                     player?.RemoveGameStatsFromSummary(summary, playerStat.Value);
                 }
             }
+
+            SqliteDatabaseRepository.RebuildPlayerSnapshots(
+                summary.PlayerIds ?? new List<Guid>());
+            database.RebuildPlayerStatistics();
         }
 
         if (selectedGame != null && selectedGame.GetID() == id)
@@ -364,36 +364,6 @@ public class AppHandler : MonoBehaviour
         return true;
     }
 
-    /// <summary>
-    /// Subtracts a deleted game from the persistent aggregates.
-    /// Mirror of SaveAggregatedPlayerStats; harmless for unfinished
-    /// Games (never aggregated) and missing lines (RemoveGameStatguardet).
-    /// </summary>
-    private void SubtractAggregatedPlayerStats(GameSummary summary, Dictionary<Guid, GameStats> playerStats)
-    {
-        if (summary == null || !summary.IsFinished)
-            return;
-        if (playerStats == null || playerStats.Count == 0)
-            return;
-
-        foreach (var kvp in playerStats)
-        {
-            var allStats = SqliteDatabaseRepository.LoadPlayerStatsAll(kvp.Key);
-            if (allStats != null)
-            {
-                allStats.RemoveGameStat(kvp.Value, summary.Id);
-                SqliteDatabaseRepository.SavePlayerStatsAll(kvp.Key, allStats);
-            }
-
-            var modeStats = SqliteDatabaseRepository.LoadPlayerStatsForMode(kvp.Key, summary.GameMode);
-            if (modeStats != null)
-            {
-                modeStats.RemoveGameStat(kvp.Value, summary.Id);
-                SqliteDatabaseRepository.SavePlayerStatsForMode(kvp.Key, modeStats, summary.GameMode);
-            }
-        }
-    }
-
     public bool DeleteGamesOfMode(GameMode mode)
     {
         var summaries = database.GetGameSummaries()
@@ -414,7 +384,6 @@ public class AppHandler : MonoBehaviour
         foreach (var summary in summaries)
         {
             allStats.TryGetValue(summary.Id, out var playerStats);
-            SubtractAggregatedPlayerStats(summary, playerStats);
 
             if (playerStats == null)
                 continue;
@@ -425,11 +394,10 @@ public class AppHandler : MonoBehaviour
             }
         }
 
-        foreach (var player in database.GetPlayers())
-        {
-            if (player != null)
-                player.ResetStatsOfMode(mode);
-        }
+        if (!SaveSystem.RebuildAggregatedPlayerStats())
+            Debug.LogError("Spieler-Snapshots konnten nach dem Löschen des Modus nicht neu aufgebaut werden.");
+        else
+            database.RebuildPlayerStatistics();
 
         var affectedPlayerIds = new List<Guid>();
         foreach (var summary in summaries)
@@ -463,16 +431,10 @@ public class AppHandler : MonoBehaviour
         }
 
         database.DeleteGames(null);
-        // Aggregates are empty: Full-Rebuild will not find any games anymore
-        // and only cleans the aggregate tables (cheap, no dead loops).
         if (!SaveSystem.RebuildAggregatedPlayerStats())
-            Debug.LogError("Spieler-Aggregate konnten nach dem Löschen nicht neu aufgebaut werden.");
+            Debug.LogError("Spieler-Snapshots konnten nach dem Löschen nicht neu aufgebaut werden.");
 
-        foreach (var player in database.GetPlayers())
-        {
-            if (player != null)
-                player.ResetAllStats();
-        }
+        database.RebuildPlayerStatistics();
 
         selectedGame = null;
         activeRuntimeGame = null;
@@ -755,23 +717,27 @@ public class AppHandler : MonoBehaviour
     private void LoadDatabase()
     {
         database = SaveSystem.LoadDatabase();
-        // Note: NO RebuildPlayerStatistics() more here. SaveSystem has
-        // already RebuildAllPlayerStatistics() running (all-time AND)
-        // Time ranges from a single full table read.
-        // Run would be a complete re-deserialize of all games.
-        // Time-range refresh at date change runs over
-        // RebuildTimeBasedStatistics().
+        // SaveSystem.LoadDatabase loads all snapshots (all-time and the current
+        // time ranges) in one query; no game replay happens at startup.
     }
 
     /// <summary>
-    /// Build only the time-range snapshots (Today/Week/Month/Year) of all players
-    /// new from the stored per-game stats.
-    /// The snapshots from the save time are otherwise stale.
-    /// Once a day, not per event.
+    /// Rebuilds all snapshots from the stored per-game stats and reloads them.
+    /// Called once per day when the statistics screen observes a date change,
+    /// because the current Today/Week/Month/Year period keys change.
     /// </summary>
     public void RebuildTimeBasedStatistics()
     {
-        database?.RebuildPlayerStatistics();
+        if (database == null)
+            return;
+
+        if (!SaveSystem.RebuildAggregatedPlayerStats())
+        {
+            Debug.LogError("Spieler-Snapshots konnten nach dem Datumswechsel nicht neu aufgebaut werden.");
+            return;
+        }
+
+        database.RebuildPlayerStatistics();
     }
 
     private void ApplyGameStatsToPlayers(Game game)

@@ -41,15 +41,15 @@ public class StatisticsPageX01 : MonoBehaviour
 
     [Header("Penalty-Resolver (TEMP-DIAG)")]
     [Tooltip("Löst Penalty-Stats zum Tap-Zeitpunkt frisch auf (statt Build-Zeit-Closure). Wird vom StatisticsScreen gesetzt.")]
-    public Func<string, GameStats> penaltyStatsResolver;
+    public Func<string, PlayerStats> penaltyStatsResolver;
 
     /// <summary>
     /// Tap handlers with fresh lookup (Stale-Closure-Fix): stats are only now
     /// When tapping brought in BasePlayer / currentRange, Closure only Fallback.
     /// </summary>
-    private void ShowPenaltyDetails(PenaltyDetailPopup popup, string playerName, GameStats fallbackStats)
+    private void ShowPenaltyDetails(PenaltyDetailPopup popup, string playerName, PlayerStats fallbackStats)
     {
-        GameStats resolved = null;
+        PlayerStats resolved = null;
         try { resolved = penaltyStatsResolver?.Invoke(playerName); }
         catch (Exception e) { Debug.LogWarning($"[PenaltyDiag] Resolver fehlgeschlagen ({playerName}): {e.Message}"); }
 
@@ -80,7 +80,7 @@ public class StatisticsPageX01 : MonoBehaviour
     private static readonly string X01CheckoutsKey = "X01_Checkouts";
 
 
-    public IEnumerator ShowStatsAsync(List<GameStatsX01> stats, List<string> playerNames)
+    public IEnumerator ShowStatsAsync(List<PlayerStats> stats, List<string> playerNames)
     {
         yield return BuildX01StatsCoroutine(stats, playerNames);
     }
@@ -89,7 +89,7 @@ public class StatisticsPageX01 : MonoBehaviour
     /// Targeted refresh of ONE player line (all tables + chart of this page).
     /// No rebuild, no clear — use cached tables/charts.
     /// </summary>
-    public void UpsertPlayerRow(GameStatsX01 stats, string playerName)
+    public void UpsertPlayerRow(PlayerStats stats, string playerName)
     {
         if (stats == null || string.IsNullOrEmpty(playerName) || parent == null)
             return;
@@ -155,7 +155,7 @@ public class StatisticsPageX01 : MonoBehaviour
         {
             throwsTable.AddOrUpdateRow(playerName, playerName, new TableCellData[]
             {
-                stats.totalThrowsCount.ToString("0.00"),
+                stats.AverageThrowsPerGame.ToString("0.00"),
                 $"{stats.doublePercentage * 100f:0.00}%",
                 $"{stats.triplePercentage * 100f:0.00}%"
             });
@@ -167,9 +167,9 @@ public class StatisticsPageX01 : MonoBehaviour
         {
             scoringTable.AddOrUpdateRow(playerName, playerName, new TableCellData[]
             {
-                stats.averagePointsPerTurn.ToString("0.00"),
-                $"{stats.first9Average:0.00}",
-                stats.bestTurnPoints.ToString()
+                (stats.x01?.averagePointsPerTurn ?? 0f).ToString("0.00"),
+                $"{(stats.x01?.first9Average ?? 0f):0.00}",
+                (stats.x01?.bestTurnPoints ?? 0).ToString()
             });
             scoringTable.SetRowActive(playerName, true);
         }
@@ -179,10 +179,10 @@ public class StatisticsPageX01 : MonoBehaviour
         {
             highScoreTable.AddOrUpdateRow(playerName, playerName, new TableCellData[]
             {
-                stats.count60Plus.ToString(),
-                stats.count100Plus.ToString(),
-                stats.count140Plus.ToString(),
-                stats.count180.ToString()
+                (stats.x01?.count60Plus ?? 0).ToString(),
+                (stats.x01?.count100Plus ?? 0).ToString(),
+                (stats.x01?.count140Plus ?? 0).ToString(),
+                (stats.x01?.count180 ?? 0).ToString()
             });
             highScoreTable.SetRowActive(playerName, true);
         }
@@ -192,9 +192,9 @@ public class StatisticsPageX01 : MonoBehaviour
         {
             checkoutTable.AddOrUpdateRow(playerName, playerName, new TableCellData[]
             {
-                stats.highestCheckout.ToString(),
-                stats.checkoutAttemptCount.ToString("0.00"),
-                stats.GetMostFrequentClosingSector() ?? "n/a"
+                (stats.x01?.highestCheckout ?? 0).ToString(),
+                (stats.x01?.checkoutAttemptCount ?? 0f).ToString("0.00"),
+                stats.x01?.GetMostFrequentClosingSector() ?? "n/a"
             });
             checkoutTable.SetRowActive(playerName, true);
         }
@@ -207,7 +207,7 @@ public class StatisticsPageX01 : MonoBehaviour
                 hitsHeadline.SetActive(true);
 
             var aggregated = new Dictionary<string, int>();
-            foreach (var kv in stats.hitSectorCounts)
+            foreach (var kv in stats.x01?.hitSectorCounts ?? new Dictionary<string, int>())
                 aggregated[kv.Key] = kv.Value;
 
             var chart = GetOrCreateChart(playerName);
@@ -392,7 +392,7 @@ public class StatisticsPageX01 : MonoBehaviour
     }
 
 
-    private IEnumerator BuildX01StatsCoroutine(List<GameStatsX01> gameStatsX01s, List<string> playerNames)
+    private IEnumerator BuildX01StatsCoroutine(List<PlayerStats> gameStatsX01s, List<string> playerNames)
     {
         bool originalParentState = parent.gameObject.activeSelf;
         parent.gameObject.SetActive(false);
@@ -528,7 +528,7 @@ public class StatisticsPageX01 : MonoBehaviour
 
             throwsTable.AddOrUpdateRow(key, key, new TableCellData[]
             {
-                stats?.totalThrowsCount.ToString("0.00") ?? "0.00",
+                stats?.AverageThrowsPerGame.ToString("0.00") ?? "0.00",
                 $"{(stats?.doublePercentage ?? 0f) * 100f:0.00}%",
                 $"{(stats?.triplePercentage ?? 0f) * 100f:0.00}%"
             }, false);
@@ -556,9 +556,9 @@ public class StatisticsPageX01 : MonoBehaviour
 
             scoringTable.AddOrUpdateRow(key, key, new TableCellData[]
             {
-                stats?.averagePointsPerTurn.ToString("0.00") ?? "0.00",
-                $"{stats?.first9Average ?? 0 : 0.00}",
-                stats?.bestTurnPoints.ToString() ?? "0"
+                stats?.x01?.averagePointsPerTurn.ToString("0.00") ?? "0.00",
+                $"{stats?.x01?.first9Average ?? 0 : 0.00}",
+                stats?.x01?.bestTurnPoints.ToString() ?? "0"
             }, false);
 
             scoringTable.SetRowActive(key, true);
@@ -586,10 +586,10 @@ public class StatisticsPageX01 : MonoBehaviour
 
             highScoreTable.AddOrUpdateRow(key, key, new TableCellData[]
             {
-                stats?.count60Plus.ToString() ?? "0",
-                stats?.count100Plus.ToString() ?? "0",
-                stats?.count140Plus.ToString() ?? "0",
-                stats?.count180.ToString() ?? "0"
+                stats?.x01?.count60Plus.ToString() ?? "0",
+                stats?.x01?.count100Plus.ToString() ?? "0",
+                stats?.x01?.count140Plus.ToString() ?? "0",
+                stats?.x01?.count180.ToString() ?? "0"
             }, false);
 
             highScoreTable.SetRowActive(key, true);
@@ -617,9 +617,9 @@ public class StatisticsPageX01 : MonoBehaviour
 
             checkoutTable.AddOrUpdateRow(key, key, new TableCellData[]
             {
-                stats?.highestCheckout.ToString() ?? "0",
-                stats?.checkoutAttemptCount.ToString("0.00") ?? "0.00",
-                stats?.GetMostFrequentClosingSector() ?? "n/a"
+                stats?.x01?.highestCheckout.ToString() ?? "0",
+                stats?.x01?.checkoutAttemptCount.ToString("0.00") ?? "0.00",
+                stats?.x01?.GetMostFrequentClosingSector() ?? "n/a"
             }, false);
 
             checkoutTable.SetRowActive(key, true);
@@ -652,7 +652,7 @@ public class StatisticsPageX01 : MonoBehaviour
 
                 if (stats != null)
                 {
-                    foreach (var kv in stats.hitSectorCounts)
+                    foreach (var kv in stats.x01?.hitSectorCounts ?? new Dictionary<string, int>())
                         aggregated[kv.Key] = kv.Value;
                 }
 

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using Unity.VectorGraphics;
 
 [Serializable]
 public class CricketNumberCell
@@ -11,7 +12,7 @@ public class CricketNumberCell
     [Tooltip("Valid cricket numbers: 15,16,17,18,19,20,25 (bull).")]
     public int number;
 
-    public Image[] hitImages = new Image[3];
+    public SVGImage[] hitImages = new SVGImage[3];
     public CanvasGroup lockCanvasGroup;
 }
 
@@ -33,8 +34,8 @@ public class CricketPlayerListItem : MonoBehaviour
 
     [Header("Last 3 Throws")]
     public TMP_Text[] lastThrowTexts = new TMP_Text[3];
-    public Image[] wallImages = new Image[3];
-    public Image[] ceilingImages = new Image[3];
+    public SVGImage[] wallImages = new SVGImage[3];
+    public SVGImage[] ceilingImages = new SVGImage[3];
 
     [Header("Glow Animation")]
     public BorderGlowAnimator glowAnimator;
@@ -60,7 +61,7 @@ public class CricketPlayerListItem : MonoBehaviour
 
     private Dictionary<CanvasGroup, Coroutine> fadeRoutines = new();
 
-    public void Bind(CricketUIStats stats)
+    public void Bind(PlayerLiveStats stats)
     {
         SetHeader(stats);
         SetBottom(stats);
@@ -68,7 +69,7 @@ public class CricketPlayerListItem : MonoBehaviour
         SetLastThrows(stats.lastThreeThrows);
     }
 
-    private void SetHeader(CricketUIStats stats)
+    private void SetHeader(PlayerLiveStats stats)
     {
         if (nameText != null)
             nameText.text = stats.playerName;
@@ -94,7 +95,7 @@ public class CricketPlayerListItem : MonoBehaviour
         }
     }
 
-    private void SetBottom(CricketUIStats stats)
+    private void SetBottom(PlayerLiveStats stats)
     {
         if (setsText != null)
             setsText.text = stats.wonSets.ToString();
@@ -109,7 +110,7 @@ public class CricketPlayerListItem : MonoBehaviour
             mprText.text = stats.averageMPR.ToString("0.00");
     }
 
-    private void SetNumbers(CricketUIStats stats)
+    private void SetNumbers(PlayerLiveStats stats)
     {
         foreach (var n in stats.numbers)
         {

@@ -5,6 +5,7 @@ using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using Unity.VectorGraphics;
 
 
 public enum BotOverlayCardPlacement
@@ -28,14 +29,14 @@ public abstract class InputHandler : MonoBehaviour
 
     [Header("Bot Icons")]
     public Transform botIconRow;
-    public Image botIcon;
+    public SVGImage botIcon;
 
     [Header("Bot Overlay")]
     [SerializeField] private GameObject botPlayerCardPrefab;
     [SerializeField] private BotOverlayCardPlacement botOverlayCardPlacement = BotOverlayCardPlacement.Top;
 
     private BotTurnPanel botTurnPanel;
-    private object lastBotPlayerStats;
+    private PlayerLiveStats lastBotPlayerStats;
 
     // [Header("Penalty Buttons")]
     // public CanvasGroup wallCanvasGroup;
@@ -480,13 +481,9 @@ public abstract class InputHandler : MonoBehaviour
         botPausePanelPause.SetActive(false);
     }
 
-    public void RefreshBotPlayerStats(X01UIStats stats) => SetBotPlayerStats(stats);
+    public void RefreshBotPlayerStats(PlayerLiveStats stats) => SetBotPlayerStats(stats);
 
-    public void RefreshBotPlayerStats(CricketUIStats stats) => SetBotPlayerStats(stats);
-
-    public void RefreshBotPlayerStats(ATCUIStats stats) => SetBotPlayerStats(stats);
-
-    private void SetBotPlayerStats(object stats)
+    private void SetBotPlayerStats(PlayerLiveStats stats)
     {
         lastBotPlayerStats = stats;
         botTurnPanel?.SetPlayerStats(stats);

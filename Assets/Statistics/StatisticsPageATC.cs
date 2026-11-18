@@ -53,15 +53,15 @@ public class StatisticsPageATC : MonoBehaviour
 
     [Header("Penalty-Resolver (TEMP-DIAG)")]
     [Tooltip("Löst Penalty-Stats zum Tap-Zeitpunkt frisch auf (statt Build-Zeit-Closure). Wird vom StatisticsScreen gesetzt.")]
-    public Func<string, GameStats> penaltyStatsResolver;
+    public Func<string, PlayerStats> penaltyStatsResolver;
 
     /// <summary>
     /// Tap handlers with fresh lookup (Stale-Closure-Fix): stats are only now
     /// When tapping brought in BasePlayer / currentRange, Closure only Fallback.
     /// </summary>
-    private void ShowPenaltyDetails(PenaltyDetailPopup popup, string playerName, GameStats fallbackStats)
+    private void ShowPenaltyDetails(PenaltyDetailPopup popup, string playerName, PlayerStats fallbackStats)
     {
-        GameStats resolved = null;
+        PlayerStats resolved = null;
         try { resolved = penaltyStatsResolver?.Invoke(playerName); }
         catch (Exception e) { Debug.LogWarning($"[PenaltyDiag] Resolver fehlgeschlagen ({playerName}): {e.Message}"); }
 
@@ -78,7 +78,7 @@ public class StatisticsPageATC : MonoBehaviour
     }
 
 
-    public IEnumerator ShowStatsAsync(List<GameStatsATC> stats, List<string> playerNames)
+    public IEnumerator ShowStatsAsync(List<PlayerStats> stats, List<string> playerNames)
     {
         yield return BuildATCStatsCoroutine(stats, playerNames);
     }
@@ -87,7 +87,7 @@ public class StatisticsPageATC : MonoBehaviour
     /// Targeted refresh of ONE player line (all tables + chart of this page).
     /// No rebuild, no clear — use cached tables/charts.
     /// </summary>
-    public void UpsertPlayerRow(GameStatsATC stats, string playerName)
+    public void UpsertPlayerRow(PlayerStats stats, string playerName)
     {
         if (stats == null || string.IsNullOrEmpty(playerName) || parent == null)
             return;
@@ -168,9 +168,9 @@ public class StatisticsPageATC : MonoBehaviour
         {
             scoringTable.AddOrUpdateRow(playerName, playerName, new TableCellData[]
             {
-                stats.totalTargets.ToString(),
-                stats.targetsHit.ToString(),
-                $"{(stats.hitPercentage * 100f):0.0}%"
+                (stats.atc?.attempts ?? 0).ToString(),
+                (stats.atc?.hits ?? 0).ToString(),
+                $"{((stats.atc?.hitPercentage ?? 0f) * 100f):0.0}%"
             });
             scoringTable.SetRowActive(playerName, true);
         }
@@ -183,13 +183,13 @@ public class StatisticsPageATC : MonoBehaviour
 
         if (streaksTable != null)
         {
-            var (target, attempts) = stats.GetChoke();
+            var (target, attempts) = stats?.atc?.GetChoke() ?? (0, 0);
             string chokeDisplay = target != -1 ? $"{target} ({attempts})" : "-";
 
             streaksTable.AddOrUpdateRow(playerName, playerName, new TableCellData[]
             {
-                $"{(stats.firstDartHitPercentage * 100f):0.00}%",
-                stats.longestHitStreak.ToString(),
+                $"{((stats.atc?.firstDartHitPercentage ?? 0f) * 100f):0.00}%",
+                (stats.atc?.longestHitStreak ?? 0).ToString(),
                 chokeDisplay
             });
             streaksTable.SetRowActive(playerName, true);
@@ -205,10 +205,10 @@ public class StatisticsPageATC : MonoBehaviour
         {
             highscoreTable.AddOrUpdateRow(playerName, playerName, new TableCellData[]
             {
-                stats.streak3Plus.ToString(),
-                stats.streak6Plus.ToString(),
-                stats.streak9Plus.ToString(),
-                stats.streak12Plus.ToString(),
+                (stats.atc?.streak3Plus ?? 0).ToString(),
+                (stats.atc?.streak6Plus ?? 0).ToString(),
+                (stats.atc?.streak9Plus ?? 0).ToString(),
+                (stats.atc?.streak12Plus ?? 0).ToString(),
             });
             highscoreTable.SetRowActive(playerName, true);
         }
@@ -224,7 +224,7 @@ public class StatisticsPageATC : MonoBehaviour
             if (chart != null)
             {
                 chart.gameObject.SetActive(true);
-                ATCAttemptsChart.SetupChart(chart, playerName, stats.throwSectorCounts);
+                ATCAttemptsChart.SetupChart(chart, playerName, stats.atc?.throwSectorCounts ?? new Dictionary<string, int>());
             }
         }
 
@@ -398,7 +398,7 @@ public class StatisticsPageATC : MonoBehaviour
     }
 
 
-    private IEnumerator BuildATCStatsCoroutine(List<GameStatsATC> gameStatsATCs, List<string> playerNames)
+    private IEnumerator BuildATCStatsCoroutine(List<PlayerStats> gameStatsATCs, List<string> playerNames)
     {
         bool originalParentState = parent.gameObject.activeSelf;
         parent.gameObject.SetActive(false);
@@ -548,9 +548,9 @@ public class StatisticsPageATC : MonoBehaviour
 
             scoringTable.AddOrUpdateRow(key, key, new TableCellData[]
             {
-                stats != null ? stats.totalTargets.ToString() : "0",
-                stats != null ? stats.targetsHit.ToString() : "0",
-                stats != null ? $"{(stats.hitPercentage * 100f):0.0}%" : "0.0%"
+                stats != null ? (stats.atc?.attempts ?? 0).ToString() : "0",
+                stats != null ? (stats.atc?.hits ?? 0).ToString() : "0",
+                stats != null ? $"{((stats.atc?.hitPercentage ?? 0f) * 100f):0.0}%" : "0.0%"
             }, false);
 
             scoringTable.SetRowActive(key, true);
@@ -585,14 +585,14 @@ public class StatisticsPageATC : MonoBehaviour
 
             if (stats != null)
             {
-                var (target, attempts) = stats.GetChoke();
+                var (target, attempts) = stats?.atc?.GetChoke() ?? (0, 0);
                 chokeDisplay = target != -1 ? $"{target} ({attempts})" : "-";
             }
 
             streaksTable.AddOrUpdateRow(key, key, new TableCellData[]
             {
-                stats != null ? $"{(stats.firstDartHitPercentage * 100f):0.00}%" : "0.00%",
-                stats != null ? stats.longestHitStreak.ToString() : "0",
+                stats != null ? $"{((stats.atc?.firstDartHitPercentage ?? 0f) * 100f):0.00}%" : "0.00%",
+                stats != null ? (stats.atc?.longestHitStreak ?? 0).ToString() : "0",
                 chokeDisplay
             }, false);
 
@@ -626,10 +626,10 @@ public class StatisticsPageATC : MonoBehaviour
 
             highscoreTable.AddOrUpdateRow(key, key, new TableCellData[]
             {
-                stats != null ? stats.streak3Plus.ToString() : "0",
-                stats != null ? stats.streak6Plus.ToString() : "0",
-                stats != null ? stats.streak9Plus.ToString() : "0",
-                stats != null ? stats.streak12Plus.ToString() : "0",
+                stats != null ? (stats.atc?.streak3Plus ?? 0).ToString() : "0",
+                stats != null ? (stats.atc?.streak6Plus ?? 0).ToString() : "0",
+                stats != null ? (stats.atc?.streak9Plus ?? 0).ToString() : "0",
+                stats != null ? (stats.atc?.streak12Plus ?? 0).ToString() : "0",
             }, false);
 
             highscoreTable.SetRowActive(key, true);
@@ -663,7 +663,7 @@ public class StatisticsPageATC : MonoBehaviour
                 if (chart == null)
                     continue;
 
-                ATCAttemptsChart.SetupChart(chart, key, stats?.throwSectorCounts);
+                ATCAttemptsChart.SetupChart(chart, key, stats?.atc?.throwSectorCounts ?? new Dictionary<string, int>());
                 activeChartKeys.Add(key);
 
                 // Perf (M6): hand off chart instantiate + bar setup per player.

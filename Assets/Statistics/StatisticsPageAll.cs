@@ -40,15 +40,15 @@ public class StatisticsPageAll : MonoBehaviour
 
     [Header("Penalty-Resolver (TEMP-DIAG)")]
     [Tooltip("Löst Penalty-Stats zum Tap-Zeitpunkt frisch auf (statt Build-Zeit-Closure). Wird vom StatisticsScreen gesetzt.")]
-    public Func<string, GameStats> penaltyStatsResolver;
+    public Func<string, PlayerStats> penaltyStatsResolver;
 
     /// <summary>
     /// Tap handlers with fresh lookup (Stale-Closure-Fix): stats are only now
     /// When tapping brought in BasePlayer / currentRange, Closure only Fallback.
     /// </summary>
-    private void ShowPenaltyDetails(PenaltyDetailPopup popup, string playerName, GameStats fallbackStats)
+    private void ShowPenaltyDetails(PenaltyDetailPopup popup, string playerName, PlayerStats fallbackStats)
     {
-        GameStats resolved = null;
+        PlayerStats resolved = null;
         try { resolved = penaltyStatsResolver?.Invoke(playerName); }
         catch (Exception e) { Debug.LogWarning($"[PenaltyDiag] Resolver fehlgeschlagen ({playerName}): {e.Message}"); }
 
@@ -73,7 +73,7 @@ public class StatisticsPageAll : MonoBehaviour
     private static readonly string AllGamesLegsKey = "AllGames_Legs";
 
 
-    public IEnumerator ShowStatsAsync(List<GameStats> stats, List<string> playerNames)
+    public IEnumerator ShowStatsAsync(List<PlayerStats> stats, List<string> playerNames)
     {
         yield return BuildAllGamesStatsCoroutineRoutine(stats, playerNames);
     }
@@ -83,7 +83,7 @@ public class StatisticsPageAll : MonoBehaviour
     /// Targeted refresh of a player line (all tables of this page).
     /// No rebuild, no clear — use the cached tables.
     /// </summary>
-    public void UpsertPlayerRow(GameStats stats, string playerName)
+    public void UpsertPlayerRow(PlayerStats stats, string playerName)
     {
         if (stats == null || string.IsNullOrEmpty(playerName) || parent == null)
             return;
@@ -264,7 +264,7 @@ public class StatisticsPageAll : MonoBehaviour
     }
 
 
-    public IEnumerator BuildAllGamesStatsCoroutineRoutine(List<GameStats> gameStats, List<string> playerNames)
+    public IEnumerator BuildAllGamesStatsCoroutineRoutine(List<PlayerStats> gameStats, List<string> playerNames)
     {
         bool originalParentState = parent.gameObject.activeSelf;
         parent.gameObject.SetActive(false);

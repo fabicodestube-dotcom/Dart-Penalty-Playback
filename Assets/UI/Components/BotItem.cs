@@ -3,6 +3,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using Unity.VectorGraphics;
 
 [RequireComponent(typeof(PlayerDragHandler))]
 public class BotItem : MonoBehaviour, IPointerClickHandler
@@ -10,7 +11,7 @@ public class BotItem : MonoBehaviour, IPointerClickHandler
     [Header("UI")]
     public TMP_Text playerName;
     public Image backgroundImage;
-    public Image botImage;
+    public SVGImage botImage;
 
     [Header("Buttons (optional, auto-find fallback)")]
     public Button renameButton;

@@ -15,7 +15,7 @@ public class X01PlayerList : MonoBehaviour
     private Coroutine scrollRoutine;
     private int lastActiveIndex = -1;
 
-    public void Init(List<X01UIStats> stats)
+    public void Init(List<PlayerLiveStats> stats)
     {
         foreach (var item in playerItems)
             if (item) Destroy(item.gameObject);
@@ -34,7 +34,7 @@ public class X01PlayerList : MonoBehaviour
         RefreshUI(stats);
     }
 
-    public void RefreshUI(List<X01UIStats> stats)
+    public void RefreshUI(List<PlayerLiveStats> stats)
     {
         if (stats == null)
             return;

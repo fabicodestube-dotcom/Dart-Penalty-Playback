@@ -165,7 +165,7 @@ public static class ATCUndoReproTest
 
             // Exactly the label data source of the UI (ATCPlayerListItem.SetTarget /
             // ATCInputHandler -Label) check, not just model getters.
-            var uiStats = new ATCUIStats(game, p1);
+            var uiStats = PlayerLiveStats.Create(game, p1);
             Check(!uiStats.isFinished, "uistats-not-finished");
             Check(uiStats.currentTarget == 25, "uistats-target", $"got={uiStats.currentTarget}");
             string prefix = uiStats.currentTargetMultiplier switch
@@ -321,7 +321,7 @@ public static class ATCUndoReproTest
 
             Check(game.IsFinished(), "match-finished");
 
-            // Secure persistent payloads (such as game_meta), including JSON format check.
+            // Secure persistent payloads (such as game_runtime_state), including JSON format check.
             string jTargets = Newtonsoft.Json.JsonConvert.SerializeObject(game.GetTargetNumbers());
             string jMults = Newtonsoft.Json.JsonConvert.SerializeObject(
                 game.GetTargetMultipliers().ConvertAll(m => (int)m));

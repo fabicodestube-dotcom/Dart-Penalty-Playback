@@ -55,9 +55,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 954048977615376449}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Script: {fileID: 11500000, guid: ef8b96895a0ec4ba685178a052544251, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
+  m_EditorClassIdentifier: Unity.VectorGraphics::Unity.VectorGraphics.SVGImage
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -66,16 +66,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 38b8637e780cd9e6faecc2fbadbfa6f9, type: 3}
-  m_Type: 0
+  m_Sprite: {fileID: 3286163911610860551, guid: 835ad8c49c9e095e08a068a914209225, type: 3}
   m_PreserveAspect: 0
-  m_FillCenter: 1
-  m_FillMethod: 4
-  m_FillAmount: 1
-  m_FillClockwise: 1
-  m_FillOrigin: 0
-  m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 1
 --- !u!114 &4131128605831530832
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -200,9 +192,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 3279122711466715328}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Script: {fileID: 11500000, guid: ef8b96895a0ec4ba685178a052544251, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
+  m_EditorClassIdentifier: Unity.VectorGraphics::Unity.VectorGraphics.SVGImage
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -211,16 +203,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: -3629558973775718049, guid: ded1e4f247fd85238937403e43fe9396, type: 3}
-  m_Type: 0
+  m_Sprite: {fileID: 3286163911610860551, guid: e8174e64844000bdbb1e081857449c30, type: 3}
   m_PreserveAspect: 0
-  m_FillCenter: 1
-  m_FillMethod: 4
-  m_FillAmount: 1
-  m_FillClockwise: 1
-  m_FillOrigin: 0
-  m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 1
 --- !u!1 &3778031484849071259
 GameObject:
   m_ObjectHideFlags: 0
@@ -549,6 +533,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerDragHandler
   longPressDuration: 0.3
   moveThreshold: 10
+  autoScrollSpeed: 250
+  autoScrollEdgeSize: 80
+  autoScrollEdgeViewportRatio: 0.2
 --- !u!225 &6301297080692309207
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -716,9 +703,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 7925164144036258714}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Script: {fileID: 11500000, guid: ef8b96895a0ec4ba685178a052544251, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
+  m_EditorClassIdentifier: Unity.VectorGraphics::Unity.VectorGraphics.SVGImage
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -727,16 +714,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: d78c906198b13b989b99f16db336067d, type: 3}
-  m_Type: 0
+  m_Sprite: {fileID: 3286163911610860551, guid: e2aacd2126594354bae02fb13e46d3a8, type: 3}
   m_PreserveAspect: 0
-  m_FillCenter: 1
-  m_FillMethod: 4
-  m_FillAmount: 1
-  m_FillClockwise: 1
-  m_FillOrigin: 0
-  m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 1
 --- !u!114 &6066189095685071677
 MonoBehaviour:
   m_ObjectHideFlags: 0

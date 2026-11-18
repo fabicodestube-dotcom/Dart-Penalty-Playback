@@ -143,7 +143,7 @@ public class CricketGame : Game
         
         if (playerStats.TryGetValue(playerId, out var stats))
         {
-            mpr = ((GameStatsCricket) stats).marksPerRound;        
+            mpr = stats.cricket?.marksPerRound ?? 0f;
         }
         return mpr;
     }
@@ -157,7 +157,7 @@ public class CricketGame : Game
         if (IsFinished()) return;
 
         Guid playerId = GetCurrentPlayerId();
-        var stats = playerStats[playerId] as GameStatsCricket;
+        var stats = playerStats[playerId];
 
         if (currentTurn.GetThrows().Count == 0)
             currentTurn.ScoreBeforeTurn = 0; 
@@ -173,6 +173,7 @@ public class CricketGame : Game
         }
 
         currentTurn.AddThrow(t);
+        stats?.AddThrow(t);
 
         // Sector sound right at input (before instant penalties).
         NotifySectorHit(playerId, t);
@@ -192,7 +193,7 @@ public class CricketGame : Game
         if (t.HitType != HitType.Board && !isScoringCustom)
         {
             // Important: Mistakes must also be registered (0 marks)
-            stats?.RegisterThrow(t, 0);
+            stats?.cricket?.RegisterThrow(t, 0);
             HandleTurnEnd(playerId);
             return;
         }
@@ -208,7 +209,7 @@ public class CricketGame : Game
         // Invalid hits (triple bull or numbers outside 15-20/bull)
         if ((value == 25 && t.Multiplier == DartMultiplier.Triple) || !numbers.Contains(value))
         {
-            stats?.RegisterThrow(t, 0); // Dart counts, but 0 Marks
+            stats?.cricket?.RegisterThrow(t, 0); // Dart counts, but 0 Marks
             HandleTurnEnd(playerId);
             return;
         }
@@ -247,7 +248,7 @@ public class CricketGame : Game
         int totalMarks = marksUsedToClose + marksEffectiveFromOverflow;
 
         // Regular hits registered
-        stats?.RegisterThrow(t, totalMarks);
+        stats?.cricket?.RegisterThrow(t, totalMarks);
 
         // =====================================================
         // SCORING
@@ -355,7 +356,7 @@ public class CricketGame : Game
     // TURN STATISTICS
     // ========================================================
 
-    private void RegisterTurnStats(Guid playerId, GameStatsCricket stats, CricketTurnResult result)
+    private void RegisterTurnStats(Guid playerId, CricketStats stats, CricketTurnResult result)
     {
         if (stats == null) return;
 
@@ -382,7 +383,7 @@ public class CricketGame : Game
         CheckFieldPreferences(playerId, stats, result);
     }
 
-    private void CheckHighscores(Guid playerId, GameStatsCricket stats, CricketTurnResult result)
+    private void CheckHighscores(Guid playerId, CricketStats stats, CricketTurnResult result)
     {
         if (result.Hits.Count == 0) return;
 
@@ -415,7 +416,7 @@ public class CricketGame : Game
         }
     }
 
-    private void CheckFieldPreferences(Guid playerId, GameStatsCricket stats, CricketTurnResult result)
+    private void CheckFieldPreferences(Guid playerId, CricketStats stats, CricketTurnResult result)
     {
         var cricketSettings = GetSettingsAsCricket();
         bool pointsEnabled = cricketSettings == null || cricketSettings.pointsEnabled;
@@ -517,11 +518,11 @@ public class CricketGame : Game
 
         var result = BuildTurnResult(playerId, currentTurn);
 
-        var stats = playerStats[playerId] as GameStatsCricket;
+        var stats = playerStats[playerId];
 
-        RegisterTurnStats(playerId, stats, result);
+        RegisterTurnStats(playerId, stats?.cricket, result);
 
-        stats?.RegisterTurn();
+        stats?.cricket?.RegisterTurn();
 
         if (announce)
             OnTurnCompleted?.Invoke(result);
@@ -766,13 +767,13 @@ public class CricketGame : Game
 
                 // IMPORTANT: EVERY roll to register in the stats (whether Hit, Miss, Wall)
                 // If the hit is invalid, 0 marks are booked, but the dart is counted.
-                (playerStats[pid] as GameStatsCricket)?.RegisterThrow(thr, totalMarks);
+                playerStats[pid].cricket?.RegisterThrow(thr, totalMarks);
             }
 
             // 4. Turn completion (MPR)
             if (turn != activeTurn && (turn.GetThrows().Count == 3 || turn == leg.GetTurns().LastOrDefault(t => t.GetThrows().Count > 0 && leg.WinnerPlayerId != null)))
             {
-                var stats = playerStats[pid] as GameStatsCricket;
+                var stats = playerStats[pid].cricket;
                 stats?.RegisterTurn();
                 
                 // Also build up new statistics if during rebuild
@@ -788,7 +789,7 @@ public class CricketGame : Game
         // Rebuild the high scores and preferences from the current playing field states
         foreach (var pid in playerIDs)
         {
-            var stats = playerStats[pid] as GameStatsCricket;
+            var stats = playerStats[pid].cricket;
             if (stats != null)
             {
                 // Rebuilding preferences from playing field
@@ -973,10 +974,10 @@ public class CricketGame : Game
     {
         if (playerStats != null)
             playerStats.Clear();
-        playerStats = new Dictionary<Guid, GameStats>();
+        playerStats = new Dictionary<Guid, PlayerStats>();
         foreach (var pid in playerIDs)
         {
-            playerStats[pid] = new GameStatsCricket(pid);
+            playerStats[pid] = PlayerStats.CreateForMode(pid, GameMode.Cricket);
         }
     }
 
@@ -985,7 +986,7 @@ public class CricketGame : Game
         // reset stats
         foreach (var pid in playerIDs)
         {
-            if (playerStats[pid] is GameStatsCricket stats)
+            if (playerStats[pid].cricket is CricketStats stats)
             {
                 stats.turnCount = 0;
                 stats.markCount = 0;
@@ -1002,7 +1003,7 @@ public class CricketGame : Game
                 {
                     var pid = turn.PlayerId;
 
-                    if (!(playerStats[pid] is GameStatsCricket stats))
+                    if (!(playerStats[pid].cricket is CricketStats stats))
                         continue;
 
                     // Only full turns count (as usual with MPR)
@@ -1053,7 +1054,7 @@ public class CricketGame : Game
         // Recalculate MPR
         foreach (var pid in playerIDs)
         {
-            if (playerStats[pid] is GameStatsCricket stats)
+            if (playerStats[pid].cricket is CricketStats stats)
             {
                 if (stats.turnCount > 0)
                     stats.marksPerRound = (float)Math.Round((float)stats.markCount / stats.turnCount, 2);
@@ -1079,8 +1080,8 @@ public class CricketGame : Game
         // Dart counters (totalThrows /Double/Triple) and penalties remain off base.
         foreach (var pid in playerIDs)
         {
-            if (playerStats.TryGetValue(pid, out var s) && s is GameStatsCricket cs)
-                ResetCricketStatsForRebuild(cs);
+            if (playerStats.TryGetValue(pid, out var s) && s.cricket != null)
+                ResetCricketStatsForRebuild(s.cricket);
         }
 
         // Chronological simulation over all sets/legs/turns.
@@ -1098,8 +1099,10 @@ public class CricketGame : Game
                         continue;
 
                     Guid pid = turn.PlayerId;
-                    if (!playerStats.TryGetValue(pid, out var s) || s is not GameStatsCricket stats)
+                    if (!playerStats.TryGetValue(pid, out var s) || s.cricket == null)
                         continue;
+
+                    var stats = s.cricket;
 
                     var result = new CricketTurnResult { PlayerId = pid };
                     int turnScore = 0;
@@ -1139,30 +1142,9 @@ public class CricketGame : Game
         }
     }
 
-    private void ResetCricketStatsForRebuild(GameStatsCricket stats)
+    private void ResetCricketStatsForRebuild(CricketStats stats)
     {
-        if (stats == null)
-            return;
-
-        stats.turnCount = 0;
-        stats.markCount = 0;
-        stats.marksPerRound = 0f;
-        stats.maxMPR = 0f;
-
-        stats.turnScores.Clear();
-        stats.turnMarks.Clear();
-        stats.turnOverkills.Clear();
-
-        // tripleDigitCount (Legacy) is no longer rebuilt, but from the
-        // restored persisted row (old games keep their values).
-        stats.nineMarkTurns = 0;
-        stats.whiteHorseTurns = 0;
-        stats.sameTripleTurns = 0;
-
-        stats.firstClosedField = -1;
-        stats.lastClosedField = -1;
-        stats.maxPointsField = -1;
-        stats.maxPointsFieldValue = 0;
+        stats?.ResetForRebuild();
     }
 
     /// <summary>
@@ -1239,12 +1221,12 @@ public class CricketGame : Game
         public Dictionary<Guid, int> DealtPoints;
     }
 
-    public GameStatsCricket GetPlayerStats(Guid playerId)
+    public CricketStats GetPlayerStats(Guid playerId)
     {
         if (!playerStats.TryGetValue(playerId, out var stats))
             return null;
 
-        return stats as GameStatsCricket;
+        return stats.cricket;
     }
     
     private void ResetForReplay()

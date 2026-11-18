@@ -55,7 +55,7 @@ public abstract class Game
     // PLAYER STATS
     // =========================================================
 
-    [JsonProperty] protected Dictionary<Guid, GameStats> playerStats;
+    [JsonProperty] protected Dictionary<Guid, PlayerStats> playerStats;
 
     [JsonProperty] protected Guid? matchWinnerId;
 
@@ -885,11 +885,11 @@ public abstract class Game
 
         foreach (var pid in playerIDs)
         {
-            playerStats[pid] = new GameStats(pid);
+            playerStats[pid] = PlayerStats.CreateForMode(pid, gameMode);
         }
     }
 
-    public virtual IReadOnlyDictionary<Guid, GameStats> GetPlayerStats() => playerStats;
+    public virtual IReadOnlyDictionary<Guid, PlayerStats> GetPlayerStats() => playerStats;
 
     public virtual void CalculatePlayerStatsOnSave()
     {

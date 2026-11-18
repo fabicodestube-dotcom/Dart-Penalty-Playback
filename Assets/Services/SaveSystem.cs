@@ -111,10 +111,8 @@ public static class SaveSystem
         try
         {
             DatabaseBootstrapper.EnsureReady();
-            PlayerStatsBackfillService.EnsureCurrent();
 
             Database db = SqliteDatabaseRepository.LoadDatabase();
-            SqliteDatabaseRepository.RunAggregatedStatsMigrationIfNeeded();
             db.InitializeAfterLoad();
             db.RebuildAllPlayerStatistics();
             loadFailed = false;

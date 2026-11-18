@@ -43,63 +43,6 @@ public static class SqliteDatabaseRepository
         }
     }
 
-    public static void AggregatePlayerStatistics(Database database)
-    {
-        if (database == null)
-            return;
-
-        foreach (var player in database.GetAllPlayers())
-        {
-            player.ResetAllStats();
-        }
-
-        SqliteDatabaseService.EnsureSchema();
-
-        using (var connection = SqliteDatabaseService.Open())
-        {
-            var finishedGames = connection.Query<GameRow>(@"
-                SELECT
-                    id AS Id,
-                    game_mode AS GameMode,
-                    created_at AS CreatedAt,
-                    last_activity_at AS LastActivityAt,
-                    finished_at AS FinishedAt,
-                    current_player_index AS CurrentPlayerIndex,
-                    starting_player_index AS StartingPlayerIndex,
-                    winner_player_id AS WinnerPlayerId,
-                    settings_json AS SettingsJson
-                FROM games
-                WHERE finished_at IS NOT NULL
-                ORDER BY last_activity_at DESC;");
-
-            PopulateGamePlayerIds(connection, finishedGames);
-
-            foreach (var gameRow in finishedGames)
-            {
-                var game = CreateGameFromRow(gameRow);
-                if (game == null)
-                    continue;
-
-                RestoreGameStructure(connection, game);
-                RestoreRuntimeGameState(connection, gameRow.Id, game);
-                game.InitializeAfterLoad();
-                game.CalculatePlayerStatsOnSave();
-
-                foreach (var playerId in game.GetPlayerIDs())
-                {
-                    var player = database.GetPlayerByID(playerId);
-                    if (player == null)
-                        continue;
-
-                    if (game.GetPlayerStats().TryGetValue(playerId, out var stats))
-                    {
-                        player.ApplyGameStats(game);
-                    }
-                }
-            }
-        }
-    }
-
     public static Database LoadDatabase()
     {
         var database = new Database();
@@ -366,9 +309,9 @@ public static class SqliteDatabaseRepository
         }
     }
 
-    public static Dictionary<Guid, Dictionary<Guid, GameStats>> LoadAllPlayerGameStats()
+    public static Dictionary<Guid, Dictionary<Guid, PlayerStats>> LoadAllPlayerGameStats()
     {
-        var result = new Dictionary<Guid, Dictionary<Guid, GameStats>>();
+        var result = new Dictionary<Guid, Dictionary<Guid, PlayerStats>>();
 
         SqliteDatabaseService.EnsureSchema();
 
@@ -384,20 +327,13 @@ public static class SqliteDatabaseRepository
                 if (!Guid.TryParse(row.PlayerId, out var playerId))
                     continue;
 
-                GameStats stats = row.StatType switch
-                {
-                    "x01" => JsonConvert.DeserializeObject<GameStatsX01>(row.StatData),
-                    "cricket" => JsonConvert.DeserializeObject<GameStatsCricket>(row.StatData),
-                    "atc" => JsonConvert.DeserializeObject<GameStatsATC>(row.StatData),
-                    _ => null
-                };
-
+                var stats = DeserializeStats(row.StatType, row.StatData);
                 if (stats == null)
                     continue;
 
                 if (!result.TryGetValue(gameId, out var playerStats))
                 {
-                    playerStats = new Dictionary<Guid, GameStats>();
+                    playerStats = new Dictionary<Guid, PlayerStats>();
                     result[gameId] = playerStats;
                 }
 
@@ -412,9 +348,9 @@ public static class SqliteDatabaseRepository
     /// Loads the Pro-Game Stats of ONE game (one connection, one query).
     /// For Delete Paths: Call before deletion, as the lines are gone afterwards.
     /// </summary>
-    public static Dictionary<Guid, GameStats> LoadPlayerGameStatsForGame(Guid gameId)
+    public static Dictionary<Guid, PlayerStats> LoadPlayerGameStatsForGame(Guid gameId)
     {
-        var result = new Dictionary<Guid, GameStats>();
+        var result = new Dictionary<Guid, PlayerStats>();
 
         SqliteDatabaseService.EnsureSchema();
 
@@ -570,11 +506,19 @@ public static class SqliteDatabaseRepository
         if (game == null)
             return;
 
-        SqliteDatabaseService.EnsureSchema();
+        RebuildPlayerSnapshots(game.GetPlayerIDs());
+    }
 
-        var stats = game.GetPlayerStats();
-        if (stats == null)
+    public static void RebuildPlayerSnapshots(IEnumerable<Guid> playerIds)
+    {
+        if (playerIds == null)
             return;
+
+        var ids = new HashSet<Guid>(playerIds.Where(id => id != Guid.Empty));
+        if (ids.Count == 0)
+            return;
+
+        SqliteDatabaseService.EnsureSchema();
 
         using (var connection = SqliteDatabaseService.Open())
         {
@@ -582,196 +526,18 @@ public static class SqliteDatabaseRepository
 
             try
             {
-                foreach (var kvp in stats)
-                {
-                    Guid playerId = kvp.Key;
-                    GameStats gameStats = kvp.Value;
+                foreach (var playerId in ids)
+                    connection.Execute("DELETE FROM player_stats_snapshots WHERE player_id = ?;", playerId.ToString());
 
-                    var allStats = LoadPlayerStatsAll(connection, playerId) ?? new GameStats(playerId);
-                    allStats.AddGameStat(gameStats, game.GetID(), gameStats.totalPenaltyCost);
-                    SavePlayerStatsAll(connection, playerId, allStats);
-
-                    GameStats modeStats = LoadPlayerStatsForMode(connection, playerId, game.GetGameMode())
-                        ?? CreateStatsForMode(playerId, game.GetGameMode());
-                    modeStats.AddGameStat(gameStats, game.GetID(), gameStats.totalPenaltyCost);
-                    SavePlayerStatsForMode(connection, playerId, modeStats, game.GetGameMode());
-                }
-
+                RebuildSnapshotsInternal(connection, ids);
                 connection.Commit();
             }
-            catch (Exception e)
+            catch
             {
                 connection.Rollback();
-                Debug.LogError("SqliteDatabaseRepository.SaveAggregatedPlayerStats failed: " + e.Message);
                 throw;
             }
         }
-    }
-
-    private static GameStats CreateStatsForMode(Guid playerId, GameMode mode)
-    {
-        return mode switch
-        {
-            GameMode.X01 => new GameStatsX01(playerId),
-            GameMode.Cricket => new GameStatsCricket(playerId),
-            GameMode.ATC => new GameStatsATC(playerId),
-            _ => new GameStats(playerId)
-        };
-    }
-
-    public static void SavePlayerStatsAll(Guid playerId, GameStats stats)
-    {
-        SqliteDatabaseService.EnsureSchema();
-
-        using (var connection = SqliteDatabaseService.Open())
-        {
-            SavePlayerStatsAll(connection, playerId, stats);
-        }
-    }
-
-    private static void SavePlayerStatsAll(SQLiteConnection connection, Guid playerId, GameStats stats)
-    {
-        if (connection == null || stats == null)
-            return;
-
-        var json = JsonConvert.SerializeObject(stats, Formatting.None);
-        connection.Execute(
-            "INSERT OR REPLACE INTO player_stats_all (player_id, stat_data) VALUES (?, ?);",
-            playerId.ToString(),
-            json
-        );
-    }
-
-    public static void SavePlayerStatsForMode(Guid playerId, GameStats stats, GameMode mode)
-    {
-        SqliteDatabaseService.EnsureSchema();
-
-        using (var connection = SqliteDatabaseService.Open())
-        {
-            SavePlayerStatsForMode(connection, playerId, stats, mode);
-        }
-    }
-
-    private static void SavePlayerStatsForMode(SQLiteConnection connection, Guid playerId, GameStats stats, GameMode mode)
-    {
-        if (connection == null || stats == null)
-            return;
-
-        string tableName = mode switch
-        {
-            GameMode.X01 => "player_stats_x01",
-            GameMode.Cricket => "player_stats_cricket",
-            GameMode.ATC => "player_stats_atc",
-            _ => null
-        };
-
-        if (tableName == null)
-            return;
-
-        var json = JsonConvert.SerializeObject(stats, Formatting.None);
-        connection.Execute(
-            $"INSERT OR REPLACE INTO {tableName} (player_id, stat_data) VALUES (?, ?);",
-            playerId.ToString(),
-            json
-        );
-    }
-
-    public static GameStats LoadPlayerStatsAll(Guid playerId)
-    {
-        SqliteDatabaseService.EnsureSchema();
-
-        using (var connection = SqliteDatabaseService.Open())
-            return LoadPlayerStatsAll(connection, playerId);
-    }
-
-    private static GameStats LoadPlayerStatsAll(SQLiteConnection connection, Guid playerId)
-    {
-        var row = connection.Query<PlayerStatsRow>(
-            "SELECT stat_data AS StatData FROM player_stats_all WHERE player_id = ?;",
-            playerId.ToString()
-        ).FirstOrDefault();
-
-        if (row == null || string.IsNullOrWhiteSpace(row.StatData))
-            return null;
-
-        return JsonConvert.DeserializeObject<GameStats>(row.StatData);
-    }
-
-    public static GameStats LoadPlayerStatsForMode(Guid playerId, GameMode mode)
-    {
-        SqliteDatabaseService.EnsureSchema();
-
-        using (var connection = SqliteDatabaseService.Open())
-            return LoadPlayerStatsForMode(connection, playerId, mode);
-    }
-
-    private static GameStats LoadPlayerStatsForMode(SQLiteConnection connection, Guid playerId, GameMode mode)
-    {
-        string tableName = mode switch
-        {
-            GameMode.X01 => "player_stats_x01",
-            GameMode.Cricket => "player_stats_cricket",
-            GameMode.ATC => "player_stats_atc",
-            _ => null
-        };
-
-        if (tableName == null)
-            return null;
-
-        var row = connection.Query<PlayerStatsRow>(
-            $"SELECT stat_data AS StatData FROM {tableName} WHERE player_id = ?;",
-            playerId.ToString()
-        ).FirstOrDefault();
-
-        if (row == null || string.IsNullOrWhiteSpace(row.StatData))
-            return null;
-
-        string statType = mode switch
-        {
-            GameMode.X01 => "x01",
-            GameMode.Cricket => "cricket",
-            GameMode.ATC => "atc",
-            _ => "unknown"
-        };
-
-        return statType switch
-        {
-            "x01" => JsonConvert.DeserializeObject<GameStatsX01>(row.StatData),
-            "cricket" => JsonConvert.DeserializeObject<GameStatsCricket>(row.StatData),
-            "atc" => JsonConvert.DeserializeObject<GameStatsATC>(row.StatData),
-            _ => null
-        };
-    }
-
-    public static void RunAggregatedStatsMigrationIfNeeded()
-    {
-        SqliteDatabaseService.EnsureSchema();
-
-        using (var connection = SqliteDatabaseService.Open())
-        {
-            var flag = connection.Query<MigrationFlagRow>(
-                "SELECT value_text AS ValueText FROM settings WHERE key_name = ?;",
-                "aggregated_stats_migrated").FirstOrDefault();
-
-            if (flag != null && flag.ValueText == "1")
-                return;
-
-            var hasSourceRows = connection.ExecuteScalar<int>(
-                "SELECT COUNT(*) FROM player_game_stats;") > 0;
-
-            if (hasSourceRows)
-                RebuildAggregatedPlayerStats();
-
-            connection.Execute(
-                "INSERT OR REPLACE INTO settings (key_name, value_text) VALUES (?, ?);",
-                "aggregated_stats_migrated",
-                "1");
-        }
-    }
-
-    private class MigrationFlagRow
-    {
-        public string ValueText { get; set; }
     }
 
     public static void RebuildAggregatedPlayerStats()
@@ -784,67 +550,8 @@ public static class SqliteDatabaseRepository
 
             try
             {
-                connection.Execute("DELETE FROM player_stats_all;");
-                connection.Execute("DELETE FROM player_stats_x01;");
-                connection.Execute("DELETE FROM player_stats_cricket;");
-                connection.Execute("DELETE FROM player_stats_atc;");
-
-                var finishedGames = new Dictionary<Guid, GameMode>();
-                var finishedRows = connection.Query<FinishedGameRow>(
-                    "SELECT id AS Id, game_mode AS GameMode FROM games WHERE finished_at IS NOT NULL;");
-
-                foreach (var row in finishedRows)
-                {
-                    if (Guid.TryParse(row.Id, out var gameId))
-                        finishedGames[gameId] = row.GameMode;
-                }
-
-                var aggregatedAll = new Dictionary<Guid, GameStats>();
-                var aggregatedByMode = new Dictionary<Guid, Dictionary<GameMode, GameStats>>();
-
-                var rows = connection.Query<PlayerGameStatRow>(
-                    "SELECT game_id AS GameId, player_id AS PlayerId, stat_type AS StatType, stat_data AS StatData FROM player_game_stats;");
-
-                foreach (var row in rows)
-                {
-                    if (!Guid.TryParse(row.GameId, out var gameId)) continue;
-                    if (!Guid.TryParse(row.PlayerId, out var playerId)) continue;
-                    if (!finishedGames.TryGetValue(gameId, out var mode)) continue;
-
-                    GameStats gameStats = DeserializeStats(row.StatType, row.StatData);
-                    if (gameStats == null) continue;
-
-                    if (!aggregatedAll.TryGetValue(playerId, out var allStats))
-                    {
-                        allStats = new GameStats(playerId);
-                        aggregatedAll[playerId] = allStats;
-                    }
-
-                    allStats.AddGameStat(gameStats, gameId, gameStats.totalPenaltyCost);
-
-                    if (!aggregatedByMode.TryGetValue(playerId, out var modes))
-                    {
-                        modes = new Dictionary<GameMode, GameStats>();
-                        aggregatedByMode[playerId] = modes;
-                    }
-
-                    if (!modes.TryGetValue(mode, out var modeStats))
-                    {
-                        modeStats = CreateStatsForMode(playerId, mode);
-                        modes[mode] = modeStats;
-                    }
-
-                    modeStats.AddGameStat(gameStats, gameId, gameStats.totalPenaltyCost);
-                }
-
-                foreach (var kvp in aggregatedAll)
-                    SavePlayerStatsAll(connection, kvp.Key, kvp.Value);
-
-                foreach (var playerKvp in aggregatedByMode)
-                {
-                    foreach (var modeKvp in playerKvp.Value)
-                        SavePlayerStatsForMode(connection, playerKvp.Key, modeKvp.Value, modeKvp.Key);
-                }
+                connection.Execute("DELETE FROM player_stats_snapshots;");
+                RebuildSnapshotsInternal(connection, null);
 
                 DatabaseMigrationRunner.SetMeta(
                     connection,
@@ -862,19 +569,219 @@ public static class SqliteDatabaseRepository
         }
     }
 
-    private static GameStats DeserializeStats(string statType, string statData)
+    private static void RebuildSnapshotsInternal(SQLiteConnection connection, HashSet<Guid> onlyPlayerIds)
+    {
+        var finishedGames = new Dictionary<Guid, (GameMode Mode, DateTime? FinishedAt)>();
+        var finishedRows = connection.Query<FinishedGameRow>(
+            "SELECT id AS Id, game_mode AS GameMode, finished_at AS FinishedAt FROM games WHERE finished_at IS NOT NULL;");
+
+        foreach (var row in finishedRows)
+        {
+            if (!Guid.TryParse(row.Id, out var gameId))
+                continue;
+
+            DateTime? finishedAt = DateTime.TryParse(row.FinishedAt, out var parsed) ? parsed : null;
+            finishedGames[gameId] = (row.GameMode, finishedAt);
+        }
+
+        var aggregates = new Dictionary<(Guid PlayerId, GameMode Mode, StatisticsRange Range), PlayerStats>();
+        var rows = connection.Query<PlayerGameStatRow>(
+            "SELECT game_id AS GameId, player_id AS PlayerId, stat_type AS StatType, stat_data AS StatData FROM player_game_stats;");
+
+        foreach (var row in rows)
+        {
+            if (!Guid.TryParse(row.GameId, out var gameId)) continue;
+            if (!Guid.TryParse(row.PlayerId, out var playerId)) continue;
+            if (!finishedGames.TryGetValue(gameId, out var game)) continue;
+            if (onlyPlayerIds != null && !onlyPlayerIds.Contains(playerId)) continue;
+
+            var gameStats = DeserializeStats(row.StatType, row.StatData);
+            if (gameStats == null) continue;
+
+            AddSnapshotGameStat(aggregates, playerId, game.Mode, StatisticsRange.AllTime, gameId, gameStats);
+
+            if (!game.FinishedAt.HasValue)
+                continue;
+
+            foreach (var range in new[]
+            {
+                StatisticsRange.Today,
+                StatisticsRange.ThisWeek,
+                StatisticsRange.ThisMonth,
+                StatisticsRange.ThisYear
+            })
+            {
+                if (IsInRange(game.FinishedAt.Value, range))
+                    AddSnapshotGameStat(aggregates, playerId, game.Mode, range, gameId, gameStats);
+            }
+        }
+
+        foreach (var kvp in aggregates)
+            SavePlayerStatsSnapshot(connection, kvp.Key.PlayerId, kvp.Key.Mode, kvp.Key.Range, kvp.Value);
+    }
+
+    private static void AddSnapshotGameStat(
+        Dictionary<(Guid PlayerId, GameMode Mode, StatisticsRange Range), PlayerStats> aggregates,
+        Guid playerId,
+        GameMode mode,
+        StatisticsRange range,
+        Guid gameId,
+        PlayerStats gameStats)
+    {
+        if (!aggregates.TryGetValue((playerId, mode, range), out var aggregate))
+        {
+            aggregate = PlayerStats.CreateForMode(playerId, mode);
+            aggregates[(playerId, mode, range)] = aggregate;
+        }
+
+        aggregate.AddGameStat(gameStats, gameId);
+    }
+
+    private static bool IsInRange(DateTime gameDate, StatisticsRange range)
+    {
+        DateTime now = DateTime.Now;
+
+        return range switch
+        {
+            StatisticsRange.Today => gameDate.Date == now.Date,
+            StatisticsRange.ThisWeek => gameDate >= now.Date.AddDays(-(((int)now.DayOfWeek + 6) % 7)),
+            StatisticsRange.ThisMonth => gameDate.Month == now.Month && gameDate.Year == now.Year,
+            StatisticsRange.ThisYear => gameDate.Year == now.Year,
+            _ => true
+        };
+    }
+
+    public static string GetPeriodKey(StatisticsRange range)
+    {
+        DateTime now = DateTime.Now;
+
+        return range switch
+        {
+            StatisticsRange.Today => now.ToString("yyyy-MM-dd"),
+            StatisticsRange.ThisWeek => now.Date.AddDays(-(((int)now.DayOfWeek + 6) % 7)).ToString("yyyy-MM-dd"),
+            StatisticsRange.ThisMonth => now.ToString("yyyy-MM"),
+            StatisticsRange.ThisYear => now.ToString("yyyy"),
+            _ => string.Empty
+        };
+    }
+
+    private static string GetRangeType(StatisticsRange range)
+    {
+        return range switch
+        {
+            StatisticsRange.Today => "today",
+            StatisticsRange.ThisWeek => "week",
+            StatisticsRange.ThisMonth => "month",
+            StatisticsRange.ThisYear => "year",
+            _ => "alltime"
+        };
+    }
+
+    private static bool TryParseRange(string value, out StatisticsRange range)
+    {
+        switch ((value ?? string.Empty).Trim().ToLowerInvariant())
+        {
+            case "today": range = StatisticsRange.Today; return true;
+            case "week": case "thisweek": range = StatisticsRange.ThisWeek; return true;
+            case "month": case "thismonth": range = StatisticsRange.ThisMonth; return true;
+            case "year": case "thisyear": range = StatisticsRange.ThisYear; return true;
+            case "alltime": case "all": range = StatisticsRange.AllTime; return true;
+            default: range = StatisticsRange.AllTime; return false;
+        }
+    }
+
+    private static bool TryParseMode(string value, out GameMode mode)
+    {
+        switch ((value ?? string.Empty).Trim().ToLowerInvariant())
+        {
+            case "x01": mode = GameMode.X01; return true;
+            case "cricket": mode = GameMode.Cricket; return true;
+            case "atc": mode = GameMode.ATC; return true;
+            default: mode = GameMode.X01; return false;
+        }
+    }
+
+    private static void SavePlayerStatsSnapshot(
+        SQLiteConnection connection,
+        Guid playerId,
+        GameMode mode,
+        StatisticsRange range,
+        PlayerStats stats)
+    {
+        if (connection == null || stats == null)
+            return;
+
+        string json = JsonConvert.SerializeObject(stats, Formatting.None);
+        connection.Execute(
+            "INSERT OR REPLACE INTO player_stats_snapshots (player_id, mode, range_type, period_key, stat_data, stats_schema_version, updated_at_utc) VALUES (?, ?, ?, ?, ?, ?, ?);",
+            playerId.ToString(),
+            mode.ToString(),
+            GetRangeType(range),
+            GetPeriodKey(range),
+            json,
+            DatabaseSchema.CurrentStatsVersion,
+            DateTime.UtcNow.ToString("o")
+        );
+    }
+
+    public static Dictionary<Guid, Dictionary<StatisticsRange, Dictionary<GameMode, PlayerStats>>> LoadPlayerStatsSnapshots()
+    {
+        var result = new Dictionary<Guid, Dictionary<StatisticsRange, Dictionary<GameMode, PlayerStats>>>();
+
+        SqliteDatabaseService.EnsureSchema();
+
+        using (var connection = SqliteDatabaseService.Open())
+        {
+            var rows = connection.Query<PlayerStatsSnapshotRow>(
+                "SELECT player_id AS PlayerId, mode AS Mode, range_type AS RangeType, period_key AS PeriodKey, stat_data AS StatData FROM player_stats_snapshots;");
+
+            foreach (var row in rows)
+            {
+                if (!Guid.TryParse(row.PlayerId, out var playerId)) continue;
+                if (!TryParseMode(row.Mode, out var mode)) continue;
+                if (!TryParseRange(row.RangeType, out var range)) continue;
+                if (range != StatisticsRange.AllTime && row.PeriodKey != GetPeriodKey(range)) continue;
+
+                PlayerStats stats;
+                try
+                {
+                    stats = JsonConvert.DeserializeObject<PlayerStats>(row.StatData);
+                }
+                catch (Exception e)
+                {
+                    Debug.LogWarning("[SQLite] Snapshot konnte nicht gelesen werden: " + e.Message);
+                    continue;
+                }
+
+                if (stats == null)
+                    continue;
+
+                if (!result.TryGetValue(playerId, out var ranges))
+                {
+                    ranges = new Dictionary<StatisticsRange, Dictionary<GameMode, PlayerStats>>();
+                    result[playerId] = ranges;
+                }
+
+                if (!ranges.TryGetValue(range, out var modes))
+                {
+                    modes = new Dictionary<GameMode, PlayerStats>();
+                    ranges[range] = modes;
+                }
+
+                modes[mode] = stats;
+            }
+        }
+
+        return result;
+    }
+
+    private static PlayerStats DeserializeStats(string statType, string statData)
     {
         if (string.IsNullOrWhiteSpace(statData)) return null;
 
         try
         {
-            return statType switch
-            {
-                "x01" => JsonConvert.DeserializeObject<GameStatsX01>(statData),
-                "cricket" => JsonConvert.DeserializeObject<GameStatsCricket>(statData),
-                "atc" => JsonConvert.DeserializeObject<GameStatsATC>(statData),
-                _ => null
-            };
+            return JsonConvert.DeserializeObject<PlayerStats>(statData);
         }
         catch (Exception e)
         {
@@ -906,6 +813,7 @@ public static class SqliteDatabaseRepository
     {
         public string Id { get; set; }
         public GameMode GameMode { get; set; }
+        public string FinishedAt { get; set; }
     }
 
     public static string GetSetting(string key)
@@ -938,12 +846,7 @@ public static class SqliteDatabaseRepository
         SqliteDatabaseService.EnsureSchema();
 
         using (var connection = SqliteDatabaseService.Open())
-        {
-            connection.Execute("DELETE FROM player_stats_all WHERE player_id = ?;", playerId.ToString());
-            connection.Execute("DELETE FROM player_stats_x01 WHERE player_id = ?;", playerId.ToString());
-            connection.Execute("DELETE FROM player_stats_cricket WHERE player_id = ?;", playerId.ToString());
-            connection.Execute("DELETE FROM player_stats_atc WHERE player_id = ?;", playerId.ToString());
-        }
+            connection.Execute("DELETE FROM player_stats_snapshots WHERE player_id = ?;", playerId.ToString());
     }
 
     private class PlayerStatsRow
@@ -1118,9 +1021,9 @@ public static class SqliteDatabaseRepository
         }
     }
 
-    private static Dictionary<Guid, GameStats> ReadPlayerGameStatsForGame(SQLiteConnection connection, string gameId)
+    private static Dictionary<Guid, PlayerStats> ReadPlayerGameStatsForGame(SQLiteConnection connection, string gameId)
     {
-        var result = new Dictionary<Guid, GameStats>();
+        var result = new Dictionary<Guid, PlayerStats>();
 
         var rows = connection.Query<PlayerGameStatRow>(
             "SELECT game_id AS GameId, player_id AS PlayerId, stat_type AS StatType, stat_data AS StatData FROM player_game_stats WHERE game_id = ?;",
@@ -1131,14 +1034,7 @@ public static class SqliteDatabaseRepository
             if (!Guid.TryParse(row.PlayerId, out var playerId))
                 continue;
 
-            GameStats stats = row.StatType switch
-            {
-                "x01" => JsonConvert.DeserializeObject<GameStatsX01>(row.StatData),
-                "cricket" => JsonConvert.DeserializeObject<GameStatsCricket>(row.StatData),
-                "atc" => JsonConvert.DeserializeObject<GameStatsATC>(row.StatData),
-                _ => null
-            };
-
+            var stats = DeserializeStats(row.StatType, row.StatData);
             if (stats != null)
                 result[playerId] = stats;
         }
@@ -1146,16 +1042,16 @@ public static class SqliteDatabaseRepository
         return result;
     }
 
-    private static int GetScoreFromStats(Dictionary<Guid, GameStats> stats, Guid playerId, GameMode mode)
+    private static int GetScoreFromStats(Dictionary<Guid, PlayerStats> stats, Guid playerId, GameMode mode)
     {
         if (!stats.TryGetValue(playerId, out var gameStats))
             return 0;
 
         return mode switch
         {
-            GameMode.X01 => (gameStats as GameStatsX01)?.currentScore ?? 0,
-            GameMode.Cricket => (gameStats as GameStatsCricket)?.turnScores.Values.Sum() ?? 0,
-            GameMode.ATC => (gameStats as GameStatsATC)?.targetsHit ?? 0,
+            GameMode.X01 => gameStats.x01?.turnSum ?? 0,
+            GameMode.Cricket => gameStats.cricket?.turnScores.Values.Sum() ?? 0,
+            GameMode.ATC => gameStats.atc?.hits ?? 0,
             _ => 0
         };
     }
@@ -1196,20 +1092,20 @@ public static class SqliteDatabaseRepository
         return counts;
     }
 
-    private static int GetTargetsHitFromStats(Dictionary<Guid, GameStats> stats, Guid playerId)
+    private static int GetTargetsHitFromStats(Dictionary<Guid, PlayerStats> stats, Guid playerId)
     {
         if (!stats.TryGetValue(playerId, out var gameStats))
             return 0;
 
-        return (gameStats as GameStatsATC)?.targetsHit ?? 0;
+        return gameStats.atc?.hits ?? 0;
     }
 
-    private static int GetTotalTargetsFromStats(Dictionary<Guid, GameStats> stats, Guid playerId)
+    private static int GetTotalTargetsFromStats(Dictionary<Guid, PlayerStats> stats, Guid playerId)
     {
         if (!stats.TryGetValue(playerId, out var gameStats))
             return 0;
 
-        return (gameStats as GameStatsATC)?.totalTargets ?? 0;
+        return gameStats.atc?.attempts ?? 0;
     }
 
     private static GameRow ReadGameById(SQLiteConnection connection, string gameId)
@@ -1232,6 +1128,15 @@ public static class SqliteDatabaseRepository
         if (row != null)
             PopulateGamePlayerIds(connection, new List<GameRow> { row });
         return row;
+    }
+
+    private class PlayerStatsSnapshotRow
+    {
+        public string PlayerId { get; set; }
+        public string Mode { get; set; }
+        public string RangeType { get; set; }
+        public string PeriodKey { get; set; }
+        public string StatData { get; set; }
     }
 
     private class PlayerGameStatRow
@@ -1352,13 +1257,13 @@ public static class SqliteDatabaseRepository
 
             if (!string.IsNullOrWhiteSpace(row.X01PlayerStatsJson) && game is X01Game x01StatsGame)
             {
-                var x01Stats = JsonConvert.DeserializeObject<Dictionary<string, GameStatsX01>>(row.X01PlayerStatsJson) ?? new Dictionary<string, GameStatsX01>();
+                var x01Stats = JsonConvert.DeserializeObject<Dictionary<string, PlayerStats>>(row.X01PlayerStatsJson) ?? new Dictionary<string, PlayerStats>();
                 var playerStatsField = typeof(Game).GetField("playerStats", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
-                var playerStatsMap = playerStatsField?.GetValue(game) as Dictionary<Guid, GameStats>;
+                var playerStatsMap = playerStatsField?.GetValue(game) as Dictionary<Guid, PlayerStats>;
 
                 foreach (var kv in x01Stats)
                 {
-                    if (Guid.TryParse(kv.Key, out var playerId) && x01StatsGame.GetPlayerIDs().Contains(playerId) && playerStatsMap != null)
+                    if (Guid.TryParse(kv.Key, out var playerId) && x01StatsGame.GetPlayerIDs().Contains(playerId) && playerStatsMap != null && kv.Value?.x01 != null)
                         playerStatsMap[playerId] = kv.Value;
                 }
             }
@@ -1547,8 +1452,8 @@ public static class SqliteDatabaseRepository
         if (game.GetPlayerStats() != null)
         {
             var stats = game.GetPlayerStats()
-                .Where(kvp => kvp.Value is GameStatsX01)
-                .ToDictionary(kvp => kvp.Key.ToString(), kvp => (GameStatsX01)kvp.Value);
+                .Where(kvp => kvp.Value?.x01 != null)
+                .ToDictionary(kvp => kvp.Key.ToString(), kvp => kvp.Value);
 
             if (stats.Count > 0)
                 x01Stats = JsonConvert.SerializeObject(stats);

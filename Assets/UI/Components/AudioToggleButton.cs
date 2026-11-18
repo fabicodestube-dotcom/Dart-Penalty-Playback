@@ -1,11 +1,12 @@
 using UnityEngine;
 using UnityEngine.UI;
+using Unity.VectorGraphics;
 
 [RequireComponent(typeof(Button))]
 public class AudioToggleButton : MonoBehaviour
 {
     [Header("UI Elements")]
-    [SerializeField] private Image buttonImage;
+    [SerializeField] private SVGImage buttonImage;
     [SerializeField] private Sprite soundOnSprite;
     [SerializeField] private Sprite soundOffSprite;
 

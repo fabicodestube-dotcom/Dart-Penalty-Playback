@@ -171,9 +171,9 @@ public class HistoryItem : MonoBehaviour
         CreateDividerIfNeeded(index, totalCount);
     }
 
-    private static GameStats BuildPenaltyStats(PlayerSummaryEntry entry, GameSummary summary)
+    private static PlayerStats BuildPenaltyStats(PlayerSummaryEntry entry, GameSummary summary)
     {
-        var stats = new GameStats(entry.PlayerId)
+        var stats = new PlayerStats(entry.PlayerId)
         {
             wallCount = entry.WallCount,
             ceilingCount = entry.CeilingCount,

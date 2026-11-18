@@ -2,6 +2,7 @@ using UnityEngine;
 using TMPro;
 using System.Linq;
 using UnityEngine.UI;
+using Unity.VectorGraphics;
 using System.Collections.Generic;
 using System.Collections;
 
@@ -11,8 +12,8 @@ public class X01PlayerItem : MonoBehaviour
     public TMP_Text dartsThrownText; 
     public Image highlightPanel;
     public TMP_Text[] lastThrowTexts = new TMP_Text[3];
-    public Image[] wallImages = new Image[3];
-    public Image[] ceilingImages = new Image[3];
+    public SVGImage[] wallImages = new SVGImage[3];
+    public SVGImage[] ceilingImages = new SVGImage[3];
 
     public List<Image> imagesDarts;
 
@@ -35,7 +36,7 @@ public class X01PlayerItem : MonoBehaviour
             text.raycastTarget = false;
     }
 
-    public void Bind(X01UIStats stats)
+    public void Bind(PlayerLiveStats stats)
     {
         highlightPanel.gameObject.SetActive(stats.isActive);
 

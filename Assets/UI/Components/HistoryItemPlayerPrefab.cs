@@ -28,7 +28,7 @@ public class HistoryItemPlayerPrefab : MonoBehaviour
         int rank,
         string playerName,
         string metricLabel,
-        GameStats stats,
+        PlayerStats stats,
         int? setsWonOverride = null,
         int? legsWonOverride = null
     )

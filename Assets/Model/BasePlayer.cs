@@ -6,55 +6,38 @@ using UnityEngine;
 [Serializable]
 public abstract class BasePlayer
 {
-    // =========================================================
-    // IDENTIFICATION
-    // =========================================================
     [JsonProperty] protected Guid id;
     [JsonProperty] protected string playerName;
 
-    // =========================================================
-    // LOGIC-FLAGS
-    // =========================================================
     [JsonProperty] protected bool showInStatistics;
     [JsonProperty] protected bool deletedFlag;
     [JsonProperty] protected int setupStartPosition = -1;
 
-    // =========================================================
-    // ALL-TIME STATS
-    // =========================================================
-    [JsonProperty] protected GameStatsX01 x01Stats;
-    [JsonProperty] protected GameStatsCricket cricketStats;
-    [JsonProperty] protected GameStatsATC atcStats;
+    [JsonIgnore] protected Dictionary<StatisticsRange, Dictionary<GameMode, PlayerStats>> statsByRange;
 
+    private static readonly StatisticsRange[] AllRanges =
+    {
+        StatisticsRange.AllTime,
+        StatisticsRange.Today,
+        StatisticsRange.ThisWeek,
+        StatisticsRange.ThisMonth,
+        StatisticsRange.ThisYear
+    };
 
-    // =========================================================
-    // TIME-BASED STATS (X01)
-    // =========================================================
-    [JsonProperty] protected GameStatsX01 x01TodayStats;
-    [JsonProperty] protected GameStatsX01 x01WeekStats;
-    [JsonProperty] protected GameStatsX01 x01MonthStats;
-    [JsonProperty] protected GameStatsX01 x01YearStats;
+    private static readonly StatisticsRange[] TimeRanges =
+    {
+        StatisticsRange.Today,
+        StatisticsRange.ThisWeek,
+        StatisticsRange.ThisMonth,
+        StatisticsRange.ThisYear
+    };
 
-    // =========================================================
-    // TIME-BASED STATS (CRICKET)
-    // =========================================================
-    [JsonProperty] protected GameStatsCricket cricketTodayStats;
-    [JsonProperty] protected GameStatsCricket cricketWeekStats;
-    [JsonProperty] protected GameStatsCricket cricketMonthStats;
-    [JsonProperty] protected GameStatsCricket cricketYearStats;
-
-    // =========================================================
-    // TIME-BASED STATS (AROUND THE CLOCK)
-    // =========================================================
-    [JsonProperty] protected GameStatsATC atcTodayStats;
-    [JsonProperty] protected GameStatsATC atcWeekStats;
-    [JsonProperty] protected GameStatsATC atcMonthStats;
-    [JsonProperty] protected GameStatsATC atcYearStats;
-
-
-    // =========================================================
-    // CONSTRUCTOR
-    // =========================================================
+    private static readonly GameMode[] AllModes =
+    {
+        GameMode.X01,
+        GameMode.Cricket,
+        GameMode.ATC
+    };
 
     protected BasePlayer(Guid id, string playerName)
     {
@@ -67,28 +50,14 @@ public abstract class BasePlayer
         ResetAllStats();
     }
 
-
-    // =========================================================
-    // EDITING
-    // =========================================================
-
     public virtual void Rename(string newName)
     {
         Debug.LogWarning($"{GetName()} kann nicht umbenannt werden (Basis-Implementierung).");
     }
 
-
-    // =========================================================
-    // IDENTIFICATION
-    // =========================================================
-
     public Guid GetID() => id;
 
     public string GetName() => playerName;
-
-    // =========================================================
-    // VISIBILITY
-    // =========================================================
 
     public void ShowInStatistics(bool show)
     {
@@ -100,11 +69,6 @@ public abstract class BasePlayer
         return showInStatistics;
     }
 
-
-    // =========================================================
-    // DELETION
-    // =========================================================
-
     public void Delete()
     {
         deletedFlag = true;
@@ -115,577 +79,177 @@ public abstract class BasePlayer
         return deletedFlag;
     }
 
+    public PlayerStats GetX01Stats() => GetModeStats(GameMode.X01, StatisticsRange.AllTime);
 
-    // =========================================================
-    // STATS
-    // =========================================================
+    public PlayerStats GetCricketStats() => GetModeStats(GameMode.Cricket, StatisticsRange.AllTime);
 
-    // STATS 1: GETTER
-    public GameStatsX01 GetX01Stats()
+    public PlayerStats GetATCStats() => GetModeStats(GameMode.ATC, StatisticsRange.AllTime);
+
+    public PlayerStats GetTimebasedStats(StatisticsRange range, GameMode mode)
     {
-        return x01Stats ??= new GameStatsX01(id, 0);
+        if (range == StatisticsRange.AllTime)
+            return null;
+
+        EnsureStatsMap();
+        EnsureRange(range);
+
+        return statsByRange[range].TryGetValue(mode, out var stats) ? stats : null;
     }
 
-    public GameStatsCricket GetCricketStats()
+    public void SetModeStats(GameMode mode, StatisticsRange range, PlayerStats stats)
     {
-        return cricketStats ??= new GameStatsCricket(id);
+        EnsureStatsMap();
+        EnsureRange(range);
+
+        statsByRange[range][mode] = stats ?? PlayerStats.CreateForMode(id, mode);
     }
 
-    public GameStatsATC GetATCStats()
-    {
-        return atcStats ??= new GameStatsATC(id);
-    }
-
-    public GameStats GetTimebasedStats(StatisticsRange range, GameMode mode)
-    {
-
-        return (range, mode) switch
-        {
-            (StatisticsRange.Today, GameMode.X01) => x01TodayStats,
-            (StatisticsRange.Today, GameMode.Cricket) => cricketTodayStats,
-            (StatisticsRange.Today, GameMode.ATC) => atcTodayStats,
-
-            (StatisticsRange.ThisWeek, GameMode.X01) => x01WeekStats,
-            (StatisticsRange.ThisWeek, GameMode.Cricket) => cricketWeekStats,
-            (StatisticsRange.ThisWeek, GameMode.ATC) => atcWeekStats,
-
-            (StatisticsRange.ThisMonth, GameMode.X01) => x01MonthStats,
-            (StatisticsRange.ThisMonth, GameMode.Cricket) => cricketMonthStats,
-            (StatisticsRange.ThisMonth, GameMode.ATC) => atcMonthStats,
-
-            (StatisticsRange.ThisYear, GameMode.X01) => x01YearStats,
-            (StatisticsRange.ThisYear, GameMode.Cricket) => cricketYearStats,
-            (StatisticsRange.ThisYear, GameMode.ATC) => atcYearStats,
-
-            _ => null
-        };
-    }
-
-
-    // STATS 2: RESET
     public void ResetAllStats()
     {
-        // All-Time
-        x01Stats = new GameStatsX01(id, 0);
-        cricketStats = new GameStatsCricket(id);
-        atcStats = new GameStatsATC(id);
+        statsByRange = new Dictionary<StatisticsRange, Dictionary<GameMode, PlayerStats>>();
 
-        ResetTimeStats();
+        foreach (var range in AllRanges)
+        {
+            var modeStats = new Dictionary<GameMode, PlayerStats>();
+            foreach (var mode in AllModes)
+                modeStats[mode] = PlayerStats.CreateForMode(id, mode);
+
+            statsByRange[range] = modeStats;
+        }
     }
 
     public void ResetTimeStats()
     {
-        // X01
-        x01TodayStats = new GameStatsX01(id, 0);
-        x01WeekStats = new GameStatsX01(id, 0);
-        x01MonthStats = new GameStatsX01(id, 0);
-        x01YearStats = new GameStatsX01(id, 0);
+        EnsureStatsMap();
 
-        // Cricket
-        cricketTodayStats = new GameStatsCricket(id);
-        cricketWeekStats = new GameStatsCricket(id);
-        cricketMonthStats = new GameStatsCricket(id);
-        cricketYearStats = new GameStatsCricket(id);
+        foreach (var range in TimeRanges)
+        {
+            var modeStats = new Dictionary<GameMode, PlayerStats>();
+            foreach (var mode in AllModes)
+                modeStats[mode] = PlayerStats.CreateForMode(id, mode);
 
-        // ATC
-        atcTodayStats = new GameStatsATC(id);
-        atcWeekStats = new GameStatsATC(id);
-        atcMonthStats = new GameStatsATC(id);
-        atcYearStats = new GameStatsATC(id);
+            statsByRange[range] = modeStats;
+        }
     }
 
     public void ResetStatsOfMode(GameMode mode)
     {
-        switch (mode)
-        {
-            case GameMode.X01:
-                x01Stats = new GameStatsX01(id, 0);
+        EnsureStatsMap();
 
-                x01TodayStats = new GameStatsX01(id, 0);
-                x01WeekStats = new GameStatsX01(id, 0);
-                x01MonthStats = new GameStatsX01(id, 0);
-                x01YearStats = new GameStatsX01(id, 0);
-                break;
-
-            case GameMode.Cricket:
-                cricketStats = new GameStatsCricket(id);
-
-                cricketTodayStats = new GameStatsCricket(id);
-                cricketWeekStats = new GameStatsCricket(id);
-                cricketMonthStats = new GameStatsCricket(id);
-                cricketYearStats = new GameStatsCricket(id);
-                break;
-
-            case GameMode.ATC:
-                atcStats = new GameStatsATC(id);
-
-                atcTodayStats = new GameStatsATC(id);
-                atcWeekStats = new GameStatsATC(id);
-                atcMonthStats = new GameStatsATC(id);
-                atcYearStats = new GameStatsATC(id);
-                break;
-        }
+        foreach (var range in AllRanges)
+            statsByRange[range][mode] = PlayerStats.CreateForMode(id, mode);
     }
 
-    // STATS 3: APPLY
     public void ApplyGameStats(Game game)
     {
-        if (game == null)
-            return;
-
-        if (!game.GetPlayerIDs().Contains(id))
+        if (game == null || !game.GetPlayerIDs().Contains(id))
             return;
 
         if (!game.GetPlayerStats().TryGetValue(id, out var stats))
             return;
 
-        float penaltyCost = game.GetTotalPenaltyCost(id);
-
-        switch (game.GetGameMode())
-        {
-            case GameMode.X01:
-            {
-                GameStatsX01 s = stats as GameStatsX01;
-
-                // AllTime
-                GetX01Stats().AddGameStat(s, game.GetID(), penaltyCost);
-
-                // TimeBased
-                ApplyToTimeRanges(game,
-                    x01TodayStats,
-                    x01WeekStats,
-                    x01MonthStats,
-                    x01YearStats,
-                    s,
-                    penaltyCost);
-
-                break;
-            }
-
-            case GameMode.Cricket:
-            {
-                GameStatsCricket s = stats as GameStatsCricket;
-
-                GetCricketStats().AddGameStat(s, game.GetID(), penaltyCost);
-
-                ApplyToTimeRanges(game,
-                    cricketTodayStats,
-                    cricketWeekStats,
-                    cricketMonthStats,
-                    cricketYearStats,
-                    s,
-                    penaltyCost);
-
-                break;
-            }
-
-            case GameMode.ATC:
-            {
-                GameStatsATC s = stats as GameStatsATC;
-
-                GetATCStats().AddGameStat(s, game.GetID(), penaltyCost);
-
-                ApplyToTimeRanges(game,
-                    atcTodayStats,
-                    atcWeekStats,
-                    atcMonthStats,
-                    atcYearStats,
-                    s,
-                    penaltyCost);
-
-                break;
-            }
-        }
+        ApplyToRanges(game, stats, game.GetTotalPenaltyCost(id), includeAllTime: true);
     }
 
     public void ApplyTimebasedGameStats(Game game)
     {
-        if (game == null)
-            return;
-
-        if (!game.GetPlayerIDs().Contains(id))
+        if (game == null || !game.GetPlayerIDs().Contains(id))
             return;
 
         if (!game.GetPlayerStats().TryGetValue(id, out var stats))
             return;
 
-        float penaltyCost = game.GetTotalPenaltyCost(id);
-
-        switch (game.GetGameMode())
-        {
-            case GameMode.X01:
-            {
-                GameStatsX01 s = stats as GameStatsX01;
-
-                ApplyToTimeRanges(game,
-                    x01TodayStats,
-                    x01WeekStats,
-                    x01MonthStats,
-                    x01YearStats,
-                    s,
-                    penaltyCost);
-
-                break;
-            }
-
-            case GameMode.Cricket:
-            {
-                GameStatsCricket s = stats as GameStatsCricket;
-
-                ApplyToTimeRanges(game,
-                    cricketTodayStats,
-                    cricketWeekStats,
-                    cricketMonthStats,
-                    cricketYearStats,
-                    s,
-                    penaltyCost);
-
-                break;
-            }
-
-            case GameMode.ATC:
-            {
-                GameStatsATC s = stats as GameStatsATC;
-
-                ApplyToTimeRanges(game,
-                    atcTodayStats,
-                    atcWeekStats,
-                    atcMonthStats,
-                    atcYearStats,
-                    s,
-                    penaltyCost);
-
-                break;
-            }
-        }
+        ApplyToRanges(game, stats, game.GetTotalPenaltyCost(id), includeAllTime: false);
     }
 
-    public void ApplyTimebasedGameStatsFromSummary(GameSummary summary, GameStats stats, float penaltyCost)
+    public void ApplyTimebasedGameStatsFromSummary(GameSummary summary, PlayerStats stats, float penaltyCost)
     {
-        if (summary == null || stats == null)
+        if (summary == null || stats == null || !summary.PlayerIds.Contains(id))
             return;
 
-        if (!summary.PlayerIds.Contains(id))
-            return;
-
-        switch (summary.GameMode)
-        {
-            case GameMode.X01:
-            {
-                GameStatsX01 s = stats as GameStatsX01;
-                if (s == null) return;
-
-                ApplyToTimeRangesFromSummary(summary,
-                    x01TodayStats,
-                    x01WeekStats,
-                    x01MonthStats,
-                    x01YearStats,
-                    s,
-                    penaltyCost);
-
-                break;
-            }
-
-            case GameMode.Cricket:
-            {
-                GameStatsCricket s = stats as GameStatsCricket;
-                if (s == null) return;
-
-                ApplyToTimeRangesFromSummary(summary,
-                    cricketTodayStats,
-                    cricketWeekStats,
-                    cricketMonthStats,
-                    cricketYearStats,
-                    s,
-                    penaltyCost);
-
-                break;
-            }
-
-            case GameMode.ATC:
-            {
-                GameStatsATC s = stats as GameStatsATC;
-                if (s == null) return;
-
-                ApplyToTimeRangesFromSummary(summary,
-                    atcTodayStats,
-                    atcWeekStats,
-                    atcMonthStats,
-                    atcYearStats,
-                    s,
-                    penaltyCost);
-
-                break;
-            }
-        }
+        ApplyToRangesFromSummary(summary, stats, penaltyCost, includeAllTime: false);
     }
 
-    public void ApplyGameStatsFromSummary(GameSummary summary, GameStats stats, float penaltyCost)
+    public void ApplyGameStatsFromSummary(GameSummary summary, PlayerStats stats, float penaltyCost)
     {
-        if (summary == null || stats == null)
+        if (summary == null || stats == null || !summary.PlayerIds.Contains(id))
             return;
 
-        if (!summary.PlayerIds.Contains(id))
-            return;
-
-        switch (summary.GameMode)
-        {
-            case GameMode.X01:
-            {
-                GameStatsX01 s = stats as GameStatsX01;
-                if (s == null) return;
-
-                GetX01Stats().AddGameStat(s, summary.Id, penaltyCost);
-                ApplyToTimeRangesFromSummary(summary,
-                    x01TodayStats,
-                    x01WeekStats,
-                    x01MonthStats,
-                    x01YearStats,
-                    s,
-                    penaltyCost);
-
-                break;
-            }
-
-            case GameMode.Cricket:
-            {
-                GameStatsCricket s = stats as GameStatsCricket;
-                if (s == null) return;
-
-                GetCricketStats().AddGameStat(s, summary.Id, penaltyCost);
-                ApplyToTimeRangesFromSummary(summary,
-                    cricketTodayStats,
-                    cricketWeekStats,
-                    cricketMonthStats,
-                    cricketYearStats,
-                    s,
-                    penaltyCost);
-
-                break;
-            }
-
-            case GameMode.ATC:
-            {
-                GameStatsATC s = stats as GameStatsATC;
-                if (s == null) return;
-
-                GetATCStats().AddGameStat(s, summary.Id, penaltyCost);
-                ApplyToTimeRangesFromSummary(summary,
-                    atcTodayStats,
-                    atcWeekStats,
-                    atcMonthStats,
-                    atcYearStats,
-                    s,
-                    penaltyCost);
-
-                break;
-            }
-        }
+        ApplyToRangesFromSummary(summary, stats, penaltyCost, includeAllTime: true);
     }
 
-    public void RemoveGameStatsFromSummary(GameSummary summary, GameStats stats)
+    public void RemoveGameStatsFromSummary(GameSummary summary, PlayerStats stats)
     {
-        if (summary == null || stats == null)
+        if (summary == null || stats == null || !summary.PlayerIds.Contains(id))
             return;
 
-        if (!summary.PlayerIds.Contains(id))
-            return;
-
-        switch (summary.GameMode)
-        {
-            case GameMode.X01:
-                GameStatsX01 sx = stats as GameStatsX01;
-                if (sx == null) return;
-
-                GetX01Stats().RemoveGameStat(sx, summary.Id);
-                RemoveFromTimeRangesFromSummary(summary,
-                    x01TodayStats,
-                    x01WeekStats,
-                    x01MonthStats,
-                    x01YearStats,
-                    sx);
-                break;
-
-            case GameMode.Cricket:
-                GameStatsCricket sc = stats as GameStatsCricket;
-                if (sc == null) return;
-
-                GetCricketStats().RemoveGameStat(sc, summary.Id);
-                RemoveFromTimeRangesFromSummary(summary,
-                    cricketTodayStats,
-                    cricketWeekStats,
-                    cricketMonthStats,
-                    cricketYearStats,
-                    sc);
-                break;
-
-            case GameMode.ATC:
-                GameStatsATC sa = stats as GameStatsATC;
-                if (sa == null) return;
-
-                GetATCStats().RemoveGameStat(sa, summary.Id);
-                RemoveFromTimeRangesFromSummary(summary,
-                    atcTodayStats,
-                    atcWeekStats,
-                    atcMonthStats,
-                    atcYearStats,
-                    sa);
-                break;
-        }
+        RemoveFromRangesFromSummary(summary, stats);
     }
 
-    private void ApplyToTimeRanges<T>(
-    Game game,
-    T today,
-    T week,
-    T month,
-    T year,
-    T stats,
-    float penaltyCost)
-    where T : GameStats
-    {
-        if (IsInRange(game, StatisticsRange.Today))
-            today.AddGameStat(stats, game.GetID(), penaltyCost);
-
-        if (IsInRange(game, StatisticsRange.ThisWeek))
-            week.AddGameStat(stats, game.GetID(), penaltyCost);
-
-        if (IsInRange(game, StatisticsRange.ThisMonth))
-            month.AddGameStat(stats, game.GetID(), penaltyCost);
-
-        if (IsInRange(game, StatisticsRange.ThisYear))
-            year.AddGameStat(stats, game.GetID(), penaltyCost);
-    }
-
-    private void ApplyToTimeRangesFromSummary<T>(
-        GameSummary summary,
-        T today,
-        T week,
-        T month,
-        T year,
-        T stats,
-        float penaltyCost)
-        where T : GameStats
-    {
-        if (IsInRangeFromSummary(summary, StatisticsRange.Today))
-            today.AddGameStat(stats, summary.Id, penaltyCost);
-
-        if (IsInRangeFromSummary(summary, StatisticsRange.ThisWeek))
-            week.AddGameStat(stats, summary.Id, penaltyCost);
-
-        if (IsInRangeFromSummary(summary, StatisticsRange.ThisMonth))
-            month.AddGameStat(stats, summary.Id, penaltyCost);
-
-        if (IsInRangeFromSummary(summary, StatisticsRange.ThisYear))
-            year.AddGameStat(stats, summary.Id, penaltyCost);
-    }
-
-
-    // STATS 4: REMOVE
     public void RemoveGameStats(Game game)
     {
-        if (game == null)
-            return;
-
-        if (!game.GetPlayerIDs().Contains(id))
+        if (game == null || !game.GetPlayerIDs().Contains(id))
             return;
 
         if (!game.GetPlayerStats().TryGetValue(id, out var stats))
             return;
 
-        switch (game.GetGameMode())
+        RemoveFromRanges(game, stats);
+    }
+
+    private void ApplyToRanges(Game game, PlayerStats stats, float penaltyCost, bool includeAllTime)
+    {
+        GameMode mode = game.GetGameMode();
+
+        if (includeAllTime)
+            GetModeStats(mode, StatisticsRange.AllTime).AddGameStat(stats, game.GetID(), penaltyCost);
+
+        foreach (var range in TimeRanges)
         {
-            case GameMode.X01:
-                GameStatsX01 sx = stats as GameStatsX01;
-
-                GetX01Stats().RemoveGameStat(sx, game.GetID());
-
-                RemoveFromTimeRanges(
-                        game,
-                        x01TodayStats,
-                        x01WeekStats,
-                        x01MonthStats,
-                        x01YearStats,
-                        sx);
-            break;
-
-            case GameMode.Cricket:
-                GameStatsCricket sc = stats as GameStatsCricket;
-
-                GetCricketStats().RemoveGameStat(sc, game.GetID());
-
-                RemoveFromTimeRanges(
-                        game,
-                        cricketTodayStats,
-                        cricketWeekStats,
-                        cricketMonthStats,
-                        cricketYearStats,
-                        sc);
-                break;
-
-            case GameMode.ATC:
-                GameStatsATC sa = stats as GameStatsATC;
-
-                GetATCStats().RemoveGameStat(sa, game.GetID());
-
-                RemoveFromTimeRanges(
-                        game,
-                        atcTodayStats,
-                        atcWeekStats,
-                        atcMonthStats,
-                        atcYearStats,
-                        sa);
-                break;
+            if (IsInRange(game, range))
+                GetModeStats(mode, range).AddGameStat(stats, game.GetID(), penaltyCost);
         }
     }
 
-    private void RemoveFromTimeRanges<T>(
-        Game game,
-        T today,
-        T week,
-        T month,
-        T year,
-        T stats)
-        where T : GameStats
+    private void ApplyToRangesFromSummary(GameSummary summary, PlayerStats stats, float penaltyCost, bool includeAllTime)
     {
-        if (IsInRange(game, StatisticsRange.Today))
-            today.RemoveGameStat(stats, game.GetID());
+        GameMode mode = summary.GameMode;
 
-        if (IsInRange(game, StatisticsRange.ThisWeek))
-            week.RemoveGameStat(stats, game.GetID());
+        if (includeAllTime)
+            GetModeStats(mode, StatisticsRange.AllTime).AddGameStat(stats, summary.Id, penaltyCost);
 
-        if (IsInRange(game, StatisticsRange.ThisMonth))
-            month.RemoveGameStat(stats, game.GetID());
-
-        if (IsInRange(game, StatisticsRange.ThisYear))
-            year.RemoveGameStat(stats, game.GetID());
+        foreach (var range in TimeRanges)
+        {
+            if (IsInRangeFromSummary(summary, range))
+                GetModeStats(mode, range).AddGameStat(stats, summary.Id, penaltyCost);
+        }
     }
 
-    private void RemoveFromTimeRangesFromSummary<T>(
-        GameSummary summary,
-        T today,
-        T week,
-        T month,
-        T year,
-        T stats)
-        where T : GameStats
+    private void RemoveFromRanges(Game game, PlayerStats stats)
     {
-        if (IsInRangeFromSummary(summary, StatisticsRange.Today))
-            today.RemoveGameStat(stats, summary.Id);
+        GameMode mode = game.GetGameMode();
 
-        if (IsInRangeFromSummary(summary, StatisticsRange.ThisWeek))
-            week.RemoveGameStat(stats, summary.Id);
+        GetModeStats(mode, StatisticsRange.AllTime).RemoveGameStat(stats, game.GetID());
 
-        if (IsInRangeFromSummary(summary, StatisticsRange.ThisMonth))
-            month.RemoveGameStat(stats, summary.Id);
-
-        if (IsInRangeFromSummary(summary, StatisticsRange.ThisYear))
-            year.RemoveGameStat(stats, summary.Id);
+        foreach (var range in TimeRanges)
+        {
+            if (IsInRange(game, range))
+                GetModeStats(mode, range).RemoveGameStat(stats, game.GetID());
+        }
     }
 
-    // =========================================================
-    // DATE FILTERING
-    // =========================================================
+    private void RemoveFromRangesFromSummary(GameSummary summary, PlayerStats stats)
+    {
+        GameMode mode = summary.GameMode;
+
+        GetModeStats(mode, StatisticsRange.AllTime).RemoveGameStat(stats, summary.Id);
+
+        foreach (var range in TimeRanges)
+        {
+            if (IsInRangeFromSummary(summary, range))
+                GetModeStats(mode, range).RemoveGameStat(stats, summary.Id);
+        }
+    }
 
     private bool IsInRange(Game game, StatisticsRange range)
     {
@@ -694,45 +258,19 @@ public abstract class BasePlayer
         if (!gameDateNullable.HasValue)
             return false;
 
-        DateTime gameDate = gameDateNullable.Value;
-        DateTime now = DateTime.Now;
-
-        switch (range)
-        {
-            case StatisticsRange.Today:
-                return gameDate.Date == now.Date;
-
-            case StatisticsRange.ThisWeek:
-            {
-                DateTime monday =
-                    now.Date.AddDays(-(((int)now.DayOfWeek + 6) % 7));
-
-                return gameDate >= monday;
-            }
-
-            case StatisticsRange.ThisMonth:
-                return gameDate.Month == now.Month &&
-                    gameDate.Year == now.Year;
-
-            case StatisticsRange.ThisYear:
-                return gameDate.Year == now.Year;
-
-            case StatisticsRange.AllTime:
-                return true;
-
-            default:
-                return false;
-        }
+        return IsInRange(gameDateNullable.Value, range);
     }
 
     private bool IsInRangeFromSummary(GameSummary summary, StatisticsRange range)
     {
-        DateTime? gameDateNullable = summary.FinishedAt;
-
-        if (!gameDateNullable.HasValue)
+        if (!summary.FinishedAt.HasValue)
             return false;
 
-        DateTime gameDate = gameDateNullable.Value;
+        return IsInRange(summary.FinishedAt.Value, range);
+    }
+
+    private static bool IsInRange(DateTime gameDate, StatisticsRange range)
+    {
         DateTime now = DateTime.Now;
 
         switch (range)
@@ -742,15 +280,12 @@ public abstract class BasePlayer
 
             case StatisticsRange.ThisWeek:
             {
-                DateTime monday =
-                    now.Date.AddDays(-(((int)now.DayOfWeek + 6) % 7));
-
+                DateTime monday = now.Date.AddDays(-(((int)now.DayOfWeek + 6) % 7));
                 return gameDate >= monday;
             }
 
             case StatisticsRange.ThisMonth:
-                return gameDate.Month == now.Month &&
-                    gameDate.Year == now.Year;
+                return gameDate.Month == now.Month && gameDate.Year == now.Year;
 
             case StatisticsRange.ThisYear:
                 return gameDate.Year == now.Year;
@@ -770,54 +305,26 @@ public abstract class BasePlayer
 
     internal int GetSetupStartPosition() => setupStartPosition;
 
-    // =========================================================
-    // STATISTICS READ API (In-Memory, not SQLite)
-    // =========================================================
-
-    /// <summary>
-    /// Mode unit for a range directly from memory (O(1), no
-    /// SQLite-Read, not deserialize. AllTime = persistent aggregates,
-    /// Time-Ranges = Save/Delete continued snapshots.
-    /// Never returns null (fallback: empty stat object).
-    /// </summary>
-    public GameStats GetModeStats(GameMode mode, StatisticsRange range)
+    public PlayerStats GetModeStats(GameMode mode, StatisticsRange range)
     {
-        if (range == StatisticsRange.AllTime)
-        {
-            return mode switch
-            {
-                GameMode.X01 => GetX01Stats(),
-                GameMode.Cricket => GetCricketStats(),
-                GameMode.ATC => GetATCStats(),
-                _ => GetX01Stats()
-            };
-        }
+        EnsureStatsMap();
+        EnsureRange(range);
 
-        var timebased = GetTimebasedStats(range, mode);
-        if (timebased != null)
-            return timebased;
+        if (statsByRange[range].TryGetValue(mode, out var stats) && stats != null)
+            return stats;
 
-        return mode switch
-        {
-            GameMode.X01 => new GameStatsX01(id),
-            GameMode.Cricket => new GameStatsCricket(id),
-            GameMode.ATC => new GameStatsATC(id),
-            _ => new GameStats(id)
-        };
+        stats = PlayerStats.CreateForMode(id, mode);
+        statsByRange[range][mode] = stats;
+        return stats;
     }
 
-    /// <summary>
-    /// Cross-mode combination unit for the "All Games" page: sum of the
-    /// Three in-memory mode sets (exact for all displayed fields):
-    /// Games, Legs, Penalties. Replaced LoadPlayerStatsAll in the Hot Path.
-    /// </summary>
-    public GameStats GetCombinedStats(StatisticsRange range)
+    public PlayerStats GetCombinedStats(StatisticsRange range)
     {
         var x01 = GetModeStats(GameMode.X01, range);
         var cricket = GetModeStats(GameMode.Cricket, range);
         var atc = GetModeStats(GameMode.ATC, range);
 
-        var combined = new GameStats(id);
+        var combined = new PlayerStats(id);
 
         foreach (var s in new[] { x01, cricket, atc })
         {
@@ -851,6 +358,7 @@ public abstract class BasePlayer
                 {
                     if (string.IsNullOrEmpty(kvp.Key) || kvp.Value <= 0)
                         continue;
+
                     combined.customPenaltyCounts.TryGetValue(kvp.Key, out int current);
                     combined.customPenaltyCounts[kvp.Key] = current + kvp.Value;
                 }
@@ -879,6 +387,33 @@ public abstract class BasePlayer
         foreach (var cost in combined.gamePenaltyCosts.Values)
             combined.totalPenaltyCost += cost;
 
+        combined.totalLegWinRate = combined.totalLegsCount == 0
+            ? 0f
+            : (float)Math.Round((float)combined.totalLegsWon / combined.totalLegsCount, 2);
+
+        combined.totalSetWinRate = combined.totalSetsCount == 0
+            ? 0f
+            : (float)Math.Round((float)combined.totalSetsWon / combined.totalSetsCount, 2);
+
+        combined.doublePercentage = combined.totalThrowsCount == 0
+            ? 0f
+            : (float)Math.Round((float)combined.totalDoubleCount / combined.totalThrowsCount, 2);
+
+        combined.triplePercentage = combined.totalThrowsCount == 0
+            ? 0f
+            : (float)Math.Round((float)combined.totalTripleCount / combined.totalThrowsCount, 2);
+
         return combined;
+    }
+
+    private void EnsureStatsMap()
+    {
+        statsByRange ??= new Dictionary<StatisticsRange, Dictionary<GameMode, PlayerStats>>();
+    }
+
+    private void EnsureRange(StatisticsRange range)
+    {
+        if (!statsByRange.ContainsKey(range))
+            statsByRange[range] = new Dictionary<GameMode, PlayerStats>();
     }
 }

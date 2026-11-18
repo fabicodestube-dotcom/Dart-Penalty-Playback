@@ -1,11 +1,12 @@
 using UnityEngine;
 using UnityEngine.UI;
+using Unity.VectorGraphics;
 using TMPro;
 
 public class TableCell : MonoBehaviour
 {
     public TextMeshProUGUI text;
-    public Image image;
+    public SVGImage image;
     public LayoutElement layoutElement;
 
     public void SetText(string t)

@@ -1,14 +1,14 @@
 using System.Collections;
 using UnityEngine;
-using UnityEngine.UI;
+using Unity.VectorGraphics;
 
 public class RippleAnimation : MonoBehaviour
 {
     [Header("Settings")]
-    public Image ripplePrefab;       
-    public float speed = 1.5f;       
-    public float maxScale = 2.5f;    
-    public float interval = 2.0f;   
+    public SVGImage ripplePrefab;
+    public float speed = 1.5f;
+    public float maxScale = 2.5f;
+    public float interval = 2.0f;
 
     private Coroutine _spawnCoroutine;
     private bool _isSpawning = false;
@@ -46,7 +46,7 @@ public class RippleAnimation : MonoBehaviour
     {
         while (_isSpawning)
         {
-            Image newRipple =
+            SVGImage newRipple =
                 Instantiate(ripplePrefab, transform);
 
             StartCoroutine(AnimateRipple(newRipple));
@@ -55,7 +55,7 @@ public class RippleAnimation : MonoBehaviour
         }
     }
 
-    IEnumerator AnimateRipple(Image ripple)
+    IEnumerator AnimateRipple(SVGImage ripple)
     {
         RectTransform rectTransform = ripple.rectTransform;
         rectTransform.localScale = Vector3.one;

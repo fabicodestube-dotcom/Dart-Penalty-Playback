@@ -63,7 +63,7 @@ public class ATCGameEngine : GameEngine
 
         BasePlayer player = appHandler.GetPlayerByID(game.GetCurrentPlayerId());
         if (player != null)
-            inputHandler.RefreshBotPlayerStats(new ATCUIStats((ATCGame)game, player));
+            inputHandler.RefreshBotPlayerStats(PlayerLiveStats.Create(game, player));
     }
 
     // =========================
