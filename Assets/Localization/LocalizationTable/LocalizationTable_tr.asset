@@ -19,15 +19,15 @@ MonoBehaviour:
     m_Items: []
   m_TableData:
   - m_Id: 1
-    m_Localized: "30 g\xFCn"
+    m_Localized: Ay
     m_Metadata:
       m_Items: []
   - m_Id: 2
-    m_Localized: "365 g\xFCn"
+    m_Localized: "Y\u0131l"
     m_Metadata:
       m_Items: []
   - m_Id: 3
-    m_Localized: "7 g\xFCn"
+    m_Localized: Hafta
     m_Metadata:
       m_Items: []
   - m_Id: 4
@@ -72,10 +72,6 @@ MonoBehaviour:
     m_Localized: Mavi
     m_Metadata:
       m_Items: []
-  - m_Id: 14
-    m_Localized: Bronz
-    m_Metadata:
-      m_Items: []
   - m_Id: 15
     m_Localized: Bust
     m_Metadata:
@@ -115,10 +111,6 @@ MonoBehaviour:
   - m_Id: 25
     m_Localized: "\xD6zel sesler kullan\u0131c\u0131 taraf\u0131ndan kaydedilen seslerdir,
       aksi takdirde varsay\u0131lan paket kullan\u0131l\u0131r"
-    m_Metadata:
-      m_Items: []
-  - m_Id: 26
-    m_Localized: "Camg\xF6be\u011Fi"
     m_Metadata:
       m_Items: []
   - m_Id: 27
@@ -216,7 +208,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 49
-    m_Localized: "Ye\u015Fil"
+    m_Localized: "Ye\u015fil"
     m_Metadata:
       m_Items: []
   - m_Id: 50
@@ -1289,7 +1281,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 33806894813368322
-    m_Localized: "Misket limonu"
+    m_Localized: Turkuaz
     m_Metadata:
       m_Items: []
   - m_Id: 33806894813368323
@@ -1362,6 +1354,14 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 33806894813368343
     m_Localized: Tam ekran
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368344
+    m_Localized: "Alt\u0131n"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368345
+    m_Localized: Mor
     m_Metadata:
       m_Items: []
   references:

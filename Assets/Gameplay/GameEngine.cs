@@ -25,6 +25,7 @@ public abstract class GameEngine : MonoBehaviour
 
     protected bool isPaused;
     protected Coroutine botCoroutine;
+    private int botTurnVersion;
     private bool botUndoPending;
     private Coroutine pendingBotCheckCoroutine;
     private Guid pendingBotCheckPlayerId;
@@ -201,20 +202,29 @@ public abstract class GameEngine : MonoBehaviour
         // e.g. X01 overwrites this
     }
 
+    protected int CurrentBotTurnVersion => botTurnVersion;
+
     protected void StartBotTurn(DartBot bot)
     {
         StopBotTurn(); // defensive: never double-run
-        botCoroutine = StartCoroutine(RunBotTurn(bot));
+        int version = ++botTurnVersion;
+        botCoroutine = StartCoroutine(RunBotTurn(bot, version));
     }
 
-    private IEnumerator RunBotTurn(DartBot bot)
+    private IEnumerator RunBotTurn(DartBot bot, int version)
     {
         yield return HandleBotTurn(bot);
-        botCoroutine = null;
+
+        // A stale turn (e.g. ended by a leg win from within its own throw)
+        // must not clear the handle of a newer turn.
+        if (version == botTurnVersion)
+            botCoroutine = null;
     }
 
     protected void StopBotTurn()
     {
+        botTurnVersion++; // invalidate any turn still winding down
+
         if (pendingBotCheckCoroutine != null)
         {
             StopCoroutine(pendingBotCheckCoroutine);
@@ -282,6 +292,7 @@ public abstract class GameEngine : MonoBehaviour
                 Score = GetScoreForPlayer(game, pid),
                 SetsWon = game.GetWonSets(pid),
                 LegsWon = game.GetWonLegsTotal(pid),
+                LegsWonCurrentSet = game.GetLegsForCurrentSetDisplay(pid),
                 TargetsHit = game is ATCGame atc ? atc.GetTargetsHit(pid) : 0,
                 TotalTargets = game is ATCGame atc2 ? atc2.GetTotalTargets() : 0,
                 WallCount = ps?.wallCount ?? 0,

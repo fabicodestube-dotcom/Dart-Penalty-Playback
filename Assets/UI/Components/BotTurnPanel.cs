@@ -335,6 +335,7 @@ public class BotTurnPanel : MonoBehaviour
                 yield break;
 
             StopTargetLock(true);
+            HideTargetLockVisuals();
             yield return FinishThrow(throwData, onImpact);
             yield break;
         }
@@ -348,6 +349,8 @@ public class BotTurnPanel : MonoBehaviour
         Vector2 landingNormalized = GetBoardNormalizedPositionForThrow(throwData);
         _activeLandingNormalized = landingNormalized;
         float arcHeight = Mathf.Max(30f, _boardAreaSize * 0.12f);
+
+        HideTargetLockVisuals();
 
         _dartImage.gameObject.SetActive(true);
         _dartRect.localScale = new Vector3(0.75f, 0.75f, 1f);
@@ -495,6 +498,15 @@ public class BotTurnPanel : MonoBehaviour
 
         if (_targetReticleGroup != null)
             _targetReticleGroup.alpha = 0f;
+    }
+
+    private void HideTargetLockVisuals()
+    {
+        if (_targetCrosshair != null)
+            _targetCrosshair.gameObject.SetActive(false);
+
+        if (_targetReticleRoot != null)
+            _targetReticleRoot.gameObject.SetActive(false);
     }
 
     private IEnumerator TargetLockRoutine()
@@ -2066,12 +2078,12 @@ public class BotTurnPanel : MonoBehaviour
         if (_hitPopupText == null)
             return;
 
-        float popupWidth = Mathf.Max(120f, _boardAreaSize * 1.12f);
-        float popupHeight = Mathf.Max(70f, _boardAreaSize * 0.42f);
+        float popupWidth = Mathf.Max(120f, _boardAreaSize * 0.85f);
+        float popupHeight = Mathf.Max(70f, _boardAreaSize * 0.45f);
         _hitPopupText.rectTransform.sizeDelta = new Vector2(popupWidth, popupHeight);
         _hitPopupText.enableAutoSizing = true;
-        _hitPopupText.fontSizeMin = Mathf.Max(40f, _boardAreaSize * 0.07f);
-        _hitPopupText.fontSizeMax = Mathf.Max(72f, _boardAreaSize * 0.20f);
+        _hitPopupText.fontSizeMin = Mathf.Max(20f, _boardAreaSize * 0.10f);
+        _hitPopupText.fontSizeMax = Mathf.Max(36f, _boardAreaSize * (1f / 3f));
         _hitPopupText.fontSize = _hitPopupText.fontSizeMax;
         _hitPopupText.margin = new Vector4(8f, 0f, 8f, 0f);
 

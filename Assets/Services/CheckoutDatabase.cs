@@ -224,6 +224,14 @@ public static partial class CheckoutDatabase
         { 2,  new[] { "D1", "-", "-" } }
     };
 
+    private static readonly Dictionary<int, string[]> DoubleOutTwoDartTable = new Dictionary<int, string[]>
+    {
+        { 101, new[] { "T17", "D25" } },
+        { 104, new[] { "T18", "D25" } },
+        { 107, new[] { "T19", "D25" } },
+        { 110, new[] { "T20", "D25" } }
+    };
+
     private static bool TryGetDoubleOutTableRoute(int score, int maxDarts, out List<string> route)
     {
         route = null;
@@ -260,6 +268,36 @@ public static partial class CheckoutDatabase
         return true;
     }
 
+    private static bool TryGetDoubleOutTwoDartRoute(int score, out List<string> route)
+    {
+        route = null;
+
+        if (!DoubleOutTwoDartTable.TryGetValue(score, out string[] slots))
+            return false;
+
+        var resolved = new List<string>(slots);
+
+        if (resolved.Count != 2 || GetRouteScore(resolved) != score || GetFinalWeight(resolved[^1]) <= 0f)
+            return false;
+
+        route = resolved;
+        return true;
+    }
+
+    private static List<string> GetDoubleOutRoute(int score, int maxDarts)
+    {
+        if (TryGetDoubleOutTableRoute(score, maxDarts, out List<string> tableRoute))
+            return tableRoute;
+
+        if (maxDarts >= 2 && TryGetDoubleOutTwoDartRoute(score, out List<string> twoDartRoute))
+            return twoDartRoute;
+
+        if (maxDarts >= 1 && TryGetDirectDoubleFinish(score, out string directDart))
+            return new List<string> { directDart };
+
+        return null;
+    }
+
     // =========================================
     // PUBLIC API
     // =========================================
@@ -269,6 +307,37 @@ public static partial class CheckoutDatabase
         public int DartCount;
         public float FinalWeight;
         public bool IsValid => !string.IsNullOrEmpty(Route);
+    }
+
+    public static CheckoutPlan GetDoubleOutTurnPlan(int score)
+    {
+        var plan = new CheckoutPlan();
+
+        if (score <= 0 || !TryGetDoubleOutTableRoute(score, 3, out List<string> route))
+            return plan;
+
+        plan.Route = string.Join(" ", route);
+        plan.DartCount = route.Count;
+        plan.FinalWeight = GetFinalWeight(route[^1]);
+        return plan;
+    }
+
+    public static bool TryGetDirectDoubleFinish(int score, out string dart)
+    {
+        if (score == 50)
+        {
+            dart = "D25";
+            return true;
+        }
+
+        if (score >= 2 && score <= 40 && score % 2 == 0)
+        {
+            dart = "D" + (score / 2);
+            return true;
+        }
+
+        dart = null;
+        return false;
     }
 
     public static string GetCheckout(CheckoutType type, int score, int dartsLeft)
@@ -288,10 +357,17 @@ public static partial class CheckoutDatabase
 
         List<string> route = null;
 
-        if (type == CheckoutType.Double && TryGetDoubleOutTableRoute(score, maxDarts, out List<string> tableRoute))
-            route = tableRoute;
+        if (type == CheckoutType.Double)
+        {
+            if (score > 170)
+                return plan;
+
+            route = GetDoubleOutRoute(score, maxDarts);
+        }
         else
+        {
             route = GetBestRoute(type, score, maxDarts);
+        }
 
         if (route == null)
             return plan;

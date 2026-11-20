@@ -17,6 +17,8 @@ public class PlayerDropZone : MonoBehaviour
 
     private ScrollRect cachedScrollRect;
 
+    public PlayerDropZone OtherZone => otherZone;
+
     public ScrollRect ListScrollRect
     {
         get

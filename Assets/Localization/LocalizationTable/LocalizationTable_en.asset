@@ -19,15 +19,15 @@ MonoBehaviour:
     m_Items: []
   m_TableData:
   - m_Id: 1
-    m_Localized: 30 days
+    m_Localized: Month
     m_Metadata:
       m_Items: []
   - m_Id: 2
-    m_Localized: 365 days
+    m_Localized: Year
     m_Metadata:
       m_Items: []
   - m_Id: 3
-    m_Localized: 7 days
+    m_Localized: Week
     m_Metadata:
       m_Items: []
   - m_Id: 4
@@ -71,10 +71,6 @@ MonoBehaviour:
     m_Localized: Blue
     m_Metadata:
       m_Items: []
-  - m_Id: 14
-    m_Localized: Bronze
-    m_Metadata:
-      m_Items: []
   - m_Id: 15
     m_Localized: Bust
     m_Metadata:
@@ -115,10 +111,6 @@ MonoBehaviour:
   - m_Id: 25
     m_Localized: Custom sounds are user-recorded sounds, otherwise the default package
       is used
-    m_Metadata:
-      m_Items: []
-  - m_Id: 26
-    m_Localized: Cyan
     m_Metadata:
       m_Items: []
   - m_Id: 27
@@ -1332,18 +1324,6 @@ MonoBehaviour:
     m_Localized: Edit trigger
     m_Metadata:
       m_Items: []
-  - m_Id: 33806894813368334
-    m_Localized: Indigo
-    m_Metadata:
-      m_Items: []
-  - m_Id: 33806894813368335
-    m_Localized: Blue Grey
-    m_Metadata:
-      m_Items: []
-  - m_Id: 33806894813368336
-    m_Localized: Deep Orange
-    m_Metadata:
-      m_Items: []
   - m_Id: 33806894813368337
     m_Localized: Bot Animation
     m_Metadata:
@@ -1370,6 +1350,14 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 33806894813368343
     m_Localized: Fullscreen
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368344
+    m_Localized: Gold
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368345
+    m_Localized: Violet
     m_Metadata:
       m_Items: []
   references:

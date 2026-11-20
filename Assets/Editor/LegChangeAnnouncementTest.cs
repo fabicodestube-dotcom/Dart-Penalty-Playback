@@ -26,6 +26,8 @@ public static class LegChangeAnnouncementTest
         {
             TestX01LegChangeNonMatch(Check);
             TestX01MatchEndSilent(Check);
+            TestX01CurrentSetLegsAfterSetWin(Check);
+            TestX01CurrentSetLegsAtMatchEnd(Check);
             TestCricketLegChangeNonMatch(Check);
             TestCricketMatchEndSilent(Check);
             TestAtcLegChangeNonMatch(Check);
@@ -137,6 +139,139 @@ public static class LegChangeAnnouncementTest
         Check(!events.Any(e => e == "audio:" + SeededAudioEvents.LegEndId
                                || e == "audio:" + SeededAudioEvents.SetEndId),
             "x01-match-no-leg-set-audio", $"events=[{string.Join(",", events)}]");
+    }
+
+    private static void TestX01CurrentSetLegsAfterSetWin(Action<bool, string, string> Check)
+    {
+        var p1 = new Player(Guid.NewGuid(), "T_P1");
+        var p2 = new Player(Guid.NewGuid(), "T_P2");
+        var game = new X01Game(Guid.NewGuid(), X01Settings(2, 3), new List<Guid> { p1.GetID(), p2.GetID() });
+        game.RestorePenaltySnapshot(new List<CustomPenaltyDef>());
+        game.RestoreAudioEventSnapshot(LegSetAudioEvents());
+
+        var legWinners = new List<Guid>();
+        game.OnLegWon += id => legWinners.Add(id);
+
+        game.AddThrow(new Throw(DartMultiplier.Single, 1, HitType.Board));
+        game.AddThrow(new Throw(DartMultiplier.Single, 1, HitType.Board));
+
+        Check(legWinners.Count == 2, "x01-current-legs-two-winners", $"winners={legWinners.Count}");
+        if (legWinners.Count < 2)
+            return;
+
+        Guid firstWinner = legWinners[0];
+        Guid secondWinner = legWinners[1];
+
+        Check(game.GetWonLegs(firstWinner) == 1 && game.GetWonLegs(secondWinner) == 1,
+            "x01-current-legs-before-set-win",
+            $"first={game.GetWonLegs(firstWinner)} second={game.GetWonLegs(secondWinner)}");
+        Check(game.GetWonSets(firstWinner) == 0 && game.GetWonSets(secondWinner) == 0,
+            "x01-current-sets-before-set-win",
+            $"first={game.GetWonSets(firstWinner)} second={game.GetWonSets(secondWinner)}");
+
+        game.AddThrow(new Throw(DartMultiplier.Single, 1, HitType.Board));
+
+        Check(legWinners.Count == 3, "x01-current-legs-set-winner", $"winners={legWinners.Count}");
+        if (legWinners.Count < 3)
+            return;
+
+        Guid setWinner = legWinners[2];
+        Guid setLoser = setWinner == firstWinner ? secondWinner : firstWinner;
+
+        Check(game.GetWonLegs(setWinner) == 0 && game.GetWonLegs(setLoser) == 0,
+            "x01-current-legs-reset-after-set-win",
+            $"winner={game.GetWonLegs(setWinner)} loser={game.GetWonLegs(setLoser)}");
+        Check(game.GetLegsForCurrentSetDisplay(setWinner) == 0 && game.GetLegsForCurrentSetDisplay(setLoser) == 0,
+            "x01-current-legs-display-reset-after-set-win",
+            $"winner={game.GetLegsForCurrentSetDisplay(setWinner)} loser={game.GetLegsForCurrentSetDisplay(setLoser)}");
+        Check(game.GetWonSets(setWinner) == 1, "x01-set-win-counted", $"sets={game.GetWonSets(setWinner)}");
+        Check(game.GetWonLegsTotal(setWinner) == 2 && game.GetWonLegsTotal(setLoser) == 1,
+            "x01-total-legs-preserved",
+            $"winner={game.GetWonLegsTotal(setWinner)} loser={game.GetWonLegsTotal(setLoser)}");
+
+        game.CalculatePlayerStatsOnSave();
+        var stats = game.GetPlayerStats();
+        Check(stats[setWinner].currentLegCount == 0 && stats[setLoser].currentLegCount == 0,
+            "x01-current-leg-count-reset",
+            $"winner={stats[setWinner].currentLegCount} loser={stats[setLoser].currentLegCount}");
+    }
+
+    private static void TestX01CurrentSetLegsAtMatchEnd(Action<bool, string, string> Check)
+    {
+        var p1 = new Player(Guid.NewGuid(), "T_P1");
+        var p2 = new Player(Guid.NewGuid(), "T_P2");
+
+        var oneLegGame = new X01Game(
+            Guid.NewGuid(),
+            X01Settings(1, 1),
+            new List<Guid> { p1.GetID(), p2.GetID() });
+        oneLegGame.RestorePenaltySnapshot(new List<CustomPenaltyDef>());
+        oneLegGame.RestoreAudioEventSnapshot(LegSetAudioEvents());
+
+        var oneLegWinners = new List<Guid>();
+        oneLegGame.OnLegWon += id => oneLegWinners.Add(id);
+        oneLegGame.AddThrow(new Throw(DartMultiplier.Single, 1, HitType.Board));
+
+        Check(oneLegWinners.Count == 1, "x01-match-end-one-leg-winner", $"winners={oneLegWinners.Count}");
+        if (oneLegWinners.Count == 1)
+        {
+            Guid winner = oneLegWinners[0];
+            Guid loser = winner == p1.GetID() ? p2.GetID() : p1.GetID();
+
+            Check(oneLegGame.GetLegsForCurrentSetDisplay(winner) == 0
+                  && oneLegGame.GetLegsForCurrentSetDisplay(loser) == 0,
+                "x01-match-end-current-legs-1set1leg",
+                $"winner={oneLegGame.GetLegsForCurrentSetDisplay(winner)} loser={oneLegGame.GetLegsForCurrentSetDisplay(loser)}");
+            Check(oneLegGame.GetWonSets(winner) == 1 && oneLegGame.GetWonLegsTotal(winner) == 1,
+                "x01-match-end-one-leg-totals",
+                $"sets={oneLegGame.GetWonSets(winner)} legs={oneLegGame.GetWonLegsTotal(winner)}");
+
+            oneLegGame.CalculatePlayerStatsOnSave();
+            var oneLegStats = oneLegGame.GetPlayerStats();
+            Check(oneLegStats[winner].currentLegCount == 0 && oneLegStats[loser].currentLegCount == 0,
+                "x01-match-end-current-leg-count-1set1leg",
+                $"winner={oneLegStats[winner].currentLegCount} loser={oneLegStats[loser].currentLegCount}");
+        }
+
+        var bestOfSettings = X01Settings(1, 3);
+        bestOfSettings.setsAndLegsMode = SetsAndLegs.BestOf;
+
+        var bestOfGame = new X01Game(
+            Guid.NewGuid(),
+            bestOfSettings,
+            new List<Guid> { p1.GetID(), p2.GetID() });
+        bestOfGame.RestorePenaltySnapshot(new List<CustomPenaltyDef>());
+        bestOfGame.RestoreAudioEventSnapshot(LegSetAudioEvents());
+
+        var bestOfWinners = new List<Guid>();
+        bestOfGame.OnLegWon += id => bestOfWinners.Add(id);
+
+        bestOfGame.AddThrow(new Throw(DartMultiplier.Single, 1, HitType.Board));
+        bestOfGame.AddThrow(new Throw(DartMultiplier.Single, 1, HitType.Board));
+        bestOfGame.AddThrow(new Throw(DartMultiplier.Single, 1, HitType.Board));
+
+        Check(bestOfWinners.Count == 3, "x01-match-end-best-of-winners", $"winners={bestOfWinners.Count}");
+        if (bestOfWinners.Count < 3)
+            return;
+
+        Guid setWinner = bestOfWinners[2];
+        Guid setLoser = bestOfWinners.First(id => id != setWinner);
+
+        Check(bestOfGame.GetWonLegs(setWinner) == 2, "x01-match-end-raw-legs", $"legs={bestOfGame.GetWonLegs(setWinner)}");
+        Check(bestOfGame.GetLegsForCurrentSetDisplay(setWinner) == 0,
+            "x01-match-end-current-legs-winner-reset", $"legs={bestOfGame.GetLegsForCurrentSetDisplay(setWinner)}");
+        Check(bestOfGame.GetLegsForCurrentSetDisplay(setLoser) == 1,
+            "x01-match-end-current-legs-loser", $"legs={bestOfGame.GetLegsForCurrentSetDisplay(setLoser)}");
+        Check(bestOfGame.GetWonSets(setWinner) == 1, "x01-match-end-set-counted", $"sets={bestOfGame.GetWonSets(setWinner)}");
+        Check(bestOfGame.GetWonLegsTotal(setWinner) == 2 && bestOfGame.GetWonLegsTotal(setLoser) == 1,
+            "x01-match-end-total-legs",
+            $"winner={bestOfGame.GetWonLegsTotal(setWinner)} loser={bestOfGame.GetWonLegsTotal(setLoser)}");
+
+        bestOfGame.CalculatePlayerStatsOnSave();
+        var bestOfStats = bestOfGame.GetPlayerStats();
+        Check(bestOfStats[setWinner].currentLegCount == 0 && bestOfStats[setLoser].currentLegCount == 1,
+            "x01-match-end-current-leg-count",
+            $"winner={bestOfStats[setWinner].currentLegCount} loser={bestOfStats[setLoser].currentLegCount}");
     }
 
     private static void TestCricketLegChangeNonMatch(Action<bool, string, string> Check)

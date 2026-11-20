@@ -58,7 +58,9 @@ public class AppHandler : MonoBehaviour
     /// Put away almost always directly one after the other (if necessary + quit afterwards).
     /// </summary>
     private const float LifecycleSaveCooldownSeconds = 2f;
+    private const float KnownGoodSnapshotCooldownSeconds = 300f;
     private float lastLifecycleSaveTime = -1000f;
+    private float lastKnownGoodSnapshotTime = -1000f;
 
     private void Awake()
     {
@@ -637,6 +639,13 @@ public class AppHandler : MonoBehaviour
         PersistOpenRuntimeGames();
 
         FlushDatabase();
+
+        if (Time.realtimeSinceStartup - lastKnownGoodSnapshotTime >= KnownGoodSnapshotCooldownSeconds)
+        {
+            lastKnownGoodSnapshotTime = Time.realtimeSinceStartup;
+            DatabaseBackupService.EnsureKnownGoodSnapshot(DatabaseSchema.CurrentVersion);
+            DatabaseBackupService.CreateRollingBackupIfDue(DatabaseSchema.CurrentVersion);
+        }
     }
 
     public bool SaveBeforeExit()
@@ -778,6 +787,7 @@ public class AppHandler : MonoBehaviour
                 Score = GetScoreForPlayer(game, pid),
                 SetsWon = game.GetWonSets(pid),
                 LegsWon = game.GetWonLegsTotal(pid),
+                LegsWonCurrentSet = game.GetLegsForCurrentSetDisplay(pid),
                 TargetsHit = game is ATCGame atc ? atc.GetTargetsHit(pid) : 0,
                 TotalTargets = game is ATCGame atc2 ? atc2.GetTotalTargets() : 0,
                 WallCount = ps?.wallCount ?? 0,

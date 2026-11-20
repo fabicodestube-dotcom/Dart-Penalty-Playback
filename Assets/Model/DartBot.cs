@@ -14,6 +14,7 @@ public class DartBot : BasePlayer
     [JsonProperty] private int dartsThrown = 0;
 
     private const int IntentionalBustMaxScore = 60;
+    private const int DoubleOutIntentionalBustMaxScore = 7;
     private const float BustFinalWeightMargin = 0.10f;
 
     public DartBot(Guid id, string playerName, float skillRating, int number) : base(id, playerName)
@@ -63,6 +64,9 @@ public class DartBot : BasePlayer
         if (currentScore <= 0)
             return Simulate(20, DartMultiplier.Single);
 
+        if (checkoutType == CheckoutType.Double)
+            return GetNextDoubleOutThrow(currentScore, dartsLeft, turnStartScore);
+
         var finishPlan = CheckoutDatabase.GetCheckoutPlan(checkoutType, currentScore, dartsLeft);
         var prepPlan = CheckoutDatabase.GetCheckoutPlan(checkoutType, currentScore, 3);
 
@@ -91,6 +95,62 @@ public class DartBot : BasePlayer
 
         var scoringTarget = ChooseScoringTarget(currentScore);
         return Simulate(scoringTarget.val, scoringTarget.mult);
+    }
+
+    private Throw GetNextDoubleOutThrow(int currentScore, int dartsLeft, int turnStartScore)
+    {
+        if (dartsLeft > 1)
+        {
+            var routePlan = CheckoutDatabase.GetDoubleOutTurnPlan(currentScore);
+
+            if (routePlan.IsValid)
+            {
+                var routeDart = ParseDart(routePlan.Route.Split(' ')[0]);
+                return Simulate(routeDart.val, routeDart.mult);
+            }
+
+            var scoringTarget = ChooseScoringTarget(currentScore);
+            return Simulate(scoringTarget.val, scoringTarget.mult);
+        }
+
+        if (CheckoutDatabase.TryGetDirectDoubleFinish(currentScore, out string directFinish))
+        {
+            var finishDart = ParseDart(directFinish);
+            return Simulate(finishDart.val, finishDart.mult);
+        }
+
+        var lastDartPlan = CheckoutDatabase.GetDoubleOutTurnPlan(currentScore);
+
+        if (currentScore <= DoubleOutIntentionalBustMaxScore && turnStartScore > currentScore)
+        {
+            var bustPlan = CheckoutDatabase.GetDoubleOutTurnPlan(turnStartScore);
+
+            if (bustPlan.IsValid)
+            {
+                CheckoutDatabase.CheckoutPlan leavePlan = default;
+
+                if (lastDartPlan.IsValid)
+                {
+                    var routeDart = ParseDart(lastDartPlan.Route.Split(' ')[0]);
+                    int leave = currentScore - DartScore(routeDart.val, routeDart.mult);
+
+                    if (leave > 0)
+                        leavePlan = CheckoutDatabase.GetDoubleOutTurnPlan(leave);
+                }
+
+                if (!leavePlan.IsValid || IsBustBetterThanLeave(bustPlan, leavePlan))
+                    return Simulate(20, DartMultiplier.Triple);
+            }
+        }
+
+        if (lastDartPlan.IsValid)
+        {
+            var lastDart = ParseDart(lastDartPlan.Route.Split(' ')[0]);
+            return Simulate(lastDart.val, lastDart.mult);
+        }
+
+        var fallback = ChooseScoringTarget(currentScore);
+        return Simulate(fallback.val, fallback.mult);
     }
 
     private static bool TryChoosePreparationTarget(

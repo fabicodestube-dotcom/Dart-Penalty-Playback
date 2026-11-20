@@ -102,8 +102,6 @@ public class ATCGameEngine : GameEngine
         playerList.Refresh((ATCGame) game);
 
         NotifyWin(WinLevel.Leg, playerId);
-
-        HandleBotCheck(game.GetCurrentPlayerId());
     }
 
     private void HandleSetWon(Guid? playerId)
@@ -116,8 +114,6 @@ public class ATCGameEngine : GameEngine
 
         if (playerId.HasValue && playerId.Value != Guid.Empty)
             NotifyWin(WinLevel.Set, playerId.Value);
-
-        HandleBotCheck(game.GetCurrentPlayerId());
     }
 
     private void HandleTurnCompleted(Guid playerId, int validThrows)
@@ -144,15 +140,26 @@ public class ATCGameEngine : GameEngine
 
     protected override IEnumerator HandleBotTurn(DartBot bot)
     {
+        int version = CurrentBotTurnVersion;
+
         inputHandler.SetInputEnabled(false);
 
         // Endless loop that cancels only when the bot is no longer on
-        while (!isPaused && game.GetCurrentPlayerId() == bot.GetID() && !game.IsFinished())
+        while (version == CurrentBotTurnVersion
+               && !isPaused
+               && game.GetCurrentPlayerId() == bot.GetID()
+               && !game.IsFinished())
         {
             yield return new WaitUntil(() => !isPaused);
 
+            if (version != CurrentBotTurnVersion)
+                yield break;
+
             Throw t = GetNextATCBotThrow(bot);
             yield return inputHandler.PlayBotThrow(t, () => AddThrow(t));
+
+            if (version != CurrentBotTurnVersion)
+                yield break;
 
             // After AddThrow the engine may have called NextPlayer() (at miss or turn-end without carry)
             // So we're going to check immediately if we're still on.

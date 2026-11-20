@@ -204,11 +204,21 @@ public class PlayerDragHandler : MonoBehaviour,
 
         dropZones = GameObject.FindObjectsByType<PlayerDropZone>(FindObjectsSortMode.None);
 
+        PlayerDropZone originZone = FindZoneForContent(originalParent);
+        if (originZone != null)
+        {
+            PlayerDropZone allowedOther = originZone.singleZone ? null : originZone.OtherZone;
+            dropZones = Array.FindAll(
+                dropZones,
+                zone => zone != null && (zone == originZone || zone == allowedOther)
+            );
+        }
+
         PointerEventData initialPointer = new PointerEventData(EventSystem.current);
         initialPointer.position = pointerPos;
         activeZone = GetCurrentDropZone(initialPointer);
         if (activeZone == null)
-            activeZone = FindZoneForContent(originalParent);
+            activeZone = originZone;
 
         selfLayout.ignoreLayout = true;
 

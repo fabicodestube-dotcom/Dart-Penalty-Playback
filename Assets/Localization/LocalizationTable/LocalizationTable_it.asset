@@ -19,15 +19,15 @@ MonoBehaviour:
     m_Items: []
   m_TableData:
   - m_Id: 1
-    m_Localized: 30 giorni
+    m_Localized: Mese
     m_Metadata:
       m_Items: []
   - m_Id: 2
-    m_Localized: 365 giorni
+    m_Localized: Anno
     m_Metadata:
       m_Items: []
   - m_Id: 3
-    m_Localized: 7 giorni
+    m_Localized: Settimana
     m_Metadata:
       m_Items: []
   - m_Id: 4
@@ -72,10 +72,6 @@ MonoBehaviour:
     m_Localized: Blu
     m_Metadata:
       m_Items: []
-  - m_Id: 14
-    m_Localized: Bronzo
-    m_Metadata:
-      m_Items: []
   - m_Id: 15
     m_Localized: Sballato
     m_Metadata:
@@ -116,10 +112,6 @@ MonoBehaviour:
   - m_Id: 25
     m_Localized: I suoni personalizzati sono registrati dall'utente, altrimenti viene
       utilizzato il pacchetto predefinito
-    m_Metadata:
-      m_Items: []
-  - m_Id: 26
-    m_Localized: Ciano
     m_Metadata:
       m_Items: []
   - m_Id: 27
@@ -1337,18 +1329,6 @@ MonoBehaviour:
     m_Localized: Modifica trigger
     m_Metadata:
       m_Items: []
-  - m_Id: 33806894813368334
-    m_Localized: Indaco
-    m_Metadata:
-      m_Items: []
-  - m_Id: 33806894813368335
-    m_Localized: Grigio blu
-    m_Metadata:
-      m_Items: []
-  - m_Id: 33806894813368336
-    m_Localized: Arancione scuro
-    m_Metadata:
-      m_Items: []
   - m_Id: 33806894813368337
     m_Localized: Animazione del bot
     m_Metadata:
@@ -1375,6 +1355,14 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 33806894813368343
     m_Localized: Schermo intero
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368344
+    m_Localized: Oro
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368345
+    m_Localized: Viola
     m_Metadata:
       m_Items: []
   references:

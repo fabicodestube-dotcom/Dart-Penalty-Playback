@@ -110,20 +110,65 @@ public static class SaveSystem
     {
         try
         {
-            DatabaseBootstrapper.EnsureReady();
-
-            Database db = SqliteDatabaseRepository.LoadDatabase();
-            db.InitializeAfterLoad();
-            db.RebuildAllPlayerStatistics();
-            loadFailed = false;
-            return db;
+            return LoadDatabaseInternal();
         }
-        catch (Exception e)
+        catch (Exception firstError)
         {
-            loadFailed = true;
-            Debug.LogError("Laden der SQLite-Datenbank fehlgeschlagen: " + e);
-            throw;
+            Debug.LogError("Laden der SQLite-Datenbank fehlgeschlagen: " + firstError);
+
+            if (DatabaseRecoveryService.RecoveredThisSession)
+            {
+                loadFailed = true;
+                throw;
+            }
+
+            if (!DatabaseRecoveryService.TryRecoverForLoadFailure(out string restoredBackup, out string recoveryError))
+            {
+                loadFailed = true;
+                Debug.LogError("Wiederherstellung der SQLite-Datenbank fehlgeschlagen: " + recoveryError);
+                throw;
+            }
+
+            Debug.LogWarning("SQLite-Datenbank aus Backup wiederhergestellt: " + restoredBackup);
+
+            try
+            {
+                Database database = LoadDatabaseInternal();
+                loadFailed = false;
+
+                try
+                {
+                    AppSettingsManager.Instance?.Load();
+                }
+                catch (Exception settingsError)
+                {
+                    Debug.LogWarning("Einstellungen konnten nach der Wiederherstellung nicht neu geladen werden: " + settingsError.Message);
+                }
+
+                return database;
+            }
+            catch (Exception secondError)
+            {
+                loadFailed = true;
+                Debug.LogError("Laden der wiederhergestellten SQLite-Datenbank fehlgeschlagen: " + secondError);
+                throw;
+            }
         }
+    }
+
+    private static Database LoadDatabaseInternal()
+    {
+        DatabaseBootstrapper.EnsureReady();
+
+        Database db = SqliteDatabaseRepository.LoadDatabase();
+        db.InitializeAfterLoad();
+        db.RebuildAllPlayerStatistics();
+        loadFailed = false;
+
+        DatabaseBackupService.EnsureKnownGoodSnapshot(DatabaseSchema.CurrentVersion);
+        DatabaseBackupService.CreateRollingBackupIfDue(DatabaseSchema.CurrentVersion);
+
+        return db;
     }
 
     private static bool IsWriteBlocked()

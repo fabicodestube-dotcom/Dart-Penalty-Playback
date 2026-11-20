@@ -60,6 +60,132 @@ public static class DatabaseMaintenanceMenu
         }
     }
 
+    [MenuItem("Tools/Database/Create Backup Now")]
+    public static void CreateBackupNow()
+    {
+        try
+        {
+            var result = DatabaseBackupService.CreateBackup(
+                "manual",
+                DatabaseSchema.CurrentVersion,
+                true,
+                true);
+
+            Debug.Log("[DB-MAINTENANCE] Backup created: " + result.Path);
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError("[DB-MAINTENANCE] Backup failed: " + e);
+        }
+    }
+
+    [MenuItem("Tools/Database/Create Known-Good Snapshot")]
+    public static void CreateKnownGoodSnapshot()
+    {
+        try
+        {
+            if (DatabaseBackupService.TryCreateKnownGoodSnapshot(
+                    DatabaseSchema.CurrentVersion,
+                    out string path,
+                    out string error))
+            {
+                Debug.Log("[DB-MAINTENANCE] Known-good snapshot created: " + path);
+            }
+            else
+            {
+                Debug.LogError("[DB-MAINTENANCE] Known-good snapshot failed: " + error);
+            }
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError("[DB-MAINTENANCE] Known-good snapshot failed: " + e);
+        }
+    }
+
+    [MenuItem("Tools/Database/Restore Latest Backup")]
+    public static void RestoreLatestBackup()
+    {
+        if (!EditorUtility.DisplayDialog(
+                "Backup wiederherstellen",
+                "Die aktuelle Datenbank wird quarantänisiert und das neueste gültige Backup wiederhergestellt.\n\nFortfahren?",
+                "Wiederherstellen",
+                "Abbrechen"))
+            return;
+
+        try
+        {
+            if (!DatabaseBackupService.TryRestoreLatestDatabaseBackup(
+                    DatabaseSchema.CurrentVersion,
+                    out string restoredBackup,
+                    out string error))
+            {
+                Debug.LogError("[DB-MAINTENANCE] Restore failed: " + error);
+                return;
+            }
+
+            DatabaseBootstrapper.ResetForTests();
+            SaveSystem.ResetLoadFailedForTests();
+
+            Debug.Log("[DB-MAINTENANCE] Restored latest backup: " + restoredBackup);
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError("[DB-MAINTENANCE] Restore failed: " + e);
+        }
+    }
+
+    [MenuItem("Tools/Database/Validate Database and Backups")]
+    public static void ValidateDatabaseAndBackups()
+    {
+        try
+        {
+            string databasePath = DatabasePaths.DatabasePath;
+
+            if (!DatabaseHealth.TryFullCheck(databasePath, out string integrityError))
+            {
+                Debug.LogError("[DB-MAINTENANCE] Database integrity failed: " + integrityError);
+                return;
+            }
+
+            using (var connection = new SQLite.SQLiteConnection(databasePath, SQLite.SQLiteOpenFlags.ReadOnly))
+            {
+                if (!DatabaseHealth.TryValidateSchema(connection, DatabaseSchema.CurrentVersion, out string schemaError))
+                {
+                    Debug.LogError("[DB-MAINTENANCE] Database schema failed: " + schemaError);
+                    return;
+                }
+            }
+
+            Debug.Log("[DB-MAINTENANCE] Database is healthy.");
+
+            if (!System.IO.Directory.Exists(DatabasePaths.BackupsRoot))
+                return;
+
+            foreach (string backup in System.IO.Directory.EnumerateFiles(
+                         DatabasePaths.BackupsRoot,
+                         "darts-backup-*.zip",
+                         System.IO.SearchOption.TopDirectoryOnly))
+            {
+                if (DatabaseBackupService.TryValidateBackup(backup, out string backupError))
+                    Debug.Log("[DB-MAINTENANCE] Backup OK: " + backup);
+                else
+                    Debug.LogWarning("[DB-MAINTENANCE] Backup invalid: " + backup + " (" + backupError + ")");
+            }
+
+            if (System.IO.File.Exists(DatabasePaths.KnownGoodDatabasePath))
+            {
+                if (DatabaseBackupService.TryValidateBackup(DatabasePaths.KnownGoodDatabasePath, out string knownGoodError))
+                    Debug.Log("[DB-MAINTENANCE] Known-good snapshot OK.");
+                else
+                    Debug.LogWarning("[DB-MAINTENANCE] Known-good snapshot invalid: " + knownGoodError);
+            }
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError("[DB-MAINTENANCE] Validation failed: " + e);
+        }
+    }
+
     [MenuItem("Tools/Database/Scan Database")]
     public static void ScanDatabase()
     {
@@ -107,16 +233,17 @@ public static class DatabaseMaintenanceMenu
 
         if (!EditorUtility.DisplayDialog(
                 "Datenbank zurücksetzen",
-                "Die lokale Datenbank wird gelöscht. Danach wird beim nächsten Start eine neue V1-Datenbank angelegt.\n\nFortfahren?",
+                "Die lokale Datenbank inklusive Backups wird gelöscht. Danach wird beim nächsten Start eine neue V1-Datenbank angelegt.\n\nFortfahren?",
                 "Löschen",
                 "Abbrechen"))
             return;
 
         try
         {
-            DeleteIfExists(databasePath);
-            DeleteIfExists(databasePath + "-wal");
-            DeleteIfExists(databasePath + "-shm");
+            DatabaseFileSet.Delete(databasePath);
+
+            if (System.IO.Directory.Exists(DatabasePaths.BackupsRoot))
+                System.IO.Directory.Delete(DatabasePaths.BackupsRoot, true);
 
             DatabaseBootstrapper.ResetForTests();
             SaveSystem.ResetLoadFailedForTests();
@@ -128,11 +255,4 @@ public static class DatabaseMaintenanceMenu
             Debug.LogError("[DB-MAINTENANCE] Database reset failed: " + e);
         }
     }
-
-    private static void DeleteIfExists(string path)
-    {
-        if (!string.IsNullOrEmpty(path) && System.IO.File.Exists(path))
-            System.IO.File.Delete(path);
-    }
-
 }

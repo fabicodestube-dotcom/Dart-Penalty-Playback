@@ -21,6 +21,7 @@ public static class DatabaseBackupService
 {
     private const int BackupFormatVersion = 1;
     private const int RollingBackupCount = 5;
+    private const int QuarantineDirectoryCount = 5;
     private const string DatabaseEntryName = "database/darts.sqlite";
     private const string RecordingsEntryPrefix = "recordings/";
     private const string ManifestEntryName = "manifest.json";
@@ -35,6 +36,15 @@ public static class DatabaseBackupService
     };
 
     public static DatabaseBackupResult CreateBackup(string reason, int schemaVersion, bool required)
+    {
+        return CreateBackup(reason, schemaVersion, true, required);
+    }
+
+    public static DatabaseBackupResult CreateBackup(
+        string reason,
+        int schemaVersion,
+        bool includeRecordings,
+        bool required)
     {
         var result = new DatabaseBackupResult();
 
@@ -66,7 +76,11 @@ public static class DatabaseBackupService
                 source.Backup(stagedDatabase);
             }
 
-            if (!DatabaseHealth.TryQuickCheck(stagedDatabase, out string healthError))
+            bool healthy = required
+                ? DatabaseHealth.TryFullCheck(stagedDatabase, out string healthError)
+                : DatabaseHealth.TryQuickCheck(stagedDatabase, out healthError);
+
+            if (!healthy)
                 throw new InvalidOperationException("Backup database failed integrity check: " + healthError);
 
             var manifest = new BackupManifest
@@ -75,7 +89,8 @@ public static class DatabaseBackupService
                 CreatedAtUtc = DateTime.UtcNow.ToString("o"),
                 AppVersion = Application.version,
                 SchemaVersion = schemaVersion,
-                Reason = reason
+                Reason = reason,
+                IncludesRecordings = includeRecordings
             };
 
             manifest.TableCounts = ReadTableCounts(stagedDatabase);
@@ -87,7 +102,7 @@ public static class DatabaseBackupService
             {
                 AddFile(archive, stagedDatabase, DatabaseEntryName, manifest, false);
 
-                if (Directory.Exists(DatabasePaths.RecordingsRoot))
+                if (includeRecordings && Directory.Exists(DatabasePaths.RecordingsRoot))
                     AddDirectory(archive, DatabasePaths.RecordingsRoot, RecordingsEntryPrefix, manifest);
 
                 AddManifest(archive, manifest);
@@ -101,6 +116,7 @@ public static class DatabaseBackupService
 
             File.Move(partialPath, finalPath);
             ApplyRetention();
+            TryRecordBackupTimestamp();
 
             result.Success = true;
             result.Path = finalPath;
@@ -131,12 +147,12 @@ public static class DatabaseBackupService
             string newest = GetBackupFiles().FirstOrDefault();
             if (newest != null)
             {
-                var age = DateTime.UtcNow - File.GetLastWriteTimeUtc(newest);
-                if (age < TimeSpan.FromHours(24))
+                TimeSpan age = DateTime.UtcNow - File.GetLastWriteTimeUtc(newest);
+                if (age < TimeSpan.FromHours(24) && IsZipReadable(newest))
                     return;
             }
 
-            CreateBackup("rolling", schemaVersion, false);
+            CreateBackup("rolling", schemaVersion, false, false);
         }
         catch (Exception e)
         {
@@ -144,69 +160,306 @@ public static class DatabaseBackupService
         }
     }
 
-    public static bool TryRestoreLatestDatabaseBackup(int currentSchemaVersion, out string restoredBackup, out string error)
+    public static bool TryCreateKnownGoodSnapshot(int schemaVersion, out string path, out string error)
+    {
+        path = null;
+        error = null;
+        string stagingDirectory = null;
+
+        try
+        {
+            if (!File.Exists(DatabasePaths.DatabasePath))
+            {
+                error = "Die Datenbankdatei fehlt.";
+                return false;
+            }
+
+            Directory.CreateDirectory(DatabasePaths.KnownGoodRoot);
+            stagingDirectory = DatabasePaths.CreateStagingDirectory("known-good");
+
+            string stagedDatabase = Path.Combine(stagingDirectory, DatabasePaths.DatabaseFileName);
+
+            using (var source = new SQLiteConnection(DatabasePaths.DatabasePath, SQLiteOpenFlags.ReadOnly))
+            {
+                source.Backup(stagedDatabase);
+            }
+
+            using (var connection = new SQLiteConnection(stagedDatabase, SQLiteOpenFlags.ReadOnly))
+            {
+                if (!DatabaseHealth.TryQuickCheck(connection, out error))
+                {
+                    error = "Known-good snapshot failed integrity check: " + error;
+                    return false;
+                }
+
+                int version = DatabaseHealth.GetUserVersion(connection);
+                if (version != schemaVersion)
+                {
+                    error = "Known-good snapshot has schema v" + version + ", expected v" + schemaVersion + ".";
+                    return false;
+                }
+
+                if (!DatabaseHealth.TryValidateSchema(connection, schemaVersion, out error))
+                    return false;
+            }
+
+            DatabaseFileSet.Replace(stagedDatabase, DatabasePaths.KnownGoodDatabasePath);
+            path = DatabasePaths.KnownGoodDatabasePath;
+            return true;
+        }
+        catch (Exception e)
+        {
+            error = e.Message;
+            return false;
+        }
+        finally
+        {
+            DatabasePaths.TryDeleteDirectory(stagingDirectory);
+        }
+    }
+
+    public static void EnsureKnownGoodSnapshot(int schemaVersion)
+    {
+        if (TryCreateKnownGoodSnapshot(schemaVersion, out _, out string error))
+            return;
+
+        Debug.LogWarning("[DatabaseBackup] Known-good snapshot failed: " + error);
+    }
+
+    public static bool TryRestoreLatestDatabaseBackup(
+        int currentSchemaVersion,
+        out string restoredBackup,
+        out string error)
     {
         restoredBackup = null;
         error = null;
 
-        foreach (string backupPath in GetBackupFiles())
+        foreach (string candidate in GetRestoreCandidates())
         {
-            string stagingDirectory = null;
+            string candidateError;
 
             try
             {
-                stagingDirectory = DatabasePaths.CreateStagingDirectory("restore");
-                ZipFile.ExtractToDirectory(backupPath, stagingDirectory);
+                bool restored = IsZipPath(candidate)
+                    ? TryRestoreZipBackup(candidate, currentSchemaVersion, out candidateError)
+                    : TryRestoreKnownGood(candidate, currentSchemaVersion, out candidateError);
 
-                if (!TryValidateManifest(stagingDirectory, out string manifestError))
+                if (restored)
                 {
-                    Debug.LogWarning("[DatabaseBackup] Backup manifest is invalid: " + backupPath + " (" + manifestError + ")");
-                    continue;
+                    restoredBackup = candidate;
+                    Debug.Log("[DatabaseBackup] Restored backup: " + candidate);
+                    return true;
                 }
-
-                string stagedDatabase = Path.Combine(stagingDirectory, "database", DatabasePaths.DatabaseFileName);
-                if (!File.Exists(stagedDatabase))
-                    continue;
-
-                if (!DatabaseHealth.TryQuickCheck(stagedDatabase, out string healthError))
-                {
-                    Debug.LogWarning("[DatabaseBackup] Backup is corrupt: " + backupPath + " (" + healthError + ")");
-                    continue;
-                }
-
-                int backupSchemaVersion;
-                using (var connection = new SQLiteConnection(stagedDatabase, SQLiteOpenFlags.ReadOnly))
-                {
-                    backupSchemaVersion = DatabaseHealth.GetUserVersion(connection);
-                }
-
-                if (backupSchemaVersion > currentSchemaVersion)
-                {
-                    Debug.LogWarning("[DatabaseBackup] Skipping newer backup schema v" + backupSchemaVersion + ": " + backupPath);
-                    continue;
-                }
-
-                RestoreStagedDatabase(stagingDirectory, stagedDatabase);
-                restoredBackup = backupPath;
-                Debug.Log("[DatabaseBackup] Restored backup: " + backupPath);
-                return true;
             }
             catch (Exception e)
             {
-                Debug.LogWarning("[DatabaseBackup] Restore failed for '" + backupPath + "': " + e.Message);
+                candidateError = e.Message;
+                Debug.LogWarning("[DatabaseBackup] Restore failed for '" + candidate + "': " + e.Message);
             }
-            finally
+
+            if (!string.IsNullOrEmpty(candidateError))
             {
-                DatabasePaths.TryDeleteDirectory(stagingDirectory);
+                error = candidateError;
+                Debug.LogWarning("[DatabaseBackup] Rejected candidate '" + candidate + "': " + candidateError);
             }
         }
 
-        error = "Kein gültiges Backup gefunden.";
+        error ??= "Kein gültiges Backup gefunden.";
         return false;
     }
 
-    private static bool TryValidateManifest(string stagingDirectory, out string error)
+    public static bool TryValidateBackup(string backupPath, out string error)
     {
+        error = null;
+
+        if (string.IsNullOrEmpty(backupPath) || !File.Exists(backupPath))
+        {
+            error = "Backup-Datei fehlt.";
+            return false;
+        }
+
+        string stagingDirectory = null;
+
+        try
+        {
+            stagingDirectory = DatabasePaths.CreateStagingDirectory("validate-backup");
+
+            if (IsZipPath(backupPath))
+            {
+                ZipFile.ExtractToDirectory(backupPath, stagingDirectory);
+
+                if (!TryValidateManifest(stagingDirectory, out BackupManifest manifest, out error))
+                    return false;
+
+                string stagedDatabase = Path.Combine(stagingDirectory, "database", DatabasePaths.DatabaseFileName);
+                if (!File.Exists(stagedDatabase))
+                {
+                    error = "Datenbank fehlt im Backup.";
+                    return false;
+                }
+
+                using (var connection = new SQLiteConnection(stagedDatabase, SQLiteOpenFlags.ReadOnly))
+                {
+                    if (!DatabaseHealth.TryQuickCheck(connection, out error))
+                        return false;
+
+                    int version = DatabaseHealth.GetUserVersion(connection);
+                    if (!IsCompatibleVersion(version, DatabaseSchema.CurrentVersion))
+                    {
+                        error = "Backup hat eine nicht unterstützte Schema-Version: v" + version + ".";
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+
+            using (var connection = new SQLiteConnection(backupPath, SQLiteOpenFlags.ReadOnly))
+            {
+                if (!DatabaseHealth.TryQuickCheck(connection, out error))
+                    return false;
+
+                int version = DatabaseHealth.GetUserVersion(connection);
+                if (version != DatabaseSchema.CurrentVersion)
+                {
+                    error = "Known-good Snapshot hat Schema v" + version +
+                            ", erwartet v" + DatabaseSchema.CurrentVersion + ".";
+                    return false;
+                }
+
+                return DatabaseHealth.TryValidateSchema(connection, version, out error);
+            }
+        }
+        catch (Exception e)
+        {
+            error = e.Message;
+            return false;
+        }
+        finally
+        {
+            DatabasePaths.TryDeleteDirectory(stagingDirectory);
+        }
+    }
+
+    private static bool TryRestoreZipBackup(string backupPath, int currentSchemaVersion, out string error)
+    {
+        error = null;
+        string stagingDirectory = null;
+
+        try
+        {
+            stagingDirectory = DatabasePaths.CreateStagingDirectory("restore");
+            ZipFile.ExtractToDirectory(backupPath, stagingDirectory);
+
+            if (!TryValidateManifest(stagingDirectory, out BackupManifest manifest, out error))
+                return false;
+
+            string stagedDatabase = Path.Combine(stagingDirectory, "database", DatabasePaths.DatabaseFileName);
+            if (!File.Exists(stagedDatabase))
+            {
+                error = "Datenbank fehlt im Backup.";
+                return false;
+            }
+
+            using (var connection = new SQLiteConnection(stagedDatabase, SQLiteOpenFlags.ReadOnly))
+            {
+                if (!DatabaseHealth.TryQuickCheck(connection, out error))
+                    return false;
+
+                int backupSchemaVersion = DatabaseHealth.GetUserVersion(connection);
+
+                if (!IsCompatibleVersion(backupSchemaVersion, currentSchemaVersion))
+                {
+                    error = "Backup-Schema v" + backupSchemaVersion +
+                            " ist mit v" + currentSchemaVersion + " nicht kompatibel.";
+                    return false;
+                }
+
+                if (manifest != null && manifest.SchemaVersion != backupSchemaVersion)
+                {
+                    error = "Manifest-Schemaversion passt nicht zur Datenbank.";
+                    return false;
+                }
+            }
+
+            RestoreStagedDatabase(stagingDirectory, stagedDatabase);
+            return true;
+        }
+        catch (Exception e)
+        {
+            error = e.Message;
+            return false;
+        }
+        finally
+        {
+            DatabasePaths.TryDeleteDirectory(stagingDirectory);
+        }
+    }
+
+    private static bool TryRestoreKnownGood(string knownGoodPath, int currentSchemaVersion, out string error)
+    {
+        error = null;
+        string stagingDirectory = null;
+
+        try
+        {
+            if (!File.Exists(knownGoodPath))
+            {
+                error = "Known-good Snapshot fehlt.";
+                return false;
+            }
+
+            using (var connection = new SQLiteConnection(knownGoodPath, SQLiteOpenFlags.ReadOnly))
+            {
+                if (!DatabaseHealth.TryQuickCheck(connection, out error))
+                    return false;
+
+                int version = DatabaseHealth.GetUserVersion(connection);
+                if (version != currentSchemaVersion)
+                {
+                    error = "Known-good Snapshot hat Schema v" + version +
+                            ", erwartet v" + currentSchemaVersion + ".";
+                    return false;
+                }
+
+                if (!DatabaseHealth.TryValidateSchema(connection, version, out error))
+                    return false;
+            }
+
+            stagingDirectory = DatabasePaths.CreateStagingDirectory("restore-known-good");
+            string stagedDatabase = Path.Combine(stagingDirectory, DatabasePaths.DatabaseFileName);
+            DatabaseFileSet.Copy(knownGoodPath, stagedDatabase);
+            RestoreStagedDatabase(stagingDirectory, stagedDatabase);
+            return true;
+        }
+        catch (Exception e)
+        {
+            error = e.Message;
+            return false;
+        }
+        finally
+        {
+            DatabasePaths.TryDeleteDirectory(stagingDirectory);
+        }
+    }
+
+    private static bool IsCompatibleVersion(int backupVersion, int currentVersion)
+    {
+        if (backupVersion < 0 || backupVersion > currentVersion)
+            return false;
+
+        if (backupVersion == currentVersion)
+            return true;
+
+        return DatabaseMigrationRunner.CanUpgrade(backupVersion, currentVersion);
+    }
+
+    private static bool TryValidateManifest(
+        string stagingDirectory,
+        out BackupManifest manifest,
+        out string error)
+    {
+        manifest = null;
         error = null;
 
         string manifestPath = Path.Combine(stagingDirectory, ManifestEntryName);
@@ -216,7 +469,6 @@ public static class DatabaseBackupService
             return false;
         }
 
-        BackupManifest manifest;
         try
         {
             manifest = JsonConvert.DeserializeObject<BackupManifest>(File.ReadAllText(manifestPath));
@@ -328,56 +580,51 @@ public static class DatabaseBackupService
 
     private static void RestoreStagedDatabase(string stagingDirectory, string stagedDatabase)
     {
-        string timestamp = DateTime.UtcNow.ToString("yyyyMMdd-HHmmss-fff");
-        string databaseBackupPath = DatabasePaths.DatabasePath + ".pre-restore-" + timestamp;
+        string quarantineDirectory = DatabasePaths.CreateQuarantineDirectory("restore");
+        string quarantinedDatabase = Path.Combine(quarantineDirectory, DatabasePaths.DatabaseFileName);
         string stagedRecordings = Path.Combine(stagingDirectory, "recordings");
-        string recordingsBackupPath = DatabasePaths.RecordingsRoot + ".pre-restore-" + timestamp;
+        string quarantinedRecordings = Path.Combine(quarantineDirectory, DatabasePaths.RecordingsFolderName);
         bool movedDatabase = false;
         bool movedRecordings = false;
 
         try
         {
-            if (File.Exists(DatabasePaths.DatabasePath))
+            if (DatabaseFileSet.Exists(DatabasePaths.DatabasePath))
             {
-                File.Move(DatabasePaths.DatabasePath, databaseBackupPath);
+                DatabaseFileSet.MoveTo(DatabasePaths.DatabasePath, quarantinedDatabase);
                 movedDatabase = true;
             }
 
-            Directory.CreateDirectory(Path.GetDirectoryName(DatabasePaths.DatabasePath));
-            File.Move(stagedDatabase, DatabasePaths.DatabasePath);
+            DatabaseFileSet.Replace(stagedDatabase, DatabasePaths.DatabasePath);
 
             if (Directory.Exists(stagedRecordings))
             {
                 if (Directory.Exists(DatabasePaths.RecordingsRoot))
                 {
-                    Directory.Move(DatabasePaths.RecordingsRoot, recordingsBackupPath);
+                    Directory.Move(DatabasePaths.RecordingsRoot, quarantinedRecordings);
                     movedRecordings = true;
                 }
 
                 Directory.Move(stagedRecordings, DatabasePaths.RecordingsRoot);
             }
 
-            if (movedDatabase && File.Exists(databaseBackupPath))
-                File.Delete(databaseBackupPath);
-
-            if (movedRecordings && Directory.Exists(recordingsBackupPath))
-                Directory.Delete(recordingsBackupPath, true);
+            PruneQuarantine();
         }
         catch
         {
             try
             {
                 if (File.Exists(DatabasePaths.DatabasePath))
-                    File.Delete(DatabasePaths.DatabasePath);
+                    DatabaseFileSet.Delete(DatabasePaths.DatabasePath);
 
-                if (movedDatabase && File.Exists(databaseBackupPath))
-                    File.Move(databaseBackupPath, DatabasePaths.DatabasePath);
+                if (movedDatabase && File.Exists(quarantinedDatabase))
+                    DatabaseFileSet.MoveTo(quarantinedDatabase, DatabasePaths.DatabasePath);
 
                 if (Directory.Exists(DatabasePaths.RecordingsRoot))
                     Directory.Delete(DatabasePaths.RecordingsRoot, true);
 
-                if (movedRecordings && Directory.Exists(recordingsBackupPath))
-                    Directory.Move(recordingsBackupPath, DatabasePaths.RecordingsRoot);
+                if (movedRecordings && Directory.Exists(quarantinedRecordings))
+                    Directory.Move(quarantinedRecordings, DatabasePaths.RecordingsRoot);
             }
             catch (Exception rollbackException)
             {
@@ -480,6 +727,11 @@ public static class DatabaseBackupService
         }
     }
 
+    private static bool IsZipPath(string path)
+    {
+        return path.EndsWith(".zip", StringComparison.OrdinalIgnoreCase);
+    }
+
     private static IEnumerable<string> GetBackupFiles()
     {
         if (!Directory.Exists(DatabasePaths.BackupsRoot))
@@ -487,6 +739,22 @@ public static class DatabaseBackupService
 
         return Directory
             .EnumerateFiles(DatabasePaths.BackupsRoot, "darts-backup-*.zip", SearchOption.TopDirectoryOnly)
+            .OrderByDescending(File.GetLastWriteTimeUtc)
+            .ThenByDescending(path => path, StringComparer.Ordinal)
+            .ToArray();
+    }
+
+    private static IEnumerable<string> GetRestoreCandidates()
+    {
+        var candidates = new List<string>();
+
+        if (File.Exists(DatabasePaths.KnownGoodDatabasePath))
+            candidates.Add(DatabasePaths.KnownGoodDatabasePath);
+
+        candidates.AddRange(GetBackupFiles());
+
+        return candidates
+            .Distinct(StringComparer.Ordinal)
             .OrderByDescending(File.GetLastWriteTimeUtc)
             .ThenByDescending(path => path, StringComparer.Ordinal)
             .ToArray();
@@ -526,6 +794,55 @@ public static class DatabaseBackupService
         catch (Exception e)
         {
             Debug.LogWarning("[DatabaseBackup] Retention cleanup failed: " + e.Message);
+        }
+    }
+
+    private static void PruneQuarantine()
+    {
+        try
+        {
+            if (!Directory.Exists(DatabasePaths.CorruptRoot))
+                return;
+
+            var directories = Directory
+                .EnumerateDirectories(DatabasePaths.CorruptRoot, "*", SearchOption.TopDirectoryOnly)
+                .OrderByDescending(Directory.GetLastWriteTimeUtc)
+                .ToArray();
+
+            for (int i = QuarantineDirectoryCount; i < directories.Length; i++)
+            {
+                try
+                {
+                    Directory.Delete(directories[i], true);
+                }
+                catch (Exception e)
+                {
+                    Debug.LogWarning("[DatabaseBackup] Could not delete old quarantine '" + directories[i] + "': " + e.Message);
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning("[DatabaseBackup] Quarantine cleanup failed: " + e.Message);
+        }
+    }
+
+    private static void TryRecordBackupTimestamp()
+    {
+        try
+        {
+            using (var connection = new SQLiteConnection(DatabasePaths.DatabasePath, SQLiteOpenFlags.ReadWrite))
+            {
+                DatabaseMeta.Set(
+                    connection,
+                    DatabaseSchema.LastBackupMetaKey,
+                    DateTime.UtcNow.ToString("o")
+                );
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning("[DatabaseBackup] Could not record backup timestamp: " + e.Message);
         }
     }
 
@@ -581,6 +898,7 @@ public static class DatabaseBackupService
         public string AppVersion;
         public int SchemaVersion;
         public string Reason;
+        public bool IncludesRecordings;
         public Dictionary<string, int> TableCounts = new Dictionary<string, int>();
         public int RecordingFileCount;
         public long RecordingBytes;

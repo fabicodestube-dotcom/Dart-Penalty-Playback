@@ -39,6 +39,8 @@ public static class DatabaseMigrationSmokeTest
             TestBotSkillPersistence();
             TestLegacyMigration();
             TestBackupAndRestore();
+            TestBootstrapRecovery();
+            TestLoadFailureRecovery();
             TestClipIntegrityRepair();
             TestCustomHitSectorRoundtrip();
             TestBuiltInHitSectors();
@@ -53,6 +55,7 @@ public static class DatabaseMigrationSmokeTest
         {
             DatabasePaths.RootOverride = previousRoot;
             DatabaseBootstrapper.ResetForTests();
+            DatabaseRecoveryService.ResetForTests();
             SaveSystem.ResetLoadFailedForTests();
 
             try
@@ -83,7 +86,7 @@ public static class DatabaseMigrationSmokeTest
             Check(DatabaseHealth.GetUserVersion(connection) == DatabaseSchema.CurrentVersion, "Fresh database has wrong user_version.");
             Check(DatabaseHealth.GetApplicationId(connection) == DatabaseSchema.ApplicationId, "Fresh database has wrong application_id.");
             Check(DatabaseHealth.TableExists(connection, "schema_migrations"), "schema_migrations is missing.");
-            Check(connection.ExecuteScalar<int>("SELECT COUNT(*) FROM schema_migrations WHERE version = 1;") == 1, "Fresh database is missing migration v1.");
+            Check(connection.ExecuteScalar<int>("SELECT COUNT(*) FROM schema_migrations;") == 0, "Fresh database must not contain migration patches.");
             Check(DatabaseHealth.TableExists(connection, "player_stats_snapshots"), "player_stats_snapshots is missing.");
             Check(!DatabaseHealth.TableExists(connection, "player_stats_all"), "player_stats_all must not exist in V1.");
             Check(DatabaseHealth.ColumnExists(connection, "bot_state", "skill"), "bot_state.skill is missing.");
@@ -224,6 +227,7 @@ public static class DatabaseMigrationSmokeTest
 
         var backup = DatabaseBackupService.CreateBackup("smoke", DatabaseSchema.CurrentVersion, true);
         Check(backup.Success && File.Exists(backup.Path), "Backup was not created.");
+        File.SetLastWriteTimeUtc(backup.Path, DateTime.UtcNow.AddMinutes(1));
 
         File.Delete(recording);
         File.WriteAllText(DatabasePaths.DatabasePath, "not a sqlite database");
@@ -250,6 +254,9 @@ public static class DatabaseMigrationSmokeTest
                 File.Delete(otherBackup);
         }
 
+        if (File.Exists(DatabasePaths.KnownGoodDatabasePath))
+            File.Delete(DatabasePaths.KnownGoodDatabasePath);
+
         TamperBackupFile(backup.Path, "recordings/Scores/smoke.wav");
 
         bool tamperedRestored = DatabaseBackupService.TryRestoreLatestDatabaseBackup(
@@ -271,6 +278,81 @@ public static class DatabaseMigrationSmokeTest
         }
 
         Debug.Log("[DB-SMOKE] Backup/restore OK");
+    }
+
+    private static void TestBootstrapRecovery()
+    {
+        string root = Path.Combine(Path.GetTempPath(), "darts-db-smoke-recovery-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        DatabaseBootstrapper.ResetForTests();
+        DatabaseRecoveryService.ResetForTests();
+        ResetRoot(root);
+
+        var first = DatabaseBootstrapper.Prepare();
+        Check(first.Success && first.CreatedNewDatabase, "Recovery test bootstrap failed: " + first.Error);
+        Check(File.Exists(DatabasePaths.KnownGoodDatabasePath), "Known-good snapshot was not created.");
+        Check(File.Exists(DatabasePaths.DatabasePath), "Fresh database was not created.");
+
+        File.WriteAllText(DatabasePaths.DatabasePath, "not a sqlite database");
+        DatabaseBootstrapper.ResetForTests();
+
+        var second = DatabaseBootstrapper.Prepare();
+        Check(second.Success, "Recovery bootstrap failed: " + second.Error);
+        Check(second.RestoredFromBackup, "Recovery bootstrap did not restore a backup.");
+        Check(!second.CreatedNewDatabase, "Recovery bootstrap created a new database instead of restoring.");
+        Check(
+            DatabaseHealth.TryFullCheck(DatabasePaths.DatabasePath, out string healthError),
+            "Recovered database is invalid: " + healthError
+        );
+
+        try
+        {
+            Directory.Delete(root, true);
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning("[DB-SMOKE] Recovery test cleanup failed: " + e.Message);
+        }
+
+        Debug.Log("[DB-SMOKE] Bootstrap recovery OK");
+    }
+
+    private static void TestLoadFailureRecovery()
+    {
+        string root = Path.Combine(Path.GetTempPath(), "darts-db-smoke-load-recovery-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        DatabaseBootstrapper.ResetForTests();
+        DatabaseRecoveryService.ResetForTests();
+        ResetRoot(root);
+
+        var bootstrap = DatabaseBootstrapper.Prepare();
+        Check(bootstrap.Success, "Load-recovery bootstrap failed: " + bootstrap.Error);
+
+        File.WriteAllText(DatabasePaths.DatabasePath, "not a sqlite database");
+
+        bool recovered = DatabaseRecoveryService.TryRecoverForLoadFailure(
+            out string restoredBackup,
+            out string recoveryError
+        );
+
+        Check(recovered, "Load-failure recovery failed: " + recoveryError);
+        Check(DatabaseRecoveryService.RecoveredThisSession, "Load-failure recovery was not recorded.");
+        Check(!string.IsNullOrEmpty(restoredBackup) && File.Exists(restoredBackup), "Load-failure recovery did not report a backup.");
+        Check(
+            DatabaseHealth.TryFullCheck(DatabasePaths.DatabasePath, out string healthError),
+            "Database after load-failure recovery is invalid: " + healthError
+        );
+
+        try
+        {
+            Directory.Delete(root, true);
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning("[DB-SMOKE] Load-recovery test cleanup failed: " + e.Message);
+        }
+
+        Debug.Log("[DB-SMOKE] Load-failure recovery OK");
     }
 
     private static void TestClipIntegrityRepair()
@@ -767,7 +849,7 @@ public static class DatabaseMigrationSmokeTest
 
         string root = CreateRoot("actual-copy");
         string copiedDatabase = Path.Combine(root, DatabasePaths.DatabaseFileName);
-        File.Copy(actualDatabase, copiedDatabase, true);
+        DatabaseFileSet.Copy(actualDatabase, copiedDatabase);
 
         string actualRecordings = Path.Combine(actualRoot, DatabasePaths.RecordingsFolderName);
         if (Directory.Exists(actualRecordings))
@@ -814,7 +896,7 @@ public static class DatabaseMigrationSmokeTest
         ResetRoot(root);
         if (Directory.Exists(actualRecordings))
             CopyDirectory(actualRecordings, Path.Combine(root, DatabasePaths.RecordingsFolderName));
-        File.Copy(actualDatabase, DatabasePaths.DatabasePath, true);
+        DatabaseFileSet.Copy(actualDatabase, DatabasePaths.DatabasePath);
 
         var result = DatabaseBootstrapper.Prepare();
         if (!result.Success)
@@ -904,7 +986,7 @@ public static class DatabaseMigrationSmokeTest
             {
                 Check(connection.ExecuteScalar<int>("SELECT COUNT(*) FROM player_game_stats WHERE stats_schema_version < ?;", DatabaseSchema.CurrentStatsVersion) == 0, "Stats backfill left outdated rows.");
                 Check(connection.ExecuteScalar<int>("SELECT COUNT(*) FROM player_game_stats;") == expectedStatRows, "Stats backfill changed the row count.");
-                Check(DatabaseMigrationRunner.GetMeta(connection, DatabaseSchema.StatsVersionMetaKey) == DatabaseSchema.CurrentStatsVersion.ToString(), "Stats version meta was not updated.");
+                Check(DatabaseMeta.Get(connection, DatabaseSchema.StatsVersionMetaKey) == DatabaseSchema.CurrentStatsVersion.ToString(), "Stats version meta was not updated.");
             }
         }
 

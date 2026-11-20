@@ -17,6 +17,7 @@ public sealed class DatabaseBootstrapResult
     public int FromSchemaVersion;
     public int ToSchemaVersion;
     public string BackupPath;
+    public string RecoveryReason;
     public string Error;
     public Exception Exception;
 

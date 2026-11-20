@@ -164,7 +164,7 @@ public class HistoryItem : MonoBehaviour
             metricLabel: metricLabel,
             stats: BuildPenaltyStats(entry, summary),
             setsWonOverride: entry.SetsWon,
-            legsWonOverride: entry.LegsWon
+            legsWonOverride: entry.LegsWonCurrentSet
         );
 
         items.Add(item.gameObject);

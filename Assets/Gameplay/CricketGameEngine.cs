@@ -163,8 +163,6 @@ public class CricketGameEngine : GameEngine
         playerList.RefreshUI();
 
         NotifyWin(WinLevel.Leg, playerId);
-
-        HandleBotCheck(game.GetCurrentPlayerId());
     }
 
     private void HandleSetWon(Guid? playerId)
@@ -177,19 +175,22 @@ public class CricketGameEngine : GameEngine
 
         if (playerId.HasValue && playerId.Value != Guid.Empty)
             NotifyWin(WinLevel.Set, playerId.Value);
-
-        HandleBotCheck(game.GetCurrentPlayerId());
     }
 
 
     protected override IEnumerator HandleBotTurn(DartBot bot)
     {
+        int version = CurrentBotTurnVersion;
+
         // Lock input
         inputHandler.SetInputEnabled(false);
 
-        for (int i = 0; i < 3; i++)
+        for (int i = 0; i < 3 && version == CurrentBotTurnVersion; i++)
         {
             yield return new WaitUntil(() => !isPaused);
+
+            if (version != CurrentBotTurnVersion)
+                yield break;
 
             // If Turn has already ended (e.g. by Bust or Win)
             var currentTurn = game.GetCurrentTurnOfPlayer(bot.GetID());
@@ -201,6 +202,9 @@ public class CricketGameEngine : GameEngine
 
             Throw t = GetNextCricketBotThrow(bot);
             yield return inputHandler.PlayBotThrow(t, () => AddThrow(t));
+
+            if (version != CurrentBotTurnVersion)
+                yield break;
 
             var updatedTurn = game.GetCurrentTurnOfPlayer(bot.GetID());
             bool canThrowAgain = i < 2

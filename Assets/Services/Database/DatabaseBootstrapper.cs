@@ -26,6 +26,7 @@ public static class DatabaseBootstrapper
         }
 
         SqliteDatabaseService.ResetSchemaEnsured();
+        DatabaseRecoveryService.ResetForTests();
         SaveSystem.ResetLoadState();
     }
 
@@ -40,6 +41,18 @@ public static class DatabaseBootstrapper
         }
     }
 #endif
+
+    internal static void ResetForRecovery()
+    {
+        lock (Gate)
+        {
+            result = null;
+            Status = DatabaseBootstrapStatus.NotStarted;
+        }
+
+        SqliteDatabaseService.ResetSchemaEnsured();
+        SaveSystem.ResetLoadState();
+    }
 
     public static DatabaseBootstrapResult Prepare()
     {
@@ -66,10 +79,7 @@ public static class DatabaseBootstrapper
             }
 
             if (result.Success)
-            {
                 SqliteDatabaseService.MarkSchemaEnsured();
-                RunQuickIntegrityCheck();
-            }
 
             return result;
         }
@@ -89,40 +99,72 @@ public static class DatabaseBootstrapper
     {
         Directory.CreateDirectory(DatabasePaths.Root);
         Directory.CreateDirectory(DatabasePaths.BackupsRoot);
+        Directory.CreateDirectory(DatabasePaths.KnownGoodRoot);
+        Directory.CreateDirectory(DatabasePaths.CorruptRoot);
 
         string databasePath = DatabasePaths.DatabasePath;
+        string restoredBackupPath = null;
 
-        if (!File.Exists(databasePath) || new FileInfo(databasePath).Length == 0)
+        if (!File.Exists(databasePath))
         {
-            if (File.Exists(databasePath))
-                File.Delete(databasePath);
+            if (DatabaseBackupService.TryRestoreLatestDatabaseBackup(
+                    DatabaseSchema.CurrentVersion,
+                    out restoredBackupPath,
+                    out _))
+            {
+                Debug.Log("[DatabaseBootstrap] Restored missing database from backup: " + restoredBackupPath);
+            }
+            else
+            {
+                return CreateFreshDatabase();
+            }
+        }
+        else if (new FileInfo(databasePath).Length == 0)
+        {
+            string quarantineDirectory = DatabasePaths.CreateQuarantineDirectory("empty-database");
+            DatabaseFileSet.MoveTo(databasePath, Path.Combine(quarantineDirectory, DatabasePaths.DatabaseFileName));
+            Debug.LogWarning("[DatabaseBootstrap] Empty database file was quarantined: " + quarantineDirectory);
 
-            return CreateFreshDatabase();
+            if (DatabaseBackupService.TryRestoreLatestDatabaseBackup(
+                    DatabaseSchema.CurrentVersion,
+                    out restoredBackupPath,
+                    out _))
+            {
+                Debug.Log("[DatabaseBootstrap] Restored empty database from backup: " + restoredBackupPath);
+            }
+            else
+            {
+                return CreateFreshDatabase();
+            }
         }
 
-        bool restoredFromBackup = false;
+        bool restoredFromBackup = !string.IsNullOrEmpty(restoredBackupPath);
         DatabaseInfo info = null;
+        string preflightError = null;
+        string restoreError = null;
 
         for (int attempt = 0; attempt < 2; attempt++)
         {
-            if (TryReadDatabaseInfo(databasePath, out info, out string preflightError))
+            if (TryReadDatabaseInfo(databasePath, out info, out preflightError))
                 break;
 
             if (!restoredFromBackup &&
                 DatabaseBackupService.TryRestoreLatestDatabaseBackup(
                     DatabaseSchema.CurrentVersion,
-                    out string restoredBackup,
-                    out string restoreError))
+                    out restoredBackupPath,
+                    out restoreError))
             {
                 restoredFromBackup = true;
                 SqliteDatabaseService.ResetSchemaEnsured();
-                Debug.Log("[DatabaseBootstrap] Restored database from backup: " + restoredBackup);
+                Debug.Log("[DatabaseBootstrap] Restored database from backup: " + restoredBackupPath);
                 continue;
             }
 
-            return DatabaseBootstrapResult.Failed(
-                "Die Datenbank ist beschädigt und konnte nicht wiederhergestellt werden: " + preflightError
-            );
+            string message = "Die Datenbank ist beschädigt und konnte nicht wiederhergestellt werden: " + preflightError;
+            if (!string.IsNullOrEmpty(restoreError))
+                message += " (" + restoreError + ")";
+
+            return DatabaseBootstrapResult.Failed(message);
         }
 
         if (info == null)
@@ -148,15 +190,7 @@ public static class DatabaseBootstrapper
 
         int fromVersion = info.UserVersion;
 
-        if (fromVersion < DatabaseSchema.CurrentVersion)
-        {
-            return DatabaseBootstrapResult.Failed(
-                "Die vorhandene Datenbank hat Schema v" + fromVersion +
-                ". Diese Version unterstützt nur Schema v" + DatabaseSchema.CurrentVersion +
-                ". Bitte die Datenbank löschen; es gibt bewusst keine Migration.");
-        }
-
-        if (info.UserVersion == DatabaseSchema.CurrentVersion)
+        if (fromVersion == DatabaseSchema.CurrentVersion)
         {
             DatabaseBackupService.CreateRollingBackupIfDue(DatabaseSchema.CurrentVersion);
 
@@ -164,12 +198,61 @@ public static class DatabaseBootstrapper
             {
                 Success = true,
                 RestoredFromBackup = restoredFromBackup,
+                BackupPath = restoredBackupPath,
                 FromSchemaVersion = info.UserVersion,
                 ToSchemaVersion = info.UserVersion
             };
         }
 
-        return DatabaseBootstrapResult.Failed("Unbekannter Datenbankzustand.");
+        if (!DatabaseMigrationRunner.CanUpgrade(fromVersion, DatabaseSchema.CurrentVersion))
+        {
+            return DatabaseBootstrapResult.Failed(
+                "Die vorhandene Datenbank hat Schema v" + fromVersion +
+                ". Diese Version unterstützt nur Schema v" + DatabaseSchema.CurrentVersion +
+                " und es ist kein Migrationspfad vorhanden."
+            );
+        }
+
+        DatabaseBackupResult backup;
+
+        try
+        {
+            backup = DatabaseBackupService.CreateBackup(
+                "pre-migration",
+                fromVersion,
+                true,
+                true);
+        }
+        catch (Exception e)
+        {
+            return DatabaseBootstrapResult.Failed(
+                "Migration abgebrochen: Vor der Schemaänderung konnte kein Backup erstellt werden: " + e.Message,
+                e);
+        }
+
+        try
+        {
+            DatabaseMigrationRunner.Migrate(databasePath, fromVersion, DatabaseSchema.CurrentVersion);
+        }
+        catch (Exception e)
+        {
+            return DatabaseBootstrapResult.Failed(
+                "Migration von Schema v" + fromVersion + " auf v" + DatabaseSchema.CurrentVersion +
+                " fehlgeschlagen. Die Datenbank wurde nicht verändert. Backup: " + backup.Path,
+                e);
+        }
+
+        DatabaseBackupService.CreateRollingBackupIfDue(DatabaseSchema.CurrentVersion);
+
+        return new DatabaseBootstrapResult
+        {
+            Success = true,
+            RestoredFromBackup = restoredFromBackup,
+            Migrated = true,
+            BackupPath = backup.Path,
+            FromSchemaVersion = fromVersion,
+            ToSchemaVersion = DatabaseSchema.CurrentVersion
+        };
     }
 
     private static DatabaseBootstrapResult CreateFreshDatabase()
@@ -181,17 +264,28 @@ public static class DatabaseBootstrapper
             stagingDirectory = DatabasePaths.CreateStagingDirectory("new-database");
             string stagedDatabase = Path.Combine(stagingDirectory, DatabasePaths.DatabaseFileName);
 
-            File.WriteAllBytes(stagedDatabase, Array.Empty<byte>());
-            DatabaseMigrationRunner.Migrate(stagedDatabase, 0, DatabaseSchema.CurrentVersion);
+            using (var connection = new SQLiteConnection(
+                       stagedDatabase,
+                       SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create))
+            {
+                SqliteDatabaseService.InitializeFreshDatabase(connection);
 
-            if (!DatabaseHealth.TryQuickCheck(stagedDatabase, out string healthError))
-                throw new InvalidOperationException("Neue Datenbank ist ungültig: " + healthError);
+                if (!DatabaseHealth.TryQuickCheck(connection, out string healthError))
+                    throw new InvalidOperationException("Neue Datenbank ist ungültig: " + healthError);
+
+                if (!DatabaseHealth.TryValidateSchema(connection, DatabaseSchema.CurrentVersion, out string schemaError))
+                    throw new InvalidOperationException("Neues Schema ist ungültig: " + schemaError);
+            }
 
             string destination = DatabasePaths.DatabasePath;
-            if (File.Exists(destination))
-                File.Delete(destination);
+            if (DatabaseFileSet.Exists(destination))
+            {
+                string quarantineDirectory = DatabasePaths.CreateQuarantineDirectory("fresh-database");
+                DatabaseFileSet.MoveTo(destination, Path.Combine(quarantineDirectory, DatabasePaths.DatabaseFileName));
+            }
 
-            File.Move(stagedDatabase, destination);
+            DatabaseFileSet.Replace(stagedDatabase, destination);
+            DatabaseBackupService.EnsureKnownGoodSnapshot(DatabaseSchema.CurrentVersion);
             DatabaseBackupService.CreateRollingBackupIfDue(DatabaseSchema.CurrentVersion);
 
             return new DatabaseBootstrapResult
@@ -205,22 +299,6 @@ public static class DatabaseBootstrapper
         finally
         {
             DatabasePaths.TryDeleteDirectory(stagingDirectory);
-        }
-    }
-
-    private static void RunQuickIntegrityCheck()
-    {
-        try
-        {
-            var report = RecordedClipIntegrityService.Scan(false);
-            if (report.IsHealthy)
-                return;
-
-            Debug.LogWarning("[DatabaseBootstrap] Clip quick check: " + report.ToSummary());
-        }
-        catch (System.Exception e)
-        {
-            Debug.LogWarning("[DatabaseBootstrap] Clip quick check failed: " + e.Message);
         }
     }
 
@@ -239,10 +317,30 @@ public static class DatabaseBootstrapper
                 if (!DatabaseHealth.TryQuickCheck(connection, out error))
                     return false;
 
+                int userVersion = DatabaseHealth.GetUserVersion(connection);
+                int applicationId = DatabaseHealth.GetApplicationId(connection);
+
+                if (applicationId != 0 && applicationId != DatabaseSchema.ApplicationId)
+                {
+                    info = new DatabaseInfo
+                    {
+                        UserVersion = userVersion,
+                        ApplicationId = applicationId
+                    };
+                    return true;
+                }
+
+                if (userVersion == DatabaseSchema.CurrentVersion &&
+                    !DatabaseHealth.TryValidateSchema(connection, DatabaseSchema.CurrentVersion, out string schemaError))
+                {
+                    error = "Schema ungültig: " + schemaError;
+                    return false;
+                }
+
                 info = new DatabaseInfo
                 {
-                    UserVersion = DatabaseHealth.GetUserVersion(connection),
-                    ApplicationId = DatabaseHealth.GetApplicationId(connection)
+                    UserVersion = userVersion,
+                    ApplicationId = applicationId
                 };
 
                 return true;

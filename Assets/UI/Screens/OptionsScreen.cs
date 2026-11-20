@@ -180,29 +180,9 @@ public class OptionsScreen : MonoBehaviour
     // THEME HANDLING
     // =========================
 
-    public void SetGreen()
-    {
-        SetColorScheme(ThemeColorScheme.Green);
-    }
-
     public void SetRed()
     {
         SetColorScheme(ThemeColorScheme.Red);
-    }
-
-    public void SetBlue()
-    {
-        SetColorScheme(ThemeColorScheme.Blue);
-    }
-
-    public void SetPurple()
-    {
-        SetColorScheme(ThemeColorScheme.Purple);
-    }
-
-    public void SetCyan()
-    {
-        SetColorScheme(ThemeColorScheme.Cyan);
     }
 
     public void SetOrange()
@@ -210,9 +190,14 @@ public class OptionsScreen : MonoBehaviour
         SetColorScheme(ThemeColorScheme.Orange);
     }
 
-    public void SetPink()
+    public void SetGold()
     {
-        SetColorScheme(ThemeColorScheme.Pink);
+        SetColorScheme(ThemeColorScheme.Gold);
+    }
+
+    public void SetGreen()
+    {
+        SetColorScheme(ThemeColorScheme.Green);
     }
 
     public void SetTeal()
@@ -220,19 +205,19 @@ public class OptionsScreen : MonoBehaviour
         SetColorScheme(ThemeColorScheme.Teal);
     }
 
-    public void SetIndigo()
+    public void SetBlue()
     {
-        SetColorScheme(ThemeColorScheme.Indigo);
+        SetColorScheme(ThemeColorScheme.Blue);
     }
 
-    public void SetBlueGrey()
+    public void SetViolet()
     {
-        SetColorScheme(ThemeColorScheme.BlueGrey);
+        SetColorScheme(ThemeColorScheme.Violet);
     }
 
-    public void SetDeepOrange()
+    public void SetPink()
     {
-        SetColorScheme(ThemeColorScheme.DeepOrange);
+        SetColorScheme(ThemeColorScheme.Pink);
     }
 
     public void SetThemeMode(bool dark)

@@ -338,6 +338,12 @@ public class AppSettingsManager : MonoBehaviour
         Settings.Penalties ??= new PenaltySettings();
         Settings.Penalties.Settings ??= new System.Collections.Generic.List<PenaltySetting>();
 
+        if (!System.Enum.IsDefined(typeof(ThemeColorScheme), Settings.Theme))
+        {
+            Debug.LogWarning($"[Settings] Unknown theme '{Settings.Theme}' -> defaulting to Green");
+            Settings.Theme = ThemeColorScheme.Green;
+        }
+
         if (string.IsNullOrWhiteSpace(Settings.Language.lastLocaleCode))
         {
             Debug.Log("[Settings] Missing language code -> defaulting to 'en'");

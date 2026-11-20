@@ -14,6 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Theme
   colors:
   - role: 5
-    color: {r: 0.9137255, g: 0.1176471, b: 0.3882353, a: 1}
+    color: {r: 0.760784, g: 0.094118, b: 0.356863, a: 1}
   - role: 12
-    color: {r: 0.9882353, g: 0.8941177, b: 0.9254902, a: 1}
+    color: {r: 0.972549, g: 0.890196, b: 0.921569, a: 1}

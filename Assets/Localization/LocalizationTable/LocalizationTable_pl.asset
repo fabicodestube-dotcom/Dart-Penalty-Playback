@@ -19,15 +19,15 @@ MonoBehaviour:
     m_Items: []
   m_TableData:
   - m_Id: 1
-    m_Localized: 30 dni
+    m_Localized: "Miesi\u0105c"
     m_Metadata:
       m_Items: []
   - m_Id: 2
-    m_Localized: 365 dni
+    m_Localized: Rok
     m_Metadata:
       m_Items: []
   - m_Id: 3
-    m_Localized: 7 dni
+    m_Localized: "Tydzie\u0144"
     m_Metadata:
       m_Items: []
   - m_Id: 4
@@ -73,10 +73,6 @@ MonoBehaviour:
     m_Localized: Niebieski
     m_Metadata:
       m_Items: []
-  - m_Id: 14
-    m_Localized: "Br\u0105z"
-    m_Metadata:
-      m_Items: []
   - m_Id: 15
     m_Localized: "Prze\u0142amanie"
     m_Metadata:
@@ -117,10 +113,6 @@ MonoBehaviour:
   - m_Id: 25
     m_Localized: "W\u0142asne d\u017Awi\u0119ki to d\u017Awi\u0119ki nagrane przez
       u\u017Cytkownika, w przeciwnym razie u\u017Cywany jest pakiet domy\u015Blny"
-    m_Metadata:
-      m_Items: []
-  - m_Id: 26
-    m_Localized: Cyjan
     m_Metadata:
       m_Items: []
   - m_Id: 27
@@ -1289,11 +1281,11 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 33806894813368321
-    m_Localized: "R\u00F3\u017Cowy"
+    m_Localized: "R\u00f3\u017cowy"
     m_Metadata:
       m_Items: []
   - m_Id: 33806894813368322
-    m_Localized: Limonkowy
+    m_Localized: Turkusowy
     m_Metadata:
       m_Items: []
   - m_Id: 33806894813368323
@@ -1366,6 +1358,14 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 33806894813368343
     m_Localized: Pełny ekran
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368344
+    m_Localized: "Z\u0142oty"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368345
+    m_Localized: Fioletowy
     m_Metadata:
       m_Items: []
   references:

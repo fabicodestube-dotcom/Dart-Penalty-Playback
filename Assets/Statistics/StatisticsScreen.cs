@@ -685,20 +685,6 @@ public class StatisticsScreen : MonoBehaviour, IUIScreen
         float listHeight = GetPopupListDesiredHeight();
         float maxList = GetPopupMaxListHeight();
 
-        // TEMP-DIAG: What height was calculated from?
-        try
-        {
-            float measured = popupListContentRect != null
-                ? LayoutUtility.GetPreferredHeight(popupListContentRect)
-                : -1f;
-            Debug.Log($"[PopupDiag] Filter: children={popupListContentRect?.childCount ?? -1} " +
-                $"rowH={GetPopupRowHeightLive():0.##} explicit={listHeight:0.##} measured={measured:0.##} max={maxList:0.##}");
-        }
-        catch (Exception e)
-        {
-            Debug.LogWarning($"[PopupDiag] Filter-Messung fehlgeschlagen: {e.Message}");
-        }
-
         if (maxList <= 0f)
         {
             Debug.LogWarning($"[StatisticsScreen] Popup Auto-Size abgebrochen: maxList={maxList}, items={popupItems.Count}");
@@ -947,6 +933,18 @@ public class StatisticsScreen : MonoBehaviour, IUIScreen
             popupListContentRect = popupScrollRect.content;
         if (popupParent == null && popupListContentRect != null)
             popupParent = popupListContentRect;
+
+        if (popupListContentRect != null)
+        {
+            var listLayout = popupListContentRect.GetComponent<VerticalLayoutGroup>();
+            if (listLayout != null)
+            {
+                if (listLayout.childForceExpandHeight)
+                    listLayout.childForceExpandHeight = false;
+                if (listLayout.childAlignment != TextAnchor.UpperCenter)
+                    listLayout.childAlignment = TextAnchor.UpperCenter;
+            }
+        }
 
         // Window: explicit field, otherwise Parent of ScrollView (Window with VLG+CSF).
         if (popupWindowRect == null && popupScrollViewRect != null)

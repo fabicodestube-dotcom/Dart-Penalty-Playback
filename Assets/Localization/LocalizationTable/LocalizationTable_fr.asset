@@ -19,15 +19,15 @@ MonoBehaviour:
     m_Items: []
   m_TableData:
   - m_Id: 1
-    m_Localized: 30 jours
+    m_Localized: Mois
     m_Metadata:
       m_Items: []
   - m_Id: 2
-    m_Localized: 365 jours
+    m_Localized: "Ann\xE9e"
     m_Metadata:
       m_Items: []
   - m_Id: 3
-    m_Localized: 7 jours
+    m_Localized: Semaine
     m_Metadata:
       m_Items: []
   - m_Id: 4
@@ -71,10 +71,6 @@ MonoBehaviour:
     m_Localized: Bleu
     m_Metadata:
       m_Items: []
-  - m_Id: 14
-    m_Localized: Bronze
-    m_Metadata:
-      m_Items: []
   - m_Id: 15
     m_Localized: Bust
     m_Metadata:
@@ -115,10 +111,6 @@ MonoBehaviour:
   - m_Id: 25
     m_Localized: "Les sons personnalis\xE9s sind des sons enregistr\xE9s par l'utilisateur,
       sinon le pack par d\xE9faut est utilis\xE9"
-    m_Metadata:
-      m_Items: []
-  - m_Id: 26
-    m_Localized: Cyan
     m_Metadata:
       m_Items: []
   - m_Id: 27
@@ -1293,7 +1285,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 33806894813368322
-    m_Localized: Citron vert
+    m_Localized: Sarcelle
     m_Metadata:
       m_Items: []
   - m_Id: 33806894813368323
@@ -1366,6 +1358,14 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 33806894813368343
     m_Localized: Plein écran
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368344
+    m_Localized: Or
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368345
+    m_Localized: Violet
     m_Metadata:
       m_Items: []
   references:

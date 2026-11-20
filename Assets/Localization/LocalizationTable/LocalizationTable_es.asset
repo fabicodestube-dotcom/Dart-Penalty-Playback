@@ -19,15 +19,15 @@ MonoBehaviour:
     m_Items: []
   m_TableData:
   - m_Id: 1
-    m_Localized: "30 d\xEDas"
+    m_Localized: Mes
     m_Metadata:
       m_Items: []
   - m_Id: 2
-    m_Localized: "365 d\xEDas"
+    m_Localized: "A\xF1o"
     m_Metadata:
       m_Items: []
   - m_Id: 3
-    m_Localized: "7 d\xEDas"
+    m_Localized: Semana
     m_Metadata:
       m_Items: []
   - m_Id: 4
@@ -72,10 +72,6 @@ MonoBehaviour:
     m_Localized: Azul
     m_Metadata:
       m_Items: []
-  - m_Id: 14
-    m_Localized: Bronce
-    m_Metadata:
-      m_Items: []
   - m_Id: 15
     m_Localized: Bust
     m_Metadata:
@@ -116,10 +112,6 @@ MonoBehaviour:
   - m_Id: 25
     m_Localized: Los sonidos personalizados son sonidos grabados por el usuario;
       de lo contrario, se utiliza el paquete predeterminado
-    m_Metadata:
-      m_Items: []
-  - m_Id: 26
-    m_Localized: Cian
     m_Metadata:
       m_Items: []
   - m_Id: 27
@@ -1291,7 +1283,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 33806894813368322
-    m_Localized: Lima
+    m_Localized: Verde azulado
     m_Metadata:
       m_Items: []
   - m_Id: 33806894813368323
@@ -1364,6 +1356,14 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 33806894813368343
     m_Localized: Pantalla completa
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368344
+    m_Localized: Oro
+    m_Metadata:
+      m_Items: []
+  - m_Id: 33806894813368345
+    m_Localized: Violeta
     m_Metadata:
       m_Items: []
   references:

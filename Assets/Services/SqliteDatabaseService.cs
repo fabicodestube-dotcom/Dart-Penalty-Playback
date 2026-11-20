@@ -26,8 +26,7 @@ public static class SqliteDatabaseService
             throw new DatabaseBootstrapException("Die Datenbankdatei fehlt. Der Datenbank-Bootstrapper wurde nicht ausgeführt.");
 
         var connection = new SQLiteConnection(GetDatabasePath());
-        connection.Execute("PRAGMA foreign_keys = ON;");
-        connection.Execute("PRAGMA busy_timeout = 5000;");
+        ConfigureConnection(connection);
         return connection;
     }
 
@@ -36,12 +35,22 @@ public static class SqliteDatabaseService
         if (!File.Exists(GetDatabasePath()))
             throw new DatabaseBootstrapException("Die Datenbankdatei fehlt.");
 
-        return new SQLiteConnection(GetDatabasePath(), SQLiteOpenFlags.ReadOnly);
+        var connection = new SQLiteConnection(GetDatabasePath(), SQLiteOpenFlags.ReadOnly);
+        connection.Execute("PRAGMA busy_timeout = 5000;");
+        return connection;
     }
 
     public static SQLiteConnection OpenForBootstrap()
     {
         return new SQLiteConnection(GetDatabasePath(), SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.Create);
+    }
+
+    private static void ConfigureConnection(SQLiteConnection connection)
+    {
+        connection.Execute("PRAGMA foreign_keys = ON;");
+        connection.Execute("PRAGMA busy_timeout = 5000;");
+        connection.Execute("PRAGMA journal_mode = WAL;");
+        connection.Execute("PRAGMA synchronous = NORMAL;");
     }
 
     public static void EnsureSchema()
@@ -128,6 +137,50 @@ public static class SqliteDatabaseService
         {
             var json = JsonConvert.SerializeObject(settings, Formatting.None);
             connection.Execute("INSERT OR REPLACE INTO settings (key_name, value_text) VALUES (?, ?);", "app_settings", json);
+        }
+    }
+
+    internal static void InitializeFreshDatabase(SQLiteConnection connection)
+    {
+        if (connection == null)
+            throw new ArgumentNullException(nameof(connection));
+
+        bool transactionStarted = false;
+
+        try
+        {
+            connection.Execute("PRAGMA foreign_keys = OFF;");
+            connection.BeginTransaction();
+            transactionStarted = true;
+
+            CreateSchemaBaseline(connection);
+
+            DatabaseMeta.Set(connection, DatabaseSchema.VersionMetaKey, DatabaseSchema.CurrentVersion.ToString());
+            DatabaseMeta.Set(connection, DatabaseSchema.StatsVersionMetaKey, DatabaseSchema.CurrentStatsVersion.ToString());
+            DatabaseMeta.Set(connection, DatabaseSchema.LastMigrationMetaKey, DateTime.UtcNow.ToString("o"));
+
+            connection.Execute("PRAGMA application_id = " + DatabaseSchema.ApplicationId + ";");
+            connection.Execute("PRAGMA user_version = " + DatabaseSchema.CurrentVersion + ";");
+
+            connection.Commit();
+            transactionStarted = false;
+            connection.Execute("PRAGMA foreign_keys = ON;");
+        }
+        catch
+        {
+            if (transactionStarted)
+            {
+                try
+                {
+                    connection.Rollback();
+                }
+                catch (Exception rollbackException)
+                {
+                    Debug.LogError("[SQLite] Fresh schema rollback failed: " + rollbackException);
+                }
+            }
+
+            throw;
         }
     }
 

@@ -850,6 +850,17 @@ public abstract class Game
         return count;
     }
 
+    public int GetLegsForCurrentSetDisplay(Guid playerId)
+    {
+        if (sets.Count == 0)
+            return 0;
+
+        if (sets[^1].WinnerPlayerId == playerId)
+            return 0;
+
+        return GetWonLegs(playerId);
+    }
+
     public int GetWonLegsTotal(Guid playerId)
     {
         return sets

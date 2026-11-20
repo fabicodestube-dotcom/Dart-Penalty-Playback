@@ -74,11 +74,11 @@ public static class DatabaseConsistencyService
         if (DatabaseHealth.ColumnExists(connection, "games", "player_ids"))
             CheckLegacyPlayerIds(connection, report);
 
-        string schemaVersion = DatabaseMigrationRunner.GetMeta(connection, DatabaseSchema.VersionMetaKey);
+        string schemaVersion = DatabaseMeta.Get(connection, DatabaseSchema.VersionMetaKey);
         if (schemaVersion != DatabaseSchema.CurrentVersion.ToString())
             report.Warnings.Add("app_meta schema_version=" + (schemaVersion ?? "<null>") + " erwartet " + DatabaseSchema.CurrentVersion + ".");
 
-        string statsVersion = DatabaseMigrationRunner.GetMeta(connection, DatabaseSchema.StatsVersionMetaKey);
+        string statsVersion = DatabaseMeta.Get(connection, DatabaseSchema.StatsVersionMetaKey);
         if (statsVersion != DatabaseSchema.CurrentStatsVersion.ToString())
             report.Warnings.Add("app_meta stats_schema_version=" + (statsVersion ?? "<null>") + " erwartet " + DatabaseSchema.CurrentStatsVersion + ".");
 

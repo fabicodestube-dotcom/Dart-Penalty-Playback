@@ -1,7 +1,7 @@
 Key,English(en),German(de),French(fr),Spanish(es),Russian(ru),Polish(pl),Italian(it),Turkish(tr)
-30_days,30 days,30 Tage,30 jours,30 días,30 дней,30 dni,30 giorni,30 gün
-365_days,365 days,365 Tage,365 jours,365 días,365 дней,365 dni,365 giorni,365 gün
-7_days,7 days,7 Tage,7 jours,7 días,7 дней,7 dni,7 giorni,7 gün
+Month,Month,Monat,Mois,Mes,Месяц,Miesiąc,Mese,Ay
+Year,Year,Jahr,Année,Año,Год,Rok,Anno,Yıl
+Week,Week,Woche,Semaine,Semana,Неделя,Tydzień,Settimana,Hafta
 Abort_game,Abort game,Spiel verwerfen,Abandonner la partie,Abortar juego,Прервать игру,Przerwij grę,Interrompi gioco,Oyunu iptal et
 Abort_game_expl,"The game is not finished yet. Would you like to save the game so it can be continued later, or would you like to abort it?","Das Spiel ist noch nicht beendet. Möchtest du das Spiel speichern, um es später fortzusetzen, oder möchtest du es abbrechen?","La partie n'est pas encore terminée. Souhaitez-vous sauvegarder la partie pour la continuer plus tard, ou souhaitez-vous l'abandonner ?","El juego aún no ha terminado. ¿Te gustaría guardar el juego para continuarlo más tarde, o prefieres abortarlo?","Игра еще не закончена. Хотите сохранить игру, чтобы продолжить ее позже, или хотите прервать ее?","Gra nie została jeszcze zakończona. Czy chcesz zapisać grę, aby móc ją kontynuować później, czy chcesz ją przerwać?",Il gioco non è ancora finito. Vuoi salvare il gioco per continuarlo più tardi o vuoi interromperlo?,"Oyun henüz bitmedi. Oyunu daha sonra devam ettirmek üzere kaydetmek mi istersiniz, yoksa iptal etmek mi istersiniz?"
 About,About,Über,À propos,Acerca de,О программе,O programie,Informazioni,Hakkında
@@ -15,7 +15,6 @@ Apply,Apply,Anwenden,Appliquer,Aplicar,Применить,Zastosuj,Applica,Uygul
 Ascending,Ascending,Aufsteigend,Croissant,Ascendente,По возрастанию,Rosnąco,Crescente,Artan
 Audio,Audio,Audio,Audio,Audio,Аудио,Audio,Audio,Ses
 Blue,Blue,Blau,Bleu,Azul,Синий,Niebieski,Blu,Mavi
-Bronze,Bronze,Bronze,Bronze,Bronce,Бронза,Brąz,Bronzo,Bronz
 Bust,Bust,Verlauf,Bust,Bust,Перебор,Przełamanie,Sballato,Bust
 Cancel,Cancel,Abbrechen,Annuler,Cancelar,Отмена,Anuluj,Anulla,İptal
 Ceiling,Ceiling,Decke,Plafond,Techo,Потолок,Sufit,Soffitto,Tavan
@@ -30,7 +29,6 @@ Custom_clips,Custom clips,Eigene Clips,Clips personnalisés,Clips personalizados
 Custom_sound,Custom sound,Eigener Sound,Son personnalisé,Sonido personalizado,Пользовательский звук,Własny dźwięk,Suono personalizzato,Özel ses
 Custom_sound_expl,"Custom sounds are user-recorded sounds, otherwise the default package is used","Eigene Sounds sind vom Benutzer aufgenommene Sounds, andernfalls wird das Standardpaket verwendet","Les sons personnalisés sind des sons enregistrés par l'utilisateur, sinon le pack par défaut est utilisé","Los sonidos personalizados son sonidos grabados por el usuario; de lo contrario, se utiliza el paquete predeterminado","Пользовательские звуки — это звуки, записанные пользователем, иначе используется стандартный пакет","Własne dźwięki to dźwięki nagrane przez użytkownika, w przeciwnym razie używany jest pakiet domyślny","I suoni personalizzati sono registrati dall'utente, altrimenti viene utilizzato il pacchetto predefinito","Özel sesler kullanıcı tarafından kaydedilen seslerdir, aksi takdirde varsayılan paket kullanılır"
 Customization,Customization,Anpassung,Personnalisation,Personalización,Настройка,Dostosowywanie,Personalizzazione,Özelleştirme
-Cyan,Cyan,Cyan,Cyan,Cian,Циан,Cyjan,Ciano,Camgöbeği
 Delete_all_games,Delete all games,Alle Spiele löschen,Supprimer toutes les parties,Eliminar todos los juegos,Удалить все игры,Usuń wszystkie gry,Elimina tutti i giochi,Tüm oyunları sil
 Delete_all_games_expl,Are you sure you want to delete all recorded games? This action cannot be undone!,"Bist du sicher, dass du alle aufgezeichneten Spiele löschen möchtest? Diese Aktion kann nicht rückgängig gemacht werden!",Êtes-vous sûr de vouloir supprimer toutes les parties enregistrées ? Cette action est irréversible !,¿Estás seguro de que deseas eliminar todos los juegos grabados? ¡Esta acción no se puede deshacer!,"Вы уверены, что хотите удалить все записанные игры? Это действие нельзя отменить!",Czy na pewno chcesz usunąć wszystkie zapisane gry? Tej operacji nie można cofnąć!,Sei sicuro di voler eliminare tutti i giochi registrati? Questa azione nicht può essere annullata!,Tüm kaydedilen oyunları silmek istediğinizden emin misiniz? Bu işlem geri alınamaz!
 Delete_atc_games,Delete Around the Clock games,„Around the Clock“-Spiele löschen,Supprimer les parties d'Around the Clock,Eliminar juegos de Around the Clock,Удалить игры Around the Clock,Usuń gry Around the Clock,Elimina i giochi Around the Clock,Around the Clock oyunlarını sil
@@ -61,7 +59,7 @@ Game_not_saved_yet_expl,The game has not been saved yet. Would you like to save 
 Game_over,Game over,Spiel vorbei,Partie terminée,Fin del juego,Игра окончена,Koniec gry,Game over,Oyun bitti
 Game_start,Start game,Spiel starten,Commencer la partie,Iniciar juego,Начать игру,Uruchom grę,Avvia gioco,Oyunu başlat
 Orange,Orange,Orange,Orange,Naranja,Оранжевый,Pomarańczowy,Arancione,Turuncu
-Green,Green,Grün,Vert,Verde,Зеленыe,Zielony,Verde,Yeşil
+Green,Green,Grün,Vert,Verde,Зелёный,Zielony,Verde,Yeşil
 Hard,Hard,Schwer,Difficile,Difícil,Сложно,Trudny,Difficile,Zor
 Highscores,Highscores,Bestenlisten,Meilleurs scores,Puntajes máximos,Рекорды,Najlepsze wyniki,Classifiche,Yüksek skorlar
 History,History,Verlauf,Historique,Historial,История,Historia,Cronologia,Geçmiş
@@ -315,9 +313,8 @@ Add_trigger,Add trigger,Trigger hinzufügen,Ajouter un déclencheur,Añadir disp
 Edit_trigger,Edit trigger,Trigger bearbeiten,Modifier le déclencheur,Editar disparador,Изменить триггер,Edytuj wyzwalacz,Modifica trigger,Tetikleyiciyi düzenle
 Pink,Pink,Pink,Rose,Rosa,Розовый,Różowy,Rosa,Pembe
 Teal,Teal,Türkis,Sarcelle,Verde azulado,Бирюзовый,Turkusowy,Verde acqua,Turkuaz
-Indigo,Indigo,Indigo,Indigo,Índigo,Индиго,Indygo,Indaco,Çivit rengi
-Blue_Grey,Blue Grey,Blaugrau,Gris bleu,Gris azulado,Сине-серый,Niebiesko-szary,Grigio blu,Mavi gri
-Deep_Orange,Deep Orange,Tiefes Orange,Orange foncé,Naranja oscuro,Тёмно-оранжевый,Ciemnopomarańczowy,Arancione scuro,Koyu turuncu
+Gold,Gold,Gold,Or,Oro,Золотой,Złoty,Oro,Altın
+Violet,Violet,Violett,Violet,Violeta,Фиолетовый,Fioletowy,Viola,Mor
 Name_required,Name is required.,Name ist erforderlich.,Le nom est requis.,El nombre es obligatorio.,Требуется имя.,Nazwa jest wymagana.,Il nome è obbligatorio.,Ad gerekli.
 Invalid_number,Please enter a valid number.,Bitte eine gültige Zahl eingeben.,Veuillez saisir un nombre valide.,Introduce un número válido.,Введите корректное число.,Wprowadź prawidłową liczbę.,Inserisci un numero valido.,Lütfen geçerli bir sayı girin.
 Select_target_area,Please select a target area.,Bitte einen Zielbereich auswählen.,Veuillez sélectionner une zone cible.,Selecciona una zona objetivo.,Выберите целевую зону.,Wybierz obszar docelowy.,Seleziona un'area bersaglio.,Lütfen bir hedef alan seçin.

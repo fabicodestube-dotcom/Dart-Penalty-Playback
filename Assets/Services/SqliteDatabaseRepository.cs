@@ -426,7 +426,7 @@ public static class SqliteDatabaseRepository
 
         using (var connection = SqliteDatabaseService.Open())
         {
-            return DatabaseMigrationRunner.GetMeta(connection, DatabaseSchema.StatsVersionMetaKey);
+            return DatabaseMeta.Get(connection, DatabaseSchema.StatsVersionMetaKey);
         }
     }
 
@@ -436,7 +436,7 @@ public static class SqliteDatabaseRepository
 
         using (var connection = SqliteDatabaseService.Open())
         {
-            DatabaseMigrationRunner.SetMeta(
+            DatabaseMeta.Set(
                 connection,
                 DatabaseSchema.StatsVersionMetaKey,
                 version.ToString()
@@ -453,7 +453,7 @@ public static class SqliteDatabaseRepository
 
         using (var connection = SqliteDatabaseService.Open())
         {
-            return DatabaseMigrationRunner.GetMeta(connection, key);
+            return DatabaseMeta.Get(connection, key);
         }
     }
 
@@ -466,7 +466,7 @@ public static class SqliteDatabaseRepository
 
         using (var connection = SqliteDatabaseService.Open())
         {
-            DatabaseMigrationRunner.SetMeta(connection, key, value);
+            DatabaseMeta.Set(connection, key, value);
         }
     }
 
@@ -553,7 +553,7 @@ public static class SqliteDatabaseRepository
                 connection.Execute("DELETE FROM player_stats_snapshots;");
                 RebuildSnapshotsInternal(connection, null);
 
-                DatabaseMigrationRunner.SetMeta(
+                DatabaseMeta.Set(
                     connection,
                     DatabaseSchema.StatsVersionMetaKey,
                     DatabaseSchema.CurrentStatsVersion.ToString()
@@ -913,6 +913,7 @@ public static class SqliteDatabaseRepository
         var playerStats = ReadPlayerGameStatsForGame(connection, row.Id);
         var setsWonByPlayer = ReadWonSetsCounts(connection, row.Id);
         var legsWonByPlayer = ReadWonLegsCounts(connection, row.Id);
+        var legsWonCurrentSetByPlayer = ReadWonLegsCurrentSetCounts(connection, row.Id);
 
         if (penaltySnapshots != null && penaltySnapshots.TryGetValue(row.Id, out var snapshot) && snapshot != null)
             summary.CustomPenaltySnapshot = snapshot;
@@ -922,12 +923,14 @@ public static class SqliteDatabaseRepository
             playerStats.TryGetValue(pid, out var gs);
             setsWonByPlayer.TryGetValue(pid, out var setsWon);
             legsWonByPlayer.TryGetValue(pid, out var legsWon);
+            legsWonCurrentSetByPlayer.TryGetValue(pid, out var legsWonCurrentSet);
             var entry = new PlayerSummaryEntry
             {
                 PlayerId = pid,
                 Score = GetScoreFromStats(playerStats, pid, row.GameMode),
                 SetsWon = setsWon,
                 LegsWon = legsWon,
+                LegsWonCurrentSet = legsWonCurrentSet,
                 TargetsHit = GetTargetsHitFromStats(playerStats, pid),
                 TotalTargets = GetTotalTargetsFromStats(playerStats, pid),
                 WallCount = gs?.wallCount ?? 0,
@@ -1087,6 +1090,30 @@ public static class SqliteDatabaseRepository
                 continue;
             counts.TryGetValue(legRow.WinnerPlayerId, out var current);
             counts[legRow.WinnerPlayerId] = current + 1;
+        }
+
+        return counts;
+    }
+
+    private static Dictionary<Guid, int> ReadWonLegsCurrentSetCounts(SQLiteConnection connection, string gameId)
+    {
+        var counts = new Dictionary<Guid, int>();
+
+        var legRows = connection.Query<WonLegCountRow>(
+            @"SELECT l.winner_player_id AS WinnerPlayerId,
+                     CASE WHEN s.winner_player_id = l.winner_player_id THEN 0 ELSE COUNT(*) END AS LegsWon
+              FROM legs l
+              JOIN sets s ON s.id = l.set_id
+              WHERE l.game_id = ?
+                AND s.order_index = (SELECT MAX(order_index) FROM sets WHERE game_id = ?)
+                AND l.winner_player_id IS NOT NULL
+              GROUP BY l.winner_player_id, s.winner_player_id;", gameId, gameId);
+
+        foreach (var legRow in legRows)
+        {
+            if (legRow.WinnerPlayerId == Guid.Empty)
+                continue;
+            counts[legRow.WinnerPlayerId] = legRow.LegsWon;
         }
 
         return counts;
@@ -1998,6 +2025,12 @@ public static class SqliteDatabaseRepository
         public string SetId { get; set; }
         public int OrderIndex { get; set; }
         public Guid WinnerPlayerId { get; set; }
+    }
+
+    private class WonLegCountRow
+    {
+        public Guid WinnerPlayerId { get; set; }
+        public int LegsWon { get; set; }
     }
 
     private class TurnRow

@@ -40,6 +40,7 @@ public class PlayerSummaryEntry
     public int Score { get; set; }
     public int SetsWon { get; set; }
     public int LegsWon { get; set; }
+    public int LegsWonCurrentSet { get; set; }
     public int TargetsHit { get; set; }
     public int TotalTargets { get; set; }
     public int WallCount { get; set; }

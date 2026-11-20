@@ -12,29 +12,39 @@ public interface IDatabaseMigration
     void Apply(SQLiteConnection connection);
 }
 
-public sealed class Migration001InitialSchema : IDatabaseMigration
-{
-    public int Version => 1;
-    public string Name => "initial_schema";
-    public string Checksum => "v1-initial-schema";
-
-    public void Apply(SQLiteConnection connection)
-    {
-        SqliteDatabaseService.CreateSchemaBaseline(connection);
-        DatabaseMigrationRunner.SetMeta(connection, DatabaseSchema.StatsVersionMetaKey, DatabaseSchema.CurrentStatsVersion.ToString());
-    }
-}
-
+/// <summary>
+/// Registry for future schema changes. Schema 1 is the current baseline and
+/// therefore has no registered patches. When the schema changes, increment
+/// <see cref="DatabaseSchema.CurrentVersion"/> and add the next migration here.
+/// </summary>
 public static class DatabaseMigrations
 {
-    public static readonly IDatabaseMigration[] All =
-    {
-        new Migration001InitialSchema()
-    };
+    public static readonly IDatabaseMigration[] All = new IDatabaseMigration[0];
 }
 
 public static class DatabaseMigrationRunner
 {
+    public static bool CanUpgrade(int fromVersion, int toVersion)
+    {
+        if (fromVersion == toVersion)
+            return true;
+
+        if (fromVersion < 0 || fromVersion > toVersion)
+            return false;
+
+        int version = fromVersion;
+        while (version < toVersion)
+        {
+            int nextVersion = version + 1;
+            if (!DatabaseMigrations.All.Any(migration => migration != null && migration.Version == nextVersion))
+                return false;
+
+            version = nextVersion;
+        }
+
+        return true;
+    }
+
     public static void Migrate(string databasePath, int fromVersion, int toVersion)
     {
         if (string.IsNullOrEmpty(databasePath))
@@ -46,13 +56,13 @@ public static class DatabaseMigrationRunner
         if (fromVersion > toVersion)
             throw new InvalidOperationException("Downgrades are not supported.");
 
+        if (!CanUpgrade(fromVersion, toVersion))
+            throw new InvalidOperationException("No migration path found for " + fromVersion + " -> " + toVersion + ".");
+
         var migrations = DatabaseMigrations.All
-            .Where(migration => migration.Version > fromVersion && migration.Version <= toVersion)
+            .Where(migration => migration != null && migration.Version > fromVersion && migration.Version <= toVersion)
             .OrderBy(migration => migration.Version)
             .ToArray();
-
-        if (migrations.Length == 0)
-            throw new InvalidOperationException("No migration found for " + fromVersion + " -> " + toVersion + ".");
 
         using (var connection = new SQLiteConnection(databasePath, SQLiteOpenFlags.ReadWrite))
         {
@@ -78,8 +88,8 @@ public static class DatabaseMigrationRunner
                     );
                 }
 
-                SetMeta(connection, DatabaseSchema.VersionMetaKey, toVersion.ToString());
-                SetMeta(connection, DatabaseSchema.LastMigrationMetaKey, DateTime.UtcNow.ToString("o"));
+                DatabaseMeta.Set(connection, DatabaseSchema.VersionMetaKey, toVersion.ToString());
+                DatabaseMeta.Set(connection, DatabaseSchema.LastMigrationMetaKey, DateTime.UtcNow.ToString("o"));
 
                 connection.Execute("PRAGMA application_id = " + DatabaseSchema.ApplicationId + ";");
                 connection.Execute("PRAGMA user_version = " + toVersion + ";");
@@ -94,6 +104,9 @@ public static class DatabaseMigrationRunner
 
                 if (!DatabaseHealth.TryQuickCheck(connection, out string healthError))
                     throw new InvalidOperationException("Migration integrity check failed: " + healthError);
+
+                if (!DatabaseHealth.TryValidateSchema(connection, toVersion, out string schemaError))
+                    throw new InvalidOperationException("Migration schema check failed: " + schemaError);
 
                 Debug.Log("[DatabaseMigration] Migrated database " + fromVersion + " -> " + toVersion + ".");
             }
@@ -114,35 +127,5 @@ public static class DatabaseMigrationRunner
                 throw;
             }
         }
-    }
-
-    public static void SetMeta(SQLiteConnection connection, string key, string value)
-    {
-        if (connection == null || string.IsNullOrEmpty(key))
-            return;
-
-        connection.Execute(
-            "INSERT OR REPLACE INTO app_meta (key_name, value_text) VALUES (?, ?);",
-            key,
-            value ?? string.Empty
-        );
-    }
-
-    public static string GetMeta(SQLiteConnection connection, string key)
-    {
-        if (connection == null || string.IsNullOrEmpty(key))
-            return null;
-
-        var rows = connection.Query<MetaRow>(
-            "SELECT value_text AS ValueText FROM app_meta WHERE key_name = ?;",
-            key
-        );
-
-        return rows.Count > 0 ? rows[0].ValueText : null;
-    }
-
-    private sealed class MetaRow
-    {
-        public string ValueText { get; set; }
     }
 }

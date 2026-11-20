@@ -243,7 +243,7 @@ public class GameDetailScreen : UIScreen, IUIScreen
             playerTable.AddOrUpdateRow(key, GetPlayerName(pid), new TableCellData[]
             {
                 s?.totalSetsWon.ToString() ?? "0",
-                s?.totalLegsWon.ToString() ?? "0",
+                GetCurrentSetLegsForPlayer(pid).ToString(),
                 GetScoreForPlayer(pid).ToString()
             }, false);
 
@@ -419,7 +419,7 @@ public class GameDetailScreen : UIScreen, IUIScreen
             playerTable.AddOrUpdateRow(key, GetPlayerName(pid), new TableCellData[]
             {
                 s?.totalSetsWon.ToString() ?? "0",
-                s?.totalLegsWon.ToString() ?? "0",
+                GetCurrentSetLegsForPlayer(pid).ToString(),
                 GetScoreForPlayer(pid).ToString()
             }, false);
 
@@ -593,7 +593,7 @@ public class GameDetailScreen : UIScreen, IUIScreen
             playerTable.AddOrUpdateRow(key, GetPlayerName(pid), new TableCellData[]
             {
                 s?.totalSetsWon.ToString() ?? "0",
-                s?.totalLegsWon.ToString() ?? "0",
+                GetCurrentSetLegsForPlayer(pid).ToString(),
                 (s?.atc?.hits ?? 0) + "/" + (s?.atc?.attempts ?? 0)
             }, false);
 
@@ -741,6 +741,12 @@ public class GameDetailScreen : UIScreen, IUIScreen
     {
         var entry = gameSummary.PlayerEntries.FirstOrDefault(e => e.PlayerId == pid);
         return entry?.Score ?? 0;
+    }
+
+    private int GetCurrentSetLegsForPlayer(Guid pid)
+    {
+        var entry = gameSummary.PlayerEntries.FirstOrDefault(e => e.PlayerId == pid);
+        return entry?.LegsWonCurrentSet ?? 0;
     }
 
     private void EnsureX01HitSectorCharts(int requestedCount, List<string> labelOrder)
